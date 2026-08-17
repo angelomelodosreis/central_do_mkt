@@ -229,18 +229,34 @@ domínio, editar/excluir documentação, alterar permissões) ganham botão
 
 Nada disso é necessário para desenvolver localmente.
 
-1. **Criar o banco de produção no Turso** (o arquivo local não serve: o sistema
-   de arquivos de uma função da Vercel é efêmero e somente leitura):
+1. **Criar o banco de produção no Turso.** O arquivo local não serve: o sistema
+   de arquivos de uma função da Vercel é efêmero e somente leitura.
+
+   O que você precisa obter, de um jeito ou de outro, são dois valores: a **URL**
+   (`libsql://...`) e um **token de acesso**. Escolha a região mais próxima da
+   configurada em `vercel.json` (hoje `gru1`, São Paulo).
+
+   **Opção A — pelo painel, sem instalar nada.** Entre em
+   <https://app.turso.tech>, crie um database (*Create Database*), escolha a
+   região e depois, na página dele, copie a URL e gere um token em *Generate
+   Token*. É o caminho mais curto.
+
+   **Opção B — pela linha de comando.** A CLI de nuvem do Turso **não vem pelo
+   npm** (o pacote `turso` no npm é outra coisa: é o shell SQL local `tursodb`,
+   sem os comandos de conta). Use o instalador oficial, que baixa de
+   `github.com/tursodatabase/` e instala em `$HOME/.turso` — **sem sudo, sem
+   root**:
    ```bash
-   npm i -g @tursodatabase/turso-cli
+   curl -sSfL https://get.tur.so/install.sh | bash
+   ```
+   Abra um terminal novo (o instalador acrescenta o PATH ao seu `~/.zshrc`) e
+   então:
+   ```bash
    turso auth login
    turso db create central-do-marketing
    turso db show central-do-marketing --url
    turso db tokens create central-do-marketing
    ```
-   Guarde a URL (`libsql://...`) e o token — são o `TURSO_DATABASE_URL` e o
-   `TURSO_AUTH_TOKEN` de produção. Crie o banco na região mais próxima da
-   configurada em `vercel.json` (hoje `gru1`, São Paulo).
 
 2. **Criar uma segunda credencial do Google** para o endereço de produção, com o
    redirect URI `https://SEU-DOMINIO/api/auth/callback/google`.
