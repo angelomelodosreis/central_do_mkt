@@ -21,19 +21,23 @@ configuração no Google:
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars
+cp .env.example .env.local
 npm run setup:local
 npm run dev
 ```
 
+Não é preciso criar conta em serviço nenhum: o banco de desenvolvimento é um
+arquivo SQLite em `.data/local.db`, na sua própria máquina.
+
 Abra <http://localhost:3000>. Na tela de login vai aparecer um painel amarelo
-**🧪 Modo de teste local** com três botões:
+**🧪 Modo de teste local** com quatro botões:
 
 | Botão | O que você vê |
 | --- | --- |
 | **Entrar como Administrador** | Tudo: aprovar cadastros, permissões, BUs, auditoria e desfazer |
-| **Entrar como Líder** | Gerador de nomes e edição da documentação, sem a área de administração |
-| **Entrar como Membro** | Gerador de nomes e leitura da documentação, sem editar nada |
+| **Entrar como Líder** | Edita conteúdo e define os parâmetros, sem a área de acessos |
+| **Entrar como Editor** | Cria e edita documentação, personas e o calendário da BU que responde |
+| **Entrar como Membro** | Só consulta: gerador, documentação, personas e calendário |
 
 Assim você compara os níveis de acesso na prática. Enquanto o modo de teste
 estiver ligado, aparece uma faixa amarela no topo de todas as telas, para não
@@ -43,16 +47,17 @@ O `BETTER_AUTH_SECRET` do arquivo de exemplo serve para o modo de teste. Quando
 for usar o login do Google de verdade, gere um valor próprio (Parte 1, passo 3).
 
 **Para desligar o modo de teste**, apague a linha `ALLOW_TEST_LOGIN` do arquivo
-`.dev.vars` e reinicie com `npm run dev`.
+`.env.local` e reinicie com `npm run dev`.
 
 As contas de teste **não interferem** no login real: quando você configurar o
 Google, seu primeiro acesso continua virando administrador normalmente (a regra
 ignora as contas fictícias).
 
 > **Isso não é um risco de segurança na versão publicada.** O recurso só existe
-> em desenvolvimento: no pacote gerado para a Cloudflare, a verificação compila
-> para "sempre falso" e a variável `ALLOW_TEST_LOGIN` nem é lida. Mesmo que
-> alguém a defina no servidor por engano, o login de teste não funciona.
+> em desenvolvimento: no build de produção a verificação compila para "sempre
+> falso" e a variável `ALLOW_TEST_LOGIN` nem é lida. Mesmo que alguém a defina
+> nas variáveis da Vercel por engano, o login de teste não funciona — e isso vale
+> também para os Preview Deployments, que rodam em modo de produção.
 
 ---
 
@@ -90,12 +95,13 @@ MedCof. Para isso, é preciso criar uma credencial no Google:
 Copie o modelo e preencha:
 
 ```bash
-cp .dev.vars.example .dev.vars
+cp .env.example .env.local
 ```
 
-Abra o arquivo `.dev.vars` e preencha:
+Abra o arquivo `.env.local` e preencha:
 
 ```
+TURSO_DATABASE_URL="file:./.data/local.db"
 GOOGLE_CLIENT_ID="cole aqui o ID do cliente"
 GOOGLE_CLIENT_SECRET="cole aqui a chave secreta"
 BETTER_AUTH_SECRET="gere um valor com o comando abaixo"
@@ -108,22 +114,23 @@ Para gerar o `BETTER_AUTH_SECRET`:
 openssl rand -base64 32
 ```
 
-> **Nunca comite o `.dev.vars` no Git.** Ele já está no `.gitignore` — é o
-> arquivo que guarda as credenciais.
+> **Nunca comite o `.env.local` no Git.** Ele já está no `.gitignore` — é o
+> arquivo que guarda as credenciais. O `.env.example`, que só tem placeholders,
+> é a única exceção versionada.
 
 ### 4. Criar o banco de dados local
 
 ```bash
-npm run db:migrate:local
+npm run db:migrate
 ```
 
-Isso cria as tabelas num banco SQLite local, dentro da pasta `.wrangler/`.
-Nada sai da sua máquina e não é preciso ter conta na Cloudflare ainda.
+Isso cria as tabelas num arquivo SQLite em `.data/local.db`. Nada sai da sua
+máquina e não é preciso ter conta em serviço nenhum ainda.
 
 ### 5. Carregar os dados iniciais
 
 ```bash
-npm run db:seed:local
+npm run db:seed
 ```
 
 Isso cadastra:
@@ -218,48 +225,62 @@ domínio, editar/excluir documentação, alterar permissões) ganham botão
 
 ---
 
-## Parte 3 — Publicar na Cloudflare (quando chegar a hora)
+## Parte 3 — Publicar na Vercel (quando chegar a hora)
 
 Nada disso é necessário para desenvolver localmente.
 
-1. **Criar o banco de verdade:**
+1. **Criar o banco de produção no Turso** (o arquivo local não serve: o sistema
+   de arquivos de uma função da Vercel é efêmero e somente leitura):
    ```bash
-   npx wrangler d1 create central_do_marketing_db
+   npm i -g @tursodatabase/turso-cli
+   turso auth login
+   turso db create central-do-marketing
+   turso db show central-do-marketing --url
+   turso db tokens create central-do-marketing
    ```
-   Copie o `database_id` retornado e substitua o valor em `wrangler.jsonc`
-   (hoje está com um valor de espera, usado apenas localmente).
+   Guarde a URL (`libsql://...`) e o token — são o `TURSO_DATABASE_URL` e o
+   `TURSO_AUTH_TOKEN` de produção. Crie o banco na região mais próxima da
+   configurada em `vercel.json` (hoje `gru1`, São Paulo).
 
 2. **Criar uma segunda credencial do Google** para o endereço de produção, com o
    redirect URI `https://SEU-DOMINIO/api/auth/callback/google`.
 
-3. **Cadastrar os segredos no Worker** (não vão no código):
+3. **Cadastrar as variáveis na Vercel**, em *Settings → Environment Variables*
+   (nunca no código, nunca num arquivo `.env` comitado):
+
+   | Variável | Valor |
+   | --- | --- |
+   | `TURSO_DATABASE_URL` | a URL `libsql://...` do passo 1 |
+   | `TURSO_AUTH_TOKEN` | o token do passo 1 |
+   | `BETTER_AUTH_SECRET` | um valor novo, gerado com `openssl rand -base64 32` |
+   | `BETTER_AUTH_URL` | `https://SEU-DOMINIO` |
+   | `GOOGLE_CLIENT_ID` | o ID do cliente de produção |
+   | `GOOGLE_CLIENT_SECRET` | a chave secreta de produção |
+
+   Não defina `ALLOW_TEST_LOGIN` — em produção ela não tem efeito nenhum.
+
+4. **Preparar o banco de produção**, apontando os scripts para ele. As migrations
+   não rodam no build da Vercel de propósito: um build com falha no meio deixaria
+   o banco num estado indefinido, e todo deploy passaria a depender do banco estar
+   acessível. Rode uma vez, da sua máquina:
    ```bash
-   npx wrangler secret put GOOGLE_CLIENT_ID
-   npx wrangler secret put GOOGLE_CLIENT_SECRET
-   npx wrangler secret put BETTER_AUTH_SECRET
-   npx wrangler secret put BETTER_AUTH_URL
+   TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npm run db:migrate
+   TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npm run db:seed
    ```
 
-4. **Preparar o banco de produção:**
+5. **Conferir o build de produção localmente** antes de publicar:
    ```bash
-   npm run db:migrate:remote
-   npm run db:seed:remote
+   npm run build && npm start
    ```
 
-5. **Testar no runtime real da Cloudflare antes de publicar** (importante — o
-   `npm run dev` não pega tudo):
-   ```bash
-   npm run cf:preview
-   ```
+6. **Publicar:** conecte o repositório do GitHub à Vercel. Cada push na `main`
+   publica em produção e cada branch ganha um Preview Deployment. Para publicar
+   da linha de comando: `npx vercel --prod`.
 
-6. **Publicar:**
-   ```bash
-   npm run cf:deploy
-   ```
-
-> **Plano da Cloudflare:** o plano gratuito dos Workers limita o processamento a
-> 10ms por requisição, o que é pouco para uma aplicação Next.js. Assine o
-> **Workers Paid** (a partir de ~US$ 5/mês) antes de colocar o time todo para usar.
+> **Atenção aos Preview Deployments.** Eles usam as mesmas variáveis de ambiente
+> do escopo que você marcar na Vercel. Se apontarem para o banco de produção,
+> qualquer teste numa branch escreve em dados reais. Crie um segundo banco no
+> Turso para o escopo *Preview* se for usar previews com o time.
 
 ---
 
@@ -270,12 +291,16 @@ Nada disso é necessário para desenvolver localmente.
 | `npm run dev` | Sobe a aplicação em <http://localhost:3000> |
 | `npm run setup:local` | Cria as tabelas e carrega os dados iniciais |
 | `npm run db:generate` | Gera uma nova migration depois de mudar o schema |
-| `npm run db:migrate:local` | Aplica as migrations no banco local |
-| `npm run db:seed:local` | Recarrega os dados iniciais (seguro rodar de novo) |
+| `npm run db:migrate` | Aplica as migrations no banco de `TURSO_DATABASE_URL` |
+| `npm run db:seed` | Recarrega os dados iniciais (seguro rodar de novo) |
+| `npm run db:studio` | Abre o Drizzle Studio para inspecionar o banco |
 | `npm run typecheck` | Confere os tipos do TypeScript |
 | `npm run build` | Build de produção |
-| `npm run cf:preview` | Roda no runtime real da Cloudflare, sem publicar |
-| `npm run cf:deploy` | Publica na Cloudflare |
+| `npm start` | Roda o build de produção localmente |
+
+Os comandos de banco agem sobre o que estiver em `TURSO_DATABASE_URL` — o
+arquivo local, por padrão. Para mirar produção, passe a URL e o token na frente
+do comando (ver Parte 3, passo 4).
 
 ---
 
@@ -315,25 +340,36 @@ drizzle/
 
 ## Decisões técnicas
 
-- **Next.js 16 + Cloudflare Workers** via `@opennextjs/cloudflare`. O adapter
-  antigo (`@cloudflare/next-on-pages`) foi descontinuado e arquivado pela
-  Cloudflare em set/2025. Como consequência, **nunca use
-  `export const runtime = "edge"`** — não é suportado neste adapter.
-- **better-auth** em vez de NextAuth/Auth.js: o adapter oficial do Auth.js para o
-  banco D1 não é mantido pela Cloudflare e tem incompatibilidade conhecida com o
-  OpenNext. Além disso, o better-auth guarda as sessões no banco, o que é o que
-  permite derrubar o acesso de um usuário suspenso imediatamente.
-- **Drizzle ORM** para o banco. As migrations são geradas pelo `drizzle-kit` mas
-  aplicadas pelo `wrangler` — o `drizzle-kit migrate` não funciona com o D1.
-- **Sem `middleware`/`proxy.ts`.** No Next 16 esse arquivo roda obrigatoriamente
-  no runtime Node, que o adapter da Cloudflare ainda não suporta (o build falha
-  com *"Node.js middleware is not currently supported"*). Não há perda de
-  segurança: o controle de acesso real está em `requireUser()`, no layout das
-  rotas autenticadas, que consulta o banco a cada requisição. Uma camada de
-  middleware só evitaria renderização desnecessária.
-- **Não marque `better-auth` em `serverExternalPackages`.** Se marcado, o build
-  para a Cloudflare quebra: a variante `workerd` de
-  `@better-auth/core/instrumentation` não é copiada para o bundle.
+- **Next.js 16 na Vercel**, sem adapter. O projeto nasceu para Cloudflare Workers
+  via `@opennextjs/cloudflare`; a migração para a Vercel removeu o adapter, o
+  `wrangler` e o banco D1 (ago/2026).
+- **libSQL/Turso** como banco, e não Postgres. O schema já era SQLite — 8 arquivos
+  com `sqliteTable`, 37 campos `mode: "timestamp"`, 11 `boolean` e 7 `json`. Como
+  o libSQL é SQLite, o schema, as 7 migrations e o seed continuaram valendo sem
+  reescrita; ir para Postgres exigiria refazer tudo isso e trocar `LIKE` por
+  `ILIKE` na busca. Em desenvolvimento a mesma biblioteca abre um arquivo local,
+  o que mantém o projeto rodável sem conta em serviço nenhum.
+- **Nenhum `replace()` profundamente aninhado em SQL.** O parser do libSQL estoura
+  a pilha (*parser stack overflow*) com o encadeamento de 48 chamadas que as
+  migrations `0002` e `0003` usavam para tirar acento; elas foram reescritas em
+  lotes de 6, um statement por lote. Se precisar normalizar texto em SQL de novo,
+  quebre em statements.
+- **As migrations são aplicadas por `scripts/db-migrate.mjs`**, que usa o migrator
+  do `drizzle-orm`, e não por `drizzle-kit migrate`: o comando do kit encerra com
+  código 0 sem aplicar nada quando o dialeto é sqlite em arquivo — falha
+  silenciosa, pior que erro. O `drizzle-kit` ficou só para `generate` e `studio`.
+- **better-auth** em vez de NextAuth/Auth.js: guarda as sessões no banco, o que é
+  o que permite derrubar o acesso de um usuário suspenso imediatamente.
+- **`export const dynamic = "force-dynamic"` no layout de `(app)`**, e não página
+  por página. Toda rota autenticada lê a sessão do request, então nenhuma pode ser
+  pré-renderizada; quando isso era declarado individualmente, `/admin` e
+  `/parametros` ficaram de fora e o `next build` falhava ao montar o auth fora de
+  um request.
+- **`@libsql/client` e `libsql` em `serverExternalPackages`.** Carregam binários
+  nativos; sem declarar, o bundler tenta empacotá-los e o build quebra.
+- **Sem `middleware`/`proxy.ts`.** O controle de acesso real está em
+  `requireUser()`, no layout das rotas autenticadas, que consulta o banco a cada
+  requisição. Uma camada de middleware só evitaria renderização desnecessária.
 - **Sem versionamento de documentos** nesta versão: a trilha de auditoria já
   guarda o antes e o depois de cada edição, o que cobre a necessidade e permite
   desfazer. Uma tabela dedicada de versões pode ser adicionada depois sem mexer

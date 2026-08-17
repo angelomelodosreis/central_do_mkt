@@ -8,8 +8,8 @@
 -- É seguro rodar mais de uma vez: todos os inserts usam INSERT OR IGNORE, então
 -- nada é sobrescrito nem duplicado.
 --
--- Local:      npm run db:seed:local
--- Produção:   npm run db:seed:remote
+-- Aplicado por `npm run db:seed`, que usa o banco definido em
+-- TURSO_DATABASE_URL (arquivo local em desenvolvimento, Turso em produção).
 -- ---------------------------------------------------------------------------
 
 -- Domínios de e-mail autorizados a se cadastrar --------------------------------

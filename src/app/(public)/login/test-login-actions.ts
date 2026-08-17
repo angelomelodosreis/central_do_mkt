@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 
+import { betterAuthSecret } from "@/lib/env";
 import { getDb } from "@/lib/db/client";
 import { session, user } from "@/lib/db/schema";
 import {
@@ -46,7 +47,7 @@ async function signSessionToken(
 /**
  * Entra na plataforma como uma conta de teste, sem passar pelo Google.
  *
- * Só funciona em desenvolvimento e com `ALLOW_TEST_LOGIN="true"` no `.dev.vars`
+ * Só funciona em desenvolvimento e com `ALLOW_TEST_LOGIN="true"` no `.env.local`
  * (ver as travas em `src/lib/auth/test-login.ts`).
  */
 export async function signInAsTestAccount(formData: FormData): Promise<void> {
@@ -102,9 +103,6 @@ export async function signInAsTestAccount(formData: FormData): Promise<void> {
   }
 
   // Cria a sessão no banco — o mesmo mecanismo do login real.
-  const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-  const { env } = await getCloudflareContext({ async: true });
-
   const token = crypto.randomUUID().replace(/-/g, "") + newId("t").slice(2);
   const expiresAt = new Date(now.getTime() + SESSION_DURATION_SECONDS * 1000);
 
@@ -122,7 +120,7 @@ export async function signInAsTestAccount(formData: FormData): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(
     "better-auth.session_token",
-    await signSessionToken(token, env.BETTER_AUTH_SECRET),
+    await signSessionToken(token, betterAuthSecret()),
     {
       httpOnly: true,
       sameSite: "lax",

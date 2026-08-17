@@ -30,8 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — NUNCA comitar: contêm o secret de sessão e as credenciais do
+# Google OAuth. O .env.example é a exceção: só tem placeholders e serve de
+# referência para quem for configurar o ambiente.
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -40,9 +43,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# cloudflare / opennext
-.open-next/
-.wrangler/
-# NUNCA comitar: contém as credenciais do Google OAuth e o secret de sessão
-.dev.vars
+# banco de dados local (libSQL em arquivo)
+/.data/
+
+# resíduo da fase Cloudflare: banco D1 local do miniflare. Não é mais usado por
+# nada no projeto e pode ser apagado à vontade (`rm -rf .wrangler`); fica
+# ignorado para que o binário não entre no repositório enquanto existir.
+/.wrangler/
 

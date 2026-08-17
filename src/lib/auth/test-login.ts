@@ -1,4 +1,4 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { allowTestLogin } from "@/lib/env";
 
 /**
  * MODO DE TESTE LOCAL
@@ -11,13 +11,13 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
  *
  *   1. `process.env.NODE_ENV` precisa ser "development".
  *   2. A variável `ALLOW_TEST_LOGIN` precisa ser exatamente "true" no arquivo
- *      `.dev.vars`, que nunca é comitado nem enviado ao servidor.
+ *      `.env.local`, que nunca é comitado nem enviado ao servidor.
  *
  * A trava 1 é resolvida no momento do build: o compilador substitui
  * `process.env.NODE_ENV` por "production" e elimina o resto da função como
- * código morto. Verificado no pacote gerado por `npm run cf:build`, onde esta
- * função compila para literalmente `async function c(){ return !1 }` — a
- * leitura de `ALLOW_TEST_LOGIN` nem chega a existir no código publicado.
+ * código morto — a leitura de `ALLOW_TEST_LOGIN` nem chega a existir no código
+ * publicado. Na Vercel, um Preview Deployment também roda com NODE_ENV
+ * "production", então nem lá o login de teste existe.
  *
  * Consequências práticas em produção:
  *   - o painel de login de teste nunca é renderizado;
@@ -88,11 +88,6 @@ export async function isTestLoginEnabled(): Promise<boolean> {
   // Trava 1: só em desenvolvimento. Some do pacote de produção no build.
   if (process.env.NODE_ENV !== "development") return false;
 
-  // Trava 2: precisa estar ligado explicitamente no .dev.vars.
-  try {
-    const { env } = await getCloudflareContext({ async: true });
-    return env.ALLOW_TEST_LOGIN === "true";
-  } catch {
-    return false;
-  }
+  // Trava 2: precisa estar ligado explicitamente no .env.local.
+  return allowTestLogin();
 }

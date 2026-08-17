@@ -1,10 +1,15 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { count, eq, like, not } from "drizzle-orm";
 
+import {
+  betterAuthSecret,
+  betterAuthUrl,
+  googleClientId,
+  googleClientSecret,
+} from "@/lib/env";
 import { getDb, schema } from "@/lib/db/client";
 import { allowedDomain, user } from "@/lib/db/schema";
 import { TEST_USER_ID_PREFIX } from "./test-login";
@@ -28,28 +33,25 @@ export function extractEmailDomain(email: string): string {
 
 type AuthInstance = ReturnType<typeof buildAuth>;
 
-// O binding do D1 e as variáveis de ambiente são estáveis dentro de um mesmo
-// isolate do Worker, então a instância pode ser reaproveitada entre requests.
-// O que NÃO pode é criá-la em escopo de módulo: `getCloudflareContext()` só
-// funciona dentro do ciclo de vida de um request.
+// A conexão e as variáveis de ambiente são estáveis dentro de um mesmo
+// container serverless, então a instância pode ser reaproveitada entre
+// requests. Continua sendo criada de forma preguiçosa (e não em escopo de
+// módulo) para que a leitura das variáveis obrigatórias aconteça no primeiro
+// request, e não durante o `next build`.
 let cachedAuth: AuthInstance | null = null;
 
 export async function getAuth(): Promise<AuthInstance> {
   if (cachedAuth) return cachedAuth;
 
-  const { env } = await getCloudflareContext({ async: true });
   const db = await getDb();
-  cachedAuth = buildAuth(db, env);
+  cachedAuth = buildAuth(db);
   return cachedAuth;
 }
 
-function buildAuth(
-  db: Awaited<ReturnType<typeof getDb>>,
-  env: CloudflareEnv,
-) {
+function buildAuth(db: Awaited<ReturnType<typeof getDb>>) {
   return betterAuth({
-    baseURL: env.BETTER_AUTH_URL,
-    secret: env.BETTER_AUTH_SECRET,
+    baseURL: betterAuthUrl(),
+    secret: betterAuthSecret(),
 
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -63,8 +65,8 @@ function buildAuth(
 
     socialProviders: {
       google: {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        clientId: googleClientId(),
+        clientSecret: googleClientSecret(),
         // Não usamos o parâmetro `hd` do Google: ele aceita apenas um domínio,
         // e precisamos de uma lista configurável (tabela `allowed_domain`).
       },

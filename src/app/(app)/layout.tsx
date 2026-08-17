@@ -6,6 +6,15 @@ import { ROLE_LABELS } from "@/components/ui/badge";
 import { can, requireUser } from "@/lib/auth/session";
 
 /**
+ * Toda rota deste grupo lê a sessão do request, então nenhuma pode ser
+ * pré-renderizada no build. Declarar aqui, no portão único, e não página por
+ * página: sem isso o `next build` tenta gerar as rotas que esqueceram de
+ * declarar (era o caso de /admin e /parametros) e falha ao montar o auth fora
+ * de um request.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Portão único de todas as rotas autenticadas.
  *
  * `requireUser()` redireciona quem não está logado, quem ainda aguarda
