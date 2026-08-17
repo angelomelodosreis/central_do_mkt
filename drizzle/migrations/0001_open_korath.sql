@@ -1,0 +1,1 @@
+ALTER TABLE `documentation_category` ADD `page_template` text;

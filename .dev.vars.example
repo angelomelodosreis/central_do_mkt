@@ -1,0 +1,25 @@
+# Copie este arquivo para `.dev.vars` e preencha os valores.
+# O arquivo `.dev.vars` NUNCA deve ser comitado no git (já está no .gitignore).
+
+# Credenciais do OAuth Client criado no Google Cloud Console
+# (tipo "Aplicativo da Web", redirect URI: http://localhost:3000/api/auth/callback/google)
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+
+# Segredo usado para assinar as sessões.
+# O valor abaixo serve APENAS para o modo de teste local. Antes de usar o login
+# do Google (e obrigatoriamente antes de publicar), gere um valor próprio com:
+#   openssl rand -base64 32
+BETTER_AUTH_SECRET="apenas-para-teste-local-troque-antes-de-publicar"
+
+# URL base da aplicação. Em desenvolvimento local, mantenha localhost:3000.
+BETTER_AUTH_URL="http://localhost:3000"
+
+# MODO DE TESTE LOCAL
+# Com "true", a tela de login mostra botões para entrar sem o Google, usando
+# contas fictícias (Administrador, Líder e Membro). Serve para conhecer a
+# plataforma antes de configurar as credenciais do Google.
+# Só funciona em desenvolvimento: em produção o recurso nem existe no código.
+# Apague esta linha (ou troque para "false") quando o login do Google estiver
+# configurado.
+ALLOW_TEST_LOGIN="true"

@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "central-do-marketing",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-01",
+  // nodejs_compat é obrigatório: o adapter do OpenNext roda o Next.js no
+  // runtime Node.js compat dos Workers.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "central_do_marketing_db",
+      // Em desenvolvimento LOCAL este valor não é usado (o banco fica em
+      // .wrangler/state/). Antes do primeiro deploy, substitua pelo ID real
+      // retornado por: npx wrangler d1 create central_do_marketing_db
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle/migrations"
+    }
+  ]
+}

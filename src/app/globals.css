@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/*
+ * Tokens visuais da Central do Marketing.
+ *
+ * A paleta `brand` é o vermelho do Grupo MedCof: o tom 500 (#e2263c) é o mesmo
+ * usado no site institucional. Os tons de ação (600/700) são mais escuros de
+ * propósito — o 500 tem 4,59:1 sobre branco, no limite do mínimo, e texto de
+ * botão precisa de folga.
+ */
+@theme {
+  --color-brand-50: #fef2f3;
+  --color-brand-100: #fde3e6;
+  --color-brand-200: #fbccd2;
+  --color-brand-300: #f7a3ae;
+  --color-brand-400: #f27186;
+  --color-brand-500: #e2263c;
+  --color-brand-600: #cf1730;
+  --color-brand-700: #ae0f28;
+  --color-brand-800: #911026;
+  --color-brand-900: #7c1226;
+
+  /*
+   * Ação destrutiva.
+   *
+   * Com a marca em vermelho, "vermelho" deixou de significar perigo sozinho.
+   * Este marsala é mais escuro e menos saturado que o vermelho da marca, e as
+   * ações destrutivas usam contorno enquanto a ação principal é preenchida —
+   * dois sinais diferentes, e não só a cor.
+   */
+  --color-danger-50: #fdf3f3;
+  --color-danger-200: #e8c4c4;
+  --color-danger-600: #8c2f2f;
+  --color-danger-700: #742525;
+  --color-danger-800: #5c1d1d;
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  /* Títulos: a Switzer é a fonte de display da identidade MedCof. */
+  --font-display: var(--font-switzer), var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-50 font-sans text-slate-900 antialiased;
+  }
+
+  /*
+   * Títulos usam a fonte de display e um leve aperto no espaçamento — é o que
+   * dá a eles a mesma voz do site, e o que separa visualmente título de corpo
+   * sem depender só do peso.
+   */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  /* Anel de foco visível e consistente — acessibilidade por teclado. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}
+
+@layer components {
+  /* Conteúdo renderizado a partir de Markdown nas páginas de documentação. */
+  .prose-doc {
+    @apply leading-relaxed text-slate-700;
+  }
+  /*
+   * Três níveis visuais de título. As tags descem um degrau (h2/h3/h4) porque o
+   * `<h1>` da tela é o título da página — mas os tamanhos aqui é que definem a
+   * hierarquia que a pessoa vê, e ela precisa ser inequívoca entre um nível e o
+   * seguinte.
+   */
+  .prose-doc h1,
+  .prose-doc h2 {
+    font-family: var(--font-display);
+    @apply mt-8 mb-3 text-xl font-semibold tracking-tight text-slate-900;
+  }
+  .prose-doc h3 {
+    font-family: var(--font-display);
+    @apply mt-7 mb-2 text-[1.0625rem] font-semibold tracking-tight text-slate-900;
+  }
+  .prose-doc h4 {
+    font-family: var(--font-display);
+    @apply mt-6 mb-1.5 text-[0.9375rem] font-semibold tracking-tight text-slate-700;
+  }
+  /* O primeiro título de um texto não precisa empurrar o topo do cartão. */
+  .prose-doc > :first-child {
+    @apply mt-0;
+  }
+  .prose-doc p {
+    @apply my-4;
+  }
+  .prose-doc ul {
+    @apply my-4 list-disc space-y-1 pl-6;
+  }
+  .prose-doc ol {
+    @apply my-4 list-decimal space-y-1 pl-6;
+  }
+  /* Marcadores alfabético e romano, escolhidos na barra do editor. */
+  .prose-doc ol[type="a"] {
+    @apply list-[lower-alpha];
+  }
+  .prose-doc ol[type="i"] {
+    @apply list-[lower-roman];
+  }
+  /* Listas aninhadas trocam o marcador, para o nível ficar legível. */
+  .prose-doc ul ul {
+    @apply my-1 list-[circle];
+  }
+  .prose-doc ul ul ul {
+    @apply list-[square];
+  }
+  .prose-doc ol ol {
+    @apply my-1 list-[lower-alpha];
+  }
+  .prose-doc a {
+    @apply font-medium text-brand-600 underline decoration-brand-200 underline-offset-2 hover:decoration-brand-500;
+  }
+  .prose-doc strong {
+    @apply font-semibold text-slate-900;
+  }
+  .prose-doc code {
+    @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.85em] text-slate-800;
+  }
+  .prose-doc pre {
+    @apply my-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm;
+  }
+  .prose-doc pre code {
+    @apply bg-transparent p-0 text-slate-100;
+  }
+  .prose-doc blockquote {
+    @apply my-4 border-l-4 border-brand-200 bg-brand-50/60 py-2 pl-4 text-slate-700;
+  }
+  .prose-doc blockquote p {
+    @apply my-1;
+  }
+  .prose-doc hr {
+    @apply my-8 border-slate-200;
+  }
+  /* Tabelas podem estourar a largura no celular: a rolagem fica só nelas. */
+  .prose-doc .table-scroll {
+    @apply my-4 overflow-x-auto;
+  }
+  .prose-doc table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .prose-doc thead {
+    @apply bg-slate-50;
+  }
+  .prose-doc th {
+    @apply border border-slate-200 px-3 py-2 font-semibold text-slate-900;
+  }
+  .prose-doc td {
+    @apply border border-slate-200 px-3 py-2 align-top;
+  }
+}
