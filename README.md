@@ -233,8 +233,16 @@ Nada disso é necessário para desenvolver localmente.
    de arquivos de uma função da Vercel é efêmero e somente leitura.
 
    O que você precisa obter, de um jeito ou de outro, são dois valores: a **URL**
-   (`libsql://...`) e um **token de acesso**. Escolha a região mais próxima da
-   configurada em `vercel.json` (hoje `gru1`, São Paulo).
+   (`libsql://...`) e um **token de acesso**.
+
+   **A região do banco e a região da Vercel (`vercel.json`) têm que ser a mesma.**
+   O Turso não oferece região no Brasil, e o app é conversador: uma renderização
+   do painel dispara 8 queries *sequenciais*. Com app e banco separados, são 8
+   travessias por carregamento — medimos 1.173ms com o app em São Paulo e o banco
+   na Virgínia, e 3.445ms com o banco em Mumbai. Juntos, sobra uma travessia só (a
+   do usuário até o servidor) e as queries ficam locais. Por isso o projeto usa
+   `us-east-1` no Turso e `iad1` na Vercel, que são o mesmo datacenter. Se trocar
+   um, troque o outro.
 
    **Opção A — pelo painel, sem instalar nada.** Entre em
    <https://app.turso.tech>, crie um database (*Create Database*), escolha a
