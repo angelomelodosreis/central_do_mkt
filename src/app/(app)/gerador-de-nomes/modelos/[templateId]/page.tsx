@@ -46,6 +46,7 @@ export default async function EditTemplatePage({
       <TemplateBuilder
         template={{
           id: template.id,
+          slug: template.slug,
           name: template.name,
           description: template.description,
           blockSeparator: template.blockSeparator,
@@ -60,6 +61,7 @@ export default async function EditTemplatePage({
             isRequired: field.isRequired,
             options: field.options,
             sourceKey: field.sourceKey,
+            dateFormat: field.dateFormat,
           })),
         }}
         // As contagens explicam de onde o bloco tira as opções — "Produtos (64)"

@@ -85,6 +85,34 @@
       "when": 1787937889368,
       "tag": "0011_bases_oficiais_organizacao_e_escopos",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788198548421,
+      "tag": "0012_data_com_formato",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788199939488,
+      "tag": "0013_produtos_por_bu",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1788200418545,
+      "tag": "0014_bu_ps_e_familia_rplus",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1788201052909,
+      "tag": "0015_mapeamento_final_de_produtos",
+      "breakpoints": true
     }
   ]
 }

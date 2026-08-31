@@ -13,27 +13,26 @@ import {
  *                  (divisão, BU, produto…). Qual base é dita por `sourceKey`.
  * - select:        dropdown com opções fixas definidas no próprio modelo
  * - text:          texto livre, convertido automaticamente para snake_case
- * - month_year:    mês e ano, gerados no formato MM_AAAA (ex.: 11_2026)
+ * - date:          data, no formato dito por `dateFormat`
  *
  * `official_base` substituiu o antigo tipo `business_unit`, que amarrava o
  * gerador a UMA base. Com uma base por tipo de campo, acrescentar Produto
  * exigiria um tipo novo, um `case` novo no formulário e outro na validação — e
  * assim a cada base. Agora a base é um dado do campo, e o conjunto de bases
  * vive num registro só (`lib/modules/bases`).
+ *
+ * `date` substituiu `month_year` pelo mesmo motivo: o formato virou dado em vez
+ * de tipo, para "dia, mês e ano" não exigir um segundo tipo com a mesma
+ * descrição, o mesmo formulário e a mesma validação.
  */
-export const FIELD_TYPES = [
-  "official_base",
-  "select",
-  "text",
-  "month_year",
-] as const;
+export const FIELD_TYPES = ["official_base", "select", "text", "date"] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
 export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   official_base: "Base oficial do sistema",
   select: "Lista de opções fixas",
   text: "Texto livre",
-  month_year: "Mês e ano",
+  date: "Data",
 };
 
 export const FIELD_TYPE_DESCRIPTIONS: Record<FieldType, string> = {
@@ -41,7 +40,33 @@ export const FIELD_TYPE_DESCRIPTIONS: Record<FieldType, string> = {
     "Divisão, BU ou Produto, sempre em dia com o cadastro oficial. Quando a base depende de outra, a lista se filtra sozinha.",
   select: "Dropdown com opções que você mesmo define. Ex.: lead, aluno.",
   text: "A pessoa digita livremente; a padronização é automática.",
-  month_year: "Seletor de mês e ano. Resulta em algo como 11_2026.",
+  date: "Seletor de data. Você escolhe se pede o dia ou só o mês e o ano.",
+};
+
+/**
+ * Formatos de data disponíveis num bloco `date`.
+ *
+ * Ambos põem o componente maior à direita (`MM_AAAA`, `DD_MM_AAAA`) porque é
+ * assim que os nomes já gerados estão escritos — mudar a ordem agora quebraria
+ * a correspondência com o que está registrado no CRM.
+ */
+export const DATE_FORMATS = ["month_year", "day_month_year"] as const;
+export type DateFormat = (typeof DATE_FORMATS)[number];
+
+export const DATE_FORMAT_LABELS: Record<DateFormat, string> = {
+  month_year: "Mês e ano",
+  day_month_year: "Dia, mês e ano",
+};
+
+export const DATE_FORMAT_EXAMPLES: Record<DateFormat, string> = {
+  month_year: "11_2026",
+  day_month_year: "05_11_2026",
+};
+
+/** Apelido do bloco ao descrever o formato de um modelo. */
+export const DATE_FORMAT_PLACEHOLDERS: Record<DateFormat, string> = {
+  month_year: "mm_aaaa",
+  day_month_year: "dd_mm_aaaa",
 };
 
 /**
@@ -107,6 +132,8 @@ export const namingTemplateField = sqliteTable(
      * bases, não aqui — a tabela só guarda a escolha.
      */
     sourceKey: text("source_key"),
+    /** Formato da data, quando `fieldType` = "date". */
+    dateFormat: text("date_format").$type<DateFormat>(),
   },
   (table) => [
     unique("naming_template_field_position_unique").on(

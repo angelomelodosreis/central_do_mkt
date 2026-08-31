@@ -3,14 +3,14 @@
 import { useState } from "react";
 
 import { Field, Input } from "@/components/ui/field";
-import { Select } from "@/components/ui/select";
-import { formatMonthYear } from "@/lib/modules/name-generator/generate";
+import { Select, type SelectGroup } from "@/components/ui/select";
+import { formatDateBlock } from "@/lib/modules/name-generator/generate";
 import {
   OFFICIAL_BASES,
   isBaseKey,
   type BaseOption,
 } from "@/lib/modules/bases/registry";
-import type { FieldType, SelectOption } from "@/lib/db/schema";
+import type { DateFormat, FieldType, SelectOption } from "@/lib/db/schema";
 
 export type FormField = {
   id: string;
@@ -22,6 +22,7 @@ export type FormField = {
   isRequired: boolean;
   options: SelectOption[] | null;
   sourceKey: string | null;
+  dateFormat: DateFormat | null;
 };
 
 const MONTHS = [
@@ -40,14 +41,30 @@ const MONTHS = [
 ];
 
 /**
- * Mês e ano, em dois seletores.
+ * Quantos dias o mês escolhido tem.
  *
- * A escolha parcial (só o mês, ou só o ano) fica guardada aqui dentro, e não no
- * valor do formulário. Sem isso, escolher o mês primeiro não teria efeito algum
- * — o valor combinado só existe quando os dois estão preenchidos, e a escolha
- * anterior se perderia a cada seleção.
+ * Oferecer sempre 31 deixaria escolher 31 de fevereiro — e o nome sairia com
+ * uma data que não existe, sem nada reclamar, porque o gerador só confere o
+ * formato.
  */
-function MonthYearField({
+function diasDoMes(month: string, year: string): number {
+  const mes = Number(month);
+  const ano = Number(year);
+  if (!mes) return 31;
+  // Sem o ano ainda, 29 é o teto seguro para fevereiro: não inventa o dia 30.
+  if (!ano) return mes === 2 ? 29 : [4, 6, 9, 11].includes(mes) ? 30 : 31;
+  return new Date(ano, mes, 0).getDate();
+}
+
+/**
+ * Data, em dois ou três seletores conforme o formato do bloco.
+ *
+ * A escolha parcial fica guardada aqui dentro, e não no valor do formulário.
+ * Sem isso, escolher o mês primeiro não teria efeito algum — o valor combinado
+ * só existe quando as partes estão preenchidas, e a escolha anterior se
+ * perderia a cada seleção.
+ */
+function DateField({
   field,
   inputId,
   onChange,
@@ -58,37 +75,81 @@ function MonthYearField({
   onChange: (value: string) => void;
   years: number[];
 }) {
-  const [month, setMonth] = useState("");
-  const [year, setYear] = useState("");
+  const formato: DateFormat = field.dateFormat ?? "month_year";
+  const pedeDia = formato === "day_month_year";
 
-  function update(nextMonth: string, nextYear: string) {
-    setMonth(nextMonth);
-    setYear(nextYear);
-    onChange(nextMonth && nextYear ? formatMonthYear(nextMonth, nextYear) : "");
+  const [dia, setDia] = useState("");
+  const [mes, setMes] = useState("");
+  const [ano, setAno] = useState("");
+
+  function update(nextDia: string, nextMes: string, nextAno: string) {
+    // O dia escolhido pode deixar de existir ao trocar o mês (31 → fevereiro).
+    // Limpar é mais honesto do que gravar uma data impossível em silêncio.
+    const teto = diasDoMes(nextMes, nextAno);
+    const diaValido = Number(nextDia) > teto ? "" : nextDia;
+
+    setDia(diaValido);
+    setMes(nextMes);
+    setAno(nextAno);
+
+    const completo = pedeDia
+      ? diaValido && nextMes && nextAno
+      : nextMes && nextAno;
+
+    onChange(
+      completo
+        ? formatDateBlock(
+            { day: diaValido, month: nextMes, year: nextAno },
+            formato,
+          )
+        : "",
+    );
   }
+
+  const dias = Array.from({ length: diasDoMes(mes, ano) }, (_, indice) => ({
+    value: String(indice + 1),
+    label: String(indice + 1),
+  }));
 
   return (
     <Field
       label={field.label}
       htmlFor={inputId}
       required={field.isRequired}
-      hint={field.hint ?? "Resulta no formato MM_AAAA. Ex.: 11_2026"}
+      hint={
+        field.hint ??
+        (pedeDia
+          ? "Resulta no formato DD_MM_AAAA. Ex.: 05_11_2026"
+          : "Resulta no formato MM_AAAA. Ex.: 11_2026")
+      }
     >
       <div className="flex gap-2">
+        {pedeDia ? (
+          <div className="w-24 shrink-0">
+            <Select
+              id={inputId}
+              value={dia}
+              onValueChange={(next) => update(next, mes, ano)}
+              ariaLabel={`Dia — ${field.label}`}
+              placeholder="Dia…"
+              options={dias}
+            />
+          </div>
+        ) : null}
         <div className="min-w-0 flex-1">
           <Select
-            id={inputId}
-            value={month}
-            onValueChange={(next) => update(next, year)}
+            id={pedeDia ? undefined : inputId}
+            value={mes}
+            onValueChange={(next) => update(dia, next, ano)}
             ariaLabel={`Mês — ${field.label}`}
             placeholder="Mês…"
             options={MONTHS}
           />
         </div>
-        <div className="w-32 shrink-0">
+        <div className="w-28 shrink-0">
           <Select
-            value={year}
-            onValueChange={(next) => update(month, next)}
+            value={ano}
+            onValueChange={(next) => update(dia, mes, next)}
             ariaLabel={`Ano — ${field.label}`}
             placeholder="Ano…"
             options={years.map((option) => ({
@@ -116,6 +177,7 @@ export function TemplateField({
   onChange,
   baseOptions,
   parentValue,
+  parentLabel,
   years,
 }: {
   field: FormField;
@@ -131,6 +193,8 @@ export function TemplateField({
    * num modelo que não pede BU é legítimo.
    */
   parentValue: string | null;
+  /** Rótulo do item escolhido no campo pai, para nomear o grupo. */
+  parentLabel: string | null;
   years: number[];
 }) {
   const inputId = `campo-${field.id}`;
@@ -141,24 +205,57 @@ export function TemplateField({
         ? OFFICIAL_BASES[field.sourceKey]
         : null;
 
-      const opcoes =
-        parentValue !== null
-          ? baseOptions.filter((option) => option.parentValue === parentValue)
-          : baseOptions;
-
       const paiEscolhido = parentValue !== null && parentValue !== "";
+
+      const doPai = paiEscolhido
+        ? baseOptions.filter((option) => option.parentValue === parentValue)
+        : [];
+      const osOutros = paiEscolhido
+        ? baseOptions.filter((option) => option.parentValue !== parentValue)
+        : baseOptions;
+
+      const paraOpcao = (option: BaseOption) => ({
+        value: option.value,
+        label: option.label,
+        hint: option.hint,
+      });
+
+      /**
+       * A hierarquia FILTRA — mas não cria beco sem saída.
+       *
+       * Escolhida a BU, a lista mostra só os produtos dela: é o comportamento
+       * correto, e o que impede alguém montar um nome com o produto de outra
+       * BU. Mostrar todos os produtos seria oferecer o erro.
+       *
+       * A exceção é a BU que ainda não tem NENHUM produto vinculado. Aí filtrar
+       * deixaria um campo obrigatório sem nenhuma opção e sem explicação — foi
+       * o que travou o cadastro na primeira vez. Nesse caso a lista se abre
+       * inteira e a dica diz por quê, para o trabalho não parar enquanto o
+       * cadastro é completado.
+       */
+      const semVinculo = paiEscolhido && doPai.length === 0;
+
+      const opcoesPlanas = paiEscolhido
+        ? (semVinculo ? baseOptions : doPai).map(paraOpcao)
+        : baseOptions.map(paraOpcao);
+
+      const grupos: SelectGroup[] | undefined = undefined;
+
+      const dica = (() => {
+        if (field.hint) return field.hint;
+        if (!paiEscolhido || !base?.parentKey) return undefined;
+        if (doPai.length > 0) {
+          return `${doPai.length} ${doPai.length === 1 ? "opção vinculada" : "opções vinculadas"} a ${parentLabel}.`;
+        }
+        return `Nenhum ${base.singular.toLowerCase()} vinculado a ${parentLabel} ainda — a lista mostra todos até o cadastro ser completado.`;
+      })();
 
       return (
         <Field
           label={field.label}
           htmlFor={inputId}
           required={field.isRequired}
-          hint={
-            field.hint ??
-            (base && parentValue !== null
-              ? `Filtrado pelo campo acima. ${opcoes.length} ${opcoes.length === 1 ? "opção" : "opções"}.`
-              : undefined)
-          }
+          hint={dica}
         >
           <Select
             id={inputId}
@@ -169,15 +266,12 @@ export function TemplateField({
                 ? "Escolha o campo acima primeiro…"
                 : "Selecione…"
             }
-            // Quando a lista depende de outra escolha, ela é desabilitada em
-            // vez de aparecer vazia: uma lista vazia parece defeito, um campo
-            // desabilitado com essa frase explica o que fazer.
+            // Só desabilita enquanto o campo pai está em branco: aí a ordem de
+            // preenchimento é a informação útil. Uma vez escolhido, a lista
+            // nunca fica vazia.
             disabled={parentValue !== null && !paiEscolhido}
-            options={opcoes.map((option) => ({
-              value: option.value,
-              label: option.label,
-              hint: option.hint,
-            }))}
+            groups={grupos}
+            options={opcoesPlanas}
           />
         </Field>
       );
@@ -203,9 +297,9 @@ export function TemplateField({
         </Field>
       );
 
-    case "month_year":
+    case "date":
       return (
-        <MonthYearField
+        <DateField
           field={field}
           inputId={inputId}
           onChange={onChange}

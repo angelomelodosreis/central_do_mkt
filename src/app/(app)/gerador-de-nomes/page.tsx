@@ -48,6 +48,7 @@ export default async function NameGeneratorPage() {
       isRequired: field.isRequired,
       options: field.options,
       sourceKey: field.sourceKey,
+      dateFormat: field.dateFormat,
     })),
   }));
 

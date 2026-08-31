@@ -8,9 +8,11 @@ import type { TemplateFormState } from "./form-state";
 import { requirePermission } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
+  DATE_FORMATS,
   FIELD_TYPES,
   namingTemplate,
   namingTemplateField,
+  type DateFormat,
   type FieldType,
   type SelectOption,
 } from "@/lib/db/schema";
@@ -28,6 +30,24 @@ function revalidateTemplateViews() {
 
 function isFieldType(value: unknown): value is FieldType {
   return typeof value === "string" && FIELD_TYPES.includes(value as FieldType);
+}
+
+function isDateFormat(value: unknown): value is DateFormat {
+  return (
+    typeof value === "string" && DATE_FORMATS.includes(value as DateFormat)
+  );
+}
+
+/**
+ * Um bloco é obrigatório a menos que digam o contrário.
+ *
+ * O padrão é obrigatório porque um nome com blocos faltando deixa de ser
+ * padronizado — que é o ponto da ferramenta. Opcional existe para o caso real
+ * de um bloco que nem sempre se aplica, como o produto enquanto o mapeamento
+ * produto → BU não está completo.
+ */
+function leObrigatorio(formData: FormData): boolean {
+  return formData.get("isRequired") !== "false";
 }
 
 /**
@@ -224,6 +244,16 @@ export async function addTemplateField(
     };
   }
 
+  // Formato da data. Sem escolha explícita, mês e ano — que era o único
+  // formato que existia antes de o bloco passar a ter formato.
+  const dateFormatRaw = String(formData.get("dateFormat") ?? "").trim();
+  const dateFormat: DateFormat | null =
+    fieldType === "date"
+      ? isDateFormat(dateFormatRaw)
+        ? dateFormatRaw
+        : "month_year"
+      : null;
+
   const db = await getDb();
   const template = await db
     .select({ name: namingTemplate.name })
@@ -251,9 +281,10 @@ export async function addTemplateField(
     label,
     hint: hint || null,
     placeholder: placeholder || null,
-    isRequired: true,
+    isRequired: leObrigatorio(formData),
     options,
     sourceKey,
+    dateFormat,
   });
 
   await writeAuditLog({
@@ -263,7 +294,7 @@ export async function addTemplateField(
     entityType: "naming_template",
     entityId: templateId,
     summary: `Adicionou o campo "${label}" ao modelo "${template.name}"`,
-    afterData: { fieldId, fieldType, label },
+    afterData: { fieldId, fieldType, label, sourceKey, dateFormat },
   });
 
   revalidateTemplateViews();
@@ -325,6 +356,17 @@ export async function updateTemplateField(
     .where(eq(namingTemplate.id, before.templateId))
     .get();
 
+  // O formato da data é editável; o TIPO do bloco não. Trocar de "mês e ano"
+  // para "dia, mês e ano" muda o que se pede daqui para a frente, sem
+  // invalidar o que já foi gerado.
+  const dateFormatRaw = String(formData.get("dateFormat") ?? "").trim();
+  const dateFormat: DateFormat | null =
+    before.fieldType === "date"
+      ? isDateFormat(dateFormatRaw)
+        ? dateFormatRaw
+        : (before.dateFormat ?? "month_year")
+      : null;
+
   await db
     .update(namingTemplateField)
     .set({
@@ -332,6 +374,8 @@ export async function updateTemplateField(
       hint: hint || null,
       placeholder: placeholder || null,
       options,
+      dateFormat,
+      isRequired: leObrigatorio(formData),
     })
     .where(eq(namingTemplateField.id, fieldId));
 
@@ -347,12 +391,16 @@ export async function updateTemplateField(
       hint: before.hint,
       placeholder: before.placeholder,
       options: before.options,
+      dateFormat: before.dateFormat,
+      isRequired: before.isRequired,
     },
     afterData: {
       label,
       hint: hint || null,
       placeholder: placeholder || null,
       options,
+      dateFormat,
+      isRequired: leObrigatorio(formData),
     },
   });
 
@@ -510,4 +558,155 @@ export async function toggleTemplate(formData: FormData): Promise<void> {
   });
 
   revalidateTemplateViews();
+}
+
+/**
+ * Duplica um modelo com todos os blocos.
+ *
+ * Existe porque modelos se parecem muito entre si: "Campanha do Meta Ads" e
+ * "Campanha do Google Ads" diferem em um bloco. Sem duplicar, a única saída é
+ * remontar a sequência inteira à mão — e é aí que os dois modelos, que deviam
+ * ser irmãos, saem diferentes por descuido.
+ *
+ * A cópia nasce INATIVA, como todo modelo novo: quem duplicou ainda vai
+ * ajustar alguma coisa, e um modelo meio pronto no gerador é pior que nenhum.
+ */
+export async function duplicateTemplate(formData: FormData): Promise<void> {
+  const admin = await requirePermission("parameters", "edit");
+
+  const id = String(formData.get("templateId") ?? "");
+  if (!id) return;
+
+  const original = await getTemplateById(id);
+  if (!original) return;
+
+  const db = await getDb();
+
+  // "Cópia de X", "Cópia 2 de X"… O slug precisa ser único, e repetir a
+  // tentativa até achar um livre é mais simples do que adivinhar quantas
+  // cópias já existem.
+  let nome = `Cópia de ${original.name}`;
+  let slug = toKebabCase(nome);
+  let tentativa = 2;
+  while (
+    await db
+      .select({ id: namingTemplate.id })
+      .from(namingTemplate)
+      .where(eq(namingTemplate.slug, slug))
+      .get()
+  ) {
+    nome = `Cópia ${tentativa} de ${original.name}`;
+    slug = toKebabCase(nome);
+    tentativa += 1;
+    if (tentativa > 50) return;
+  }
+
+  const novoId = newId("tpl");
+  const now = new Date();
+
+  await db.insert(namingTemplate).values({
+    id: novoId,
+    slug,
+    name: nome,
+    description: original.description,
+    blockSeparator: original.blockSeparator,
+    isActive: false,
+    sortOrder: original.sortOrder,
+    createdBy: admin.id,
+    updatedBy: admin.id,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  for (const campo of original.fields) {
+    await db.insert(namingTemplateField).values({
+      id: newId("fld"),
+      templateId: novoId,
+      position: campo.position,
+      fieldType: campo.fieldType,
+      label: campo.label,
+      hint: campo.hint,
+      placeholder: campo.placeholder,
+      isRequired: campo.isRequired,
+      options: campo.options,
+      sourceKey: campo.sourceKey,
+      dateFormat: campo.dateFormat,
+    });
+  }
+
+  await writeAuditLog({
+    actorUserId: admin.id,
+    actorEmail: admin.email,
+    action: "naming_template.create",
+    entityType: "naming_template",
+    entityId: novoId,
+    summary: `Duplicou o modelo "${original.name}" como "${nome}"`,
+    afterData: { name: nome, slug, copiadoDe: original.id },
+  });
+
+  revalidateTemplateViews();
+  redirect(`/gerador-de-nomes/modelos/${novoId}`);
+}
+
+/**
+ * Exclui um modelo e os blocos dele.
+ *
+ * Exclusão de verdade, e não desativação, porque aqui não há histórico apontando
+ * para o modelo: os nomes gerados não são registrados no banco — a ferramenta é
+ * auxiliar, não um sistema de registro. Não existe órfão a proteger.
+ *
+ * A auditoria guarda o modelo inteiro, com os blocos, para a exclusão poder ser
+ * desfeita na tela de Auditoria.
+ */
+export async function deleteTemplate(formData: FormData): Promise<void> {
+  const admin = await requirePermission("parameters", "edit");
+
+  const id = String(formData.get("templateId") ?? "");
+  if (!id) return;
+
+  const template = await getTemplateById(id);
+  if (!template) return;
+
+  const db = await getDb();
+  // Os blocos saem por cascata da chave estrangeira, mas são apagados
+  // explicitamente para o comportamento não depender de o banco ter as chaves
+  // ligadas — no SQLite elas são opcionais e vêm desligadas por padrão.
+  await db
+    .delete(namingTemplateField)
+    .where(eq(namingTemplateField.templateId, id));
+  await db.delete(namingTemplate).where(eq(namingTemplate.id, id));
+
+  await writeAuditLog({
+    actorUserId: admin.id,
+    actorEmail: admin.email,
+    action: "naming_template.delete",
+    entityType: "naming_template",
+    entityId: id,
+    summary: `Excluiu o modelo de nomenclatura "${template.name}"`,
+    beforeData: {
+      slug: template.slug,
+      name: template.name,
+      description: template.description,
+      blockSeparator: template.blockSeparator,
+      isActive: template.isActive,
+      sortOrder: template.sortOrder,
+      createdBy: template.createdBy,
+      createdAt: template.createdAt.toISOString(),
+      fields: template.fields.map((campo) => ({
+        id: campo.id,
+        position: campo.position,
+        fieldType: campo.fieldType,
+        label: campo.label,
+        hint: campo.hint,
+        placeholder: campo.placeholder,
+        isRequired: campo.isRequired,
+        options: campo.options,
+        sourceKey: campo.sourceKey,
+        dateFormat: campo.dateFormat,
+      })),
+    },
+  });
+
+  revalidateTemplateViews();
+  redirect("/gerador-de-nomes/modelos");
 }

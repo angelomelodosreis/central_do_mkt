@@ -46,6 +46,8 @@ export default async function TemplatesPage() {
           description: template.description,
           isActive: template.isActive,
           fieldCount: template.fields.length,
+          optionalCount: template.fields.filter((field) => !field.isRequired)
+            .length,
           format:
             template.fields.length > 0
               ? describeTemplateFormat(template.fields, template.blockSeparator)

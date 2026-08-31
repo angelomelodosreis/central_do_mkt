@@ -32,7 +32,7 @@ INSERT OR IGNORE INTO business_unit (id, slug, label, description, is_active, so
   ('bu_endocrinologia_pediatrica',  'endocrinologia_pediatrica',  'Endocrinologia Pediátrica',  NULL, 1,  90, unixepoch(), unixepoch()),
   ('bu_ginecologia_e_obstetricia',  'ginecologia_e_obstetricia',  'Ginecologia e Obstetrícia',  NULL, 1, 100, unixepoch(), unixepoch()),
   ('bu_internato',                  'internato',                  'Internato',                  NULL, 1, 110, unixepoch(), unixepoch()),
-  ('bu_lifehacks',                  'lifehacks',                  'Lifehacks',                  NULL, 1, 120, unixepoch(), unixepoch()),
+  ('bu_lifehacks',                  'ps',                         'PS',                         NULL, 1, 120, unixepoch(), unixepoch()),
   ('bu_medicina_de_emergencia',     'medicina_de_emergencia',     'Medicina de Emergência',     NULL, 1, 130, unixepoch(), unixepoch()),
   ('bu_medicina_intensiva',         'medicina_intensiva',         'Medicina Intensiva',         NULL, 1, 140, unixepoch(), unixepoch()),
   ('bu_oftalmologia',               'oftalmologia',               'Oftalmologia',               NULL, 1, 150, unixepoch(), unixepoch()),
@@ -216,3 +216,98 @@ Os formatos ficam cadastrados na plataforma, não no código. Um administrador p
     20,
     NULL, NULL, unixepoch(), unixepoch()
   );
+
+-- ---------------------------------------------------------------------------
+-- Estrutura de negócio: divisão de cada BU e BU de cada produto.
+--
+-- Repete o que as migrations 0011 a 0015 fizeram, e a repetição é proposital:
+-- as migrations levam um banco EXISTENTE até aqui; este bloco leva um banco
+-- NOVO ao mesmo lugar. Sem ele, `setup:local` do zero termina com as BUs sem
+-- divisão e os 64 produtos sem BU — porque o seed roda depois das migrations,
+-- e naquele momento a tabela `business_unit` ainda estava vazia para elas.
+--
+-- Ao mudar o mapeamento, mude nos dois lugares.
+-- ---------------------------------------------------------------------------
+
+UPDATE business_unit SET division_id = 'div_revalidacao'
+ WHERE slug IN ('revalida', 'usa') AND division_id IS NULL;
+
+UPDATE business_unit SET division_id = 'div_formacao_medica'
+ WHERE slug IN ('enamed', 'internato', 'residencia', 'ps') AND division_id IS NULL;
+
+UPDATE business_unit SET division_id = 'div_especialidades'
+ WHERE division_id IS NULL;
+
+UPDATE squad SET slug = 'ps', name = 'Squad PS'
+ WHERE business_unit_id = 'bu_lifehacks' AND slug <> 'ps';
+
+UPDATE product SET business_unit_id = (
+  SELECT bu.id FROM business_unit bu WHERE bu.slug = CASE product.slug
+    WHEN 'anest_us'                     THEN 'anestesiologia'
+    WHEN 'tea'                          THEN 'anestesiologia'
+    WHEN 'tea_seriado'                  THEN 'anestesiologia'
+    WHEN 'tsa'                          THEN 'anestesiologia'
+    WHEN 'ecg_sem_segredo'              THEN 'cardiologia'
+    WHEN 'tec'                          THEN 'cardiologia'
+    WHEN 'cbc'                          THEN 'cirurgia'
+    WHEN 'cirurgia_hands_on'            THEN 'cirurgia'
+    WHEN 'tecm'                         THEN 'clinica_medica'
+    WHEN 'concursus'                    THEN 'concursus'
+    WHEN 'aprova'                       THEN 'dermatologia'
+    WHEN 'cosmiatria'                   THEN 'dermatologia'
+    WHEN 'dermatoscopia'                THEN 'dermatologia'
+    WHEN 'extensivo_ted_2027'           THEN 'dermatologia'
+    WHEN 'extensivo_ted_2028'           THEN 'dermatologia'
+    WHEN 'hiit_ted_2afase'              THEN 'dermatologia'
+    WHEN 'ted'                          THEN 'dermatologia'
+    WHEN 'tpi'                          THEN 'dermatologia'
+    WHEN 'enamed'                       THEN 'enamed'
+    WHEN 'hiit_enamed'                  THEN 'enamed'
+    WHEN 'imersao_enamed'               THEN 'enamed'
+    WHEN 'teem'                         THEN 'endocrinologia'
+    WHEN 'caaep'                        THEN 'endocrinologia_pediatrica'
+    WHEN 'tego'                         THEN 'ginecologia_e_obstetricia'
+    WHEN 'tego_hands_on'                THEN 'ginecologia_e_obstetricia'
+    WHEN 'internato'                    THEN 'internato'
+    WHEN 'teme'                         THEN 'medicina_de_emergencia'
+    WHEN 'teme_hands_on'                THEN 'medicina_de_emergencia'
+    WHEN 'temi'                         THEN 'medicina_intensiva'
+    WHEN 'temi_hands_on'                THEN 'medicina_intensiva'
+    WHEN 'oftalmo_pno'                  THEN 'oftalmologia'
+    WHEN 'teot_tepot'                   THEN 'ortopedia'
+    WHEN 'teot_tepot_hands_on'          THEN 'ortopedia'
+    WHEN 'tep'                          THEN 'pediatria'
+    WHEN 'antibioticoterapia_na_pratica' THEN 'ps'
+    WHEN 'ps_life_hacks'                THEN 'ps'
+    WHEN 'situacoes_clinicas_ps'        THEN 'ps'
+    WHEN 'ventilacao_mecanica'          THEN 'ps'
+    WHEN 'radio_cbr'                    THEN 'radiologia'
+    WHEN 'radiologia_descomplicada'     THEN 'radiologia'
+    WHEN 'cofcards'                     THEN 'residencia'
+    WHEN 'cofquest'                     THEN 'residencia'
+    WHEN 'completao_rplus'              THEN 'residencia'
+    WHEN 'extensivo_performance_r1'     THEN 'residencia'
+    WHEN 'extensivo_r1_maio'            THEN 'residencia'
+    WHEN 'extensivo_rplus_maio'         THEN 'residencia'
+    WHEN 'hands_on_especificos'         THEN 'residencia'
+    WHEN 'hands_on_tradicional'         THEN 'residencia'
+    WHEN 'hiit_target_r1'               THEN 'residencia'
+    WHEN 'hiit_target_rplus'            THEN 'residencia'
+    WHEN 'intensivo_hiit_r1'            THEN 'residencia'
+    WHEN 'intensivo_hiit_rplus'         THEN 'residencia'
+    WHEN 'livros_ebooks'                THEN 'residencia'
+    WHEN 'mentoria'                     THEN 'residencia'
+    WHEN 'raiox_da_banca'               THEN 'residencia'
+    WHEN 'residencia'                   THEN 'residencia'
+    WHEN 'revisao_vespera_2afase'       THEN 'residencia'
+    WHEN 'revisoes_vespera_rplus'       THEN 'residencia'
+    WHEN 'simulado_tendencias'          THEN 'residencia'
+    WHEN 'recursos_individuais'         THEN 'revalida'
+    WHEN 'revalida'                     THEN 'revalida'
+    WHEN 'revalida_hands_on'            THEN 'revalida'
+    WHEN 'pro_tisbu'                    THEN 'urologia'
+    WHEN 'usa_usmle'                    THEN 'usa'
+    ELSE NULL
+  END
+)
+WHERE business_unit_id IS NULL;

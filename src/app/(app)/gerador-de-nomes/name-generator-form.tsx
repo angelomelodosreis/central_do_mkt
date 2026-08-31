@@ -104,6 +104,23 @@ export function NameGeneratorForm({
     return values[campoPai.id] ?? "";
   }
 
+  /** O nome do item escolhido no campo pai — usado para rotular o grupo. */
+  function parentLabelOf(field: FormField): string | null {
+    if (field.fieldType !== "official_base" || !isBaseKey(field.sourceKey)) {
+      return null;
+    }
+    const parentKey = OFFICIAL_BASES[field.sourceKey].parentKey;
+    if (!parentKey) return null;
+
+    const escolhido = parentValueOf(field);
+    if (!escolhido) return null;
+
+    return (
+      baseOptions[parentKey].find((option) => option.value === escolhido)
+        ?.label ?? null
+    );
+  }
+
   const isUntouched = Object.values(values).every((value) => !value?.trim());
 
   function setFieldValue(fieldId: string, value: string) {
@@ -178,6 +195,7 @@ export function NameGeneratorForm({
                 : []
             }
             parentValue={parentValueOf(field)}
+            parentLabel={parentLabelOf(field)}
             years={years}
           />
         ))}

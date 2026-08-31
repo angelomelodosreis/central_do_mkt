@@ -2,7 +2,12 @@
 
 import { useActionState, useState } from "react";
 
-import { createTemplate, toggleTemplate } from "./actions";
+import {
+  createTemplate,
+  deleteTemplate,
+  duplicateTemplate,
+  toggleTemplate,
+} from "./actions";
 import { INITIAL_TEMPLATE_STATE } from "./form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -17,6 +22,7 @@ type TemplateRow = {
   description: string | null;
   isActive: boolean;
   fieldCount: number;
+  optionalCount: number;
   format: string | null;
 };
 
@@ -29,6 +35,7 @@ type TemplateRow = {
  */
 export function TemplatesPanel({ templates }: { templates: TemplateRow[] }) {
   const [criando, setCriando] = useState(false);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
 
   const ativos = templates.filter((template) => template.isActive).length;
 
@@ -54,69 +61,131 @@ export function TemplatesPanel({ templates }: { templates: TemplateRow[] }) {
                 <li
                   key={template.id}
                   className={cn(
-                    "flex flex-wrap items-start justify-between gap-4 px-5 py-4",
+                    "px-5 py-4",
                     !template.isActive && "bg-slate-50/60",
                   )}
                 >
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-slate-900">
-                        {template.name}
-                      </span>
-                      {template.isActive ? (
-                        <Badge tone="success">Ativo</Badge>
-                      ) : (
-                        <Badge tone="neutral">Inativo</Badge>
-                      )}
-                      {template.fieldCount === 0 ? (
-                        <Badge tone="warning">Sem blocos</Badge>
-                      ) : null}
-                    </p>
-
-                    {template.description ? (
-                      <p className="mt-0.5 text-sm text-slate-500">
-                        {template.description}
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-slate-900">
+                          {template.name}
+                        </span>
+                        {template.isActive ? (
+                          <Badge tone="success">Ativo</Badge>
+                        ) : (
+                          <Badge tone="neutral">Inativo</Badge>
+                        )}
+                        {template.fieldCount === 0 ? (
+                          <Badge tone="warning">Sem blocos</Badge>
+                        ) : null}
                       </p>
-                    ) : null}
 
-                    <code className="mt-1.5 block break-all font-mono text-xs text-slate-500">
-                      {template.format ?? "defina os blocos para ver o formato"}
-                    </code>
-                  </div>
+                      {template.description ? (
+                        <p className="mt-0.5 text-sm text-slate-500">
+                          {template.description}
+                        </p>
+                      ) : null}
 
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    <ButtonLink
-                      href={`/gerador-de-nomes/modelos/${template.id}`}
-                      size="sm"
-                      variant="secondary"
-                    >
-                      Editar blocos
-                    </ButtonLink>
-                    <form action={toggleTemplate}>
-                      <input
-                        type="hidden"
-                        name="templateId"
-                        value={template.id}
-                      />
-                      <Button
-                        type="submit"
+                      <code className="mt-1.5 block break-all font-mono text-xs text-slate-500">
+                        {template.format ??
+                          "defina os blocos para ver o formato"}
+                      </code>
+
+                      {template.optionalCount > 0 ? (
+                        <p className="mt-1 text-xs text-slate-400">
+                          {template.optionalCount}{" "}
+                          {template.optionalCount === 1
+                            ? "bloco opcional"
+                            : "blocos opcionais"}{" "}
+                          — não aparecem no formato acima
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <ButtonLink
+                        href={`/gerador-de-nomes/modelos/${template.id}`}
                         size="sm"
-                        variant={template.isActive ? "danger" : "secondary"}
-                        // Ativar um modelo sem blocos deixaria o gerador com um
-                        // formulário vazio. O servidor também recusa.
-                        disabled={
-                          !template.isActive && template.fieldCount === 0
-                        }
-                        title={
-                          !template.isActive && template.fieldCount === 0
-                            ? "Defina ao menos um bloco antes de ativar"
-                            : undefined
-                        }
+                        variant="secondary"
                       >
-                        {template.isActive ? "Desativar" : "Ativar"}
+                        Editar blocos
+                      </ButtonLink>
+                      <form action={duplicateTemplate}>
+                        <input
+                          type="hidden"
+                          name="templateId"
+                          value={template.id}
+                        />
+                        <Button type="submit" size="sm" variant="ghost">
+                          Duplicar
+                        </Button>
+                      </form>
+                      <form action={toggleTemplate}>
+                        <input
+                          type="hidden"
+                          name="templateId"
+                          value={template.id}
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          variant="ghost"
+                          // Ativar um modelo sem blocos deixaria o gerador com
+                          // um formulário vazio. O servidor também recusa.
+                          disabled={
+                            !template.isActive && template.fieldCount === 0
+                          }
+                          title={
+                            !template.isActive && template.fieldCount === 0
+                              ? "Defina ao menos um bloco antes de ativar"
+                              : undefined
+                          }
+                        >
+                          {template.isActive ? "Desativar" : "Ativar"}
+                        </Button>
+                      </form>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => setExcluindo(template.id)}
+                      >
+                        Excluir
                       </Button>
-                    </form>
+                    </div>
                   </div>
+
+                  {/* A confirmação abre na própria linha, e não num diálogo:
+                      assim o nome do modelo que vai sumir continua à vista
+                      enquanto se decide. */}
+                  {excluindo === template.id ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2.5">
+                      <p className="min-w-0 flex-1 text-sm text-danger-900">
+                        Excluir <strong>{template.name}</strong> e os{" "}
+                        {template.fieldCount}{" "}
+                        {template.fieldCount === 1 ? "bloco" : "blocos"} dele?
+                        Os nomes já gerados pelo time não são afetados. Dá para
+                        desfazer em Administração › Auditoria.
+                      </p>
+                      <form action={deleteTemplate}>
+                        <input
+                          type="hidden"
+                          name="templateId"
+                          value={template.id}
+                        />
+                        <Button type="submit" size="sm" variant="danger">
+                          Excluir
+                        </Button>
+                      </form>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setExcluindo(null)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>

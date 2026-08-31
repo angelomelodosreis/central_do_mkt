@@ -4,22 +4,29 @@ import { useActionState, useState } from "react";
 
 import {
   addTemplateField,
+  deleteTemplate,
+  duplicateTemplate,
   moveTemplateField,
   removeTemplateField,
+  toggleTemplate,
   updateTemplate,
   updateTemplateField,
 } from "../actions";
 import { INITIAL_TEMPLATE_STATE } from "../form-state";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import {
+  DATE_FORMATS,
+  DATE_FORMAT_EXAMPLES,
+  DATE_FORMAT_LABELS,
   FIELD_TYPES,
   FIELD_TYPE_DESCRIPTIONS,
   FIELD_TYPE_LABELS,
+  type DateFormat,
   type FieldType,
   type SelectOption,
 } from "@/lib/db/schema";
@@ -41,10 +48,12 @@ type BuilderField = {
   isRequired: boolean;
   options: SelectOption[] | null;
   sourceKey: string | null;
+  dateFormat: DateFormat | null;
 };
 
 type BuilderTemplate = {
   id: string;
+  slug: string;
   name: string;
   description: string | null;
   blockSeparator: string;
@@ -61,8 +70,8 @@ function origemDoBloco(field: BuilderField): string {
         : "Base oficial não definida";
     case "select":
       return `Lista fixa · ${field.options?.length ?? 0} opções`;
-    case "month_year":
-      return "Mês e ano · MM_AAAA";
+    case "date":
+      return `Data · ${DATE_FORMAT_LABELS[field.dateFormat ?? "month_year"]}`;
     default:
       return "Texto livre · padronizado automaticamente";
   }
@@ -78,8 +87,8 @@ function amostraDoBloco(
       return isBaseKey(field.sourceKey) ? baseSamples[field.sourceKey] : "?";
     case "select":
       return field.options?.[0]?.value ?? "opcao";
-    case "month_year":
-      return "11_2026";
+    case "date":
+      return DATE_FORMAT_EXAMPLES[field.dateFormat ?? "month_year"];
     default:
       return "texto_livre";
   }
@@ -88,10 +97,14 @@ function amostraDoBloco(
 /**
  * O construtor de um modelo.
  *
- * Três blocos, na ordem em que se pensa: a identidade do modelo, a sequência
- * de blocos que forma o nome, e o resultado. O resultado fica GRUDADO no topo
+ * Três blocos, na ordem em que se pensa: a identidade do modelo, a sequência de
+ * blocos que forma o nome, e o resultado. O resultado fica GRUDADO no topo
  * porque é ele que dá sentido a cada mudança — mexer na ordem sem ver o nome
  * mudar é montar às cegas.
+ *
+ * Ativar, duplicar e excluir moram aqui e não só na listagem: quem acabou de
+ * montar o modelo está nesta tela, e voltar para a lista só para ligá-lo era um
+ * desvio sem motivo.
  */
 export function TemplateBuilder({
   template,
@@ -105,48 +118,115 @@ export function TemplateBuilder({
   const [adicionando, setAdicionando] = useState(false);
   const [editando, setEditando] = useState<BuilderField | null>(null);
   const [editandoIdentidade, setEditandoIdentidade] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   const temBlocos = template.fields.length > 0;
 
+  // Só os blocos obrigatórios aparecem no exemplo, porque é o que sai quando a
+  // pessoa preenche o mínimo. Mostrar os opcionais faria o exemplo prometer um
+  // formato mais longo do que o modelo exige.
   const exemplo = temBlocos
     ? template.fields
+        .filter((field) => field.isRequired)
         .map((field) => amostraDoBloco(field, baseSamples))
         .join(template.blockSeparator)
     : null;
 
+  const opcionais = template.fields.filter((field) => !field.isRequired).length;
+  const semBase = template.fields.filter(
+    (field) =>
+      field.fieldType === "official_base" && !isBaseKey(field.sourceKey),
+  ).length;
+
   return (
     <>
       <PageHeader
-        title={template.name}
+        title={
+          <span className="flex flex-wrap items-center gap-2">
+            {template.name}
+            {template.isActive ? (
+              <Badge tone="success">Ativo</Badge>
+            ) : (
+              <Badge tone="neutral">Inativo</Badge>
+            )}
+          </span>
+        }
         description={template.description ?? "Sem descrição."}
         action={
-          <Button
-            variant="secondary"
-            onClick={() => setEditandoIdentidade(true)}
-          >
-            Editar nome e separador
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {template.isActive ? (
+              <ButtonLink href="/gerador-de-nomes" variant="ghost">
+                Usar no gerador
+              </ButtonLink>
+            ) : null}
+            <form action={duplicateTemplate}>
+              <input type="hidden" name="templateId" value={template.id} />
+              <Button type="submit" variant="ghost">
+                Duplicar
+              </Button>
+            </form>
+            <Button
+              variant="secondary"
+              onClick={() => setEditandoIdentidade(true)}
+            >
+              Editar nome
+            </Button>
+            <form action={toggleTemplate}>
+              <input type="hidden" name="templateId" value={template.id} />
+              <Button
+                type="submit"
+                variant={template.isActive ? "danger" : "primary"}
+                // Ativar um modelo sem blocos deixaria o gerador com um
+                // formulário vazio. O servidor também recusa.
+                disabled={!template.isActive && !temBlocos}
+                title={
+                  !template.isActive && !temBlocos
+                    ? "Defina ao menos um bloco antes de ativar"
+                    : undefined
+                }
+              >
+                {template.isActive ? "Desativar" : "Ativar"}
+              </Button>
+            </form>
+          </div>
         }
       />
 
-      {/* Resultado — a referência de tudo que vem abaixo */}
-      <div className="sticky top-2 z-10 mb-6 rounded-xl border border-brand-200 bg-brand-50/80 px-4 py-3 backdrop-blur">
-        <p className="text-xs font-medium uppercase tracking-wide text-brand-700">
+      {/*
+        Prévia do resultado — a referência de tudo que vem abaixo.
+
+        Em tom neutro, e não na cor da marca: a marca daqui é vermelha, e um
+        painel vermelho no topo da tela é lido como erro. O mesmo desenho do
+        "Resultado" do gerador, porque é a mesma coisa — o nome que vai sair.
+      */}
+      <div className="sticky top-2 z-10 mb-6 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Exemplo do nome final
         </p>
-        <code className="mt-1 block break-all font-mono text-sm font-medium text-slate-900">
+        <code className="mt-1 block break-all font-mono text-base font-medium text-slate-900">
           {exemplo ?? "— adicione blocos abaixo —"}
         </code>
-        <p className="mt-1.5 text-xs text-slate-600">
+        <p className="mt-1.5 text-xs text-slate-500">
           {template.isActive
             ? "Este modelo está ativo e aparece no gerador."
             : temBlocos
-              ? "Inativo. Ative-o na listagem para o time poder usá-lo."
+              ? "Inativo — ainda não aparece no gerador. Use o botão Ativar acima."
               : "Adicione ao menos um bloco para poder ativar este modelo."}
           {" Blocos unidos por "}
-          <code className="font-mono">{template.blockSeparator}</code>.
+          <code className="font-mono">{template.blockSeparator}</code>
+          {opcionais > 0
+            ? ` · ${opcionais} ${opcionais === 1 ? "bloco opcional não aparece" : "blocos opcionais não aparecem"} no exemplo`
+            : ""}
         </p>
       </div>
+
+      {semBase > 0 ? (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {semBase === 1
+            ? "Um bloco de base oficial está sem base definida e vai aparecer vazio no gerador."
+            : `${semBase} blocos de base oficial estão sem base definida e vão aparecer vazios no gerador.`}
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader
@@ -182,6 +262,9 @@ export function TemplateBuilder({
                         <span className="font-medium text-slate-900">
                           {field.label}
                         </span>
+                        {field.isRequired ? null : (
+                          <Badge tone="neutral">Opcional</Badge>
+                        )}
                         {field.fieldType === "official_base" &&
                         !isBaseKey(field.sourceKey) ? (
                           <Badge tone="warning">Base não definida</Badge>
@@ -244,6 +327,35 @@ export function TemplateBuilder({
         </CardBody>
       </Card>
 
+      {/* Excluir fica no fim, longe do resto: é a única ação da tela que não
+          tem como ser corrigida clicando de novo. */}
+      <div className="mt-8 border-t border-slate-200 pt-5">
+        {excluindo ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-danger-200 bg-danger-50 px-4 py-3">
+            <p className="min-w-0 flex-1 text-sm text-danger-900">
+              Excluir <strong>{template.name}</strong> e os{" "}
+              {template.fields.length}{" "}
+              {template.fields.length === 1 ? "bloco" : "blocos"} dele? Os nomes
+              que o time já gerou não são afetados — eles não ficam guardados
+              aqui. A exclusão pode ser desfeita em Administração › Auditoria.
+            </p>
+            <form action={deleteTemplate}>
+              <input type="hidden" name="templateId" value={template.id} />
+              <Button type="submit" variant="danger">
+                Excluir modelo
+              </Button>
+            </form>
+            <Button variant="ghost" onClick={() => setExcluindo(false)}>
+              Cancelar
+            </Button>
+          </div>
+        ) : (
+          <Button variant="ghost" onClick={() => setExcluindo(true)}>
+            Excluir este modelo
+          </Button>
+        )}
+      </div>
+
       <AddFieldDrawer
         open={adicionando}
         templateId={template.id}
@@ -274,6 +386,65 @@ function Mensagem({ status, message }: { status: string; message?: string }) {
     >
       {message}
     </p>
+  );
+}
+
+/** Obrigatório × opcional, com o efeito de cada um dito por extenso. */
+function CampoObrigatoriedade({
+  id,
+  defaultValue,
+}: {
+  id: string;
+  defaultValue: boolean;
+}) {
+  return (
+    <Field
+      label="Preenchimento"
+      htmlFor={id}
+      hint="Bloco opcional deixado em branco simplesmente não entra no nome."
+    >
+      <Select
+        id={id}
+        name="isRequired"
+        defaultValue={defaultValue ? "true" : "false"}
+        options={[
+          {
+            value: "true",
+            label: "Obrigatório",
+            hint: "O nome não é gerado sem este bloco",
+          },
+          {
+            value: "false",
+            label: "Opcional",
+            hint: "Some do nome quando deixado em branco",
+          },
+        ]}
+      />
+    </Field>
+  );
+}
+
+/** Formato da data, com o resultado à mostra em cada opção. */
+function CampoFormatoDeData({
+  id,
+  defaultValue,
+}: {
+  id: string;
+  defaultValue: DateFormat;
+}) {
+  return (
+    <Field label="Formato da data" htmlFor={id} required>
+      <Select
+        id={id}
+        name="dateFormat"
+        defaultValue={defaultValue}
+        options={DATE_FORMATS.map((formato) => ({
+          value: formato,
+          label: DATE_FORMAT_LABELS[formato],
+          hint: `Resulta em ${DATE_FORMAT_EXAMPLES[formato]}`,
+        }))}
+      />
+    </Field>
   );
 }
 
@@ -333,7 +504,7 @@ function AddFieldDrawer({
             required
             hint={
               OFFICIAL_BASES[baseKey].parentKey
-                ? `Depende de ${OFFICIAL_BASES[OFFICIAL_BASES[baseKey].parentKey!].singular}: se o modelo tiver esse bloco antes, a lista se filtra sozinha.`
+                ? `Depende de ${OFFICIAL_BASES[OFFICIAL_BASES[baseKey].parentKey!].singular}: se o modelo tiver esse bloco antes, os vinculados vêm primeiro na lista.`
                 : "Não depende de nenhuma outra base."
             }
           >
@@ -351,6 +522,10 @@ function AddFieldDrawer({
           </Field>
         ) : null}
 
+        {fieldType === "date" ? (
+          <CampoFormatoDeData id="dateFormat" defaultValue="month_year" />
+        ) : null}
+
         <Field
           label="Rótulo"
           htmlFor="label"
@@ -365,6 +540,8 @@ function AddFieldDrawer({
             required
           />
         </Field>
+
+        <CampoObrigatoriedade id="isRequired" defaultValue />
 
         <Field
           label="Texto de ajuda"
@@ -456,6 +633,18 @@ function EditFieldDrawer({
               defaultValue={field.label}
             />
           </Field>
+
+          <CampoObrigatoriedade
+            id="edit-isRequired"
+            defaultValue={field.isRequired}
+          />
+
+          {field.fieldType === "date" ? (
+            <CampoFormatoDeData
+              id="edit-dateFormat"
+              defaultValue={field.dateFormat ?? "month_year"}
+            />
+          ) : null}
 
           <Field label="Texto de ajuda" htmlFor="edit-hint">
             <Input

@@ -13,6 +13,7 @@ import {
   persona,
   personaPain,
   namingTemplate,
+  namingTemplateField,
   rolePermission,
   user,
   type ModuleKey,
@@ -282,6 +283,54 @@ export async function undoAuditAction(formData: FormData): Promise<void> {
           createdAt: parseDate(before.createdAt),
           updatedAt: new Date(),
         });
+        undone = true;
+      }
+      break;
+    }
+
+    case "naming_template.delete": {
+      // Recria o modelo com o mesmo id e os mesmos blocos. O id é preservado
+      // de propósito: sem ele, o "desfazer" produziria um modelo parecido, e
+      // não o mesmo — e um link antigo para o construtor continuaria quebrado.
+      const jaExiste = await db
+        .select({ id: namingTemplate.id })
+        .from(namingTemplate)
+        .where(eq(namingTemplate.id, entry.entityId))
+        .get();
+
+      if (!jaExiste && "slug" in before) {
+        await db.insert(namingTemplate).values({
+          id: entry.entityId,
+          slug: String(before.slug ?? ""),
+          name: String(before.name ?? ""),
+          description: (before.description as string | null) ?? null,
+          blockSeparator: String(before.blockSeparator ?? "-"),
+          isActive: Boolean(before.isActive),
+          sortOrder: Number(before.sortOrder ?? 1000),
+          createdBy: (before.createdBy as string | null) ?? null,
+          updatedBy: admin.id,
+          createdAt: parseDate(before.createdAt),
+          updatedAt: new Date(),
+        });
+
+        const blocos = Array.isArray(before.fields) ? before.fields : [];
+        for (const bruto of blocos) {
+          const bloco = bruto as Record<string, unknown>;
+          await db.insert(namingTemplateField).values({
+            id: String(bloco.id),
+            templateId: entry.entityId,
+            position: Number(bloco.position ?? 0),
+            fieldType: bloco.fieldType as never,
+            label: String(bloco.label ?? ""),
+            hint: (bloco.hint as string | null) ?? null,
+            placeholder: (bloco.placeholder as string | null) ?? null,
+            isRequired: Boolean(bloco.isRequired),
+            options: (bloco.options as never) ?? null,
+            sourceKey: (bloco.sourceKey as string | null) ?? null,
+            dateFormat: (bloco.dateFormat as never) ?? null,
+          });
+        }
+
         undone = true;
       }
       break;

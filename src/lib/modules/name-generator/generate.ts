@@ -1,9 +1,11 @@
 import { toSnakeCase, validateListName } from "./slugify";
 import { OFFICIAL_BASES, isBaseKey } from "@/lib/modules/bases/registry";
-import type {
-  FieldType,
-  NamingTemplateField,
-  SelectOption,
+import {
+  DATE_FORMAT_PLACEHOLDERS,
+  type DateFormat,
+  type FieldType,
+  type NamingTemplateField,
+  type SelectOption,
 } from "@/lib/db/schema";
 
 /**
@@ -19,6 +21,8 @@ export type TemplateFieldInput = {
   options: SelectOption[] | null;
   /** Qual base oficial alimenta o campo, quando `fieldType = official_base`. */
   sourceKey: string | null;
+  /** Formato da data, quando `fieldType = date`. */
+  dateFormat: DateFormat | null;
 };
 
 /** Valores preenchidos no formulário, indexados pelo id do campo. */
@@ -27,12 +31,30 @@ export type FieldValues = Record<string, string>;
 export type BuildResult =
   { ok: true; name: string } | { ok: false; error: string; fieldId?: string };
 
-/** Mês/ano é gravado como MM_AAAA (ex.: 11_2026), que ordena corretamente. */
-export function formatMonthYear(month: string, year: string): string {
+/**
+ * Monta o bloco de data no formato escolhido.
+ *
+ * Sempre com dois dígitos nos componentes menores (`05_11_2026`, e não
+ * `5_11_2026`): sem o zero à esquerda, uma listagem ordenada alfabeticamente
+ * põe o dia 10 antes do dia 5.
+ */
+export function formatDateBlock(
+  { day, month, year }: { day?: string; month: string; year: string },
+  format: DateFormat = "month_year",
+): string {
   const monthNumber = Number(month);
   const yearNumber = Number(year);
   if (!monthNumber || !yearNumber) return "";
-  return `${String(monthNumber).padStart(2, "0")}_${yearNumber}`;
+
+  const mes = String(monthNumber).padStart(2, "0");
+
+  if (format === "day_month_year") {
+    const dayNumber = Number(day);
+    if (!dayNumber) return "";
+    return `${String(dayNumber).padStart(2, "0")}_${mes}_${yearNumber}`;
+  }
+
+  return `${mes}_${yearNumber}`;
 }
 
 /**
@@ -59,11 +81,23 @@ function normalizeFieldValue(
       // opção fixa).
       return { ok: true, value: toSnakeCase(value) };
 
-    case "month_year":
-      // Chega no formato "MM_AAAA", montado pelo formulário.
-      return /^\d{2}_\d{4}$/.test(value)
-        ? { ok: true, value }
-        : { ok: false, error: `Escolha o mês e o ano em "${field.label}".` };
+    case "date": {
+      // Chega montado pelo formulário, no formato do próprio campo.
+      const esperado =
+        field.dateFormat === "day_month_year"
+          ? /^\d{2}_\d{2}_\d{4}$/
+          : /^\d{2}_\d{4}$/;
+
+      if (esperado.test(value)) return { ok: true, value };
+
+      return {
+        ok: false,
+        error:
+          field.dateFormat === "day_month_year"
+            ? `Escolha o dia, o mês e o ano em "${field.label}".`
+            : `Escolha o mês e o ano em "${field.label}".`,
+      };
+    }
 
     case "text": {
       const validation = validateListName(value);
@@ -120,9 +154,7 @@ export function buildName(
  * Os tipos com forma fixa usam sempre o mesmo apelido, para o formato exibido
  * bater com o que está escrito na documentação de convenções.
  */
-const FORMAT_PLACEHOLDERS: Partial<Record<FieldType, string>> = {
-  month_year: "mm_aaaa",
-};
+const FORMAT_PLACEHOLDERS: Partial<Record<FieldType, string>> = {};
 
 /**
  * Descreve o formato do modelo em texto, para exibir como referência.
@@ -130,7 +162,10 @@ const FORMAT_PLACEHOLDERS: Partial<Record<FieldType, string>> = {
  */
 export function describeTemplateFormat(
   fields: Array<
-    Pick<NamingTemplateField, "label" | "fieldType" | "position" | "sourceKey">
+    Pick<
+      NamingTemplateField,
+      "label" | "fieldType" | "position" | "sourceKey" | "dateFormat"
+    >
   >,
   blockSeparator = "-",
 ): string {
@@ -141,6 +176,9 @@ export function describeTemplateFormat(
       // exibido bater com o que está escrito na documentação de convenções.
       if (field.fieldType === "official_base" && isBaseKey(field.sourceKey)) {
         return OFFICIAL_BASES[field.sourceKey].formatPlaceholder;
+      }
+      if (field.fieldType === "date") {
+        return DATE_FORMAT_PLACEHOLDERS[field.dateFormat ?? "month_year"];
       }
       return FORMAT_PLACEHOLDERS[field.fieldType] ?? toSnakeCase(field.label);
     })
