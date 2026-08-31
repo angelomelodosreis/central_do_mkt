@@ -233,7 +233,7 @@ export function MonthView({
       </div>
 
       {canEdit ? (
-        <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400">
+        <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
           Duplo clique num dia cria um item. Arraste um card para mover, ou a
           alça da direita para mudar a duração.
         </p>

@@ -114,7 +114,7 @@ export default async function TaskDetailPage({ params }: { params: Params }) {
         />
       </div>
 
-      <p className="mt-6 text-xs text-slate-400">
+      <p className="mt-6 text-xs text-slate-500">
         Criada em {formatDateTime(item.createdAt)}
         {item.completedAt
           ? ` · concluída em ${formatDateTime(item.completedAt)}`

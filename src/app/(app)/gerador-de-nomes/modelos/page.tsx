@@ -36,7 +36,7 @@ export default async function TemplatesPage() {
 
       <PageHeader
         title="Modelos de nomenclatura"
-        description="Cada modelo é uma sequência de blocos unidos por um separador. Só os ativos aparecem no gerador."
+        description="Uma sequência de blocos unidos por um separador. Só os ativos aparecem no gerador."
       />
 
       <TemplatesPanel

@@ -26,7 +26,7 @@ export default async function AdminPermissionsPage() {
     <>
       <PageHeader
         title="Permissões"
-        description="Defina o que cada papel pode ver e editar em cada módulo. As mudanças valem imediatamente, sem precisar de deploy."
+        description="Defina o que cada papel vê e edita em cada módulo. Vale na hora."
       />
 
       <Card>

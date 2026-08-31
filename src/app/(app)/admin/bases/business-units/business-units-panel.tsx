@@ -83,7 +83,7 @@ export function BusinessUnitsPanel({
 
       {filtradas.length === 0 ? (
         <Card>
-          <CardBody className="py-10 text-center text-sm text-slate-400">
+          <CardBody className="py-10 text-center text-sm text-slate-500">
             Nenhuma BU encontrada para “{busca}”.
           </CardBody>
         </Card>
@@ -189,7 +189,7 @@ function Grupo({
                     {unit.productCount === 1 ? "produto" : "produtos"}
                   </Link>
                 ) : (
-                  <span className="text-slate-400">
+                  <span className="text-slate-500">
                     nenhum produto vinculado
                   </span>
                 )}

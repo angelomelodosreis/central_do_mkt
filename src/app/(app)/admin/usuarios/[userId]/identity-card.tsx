@@ -40,7 +40,7 @@ export function IdentityCard({
               <StatusBadge status={person.status} />
             </h1>
             <p className="truncate text-sm text-slate-500">{person.email}</p>
-            <p className="mt-0.5 text-xs text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500">
               Cadastrada em {formatDateTime(new Date(person.createdAt))}
               {person.approvedAt
                 ? ` · aprovada em ${formatDateTime(new Date(person.approvedAt))}`

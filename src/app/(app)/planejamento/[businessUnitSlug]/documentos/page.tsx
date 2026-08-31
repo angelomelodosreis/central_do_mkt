@@ -118,7 +118,7 @@ function DocGroup({
                       </Badge>
                     ) : null}
                   </span>
-                  <span className="shrink-0 text-xs text-slate-400">
+                  <span className="shrink-0 text-xs text-slate-500">
                     atualizado em {formatDate(doc.updatedAt)}
                   </span>
                 </span>

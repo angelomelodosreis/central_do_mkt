@@ -137,7 +137,7 @@ export function Nav({
     <div className="border-t border-slate-200 pt-4">
       <p className="truncate text-sm font-medium text-slate-900">{user.name}</p>
       <p className="truncate text-xs text-slate-500">{user.email}</p>
-      <p className="mt-1 text-xs text-slate-400">
+      <p className="mt-1 text-xs text-slate-500">
         {user.jobTitle ? `${user.jobTitle} · ` : ""}
         {user.roleLabel}
       </p>
@@ -193,7 +193,7 @@ export function Nav({
                 onClick={toggleCollapsed}
                 aria-label="Recolher menu"
                 title="Recolher menu"
-                className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                className="shrink-0 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
               >
                 <ChevronsIcon direction="left" />
               </button>
@@ -206,7 +206,7 @@ export function Nav({
               onClick={toggleCollapsed}
               aria-label="Expandir menu"
               title="Expandir menu"
-              className="mt-3 flex justify-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              className="mt-3 flex justify-center rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
             >
               <ChevronsIcon direction="right" />
             </button>
@@ -223,7 +223,7 @@ export function Nav({
               <SignOutButton
                 compact
                 title={`Sair (${user.name})`}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
               />
             </div>
           ) : (

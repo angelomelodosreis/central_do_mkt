@@ -269,7 +269,7 @@ export function PersonaForm({
                   className="mb-1 block text-xs font-medium text-slate-700"
                 >
                   O que oferecemos{" "}
-                  <span className="font-normal text-slate-400">(opcional)</span>
+                  <span className="font-normal text-slate-500">(opcional)</span>
                 </label>
                 <Textarea
                   id={`solution-${index}`}

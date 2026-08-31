@@ -136,7 +136,7 @@ export function ProductsPanel({
       <Card>
         <CardBody className="px-0 py-0">
           {visiveis.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-400">
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
               {busca
                 ? `Nenhum produto encontrado para “${busca}”.`
                 : "Nada nesta lista."}

@@ -99,7 +99,7 @@ export function ItemPanel({
             type="button"
             onClick={onClose}
             aria-label="Fechar"
-            className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="shrink-0 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
           >
             ✕
           </button>

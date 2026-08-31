@@ -48,7 +48,7 @@ export default async function DocumentationIndexPage({
     <>
       <PageHeader
         title="Documentação"
-        description="Biblioteca geral do time. Documentos internos de cada BU ficam dentro dela, no Planejamento — e aparecem na busca para quem trabalha lá."
+        description="Biblioteca geral do time. Documentos internos de cada BU ficam no Planejamento."
         action={
           canEdit ? (
             <div className="flex flex-wrap gap-2">
@@ -144,7 +144,7 @@ export default async function DocumentationIndexPage({
                               </span>
                             ) : null}
                           </span>
-                          <span className="shrink-0 text-xs text-slate-400">
+                          <span className="shrink-0 text-xs text-slate-500">
                             atualizada em {formatDate(page.updatedAt)}
                           </span>
                         </Link>
@@ -218,7 +218,7 @@ function SearchResults({
                       </Badge>
                     ) : null}
                   </span>
-                  <span className="shrink-0 text-xs text-slate-400">
+                  <span className="shrink-0 text-xs text-slate-500">
                     atualizada em {formatDate(page.updatedAt)}
                   </span>
                 </span>
@@ -228,7 +228,7 @@ function SearchResults({
                   </span>
                 ) : null}
                 {page.excerpt ? (
-                  <span className="mt-1 block text-xs text-slate-400">
+                  <span className="mt-1 block text-xs text-slate-500">
                     {page.excerpt}
                   </span>
                 ) : null}

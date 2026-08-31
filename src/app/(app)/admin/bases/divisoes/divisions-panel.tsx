@@ -101,7 +101,7 @@ export function DivisionsPanel({
                     {division.units.map((unit) => unit.label).join(" · ")}
                   </p>
                 ) : (
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-sm text-slate-500">
                     Nenhuma BU nesta divisão ainda.
                   </p>
                 )}

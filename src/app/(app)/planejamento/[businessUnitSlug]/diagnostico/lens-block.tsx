@@ -68,7 +68,7 @@ export function LensBlock({
         {/* O que a plataforma já sabe. Leitura, não digitação. */}
         {evidence.length > 0 ? (
           <div className="rounded-lg bg-slate-50 px-3 py-2.5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               O que a plataforma já sabe
             </p>
             <ul className="mt-1.5 space-y-1">
@@ -97,7 +97,7 @@ export function LensBlock({
 
         {/* Os achados. */}
         {findings.length === 0 && !adding ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Nenhum achado nesta lente.
             {canEdit && roundId
               ? " Leia a evidência acima e registre o que ela mostra."
@@ -138,7 +138,7 @@ export function LensBlock({
                           Nenhuma meta responde a este achado
                         </span>
                       ) : (
-                        <span className="mt-1 block text-xs text-slate-400">
+                        <span className="mt-1 block text-xs text-slate-500">
                           Respondido por {achado.goalIds.length}{" "}
                           {achado.goalIds.length === 1 ? "meta" : "metas"}
                         </span>

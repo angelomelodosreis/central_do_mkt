@@ -37,7 +37,7 @@ export default async function BasesLayout({
     <>
       <PageHeader
         title="Bases oficiais"
-        description="Divisão de Negócio → Business Unit → Produto. Uma fonte só, lida pelo Gerador de Nomes, pela Documentação e pelo Planejamento."
+        description="Divisão de Negócio → Business Unit → Produto. A fonte que o resto da ferramenta lê."
       />
       <BasesTabs
         divisions={divisions.length}

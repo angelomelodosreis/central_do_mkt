@@ -147,13 +147,13 @@ export function PersonCard({
         ) : null}
 
         {person.positions.length === 0 ? (
-          <span className="mt-0.5 block text-xs text-slate-400">
+          <span className="mt-0.5 block text-xs text-slate-500">
             fora da estrutura
           </span>
         ) : null}
       </span>
       {person.role && showRole && !compact ? (
-        <span className="shrink-0 text-[11px] text-slate-400">
+        <span className="shrink-0 text-[11px] text-slate-500">
           {USER_ROLE_LABELS[person.role]}
         </span>
       ) : null}

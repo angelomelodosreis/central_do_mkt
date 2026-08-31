@@ -108,7 +108,7 @@ export function AttachmentPanel({
         ) : null}
 
         {items.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-slate-400">
+          <p className="px-5 py-6 text-center text-sm text-slate-500">
             Nenhum arquivo por aqui.
           </p>
         ) : (
@@ -170,15 +170,15 @@ function AttachmentRow({
             <span className="font-medium text-slate-900">{item.title}</span>
             <Badge tone="neutral">{kindLabel}</Badge>
             {item.kind === "link" ? (
-              <span className="text-xs text-slate-400">não copiado</span>
+              <span className="text-xs text-slate-500">não copiado</span>
             ) : (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 {formatBytes(item.sizeBytes)}
               </span>
             )}
           </p>
           {item.authorName ? (
-            <p className="mt-0.5 text-xs text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500">
               enviado por {item.authorName}
             </p>
           ) : null}

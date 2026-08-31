@@ -39,7 +39,7 @@ export function RoleCard({
     <Card>
       <CardHeader
         title="Papel no sistema"
-        description="O que ela pode fazer. Sobre o quê é o cartão de escopos, logo abaixo."
+        description="O que ela pode fazer. Sobre o quê fica no cartão de escopos, abaixo."
       />
       <CardBody className="space-y-4">
         <form

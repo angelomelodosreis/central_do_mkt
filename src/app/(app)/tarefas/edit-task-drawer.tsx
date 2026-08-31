@@ -47,7 +47,7 @@ export function EditTaskDrawer({
       open={task !== null}
       onClose={onClose}
       title="Editar tarefa"
-      description="O andamento continua com quem executa — aqui você ajusta o que a tarefa é."
+      description="Você ajusta o que a tarefa é. O andamento continua com quem executa."
     >
       {task ? (
         <form action={formAction} className="space-y-5" key={task.id}>

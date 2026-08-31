@@ -119,7 +119,7 @@ export default async function BusinessUnitPersonasPage({
                           </span>
                         ) : null}
                       </span>
-                      <span className="shrink-0 text-xs text-slate-400">
+                      <span className="shrink-0 text-xs text-slate-500">
                         {item.painCount === 1
                           ? "1 dor mapeada"
                           : `${item.painCount} dores mapeadas`}

@@ -153,7 +153,7 @@ export default async function DiagnosisPage({
           ) : canEdit ? (
             <OpenRoundForm cycleId={cycle.id} isFirst />
           ) : (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               Ninguém abriu uma rodada de diagnóstico para este ciclo ainda.
             </p>
           )}
@@ -166,7 +166,7 @@ export default async function DiagnosisPage({
 
           {rounds.length > 1 ? (
             <nav className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 Rodadas anteriores:
               </span>
               {rounds
@@ -219,7 +219,7 @@ export default async function DiagnosisPage({
                       </p>
                       <p className="font-display text-xl font-semibold tabular-nums text-slate-900">
                         {formatMetricValue(a.metric, a.actual)}
-                        <span className="text-sm font-normal text-slate-400">
+                        <span className="text-sm font-normal text-slate-500">
                           {" / "}
                           {formatMetricValue(a.metric, a.target)}
                         </span>
@@ -262,7 +262,7 @@ export default async function DiagnosisPage({
             ) : null}
 
             {!goals.cycle || goals.cycle.targets.length === 0 ? (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-500">
                 Defina a meta geral do ciclo com pelo menos um indicador para
                 poder registrar o realizado aqui.
               </p>
@@ -314,7 +314,7 @@ export default async function DiagnosisPage({
 
       {cycles.length > 1 ? (
         <nav className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
-          <span className="text-xs text-slate-400">Outros ciclos:</span>
+          <span className="text-xs text-slate-500">Outros ciclos:</span>
           {cycles
             .filter((c) => c.id !== cycle.id)
             .map((c) => (

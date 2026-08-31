@@ -106,7 +106,7 @@ export function SquadsBoard({
                       <Badge tone="neutral">Desativado</Badge>
                     )}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {unit.divisionName ? `${unit.divisionName} · ` : ""}
                     {doSquad.length === 0
                       ? "sem ninguém"
@@ -116,7 +116,7 @@ export function SquadsBoard({
 
                 <div className="flex flex-1 flex-col gap-1.5">
                   {doSquad.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-slate-300 px-2 py-6 text-center text-xs text-slate-400">
+                    <p className="rounded-xl border border-dashed border-slate-300 px-2 py-6 text-center text-xs text-slate-500">
                       {canEdit ? "Arraste alguém para cá" : "Squad não montado"}
                     </p>
                   ) : (
@@ -226,7 +226,7 @@ function MiniPerson({
               />
             ) : null}
           </span>
-          <span className="mt-0.5 block truncate text-[11px] text-slate-400">
+          <span className="mt-0.5 block truncate text-[11px] text-slate-500">
             {contexto || "fora da estrutura"}
           </span>
         </span>

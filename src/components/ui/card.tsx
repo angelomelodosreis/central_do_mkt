@@ -123,7 +123,7 @@ export function SectionTitle({
       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
         {children}
         {typeof count === "number" ? (
-          <span className="ml-1.5 font-normal tabular-nums text-slate-400">
+          <span className="ml-1.5 font-normal tabular-nums text-slate-500">
             {count}
           </span>
         ) : null}

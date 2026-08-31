@@ -215,7 +215,7 @@ export function CalendarWorkspace({
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-all",
                 hidden
-                  ? "bg-white text-slate-400 ring-slate-200 opacity-60"
+                  ? "bg-white text-slate-500 ring-slate-200 opacity-60"
                   : config.chip,
               )}
             >

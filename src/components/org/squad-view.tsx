@@ -41,7 +41,7 @@ export function SquadView({
             <span className="font-display text-sm font-semibold text-slate-900">
               {bloco.teamName}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               {bloco.people.length === 1
                 ? "1 pessoa"
                 : `${bloco.people.length} pessoas`}

@@ -156,7 +156,7 @@ export function TaskRow({
                 {formatDate(new Date(task.dueDate))}
               </span>
             ) : (
-              <span className="text-slate-400">sem prazo</span>
+              <span className="text-slate-500">sem prazo</span>
             )}
             {task.assigneeName ? <span>· {task.assigneeName}</span> : null}
             {!task.assigneeName && task.assignedTeamName ? (
@@ -171,7 +171,7 @@ export function TaskRow({
               </Link>
             ) : null}
             {task.createdByName ? (
-              <span className="text-slate-400">· de {task.createdByName}</span>
+              <span className="text-slate-500">· de {task.createdByName}</span>
             ) : null}
           </p>
 

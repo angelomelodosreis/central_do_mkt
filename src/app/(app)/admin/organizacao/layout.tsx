@@ -28,7 +28,7 @@ export default async function OrganizacaoLayout({
     <>
       <PageHeader
         title="Organização"
-        description="Setor → Subsetor → Time, e o catálogo de cargos. Nada aqui concede permissão: acesso é papel + escopo, na ficha de cada pessoa."
+        description="Setor → Subsetor → Time, e o catálogo de cargos. Acesso se define na ficha de cada pessoa."
       />
       <OrgTabs units={units.length} jobTitles={titles.length} />
       {children}

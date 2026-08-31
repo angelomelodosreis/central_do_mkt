@@ -18,7 +18,7 @@ export default async function SquadsPage() {
     <>
       <PageHeader
         title="Squads"
-        description="A equipe multidisciplinar de cada Business Unit. Diferente de time: o squad reúne gente de várias unidades — inclusive de fora do marketing — em torno de uma BU."
+        description="A equipe de cada Business Unit. Reúne gente de unidades diferentes, e não é o mesmo que time."
       />
       <SquadsPanel
         squads={squads.map((item) => ({

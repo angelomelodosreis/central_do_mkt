@@ -54,7 +54,7 @@ export function TemplatesPanel({ templates }: { templates: TemplateRow[] }) {
       <Card>
         <CardBody className="px-0 py-0">
           {templates.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-400">
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
               Nenhum modelo cadastrado ainda.
             </p>
           ) : (
@@ -95,7 +95,7 @@ export function TemplatesPanel({ templates }: { templates: TemplateRow[] }) {
                       </code>
 
                       {template.optionalCount > 0 ? (
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-xs text-slate-500">
                           {template.optionalCount}{" "}
                           {template.optionalCount === 1
                             ? "bloco opcional"
@@ -217,7 +217,7 @@ function NewTemplateDrawer({
       open={open}
       onClose={onClose}
       title="Novo modelo"
-      description="Comece pelo nome. Os blocos vêm no passo seguinte, no construtor."
+      description="Os blocos vêm no passo seguinte."
     >
       <form action={formAction} className="space-y-4">
         {state.status === "error" && state.message ? (

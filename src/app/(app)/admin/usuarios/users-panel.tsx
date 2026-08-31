@@ -171,7 +171,7 @@ export function UsersPanel({
       <Card>
         <CardBody className="px-0 py-0">
           {visiveis.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-400">
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
               Ninguém encontrado com esses filtros.
             </p>
           ) : (
@@ -206,7 +206,7 @@ export function UsersPanel({
                           ? ` · ${person.teams.map((team) => team.name).join(", ")}`
                           : ""}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-400">
+                      <p className="mt-0.5 truncate text-xs text-slate-500">
                         {resumoDeAlcance(person)}
                       </p>
                     </div>

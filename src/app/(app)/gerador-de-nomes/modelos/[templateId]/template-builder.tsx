@@ -234,7 +234,7 @@ export function TemplateBuilder({
       <Card>
         <CardHeader
           title={`Blocos do nome (${template.fields.length})`}
-          description="Na ordem em que aparecem no nome. Cada bloco vira um campo no formulário do gerador."
+          description="Na ordem em que aparecem no nome. Cada um vira um campo no gerador."
           action={
             <Button
               size="sm"
@@ -247,7 +247,7 @@ export function TemplateBuilder({
         />
         <CardBody className="px-0 py-0">
           {!temBlocos ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-400">
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
               Nenhum bloco ainda. O nome é montado a partir deles.
             </p>
           ) : (
@@ -280,7 +280,7 @@ export function TemplateBuilder({
                       <p className="text-xs text-slate-500">
                         {origemDoBloco(field)}
                       </p>
-                      <code className="mt-0.5 block font-mono text-[11px] text-slate-400">
+                      <code className="mt-0.5 block font-mono text-[11px] text-slate-500">
                         {amostraDoBloco(field, baseSamples)}
                       </code>
                     </div>
@@ -408,7 +408,7 @@ function CampoObrigatoriedade({
     <Field
       label="Preenchimento"
       htmlFor={id}
-      hint="Bloco opcional deixado em branco simplesmente não entra no nome."
+      hint="Bloco opcional deixado em branco não entra no nome."
     >
       <Select
         id={id}
@@ -619,7 +619,7 @@ function EditFieldDrawer({
       open={field !== null}
       onClose={onClose}
       title={field ? `Editar “${field.label}”` : ""}
-      description="O tipo do bloco não muda: trocá-lo mudaria o significado do que já foi gerado. Para mudar o tipo, remova e adicione outro."
+      description="O tipo do bloco não muda. Para trocá-lo, remova este e adicione outro."
       width="lg"
     >
       {field ? (

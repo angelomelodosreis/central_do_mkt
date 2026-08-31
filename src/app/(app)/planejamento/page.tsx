@@ -181,7 +181,7 @@ export default async function StrategyIndexPage({
                               <Badge tone="warning">Sem ciclo</Badge>
                             ) : null}
                           </span>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-500">
                             {unit.leadName
                               ? `Responde: ${unit.leadName}`
                               : "Sem responsável"}
@@ -240,7 +240,7 @@ function UnitCard({
             ? "Ciclo criado, calendário vazio."
             : `${unit.itens} ${unit.itens === 1 ? "item no calendário" : "itens no calendário"}`}
       </p>
-      <p className="mt-2 text-xs text-slate-400">
+      <p className="mt-2 text-xs text-slate-500">
         {unit.leadName ? `Responsável: ${unit.leadName}` : "Sem responsável"}
         {unit.pessoas > 1 ? ` · ${unit.pessoas} pessoas na equipe` : ""}
       </p>

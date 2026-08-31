@@ -331,14 +331,14 @@ export function Select({
             ? "border-brand-500 ring-2 ring-brand-100"
             : "border-slate-300 hover:border-slate-400",
           disabled &&
-            "cursor-not-allowed bg-slate-50 text-slate-400 hover:border-slate-300",
+            "cursor-not-allowed bg-slate-50 text-slate-500 hover:border-slate-300",
           className,
         )}
       >
         <span
           className={cn(
             "min-w-0 truncate",
-            opcaoAtual ? "text-slate-900" : "text-slate-400",
+            opcaoAtual ? "text-slate-900" : "text-slate-500",
           )}
         >
           {opcaoAtual
@@ -370,13 +370,13 @@ export function Select({
               className="overflow-y-auto overscroll-contain rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
             >
               {flat.length === 0 ? (
-                <p className="px-3 py-2 text-sm text-slate-400">
+                <p className="px-3 py-2 text-sm text-slate-500">
                   Nenhuma opção disponível.
                 </p>
               ) : groups ? (
                 groups.map((group) => (
                   <div key={group.label} className="py-0.5">
-                    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                       {group.label}
                     </p>
                     {group.options.map((option) => (
@@ -452,7 +452,7 @@ function Opcao({
       <span className="min-w-0">
         <span className="block truncate">{option.label}</span>
         {option.hint ? (
-          <span className="mt-0.5 block truncate text-xs text-slate-400">
+          <span className="mt-0.5 block truncate text-xs text-slate-500">
             {option.hint}
           </span>
         ) : null}
@@ -480,7 +480,7 @@ function Chevron({ aberto }: { aberto: boolean }) {
     <svg
       viewBox="0 0 20 20"
       className={cn(
-        "size-4 shrink-0 text-slate-400 transition-transform",
+        "size-4 shrink-0 text-slate-500 transition-transform",
         aberto && "rotate-180",
       )}
       fill="none"

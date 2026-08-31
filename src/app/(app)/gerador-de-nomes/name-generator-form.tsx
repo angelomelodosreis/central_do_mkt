@@ -258,7 +258,7 @@ export function NameGeneratorForm({
                   <code className="block break-all font-mono text-sm text-slate-800">
                     {item.name}
                   </code>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     {item.templateName}
                   </span>
                 </span>

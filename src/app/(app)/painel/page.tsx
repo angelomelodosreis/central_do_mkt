@@ -142,7 +142,7 @@ export default async function DashboardPage({
           />
           <CardBody className="px-0 py-0">
             {tarefas.length === 0 ? (
-              <p className="px-5 py-6 text-center text-sm text-slate-400">
+              <p className="px-5 py-6 text-center text-sm text-slate-500">
                 Nada pendente para você agora.
               </p>
             ) : (

@@ -50,7 +50,7 @@ export function LinkTabs({ items }: { items: TabItem[] }) {
                     "rounded-full px-1.5 py-0.5 text-[11px] tabular-nums",
                     isActive
                       ? "bg-brand-50 text-brand-700"
-                      : "bg-slate-100 text-slate-500",
+                      : "bg-slate-100 text-slate-600",
                   )}
                 >
                   {tab.count}

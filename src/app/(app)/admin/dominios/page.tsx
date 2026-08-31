@@ -80,7 +80,7 @@ export default async function AdminDomainsPage() {
                           <Badge tone="danger">Desativado</Badge>
                         )}
                         {isOwnDomain ? (
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-500">
                             (seu domínio)
                           </span>
                         ) : null}
@@ -96,7 +96,7 @@ export default async function AdminDomainsPage() {
                     {/* O admin não pode desativar o próprio domínio e se
                         trancar fora da plataforma. */}
                     {item.isActive && isOwnDomain ? (
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         Não é possível desativar o domínio da sua própria conta
                       </span>
                     ) : (

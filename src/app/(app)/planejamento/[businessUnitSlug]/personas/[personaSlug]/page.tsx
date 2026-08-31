@@ -76,7 +76,7 @@ export default async function PersonaDetailPage({
                   : "dores sem solução"}
               </Badge>
             ) : null}
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               Atualizada em {formatDateTime(found.updatedAt)}
             </span>
           </div>

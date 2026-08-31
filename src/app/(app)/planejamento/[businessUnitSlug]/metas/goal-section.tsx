@@ -123,7 +123,7 @@ export function GoalSection({
         ) : goal ? (
           <GoalReadView goal={goal} findings={findings} revisions={revisions} />
         ) : (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Nenhuma meta definida para este escopo.
             {canEdit ? " Use “Definir meta” para escrever a primeira." : ""}
           </p>
@@ -144,7 +144,7 @@ function Bloco({
 }) {
   return (
     <div>
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
         {titulo}
       </h4>
       <div className="mt-1 text-sm text-slate-700">{children}</div>
@@ -183,7 +183,7 @@ function GoalReadView({
                 {formatMetricValue(alvo.metric, alvo.target)}
               </p>
               {alvo.note ? (
-                <p className="mt-0.5 text-xs text-slate-400">{alvo.note}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{alvo.note}</p>
               ) : null}
             </div>
           ))}
@@ -440,7 +440,7 @@ function GoalForm({
 
             return (
               <fieldset key={grupo.key}>
-                <legend className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <legend className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {grupo.label}
                 </legend>
                 <div className="mt-2 space-y-1.5">
@@ -470,7 +470,7 @@ function GoalForm({
                           <span className="text-sm text-slate-800">
                             {spec.label}
                           </span>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-500">
                             {UNIDADE_LABEL[spec.unit]}
                           </span>
                         </label>
@@ -542,7 +542,7 @@ function GoalForm({
                     <span className="text-sm text-slate-800">
                       {achado.statement}
                     </span>
-                    <span className="mt-0.5 block text-xs text-slate-400">
+                    <span className="mt-0.5 block text-xs text-slate-500">
                       {FINDING_KIND_LABELS[achado.kind]}
                       {" · "}
                       {achado.roundSequence}ª rodada

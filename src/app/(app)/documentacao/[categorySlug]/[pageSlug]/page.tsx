@@ -114,7 +114,7 @@ export default async function DocumentationPageView({
                 {DOC_VISIBILITY_LABELS[page.visibility]}
               </Badge>
             ) : null}
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               Atualizada em {formatDateTime(page.updatedAt)}
             </span>
           </div>

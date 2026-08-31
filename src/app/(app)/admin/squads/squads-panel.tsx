@@ -119,7 +119,7 @@ export function SquadsPanel({
 
       {visiveis.length === 0 ? (
         <Card>
-          <CardBody className="py-10 text-center text-sm text-slate-400">
+          <CardBody className="py-10 text-center text-sm text-slate-500">
             Nenhum squad nesta lista.
           </CardBody>
         </Card>

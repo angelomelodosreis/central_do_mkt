@@ -163,7 +163,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
                         </span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-xs text-slate-400">
+                    <span className="shrink-0 text-xs text-slate-500">
                       atualizada em {formatDate(page.updatedAt)}
                     </span>
                   </Link>

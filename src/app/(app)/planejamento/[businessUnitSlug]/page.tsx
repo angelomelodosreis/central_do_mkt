@@ -120,7 +120,7 @@ export default async function BusinessUnitOverviewPage({
           <CardBody className="space-y-4">
             {metas.cycle ? (
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {GOAL_SCOPE_LABELS.cycle}
                 </p>
                 <p className="mt-1 font-display text-lg leading-snug text-slate-900">
@@ -144,14 +144,14 @@ export default async function BusinessUnitOverviewPage({
                 ) : null}
               </div>
             ) : (
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-500">
                 A meta geral do ciclo ainda não foi definida.
               </p>
             )}
 
             {semestreEmCurso && metas[semestreEmCurso] ? (
               <div className="border-t border-slate-100 pt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {GOAL_SCOPE_LABELS[semestreEmCurso]} · em curso
                 </p>
                 <p className="mt-1 text-sm text-slate-800">
@@ -178,7 +178,7 @@ export default async function BusinessUnitOverviewPage({
               ? "Squad · 1 pessoa"
               : `Squad · ${equipe.length} pessoas`
           }
-          description="Quem atende esta BU, agrupado pela unidade de origem. Quem participa de duas aparece nas duas — é a mistura que o squad existe para mostrar."
+          description="Quem atende esta BU, agrupado pela unidade de origem."
           action={
             <ButtonLink href="/organograma" variant="ghost" size="sm">
               Organograma
@@ -214,7 +214,7 @@ export default async function BusinessUnitOverviewPage({
         />
         <CardBody className="px-0 py-0">
           {proximos.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-slate-400">
+            <p className="px-5 py-6 text-center text-sm text-slate-500">
               Nada marcado para os próximos {HORIZONTE_DIAS} dias.
             </p>
           ) : (
@@ -234,7 +234,7 @@ export default async function BusinessUnitOverviewPage({
                         {item.title}
                       </span>
                     </span>
-                    <span className="mt-0.5 block pl-4 text-xs text-slate-400">
+                    <span className="mt-0.5 block pl-4 text-xs text-slate-500">
                       {TIMELINE_KIND_CONFIG[item.kind].label}
                     </span>
                   </span>
@@ -352,7 +352,7 @@ export default async function BusinessUnitOverviewPage({
                       <span className="text-sm font-medium text-slate-900">
                         {doc.title}
                       </span>
-                      <span className="shrink-0 text-xs text-slate-400">
+                      <span className="shrink-0 text-xs text-slate-500">
                         {doc.scope === "general" ? "na biblioteca" : "interno"}
                         {" · "}
                         {formatDate(doc.updatedAt)}

@@ -167,7 +167,7 @@ export function MeasurementsForm({
             >
               <div>
                 <p className="text-sm text-slate-800">{spec.label}</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   alvo do ciclo:{" "}
                   <span className="tabular-nums">
                     {alvo.target.toLocaleString("pt-BR")}

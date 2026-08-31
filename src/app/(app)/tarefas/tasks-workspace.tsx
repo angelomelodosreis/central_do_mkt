@@ -36,8 +36,7 @@ const VISAO_LABELS: Record<Visao, string> = {
 const VISAO_DESCRICOES: Record<Visao, string> = {
   para_mim:
     "O que é seu e o que está aberto para as suas unidades, do mais urgente para o menos.",
-  deleguei:
-    "O que você passou para outras pessoas e como está cada uma. Aqui você acompanha e gere — quem executa é quem muda a situação.",
+  deleguei: "O que você passou para outras pessoas e como está cada uma.",
   todas: "Tudo em aberto no seu escopo de responsabilidade.",
   historico: "Concluídas e canceladas, na ordem em que terminaram.",
 };

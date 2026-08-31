@@ -187,7 +187,7 @@ export default async function GoalsPage({
 
       {cycles.length > 1 ? (
         <nav className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
-          <span className="text-xs text-slate-400">Outros ciclos:</span>
+          <span className="text-xs text-slate-500">Outros ciclos:</span>
           {cycles
             .filter((c) => c.id !== cycle.id)
             .map((c) => (
@@ -203,7 +203,7 @@ export default async function GoalsPage({
         </nav>
       ) : null}
 
-      <p className="mt-6 text-xs text-slate-400">
+      <p className="mt-6 text-xs text-slate-500">
         Os semestres são civis — {GOAL_SCOPE_SHORT.h1} vai de janeiro a junho e{" "}
         {GOAL_SCOPE_SHORT.h2} de julho a dezembro — mesmo quando o ciclo não
         começa em janeiro. Quando o ciclo é mais curto, o período mostrado já

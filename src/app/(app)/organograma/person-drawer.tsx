@@ -131,7 +131,7 @@ export function PersonDrawer({
           <SectionTitle>Unidades ({person.positions.length})</SectionTitle>
 
           {person.positions.length === 0 ? (
-            <p className="text-sm text-slate-400">Fora da estrutura.</p>
+            <p className="text-sm text-slate-500">Fora da estrutura.</p>
           ) : (
             <ul className="space-y-1.5">
               {person.positions.map((position) => (
@@ -218,7 +218,7 @@ export function PersonDrawer({
           <SectionTitle>Squads ({person.squadIds.length})</SectionTitle>
 
           {person.squadIds.length === 0 ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-500">
               Fora de todos os squads — não enxerga planejamento de BU nenhuma.
             </p>
           ) : (

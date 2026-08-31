@@ -114,7 +114,7 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
                   </p>
 
                   {unit.memberNames.length > 0 ? (
-                    <p className="mt-0.5 truncate text-xs text-slate-400">
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
                       {unit.memberNames.join(", ")}
                     </p>
                   ) : null}

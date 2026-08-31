@@ -104,7 +104,7 @@ export function TeamsBoard({
                     {team.isActive ? null : (
                       <Badge tone="neutral">Inativa</Badge>
                     )}
-                    <span className="text-xs font-normal text-slate-400">
+                    <span className="text-xs font-normal text-slate-500">
                       {doTime.length === 0
                         ? "sem ninguém"
                         : `${doTime.length} ${doTime.length === 1 ? "pessoa" : "pessoas"}`}
@@ -115,7 +115,7 @@ export function TeamsBoard({
               />
               <CardBody>
                 {doTime.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-400">
+                  <p className="rounded-xl border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-500">
                     {canEdit
                       ? "Arraste alguém para cá para incluir na unidade"
                       : "Ninguém diretamente nesta unidade"}

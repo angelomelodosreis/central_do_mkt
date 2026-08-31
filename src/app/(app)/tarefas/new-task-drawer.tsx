@@ -106,7 +106,7 @@ export function NewTaskDrawer({
       title="Nova tarefa"
       description={
         podeDelegar
-          ? "Ela aparece na hora na fila de quem receber."
+          ? "Aparece na hora na fila de quem receber."
           : "Você pode criar tarefas para a sua própria fila."
       }
       width="lg"
@@ -151,7 +151,7 @@ export function NewTaskDrawer({
             label="Para quem"
             htmlFor="task-destino"
             required
-            hint="Pessoas e unidades na mesma lista: a pergunta que se faz é uma só."
+            hint="Pessoas e unidades na mesma lista."
           >
             <Select
               id="task-destino"

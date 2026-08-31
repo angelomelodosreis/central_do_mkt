@@ -104,7 +104,7 @@ export function GeneratorWorkspace({
       </div>
 
       {visiveis.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400">
+        <p className="rounded-2xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
           Nenhum modelo encontrado para “{busca}”.
         </p>
       ) : null}

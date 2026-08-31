@@ -109,7 +109,7 @@ function CadenceGroup({
       />
       <CardBody className="px-0 py-0">
         {products.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-slate-400">
+          <p className="px-5 py-6 text-center text-sm text-slate-500">
             Nenhum produto nesta cadência.
           </p>
         ) : (
@@ -169,7 +169,7 @@ function ProductItem({
           ) : null}
           {product.isActive ? null : <Badge tone="neutral">Inativo</Badge>}
         </p>
-        <p className="mt-0.5 text-xs text-slate-400">
+        <p className="mt-0.5 text-xs text-slate-500">
           {product.janelas === 0
             ? "Nenhuma data no calendário do ciclo atual"
             : `${product.janelas} ${

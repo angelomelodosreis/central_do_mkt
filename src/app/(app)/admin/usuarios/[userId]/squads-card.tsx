@@ -47,7 +47,7 @@ export function SquadsCard({
     <Card>
       <CardHeader
         title="Squads"
-        description="As equipes de BU de que ela participa. Participar abre a leitura do planejamento daquela BU."
+        description="As BUs de que ela participa. Participar abre a leitura do planejamento delas."
         action={
           !adicionando && disponiveis.length > 0 ? (
             <Button

@@ -52,7 +52,7 @@ export function WeekView({
               )}
             >
               <p className="mb-2 flex items-center gap-1.5">
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500">
                   {WEEKDAYS_SHORT[day.getDay()]}
                 </span>
                 <span
@@ -111,7 +111,7 @@ export function WeekView({
       </div>
 
       {canEdit ? (
-        <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400">
+        <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
           Duplo clique num dia cria um item.
         </p>
       ) : null}

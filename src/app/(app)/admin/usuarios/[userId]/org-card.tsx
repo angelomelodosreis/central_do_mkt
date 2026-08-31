@@ -56,7 +56,7 @@ export function OrgCard({
     <Card>
       <CardHeader
         title="Estrutura organizacional"
-        description="Cargo descreve a pessoa; as unidades dizem onde ela trabalha. Nenhum dos dois concede permissão."
+        description="Cargo descreve a pessoa; as unidades dizem onde ela trabalha. Nenhum concede permissão."
       />
       <CardBody className="space-y-5">
         <form

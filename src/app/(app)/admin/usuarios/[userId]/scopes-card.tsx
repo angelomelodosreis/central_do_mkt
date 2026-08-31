@@ -61,7 +61,7 @@ export function ScopesCard({
     <Card>
       <CardHeader
         title="Escopos de responsabilidade"
-        description="Sobre o que ela responde. O escopo desce sozinho: um subsetor alcança os times dele; uma divisão alcança as BUs dela."
+        description="Sobre o que ela responde. O escopo desce sozinho para o que está abaixo."
         action={
           !concedendo ? (
             <Button
@@ -106,7 +106,7 @@ export function ScopesCard({
                       .join(" · ")}
                   </p>
                   {grant.note ? (
-                    <p className="mt-0.5 text-xs italic text-slate-400">
+                    <p className="mt-0.5 text-xs italic text-slate-500">
                       {grant.note}
                     </p>
                   ) : null}
