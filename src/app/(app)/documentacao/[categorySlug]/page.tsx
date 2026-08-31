@@ -5,10 +5,20 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  PageHeader,
+} from "@/components/ui/card";
 import { can, requirePermission } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { documentationPage, DOC_VISIBILITY_LABELS, isReferencePage } from "@/lib/db/schema";
+import {
+  documentationPage,
+  DOC_VISIBILITY_LABELS,
+  isReferencePage,
+} from "@/lib/db/schema";
 import {
   getCategoryBySlug,
   visibilitiesFor,
@@ -60,7 +70,10 @@ export default async function CategoryPage({ params }: { params: Params }) {
     .where(
       and(
         eq(documentationPage.categoryId, category.id),
-        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+        inArray(
+          documentationPage.visibility,
+          visibilitiesFor(currentUser.role),
+        ),
       ),
     )
     .orderBy(asc(documentationPage.sortOrder), asc(documentationPage.title));
@@ -91,7 +104,9 @@ export default async function CategoryPage({ params }: { params: Params }) {
               >
                 Editar categoria
               </ButtonLink>
-              <ButtonLink href={`/documentacao/nova?categoria=${category.slug}`}>
+              <ButtonLink
+                href={`/documentacao/nova?categoria=${category.slug}`}
+              >
                 Nova página
               </ButtonLink>
             </div>
@@ -109,7 +124,9 @@ export default async function CategoryPage({ params }: { params: Params }) {
           }
           action={
             canEdit ? (
-              <ButtonLink href={`/documentacao/nova?categoria=${category.slug}`}>
+              <ButtonLink
+                href={`/documentacao/nova?categoria=${category.slug}`}
+              >
                 Criar página
               </ButtonLink>
             ) : null

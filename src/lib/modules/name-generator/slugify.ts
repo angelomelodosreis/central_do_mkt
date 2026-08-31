@@ -36,8 +36,7 @@ export function toSnakeCase(input: string): string {
 export const MAX_NAME_LENGTH = 60;
 
 export type NameValidationResult =
-  | { ok: true; value: string }
-  | { ok: false; error: string };
+  { ok: true; value: string } | { ok: false; error: string };
 
 /**
  * Valida e normaliza o bloco `nome_da_lista`.

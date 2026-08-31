@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
-import { USER_ROLE_LABELS, type UserRole, type UserStatus } from "@/lib/db/schema";
+import {
+  USER_ROLE_LABELS,
+  type UserRole,
+  type UserStatus,
+} from "@/lib/db/schema";
 
 type Tone = "neutral" | "success" | "warning" | "danger" | "brand";
 

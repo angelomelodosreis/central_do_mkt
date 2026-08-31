@@ -79,7 +79,10 @@ export async function uploadAttachment(
   const ownerType = parseOwnerType(formData.get("ownerType"));
   const ownerId = String(formData.get("ownerId") ?? "");
   if (!ownerType || !ownerId) {
-    return { status: "error", message: "Registro de destino não identificado." };
+    return {
+      status: "error",
+      message: "Registro de destino não identificado.",
+    };
   }
 
   const currentUser = await gate(ownerType, ownerId);
@@ -95,7 +98,8 @@ export async function uploadAttachment(
   const stored = await storeUpload(file, ownerType);
   if (!stored.ok) return { status: "error", message: stored.message };
 
-  const title = String(formData.get("title") ?? "").trim() || stored.file.filename;
+  const title =
+    String(formData.get("title") ?? "").trim() || stored.file.filename;
   const db = await getDb();
   const attachmentId = newId("att");
 
@@ -150,7 +154,10 @@ export async function linkAttachment(
   const ownerType = parseOwnerType(formData.get("ownerType"));
   const ownerId = String(formData.get("ownerId") ?? "");
   if (!ownerType || !ownerId) {
-    return { status: "error", message: "Registro de destino não identificado." };
+    return {
+      status: "error",
+      message: "Registro de destino não identificado.",
+    };
   }
 
   const currentUser = await gate(ownerType, ownerId);
@@ -164,7 +171,8 @@ export async function linkAttachment(
   if (!embed) {
     return {
       status: "error",
-      message: "Cole um endereço http(s) válido — por exemplo, o link de um Google Doc.",
+      message:
+        "Cole um endereço http(s) válido — por exemplo, o link de um Google Doc.",
     };
   }
 

@@ -86,7 +86,9 @@ export default async function BusinessUnitPersonasPage({
           <Card>
             <CardHeader
               title={
-                ativas.length === 1 ? "1 persona ativa" : `${ativas.length} personas ativas`
+                ativas.length === 1
+                  ? "1 persona ativa"
+                  : `${ativas.length} personas ativas`
               }
             />
             <CardBody className="px-0 py-0">

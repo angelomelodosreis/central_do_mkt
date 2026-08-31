@@ -72,7 +72,10 @@ export default async function GoalsPage({
   const achados = await listFindingsOfCycle(cycle.id);
 
   // As revisões de cada meta existente, para o histórico na leitura.
-  const revisoesPorMeta = new Map<string, { changedAt: Date; reason: string | null }[]>();
+  const revisoesPorMeta = new Map<
+    string,
+    { changedAt: Date; reason: string | null }[]
+  >();
   await Promise.all(
     GOAL_SCOPES.map(async (scope) => {
       const meta = goals[scope];
@@ -129,8 +132,8 @@ export default async function GoalsPage({
               ))}
             </ul>
             <p className="mt-2 text-xs text-amber-700">
-              É só um aviso — pode ser erro de digitação ou margem proposital. Nada
-              impede de salvar assim.
+              É só um aviso — pode ser erro de digitação ou margem proposital.
+              Nada impede de salvar assim.
             </p>
           </CardBody>
         </Card>
@@ -150,8 +153,8 @@ export default async function GoalsPage({
                 .join(", ")}
             </p>
             <p className="mt-2 text-xs text-amber-700">
-              Meta sem achado é meta que ninguém sustentou. Edite a meta e marque o
-              que ela responde.
+              Meta sem achado é meta que ninguém sustentou. Edite a meta e
+              marque o que ela responde.
             </p>
           </CardBody>
         </Card>
@@ -173,7 +176,9 @@ export default async function GoalsPage({
               canEdit={canEdit}
               findings={achados}
               revisions={
-                goals[scope] ? (revisoesPorMeta.get(goals[scope]!.id) ?? []) : []
+                goals[scope]
+                  ? (revisoesPorMeta.get(goals[scope]!.id) ?? [])
+                  : []
               }
             />
           );
@@ -201,8 +206,8 @@ export default async function GoalsPage({
       <p className="mt-6 text-xs text-slate-400">
         Os semestres são civis — {GOAL_SCOPE_SHORT.h1} vai de janeiro a junho e{" "}
         {GOAL_SCOPE_SHORT.h2} de julho a dezembro — mesmo quando o ciclo não
-        começa em janeiro. Quando o ciclo é mais curto, o período mostrado já vem
-        recortado.
+        começa em janeiro. Quando o ciclo é mais curto, o período mostrado já
+        vem recortado.
       </p>
     </>
   );

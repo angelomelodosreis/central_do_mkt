@@ -199,17 +199,15 @@ export function PersonaForm({
       <Card>
         <CardHeader title="Interesses e canais" />
         <CardBody className="space-y-5 sm:px-6 sm:py-5">
-          <Field
-            label="Interesses"
-            htmlFor="interests"
-            hint="Um por linha."
-          >
+          <Field label="Interesses" htmlFor="interests" hint="Um por linha.">
             <Textarea
               id="interests"
               name="interests"
               defaultValue={values.interests}
               rows={5}
-              placeholder={"Estudo por questões\nRotina de plantão\nQualidade de vida"}
+              placeholder={
+                "Estudo por questões\nRotina de plantão\nQualidade de vida"
+              }
             />
           </Field>
 
@@ -223,7 +221,9 @@ export function PersonaForm({
               name="channels"
               defaultValue={values.channels}
               rows={4}
-              placeholder={"Instagram\nGrupos de WhatsApp da faculdade\nCongressos"}
+              placeholder={
+                "Instagram\nGrupos de WhatsApp da faculdade\nCongressos"
+              }
             />
           </Field>
         </CardBody>
@@ -235,9 +235,7 @@ export function PersonaForm({
           description="A solução pode ficar em branco: dor mapeada sem resposta ainda é informação — vira pauta de produto."
           action={
             openCount > 0 ? (
-              <Badge tone="warning">
-                {openCount} sem solução
-              </Badge>
+              <Badge tone="warning">{openCount} sem solução</Badge>
             ) : null
           }
         />

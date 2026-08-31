@@ -6,10 +6,7 @@ import { EmptyState, PageHeader } from "@/components/ui/card";
 import { getDb } from "@/lib/db/client";
 import { strategyProduct, timelineItem } from "@/lib/db/schema";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
-import {
-  listCycles,
-  pickDefaultCycle,
-} from "@/lib/modules/strategy/queries";
+import { listCycles, pickDefaultCycle } from "@/lib/modules/strategy/queries";
 
 export const metadata: Metadata = { title: "Esteira de produtos" };
 export const dynamic = "force-dynamic";

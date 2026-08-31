@@ -6,11 +6,11 @@ auditoria.
 
 **O que já existe nesta primeira versão:**
 
-| Módulo | O que faz |
-| --- | --- |
-| **Gerador de Nomes** | Monta nomes padronizados para o CRM — listas, tags e o que mais for cadastrado — prontos para copiar e colar. |
-| **Documentação** | Base de conhecimento por categorias, escrita em Markdown, com controle de quem pode ver cada página. Inclui a lista oficial de Business Units, renderizada ao vivo do banco. |
-| **Administração** | Aprovação de cadastros, papéis e permissões, cadastro de BUs, modelos de nomenclatura, domínios de e-mail autorizados e trilha de auditoria com botão de desfazer. |
+| Módulo               | O que faz                                                                                                                                                                    |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gerador de Nomes** | Monta nomes padronizados para o CRM — listas, tags e o que mais for cadastrado — prontos para copiar e colar.                                                                |
+| **Documentação**     | Base de conhecimento por categorias, escrita em Markdown, com controle de quem pode ver cada página. Inclui a lista oficial de Business Units, renderizada ao vivo do banco. |
+| **Administração**    | Aprovação de cadastros, papéis e permissões, cadastro de BUs, modelos de nomenclatura, domínios de e-mail autorizados e trilha de auditoria com botão de desfazer.           |
 
 ---
 
@@ -32,12 +32,12 @@ arquivo SQLite em `.data/local.db`, na sua própria máquina.
 Abra <http://localhost:3000>. Na tela de login vai aparecer um painel amarelo
 **🧪 Modo de teste local** com quatro botões:
 
-| Botão | O que você vê |
-| --- | --- |
-| **Entrar como Administrador** | Tudo: aprovar cadastros, permissões, BUs, auditoria e desfazer |
-| **Entrar como Líder** | Edita conteúdo e define os parâmetros, sem a área de acessos |
-| **Entrar como Editor** | Cria e edita documentação, personas e o calendário da BU que responde |
-| **Entrar como Membro** | Só consulta: gerador, documentação, personas e calendário |
+| Botão                         | O que você vê                                                         |
+| ----------------------------- | --------------------------------------------------------------------- |
+| **Entrar como Administrador** | Tudo: aprovar cadastros, permissões, BUs, auditoria e desfazer        |
+| **Entrar como Líder**         | Edita conteúdo e define os parâmetros, sem a área de acessos          |
+| **Entrar como Editor**        | Cria e edita documentação, personas e o calendário da BU que responde |
+| **Entrar como Membro**        | Só consulta: gerador, documentação, personas e calendário             |
 
 Assim você compara os níveis de acesso na prática. Enquanto o modo de teste
 estiver ligado, aparece uma faixa amarela no topo de todas as telas, para não
@@ -134,6 +134,7 @@ npm run db:seed
 ```
 
 Isso cadastra:
+
 - as **22 Business Units** da MedCof
 - os **3 domínios de e-mail** autorizados (`grupomedcof.com.br`, `medcof.com.br`, `medcof.tech`)
 - a **matriz de permissões** padrão dos papéis
@@ -152,7 +153,7 @@ Abra <http://localhost:3000> e entre com sua conta Google da MedCof.
 
 > **O primeiro login vira administrador automaticamente.** A primeira pessoa que
 > entrar na plataforma recebe papel de administrador e acesso liberado, sem
-> precisar de aprovação. Todas as seguintes ficam como *aguardando aprovação*
+> precisar de aprovação. Todas as seguintes ficam como _aguardando aprovação_
 > até que um administrador libere na tela **Administração → Usuários**.
 
 ---
@@ -160,24 +161,24 @@ Abra <http://localhost:3000> e entre com sua conta Google da MedCof.
 ## Parte 1.5 — Modelos de nomenclatura
 
 O Gerador de Nomes não sabe apenas nomear listas: ele monta **qualquer formato
-cadastrado** em *Administração → Nomenclaturas*. Dois já vêm prontos:
+cadastrado** em _Administração → Nomenclaturas_. Dois já vêm prontos:
 
-| Modelo | Formato | Exemplo |
-| --- | --- | --- |
+| Modelo                  | Formato                          | Exemplo                                  |
+| ----------------------- | -------------------------------- | ---------------------------------------- |
 | Lista do ActiveCampaign | `bu-tipo_de_lista-nome_da_lista` | `cardiologia-lead-black_friday_novembro` |
-| Tag do ActiveCampaign | `bu-nome_da_tag-mes_ano` | `pediatria-interesse_extensivo-11_2026` |
+| Tag do ActiveCampaign   | `bu-nome_da_tag-mes_ano`         | `pediatria-interesse_extensivo-11_2026`  |
 
 ### Criar um formato novo (sem programação)
 
-1. Vá em **Administração → Nomenclaturas** e clique em *Criar e definir blocos*
+1. Vá em **Administração → Nomenclaturas** e clique em _Criar e definir blocos_
 2. Adicione um bloco de cada vez. Cada bloco pode ser de um destes tipos:
 
-| Tipo de bloco | O que faz |
-| --- | --- |
-| **Business Unit** | Dropdown com as BUs cadastradas, sempre atualizado sozinho |
+| Tipo de bloco             | O que faz                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------- |
+| **Business Unit**         | Dropdown com as BUs cadastradas, sempre atualizado sozinho                            |
 | **Lista de opções fixas** | Dropdown com as opções que você digitar (uma por linha, no formato `valor \| Rótulo`) |
-| **Texto livre** | A pessoa digita; a padronização para `snake_case` é automática |
-| **Mês e ano** | Dois seletores que resultam em `MM_AAAA` |
+| **Texto livre**           | A pessoa digita; a padronização para `snake_case` é automática                        |
+| **Mês e ano**             | Dois seletores que resultam em `MM_AAAA`                                              |
 
 3. Use as setas ↑ ↓ para colocar os blocos na ordem certa
 4. Volte à listagem e clique em **Ativar**
@@ -190,8 +191,8 @@ O modelo passa a aparecer no gerador na mesma hora, para o time todo.
 ### Sobre os nomes gerados
 
 A ferramenta é **auxiliar na padronização**, não um registro do que foi criado.
-Nenhum nome gerado é gravado no banco nem na auditoria. A lista *"Copiados nesta
-sessão"* fica apenas no navegador da pessoa e some quando ela sai da plataforma.
+Nenhum nome gerado é gravado no banco nem na auditoria. A lista _"Copiados nesta
+sessão"_ fica apenas no navegador da pessoa e some quando ela sai da plataforma.
 
 ---
 
@@ -200,25 +201,26 @@ sessão"* fica apenas no navegador da pessoa e some quando ela sai da plataforma
 São quatro camadas independentes. Uma falhar não abre a porta:
 
 1. **Domínio de e-mail** — só e-mails dos domínios cadastrados em
-   *Administração → Domínios de e-mail* conseguem criar cadastro. Qualquer outra
+   _Administração → Domínios de e-mail_ conseguem criar cadastro. Qualquer outra
    conta Google é recusada antes de qualquer dado ser gravado.
-2. **Aprovação manual** — todo cadastro novo nasce *pendente* e não acessa nada
+2. **Aprovação manual** — todo cadastro novo nasce _pendente_ e não acessa nada
    até um administrador aprovar.
 3. **Papel e permissões** — cada papel (Administrador, Líder, Membro) tem
    permissão de ver/editar por módulo, configurável em
-   *Administração → Permissões* sem precisar mexer no código.
+   _Administração → Permissões_ sem precisar mexer no código.
 4. **Revalidação a cada acesso** — a cada página aberta, a plataforma reconfere no
    banco se a pessoa continua ativa e se o domínio dela continua autorizado.
    Por isso, suspender alguém tem efeito imediato: as sessões dele são derrubadas
    na hora, sem esperar expirar.
 
 **Trilha de auditoria.** Toda ação relevante fica registrada em
-*Administração → Auditoria*: quem fez, o quê, quando, e o estado anterior.
+_Administração → Auditoria_: quem fez, o quê, quando, e o estado anterior.
 Ações destrutivas ou sensíveis (suspender usuário, mudar papel, desativar BU ou
 domínio, editar/excluir documentação, alterar permissões) ganham botão
 **Desfazer**, que restaura o estado anterior e registra o próprio desfazer.
 
 **Travas de proteção contra bloqueio total:**
+
 - Um administrador não consegue suspender nem rebaixar a própria conta
 - Um administrador não consegue desativar o domínio do próprio e-mail
 - A permissão do Administrador sobre o módulo de Administração não pode ser desmarcada
@@ -237,7 +239,7 @@ Nada disso é necessário para desenvolver localmente.
 
    **A região do banco e a região da Vercel (`vercel.json`) têm que ser a mesma.**
    O Turso não oferece região no Brasil, e o app é conversador: uma renderização
-   do painel dispara 8 queries *sequenciais*. Com app e banco separados, são 8
+   do painel dispara 8 queries _sequenciais_. Com app e banco separados, são 8
    travessias por carregamento — medimos 1.173ms com o app em São Paulo e o banco
    na Virgínia, e 3.445ms com o banco em Mumbai. Juntos, sobra uma travessia só (a
    do usuário até o servidor) e as queries ficam locais. Por isso o projeto usa
@@ -245,20 +247,23 @@ Nada disso é necessário para desenvolver localmente.
    um, troque o outro.
 
    **Opção A — pelo painel, sem instalar nada.** Entre em
-   <https://app.turso.tech>, crie um database (*Create Database*), escolha a
-   região e depois, na página dele, copie a URL e gere um token em *Generate
-   Token*. É o caminho mais curto.
+   <https://app.turso.tech>, crie um database (_Create Database_), escolha a
+   região e depois, na página dele, copie a URL e gere um token em _Generate
+   Token_. É o caminho mais curto.
 
    **Opção B — pela linha de comando.** A CLI de nuvem do Turso **não vem pelo
    npm** (o pacote `turso` no npm é outra coisa: é o shell SQL local `tursodb`,
    sem os comandos de conta). Use o instalador oficial, que baixa de
    `github.com/tursodatabase/` e instala em `$HOME/.turso` — **sem sudo, sem
    root**:
+
    ```bash
    curl -sSfL https://get.tur.so/install.sh | bash
    ```
+
    Abra um terminal novo (o instalador acrescenta o PATH ao seu `~/.zshrc`) e
    então:
+
    ```bash
    turso auth login
    turso db create central-do-marketing
@@ -269,17 +274,17 @@ Nada disso é necessário para desenvolver localmente.
 2. **Criar uma segunda credencial do Google** para o endereço de produção, com o
    redirect URI `https://SEU-DOMINIO/api/auth/callback/google`.
 
-3. **Cadastrar as variáveis na Vercel**, em *Settings → Environment Variables*
+3. **Cadastrar as variáveis na Vercel**, em _Settings → Environment Variables_
    (nunca no código, nunca num arquivo `.env` comitado):
 
-   | Variável | Valor |
-   | --- | --- |
-   | `TURSO_DATABASE_URL` | a URL `libsql://...` do passo 1 |
-   | `TURSO_AUTH_TOKEN` | o token do passo 1 |
-   | `BETTER_AUTH_SECRET` | um valor novo, gerado com `openssl rand -base64 32` |
-   | `BETTER_AUTH_URL` | `https://SEU-DOMINIO` |
-   | `GOOGLE_CLIENT_ID` | o ID do cliente de produção |
-   | `GOOGLE_CLIENT_SECRET` | a chave secreta de produção |
+   | Variável               | Valor                                               |
+   | ---------------------- | --------------------------------------------------- |
+   | `TURSO_DATABASE_URL`   | a URL `libsql://...` do passo 1                     |
+   | `TURSO_AUTH_TOKEN`     | o token do passo 1                                  |
+   | `BETTER_AUTH_SECRET`   | um valor novo, gerado com `openssl rand -base64 32` |
+   | `BETTER_AUTH_URL`      | `https://SEU-DOMINIO`                               |
+   | `GOOGLE_CLIENT_ID`     | o ID do cliente de produção                         |
+   | `GOOGLE_CLIENT_SECRET` | a chave secreta de produção                         |
 
    Não defina `ALLOW_TEST_LOGIN` — em produção ela não tem efeito nenhum.
 
@@ -287,12 +292,14 @@ Nada disso é necessário para desenvolver localmente.
    não rodam no build da Vercel de propósito: um build com falha no meio deixaria
    o banco num estado indefinido, e todo deploy passaria a depender do banco estar
    acessível. Rode uma vez, da sua máquina:
+
    ```bash
    TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npm run db:migrate
    TURSO_DATABASE_URL="libsql://..." TURSO_AUTH_TOKEN="..." npm run db:seed
    ```
 
 5. **Conferir o build de produção localmente** antes de publicar:
+
    ```bash
    npm run build && npm start
    ```
@@ -304,26 +311,26 @@ Nada disso é necessário para desenvolver localmente.
 > **Atenção aos Preview Deployments.** Eles usam as mesmas variáveis de ambiente
 > do escopo que você marcar na Vercel. Se apontarem para o banco de produção,
 > qualquer teste numa branch escreve em dados reais. Crie um segundo banco no
-> Turso para o escopo *Preview* se for usar previews com o time.
+> Turso para o escopo _Preview_ se for usar previews com o time.
 
 ---
 
 ## Comandos disponíveis
 
-| Comando | Para que serve |
-| --- | --- |
-| `npm run dev` | Sobe a aplicação em <http://localhost:3000> |
-| `npm run setup:local` | Cria as tabelas e carrega os dados iniciais |
-| `npm run db:generate` | Gera uma nova migration depois de mudar o schema |
-| `npm run db:migrate` | Aplica as migrations no banco de `TURSO_DATABASE_URL` |
-| `npm run db:seed` | Recarrega os dados iniciais (seguro rodar de novo) |
-| `npm run db:backup` | Grava o banco inteiro em `backups/` como SQL |
-| `npm run db:restore` | Restaura um backup, substituindo o banco atual |
+| Comando               | Para que serve                                              |
+| --------------------- | ----------------------------------------------------------- |
+| `npm run dev`         | Sobe a aplicação em <http://localhost:3000>                 |
+| `npm run setup:local` | Cria as tabelas e carrega os dados iniciais                 |
+| `npm run db:generate` | Gera uma nova migration depois de mudar o schema            |
+| `npm run db:migrate`  | Aplica as migrations no banco de `TURSO_DATABASE_URL`       |
+| `npm run db:seed`     | Recarrega os dados iniciais (seguro rodar de novo)          |
+| `npm run db:backup`   | Grava o banco inteiro em `backups/` como SQL                |
+| `npm run db:restore`  | Restaura um backup, substituindo o banco atual              |
 | `npm run db:snapshot` | Conta as linhas de cada tabela — para comparar antes/depois |
-| `npm run db:studio` | Abre o Drizzle Studio para inspecionar o banco |
-| `npm run typecheck` | Confere os tipos do TypeScript |
-| `npm run build` | Build de produção |
-| `npm start` | Roda o build de produção localmente |
+| `npm run db:studio`   | Abre o Drizzle Studio para inspecionar o banco              |
+| `npm run typecheck`   | Confere os tipos do TypeScript                              |
+| `npm run build`       | Build de produção                                           |
+| `npm start`           | Roda o build de produção localmente                         |
 
 Os comandos de banco agem sobre o que estiver em `TURSO_DATABASE_URL` — o
 arquivo local, por padrão. Para mirar produção, passe a URL e o token na frente
@@ -389,7 +396,7 @@ drizzle/
 3. Comece a página com `await requirePermission("nome_do_modulo", "view")`
 4. Registre as ações com `writeAuditLog()` (`src/lib/modules/audit/log.ts`)
 5. Adicione o item no menu em `src/app/(app)/layout.tsx`
-6. Cadastre as permissões do módulo por papel em *Administração → Permissões*
+6. Cadastre as permissões do módulo por papel em _Administração → Permissões_
 
 ---
 
@@ -405,7 +412,7 @@ drizzle/
   `ILIKE` na busca. Em desenvolvimento a mesma biblioteca abre um arquivo local,
   o que mantém o projeto rodável sem conta em serviço nenhum.
 - **Nenhum `replace()` profundamente aninhado em SQL.** O parser do libSQL estoura
-  a pilha (*parser stack overflow*) com o encadeamento de 48 chamadas que as
+  a pilha (_parser stack overflow_) com o encadeamento de 48 chamadas que as
   migrations `0002` e `0003` usavam para tirar acento; elas foram reescritas em
   lotes de 6, um statement por lote. Se precisar normalizar texto em SQL de novo,
   quebre em statements.

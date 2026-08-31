@@ -63,7 +63,8 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
   seasonality: {
     label: "Sazonalidade",
     plural: "Sazonalidades",
-    description: "Períodos que mexem com a demanda: Black Friday, Natal, férias.",
+    description:
+      "Períodos que mexem com a demanda: Black Friday, Natal, férias.",
     chip: "bg-violet-100 text-violet-900 ring-violet-200",
     dot: "bg-violet-500",
     lane: "bg-violet-500",

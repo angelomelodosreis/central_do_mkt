@@ -57,7 +57,9 @@ export function scopeRange(
       ? cycle.startsAt
       : civil.startsAt;
   const endsAt =
-    cycle.endsAt.getTime() < civil.endsAt.getTime() ? cycle.endsAt : civil.endsAt;
+    cycle.endsAt.getTime() < civil.endsAt.getTime()
+      ? cycle.endsAt
+      : civil.endsAt;
 
   return {
     startsAt,
@@ -139,7 +141,9 @@ export async function loadCycleGoals(cycleId: string): Promise<CycleGoals> {
 
   const byGoal = new Map<string, GoalTarget[]>();
   for (const row of targets) {
-    if (!Object.prototype.hasOwnProperty.call(GOAL_METRIC_CATALOG, row.metric)) {
+    if (
+      !Object.prototype.hasOwnProperty.call(GOAL_METRIC_CATALOG, row.metric)
+    ) {
       continue;
     }
     const list = byGoal.get(row.goalId) ?? [];

@@ -108,7 +108,9 @@ export function Nav({
                   </span>
                 ) : (
                   <>
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {item.label}
+                    </span>
                     {item.badge ? (
                       <span
                         className={cn(

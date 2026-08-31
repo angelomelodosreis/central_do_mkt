@@ -8,7 +8,11 @@ import {
   unique,
 } from "drizzle-orm/sqlite-core";
 
-import { strategyCycle, strategyGoal, type GoalMetric } from "./strategy.schema";
+import {
+  strategyCycle,
+  strategyGoal,
+  type GoalMetric,
+} from "./strategy.schema";
 
 /**
  * ── DIAGNÓSTICO ────────────────────────────────────────────────────────────
@@ -60,7 +64,8 @@ export const DIAGNOSIS_LENS_QUESTIONS: Record<DiagnosisLens, string> = {
     "O que carrega o ciclo, o que estagnou e onde está a lacuna do portfólio?",
   audience: "Quem atendemos e o que o público sente que ainda não respondemos?",
   seasonality: "O que dita a demanda ao longo do ano e onde estão os vazios?",
-  previous_cycle: "O que prometemos no ciclo anterior e o que de fato aconteceu?",
+  previous_cycle:
+    "O que prometemos no ciclo anterior e o que de fato aconteceu?",
   external:
     "O que muda fora de casa — concorrência, canais — e o que nos limita dentro?",
 };
@@ -227,7 +232,9 @@ export const strategyGoalRevision = sqliteTable(
     /** Por que a meta mudou. Em branco quando foi só ajuste de redação. */
     reason: text("reason"),
     /** O estado anterior completo, para leitura lado a lado. */
-    snapshot: text("snapshot", { mode: "json" }).$type<Record<string, unknown>>(),
+    snapshot: text("snapshot", { mode: "json" }).$type<
+      Record<string, unknown>
+    >(),
     changedBy: text("changed_by"),
     changedAt: integer("changed_at", { mode: "timestamp" }).notNull(),
   },

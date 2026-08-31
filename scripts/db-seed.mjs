@@ -25,12 +25,13 @@ if (!isLocalFile && !authToken) {
   process.exit(1);
 }
 
-const client = createClient(
-  isLocalFile ? { url } : { url, authToken },
-);
+const client = createClient(isLocalFile ? { url } : { url, authToken });
 
 try {
-  const sql = await readFile(new URL("../drizzle/seed.sql", import.meta.url), "utf8");
+  const sql = await readFile(
+    new URL("../drizzle/seed.sql", import.meta.url),
+    "utf8",
+  );
   await client.executeMultiple(sql);
   console.log(`Seed aplicado em ${url}`);
 } catch (error) {

@@ -3,7 +3,10 @@
 import { useActionState } from "react";
 
 import { createCycle } from "../../actions";
-import { INITIAL_STRATEGY_STATE, type StrategyFormState } from "../../form-state";
+import {
+  INITIAL_STRATEGY_STATE,
+  type StrategyFormState,
+} from "../../form-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";

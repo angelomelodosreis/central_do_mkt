@@ -33,7 +33,11 @@ export function TogglePersonaButton({
 
   if (!isConfirming) {
     return (
-      <Button type="button" variant="danger" onClick={() => setIsConfirming(true)}>
+      <Button
+        type="button"
+        variant="danger"
+        onClick={() => setIsConfirming(true)}
+      >
         Desativar persona
       </Button>
     );

@@ -9,7 +9,13 @@ import {
 } from "./round-forms";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  PageHeader,
+} from "@/components/ui/card";
 import { DIAGNOSIS_LENSES } from "@/lib/db/schema";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import {
@@ -22,7 +28,11 @@ import {
   pickDefaultRound,
   roundLabel,
 } from "@/lib/modules/strategy/diagnosis";
-import { formatMetricValue, loadCycleGoals, metricLabel } from "@/lib/modules/strategy/goals";
+import {
+  formatMetricValue,
+  loadCycleGoals,
+  metricLabel,
+} from "@/lib/modules/strategy/goals";
 import {
   getCycleBySlug,
   listCycles,
@@ -61,7 +71,11 @@ export default async function DiagnosisPage({
         <EmptyState
           title="Nenhum ciclo criado ainda"
           description="O diagnóstico é sempre de um ciclo. Comece criando o ciclo no calendário."
-          action={<ButtonLink href={`${base}/calendario`}>Ir para o calendário</ButtonLink>}
+          action={
+            <ButtonLink href={`${base}/calendario`}>
+              Ir para o calendário
+            </ButtonLink>
+          }
         />
       </>
     );
@@ -73,7 +87,7 @@ export default async function DiagnosisPage({
   ]);
 
   const round = rodada
-    ? rounds.find((r) => r.id === rodada) ?? pickDefaultRound(rounds)
+    ? (rounds.find((r) => r.id === rodada) ?? pickDefaultRound(rounds))
     : pickDefaultRound(rounds);
 
   const [evidence, findings, measurements] = await Promise.all([
@@ -152,7 +166,9 @@ export default async function DiagnosisPage({
 
           {rounds.length > 1 ? (
             <nav className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-              <span className="text-xs text-slate-400">Rodadas anteriores:</span>
+              <span className="text-xs text-slate-400">
+                Rodadas anteriores:
+              </span>
               {rounds
                 .filter((r) => r.id !== round?.id)
                 .map((r) => (
@@ -228,8 +244,15 @@ export default async function DiagnosisPage({
               </div>
             ) : null}
 
-            {canEdit && round.isOpen && goals.cycle && goals.cycle.targets.length > 0 ? (
-              <div className={atingimento.length > 0 ? "border-t border-slate-100 pt-4" : ""}>
+            {canEdit &&
+            round.isOpen &&
+            goals.cycle &&
+            goals.cycle.targets.length > 0 ? (
+              <div
+                className={
+                  atingimento.length > 0 ? "border-t border-slate-100 pt-4" : ""
+                }
+              >
                 <MeasurementsForm
                   roundId={round.id}
                   targets={goals.cycle.targets}
@@ -240,8 +263,8 @@ export default async function DiagnosisPage({
 
             {!goals.cycle || goals.cycle.targets.length === 0 ? (
               <p className="text-sm text-slate-400">
-                Defina a meta geral do ciclo com pelo menos um indicador para poder
-                registrar o realizado aqui.
+                Defina a meta geral do ciclo com pelo menos um indicador para
+                poder registrar o realizado aqui.
               </p>
             ) : null}
           </CardBody>
@@ -277,7 +300,10 @@ export default async function DiagnosisPage({
           <CardBody className="px-0 py-0">
             <ul className="divide-y divide-amber-200/60">
               {orfaos.map((achado) => (
-                <li key={achado.id} className="px-5 py-2.5 text-sm text-amber-900">
+                <li
+                  key={achado.id}
+                  className="px-5 py-2.5 text-sm text-amber-900"
+                >
                   {achado.statement}
                 </li>
               ))}

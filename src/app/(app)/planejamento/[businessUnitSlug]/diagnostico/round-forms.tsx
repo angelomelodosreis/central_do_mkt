@@ -112,7 +112,12 @@ export function RoundSummaryForm({
         placeholder="Em duas ou três frases: o que esta rodada mostrou que a anterior não mostrava."
       />
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" variant="secondary" size="sm" disabled={isPending}>
+        <Button
+          type="submit"
+          variant="secondary"
+          size="sm"
+          disabled={isPending}
+        >
           {isPending ? "Salvando…" : "Salvar leitura"}
         </Button>
         <Aviso state={state} />

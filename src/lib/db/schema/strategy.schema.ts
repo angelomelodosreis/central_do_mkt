@@ -31,7 +31,9 @@ export const strategyCycle = sqliteTable(
     startsAt: integer("starts_at", { mode: "timestamp" }).notNull(),
     endsAt: integer("ends_at", { mode: "timestamp" }).notNull(),
     /** O ciclo que abre por padrão para esta BU. */
-    isCurrent: integer("is_current", { mode: "boolean" }).notNull().default(false),
+    isCurrent: integer("is_current", { mode: "boolean" })
+      .notNull()
+      .default(false),
     createdBy: text("created_by"),
     updatedBy: text("updated_by"),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
@@ -210,7 +212,8 @@ export const GOAL_SCOPE_SHORT: Record<GoalScope, string> = {
 };
 
 /** Como o número é escrito na tela. */
-export type GoalMetricUnit = "count" | "currency" | "percent" | "ratio" | "score";
+export type GoalMetricUnit =
+  "count" | "currency" | "percent" | "ratio" | "score";
 
 /**
  * Catálogo de indicadores sugeridos.
@@ -259,7 +262,11 @@ export const GOAL_METRIC_CATALOG = {
   roas: { label: "ROAS", unit: "ratio", group: "sales" },
 
   // ── Base e retenção ──
-  active_students: { label: "Alunos ativos", unit: "count", group: "retention" },
+  active_students: {
+    label: "Alunos ativos",
+    unit: "count",
+    group: "retention",
+  },
   renewal_rate: {
     label: "Taxa de renovação",
     unit: "percent",

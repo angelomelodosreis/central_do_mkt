@@ -72,7 +72,11 @@ export function AttachmentPanel({
         action={
           canEdit && mode === "none" ? (
             <div className="flex gap-1.5">
-              <Button size="sm" variant="secondary" onClick={() => setMode("upload")}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setMode("upload")}
+              >
                 Subir arquivo
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setMode("link")}>
@@ -201,7 +205,11 @@ function AttachmentRow({
           {canEdit ? (
             <form action={deleteAttachment}>
               <input type="hidden" name="attachmentId" value={item.id} />
-              <input type="hidden" name="revalidatePath" value={revalidatePath} />
+              <input
+                type="hidden"
+                name="revalidatePath"
+                value={revalidatePath}
+              />
               <Button type="submit" size="sm" variant="ghost">
                 Remover
               </Button>
@@ -369,8 +377,8 @@ function LinkForm({
       </div>
 
       <p className="text-xs text-slate-500">
-        O arquivo continua no Drive: nada é copiado. Quem abrir precisa ter acesso
-        a ele lá — confira o compartilhamento antes de vincular.
+        O arquivo continua no Drive: nada é copiado. Quem abrir precisa ter
+        acesso a ele lá — confira o compartilhamento antes de vincular.
       </p>
 
       <div className="flex gap-2">

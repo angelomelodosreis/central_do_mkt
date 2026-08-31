@@ -71,7 +71,9 @@ export default async function PersonaDetailPage({
             {openPains.length > 0 ? (
               <Badge tone="warning">
                 {openPains.length}{" "}
-                {openPains.length === 1 ? "dor sem solução" : "dores sem solução"}
+                {openPains.length === 1
+                  ? "dor sem solução"
+                  : "dores sem solução"}
               </Badge>
             ) : null}
             <span className="text-xs text-slate-400">
@@ -81,10 +83,7 @@ export default async function PersonaDetailPage({
         </div>
 
         {canEdit ? (
-          <ButtonLink
-            href={`${base}/${found.slug}/editar`}
-            variant="secondary"
-          >
+          <ButtonLink href={`${base}/${found.slug}/editar`} variant="secondary">
             Editar
           </ButtonLink>
         ) : null}

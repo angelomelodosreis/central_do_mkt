@@ -7,7 +7,10 @@ import {
   duplicateTimelineItem,
   saveTimelineItem,
 } from "../../actions";
-import { INITIAL_STRATEGY_STATE, type StrategyFormState } from "../../form-state";
+import {
+  INITIAL_STRATEGY_STATE,
+  type StrategyFormState,
+} from "../../form-state";
 import type { CalendarItem, ClientProduct } from "./calendar-types";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -88,7 +91,9 @@ export function ItemPanel({
             <p className="font-display text-base font-semibold text-slate-900">
               {isNew ? "Novo item" : item.title}
             </p>
-            <p className="mt-0.5 text-xs text-slate-500">{config.description}</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {config.description}
+            </p>
           </div>
           <button
             type="button"
@@ -116,7 +121,9 @@ export function ItemPanel({
 
           {/* A categoria é a primeira escolha: é ela que define os campos. */}
           <div>
-            <p className="mb-1.5 text-sm font-medium text-slate-800">Categoria</p>
+            <p className="mb-1.5 text-sm font-medium text-slate-800">
+              Categoria
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {TIMELINE_KINDS.map((option) => {
                 const optionConfig = kindConfig(option);

@@ -2,11 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import {
-  createProduct,
-  toggleProduct,
-  updateProduct,
-} from "../../actions";
+import { createProduct, toggleProduct, updateProduct } from "../../actions";
 import {
   INITIAL_STRATEGY_STATE,
   type StrategyFormState,
@@ -184,7 +180,11 @@ function ProductItem({
 
       {canEdit ? (
         <div className="flex gap-2">
-          <Button size="sm" variant="secondary" onClick={() => setIsEditing(true)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setIsEditing(true)}
+          >
             Editar
           </Button>
           <form action={toggleProduct}>
@@ -264,7 +264,10 @@ function ProductForm({
             defaultValue={product?.cadence ?? "one_time"}
             required
             options={(
-              Object.entries(PRODUCT_CADENCE_LABELS) as [ProductCadence, string][]
+              Object.entries(PRODUCT_CADENCE_LABELS) as [
+                ProductCadence,
+                string,
+              ][]
             ).map(([value, label]) => ({
               value,
               label,

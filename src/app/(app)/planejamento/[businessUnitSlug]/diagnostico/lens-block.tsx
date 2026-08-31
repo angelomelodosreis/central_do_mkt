@@ -76,7 +76,9 @@ export function LensBlock({
                 <li key={index} className="text-sm">
                   <span
                     className={cn(
-                      item.alert ? "font-medium text-amber-800" : "text-slate-700",
+                      item.alert
+                        ? "font-medium text-amber-800"
+                        : "text-slate-700",
                     )}
                   >
                     {item.alert ? "⚠ " : ""}
@@ -268,7 +270,10 @@ function FindingForm({
         />
       </Field>
 
-      <Field label="Evidência" hint="De onde isso saiu: o dado, o relatório, a conversa.">
+      <Field
+        label="Evidência"
+        hint="De onde isso saiu: o dado, o relatório, a conversa."
+      >
         <Input
           name="evidence"
           defaultValue={finding?.evidence ?? ""}
@@ -278,7 +283,11 @@ function FindingForm({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" size="sm" disabled={isPending}>
-          {isPending ? "Salvando…" : finding ? "Salvar achado" : "Registrar achado"}
+          {isPending
+            ? "Salvando…"
+            : finding
+              ? "Salvar achado"
+              : "Registrar achado"}
         </Button>
         <Button
           type="button"

@@ -69,7 +69,9 @@ function parseList(raw: string): string[] {
  * branco descarta a linha inteira; uma solução em branco é gravada como `null`,
  * que é o que marca a dor como ainda sem resposta.
  */
-function parsePains(formData: FormData): { pain: string; solution: string | null }[] {
+function parsePains(
+  formData: FormData,
+): { pain: string; solution: string | null }[] {
   const pains = formData.getAll("pain").map((value) => String(value).trim());
   const solutions = formData
     .getAll("solution")
@@ -150,7 +152,11 @@ export async function createPersona(
 
   const db = await getDb();
   const unit = await db
-    .select({ id: businessUnit.id, label: businessUnit.label, slug: businessUnit.slug })
+    .select({
+      id: businessUnit.id,
+      label: businessUnit.label,
+      slug: businessUnit.slug,
+    })
     .from(businessUnit)
     .where(eq(businessUnit.id, input.businessUnitId))
     .get();

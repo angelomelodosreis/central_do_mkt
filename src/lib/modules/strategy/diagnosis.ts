@@ -118,7 +118,9 @@ export async function listFindings(roundId: string): Promise<Finding[]> {
   }));
 }
 
-export function groupByLens(findings: Finding[]): Record<DiagnosisLens, Finding[]> {
+export function groupByLens(
+  findings: Finding[],
+): Record<DiagnosisLens, Finding[]> {
   const grupos = Object.fromEntries(
     DIAGNOSIS_LENSES.map((lens) => [lens, [] as Finding[]]),
   ) as Record<DiagnosisLens, Finding[]>;
@@ -137,7 +139,9 @@ export type Measurement = {
   note: string | null;
 };
 
-export async function listMeasurements(roundId: string): Promise<Measurement[]> {
+export async function listMeasurements(
+  roundId: string,
+): Promise<Measurement[]> {
   const db = await getDb();
   const rows = await db
     .select()
@@ -345,7 +349,11 @@ export async function buildEvidence(
     }
   }
   const mesesVazios: string[] = [];
-  const cursor = new Date(cycle.startsAt.getFullYear(), cycle.startsAt.getMonth(), 1);
+  const cursor = new Date(
+    cycle.startsAt.getFullYear(),
+    cycle.startsAt.getMonth(),
+    1,
+  );
   while (cursor.getTime() <= cycle.endsAt.getTime()) {
     if (!mesesOcupados.has(cursor.getFullYear() * 12 + cursor.getMonth())) {
       mesesVazios.push(monthShort(cursor.getMonth()));
@@ -416,7 +424,10 @@ export async function buildEvidence(
     },
   ];
   if (!equipe.some((p) => p.isLead)) {
-    external.push({ label: "Nenhum responsável definido para a BU", alert: true });
+    external.push({
+      label: "Nenhum responsável definido para a BU",
+      alert: true,
+    });
   }
   if (!goals.cycle) {
     external.push({
@@ -448,7 +459,10 @@ export function findOrphans(
   const goalsWithoutFinding = Object.values(goals)
     .filter((goal): goal is NonNullable<typeof goal> => goal !== null)
     .filter((goal) => !comAchado.has(goal.id))
-    .map((goal) => ({ id: goal.id, label: scopeLabels[goal.scope] ?? goal.scope }));
+    .map((goal) => ({
+      id: goal.id,
+      label: scopeLabels[goal.scope] ?? goal.scope,
+    }));
 
   return { findingsWithoutGoal, goalsWithoutFinding };
 }

@@ -135,7 +135,13 @@ export function GoalSection({
 
 /* ────────────────────────────── leitura ────────────────────────────── */
 
-function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Bloco({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -203,7 +209,9 @@ function GoalReadView({
                     {frente.title}
                   </span>
                   {frente.detail ? (
-                    <span className="block text-slate-600">{frente.detail}</span>
+                    <span className="block text-slate-600">
+                      {frente.detail}
+                    </span>
                   ) : null}
                 </span>
               </li>
@@ -239,9 +247,14 @@ function GoalReadView({
         ) : (
           <ul className="space-y-1.5">
             {vinculados.map((achado) => (
-              <li key={achado.id} className="flex flex-wrap items-baseline gap-2">
+              <li
+                key={achado.id}
+                className="flex flex-wrap items-baseline gap-2"
+              >
                 <Badge>{FINDING_KIND_LABELS[achado.kind]}</Badge>
-                <span className="text-sm text-slate-700">{achado.statement}</span>
+                <span className="text-sm text-slate-700">
+                  {achado.statement}
+                </span>
               </li>
             ))}
           </ul>
@@ -320,7 +333,12 @@ function GoalForm({
         </p>
       ) : null}
 
-      <Field label="Objetivo" hint={AJUDA.objective} required htmlFor={`obj-${scope}`}>
+      <Field
+        label="Objetivo"
+        hint={AJUDA.objective}
+        required
+        htmlFor={`obj-${scope}`}
+      >
         <Textarea
           id={`obj-${scope}`}
           name="objective"
@@ -342,7 +360,9 @@ function GoalForm({
       </Field>
 
       <div>
-        <p className="mb-1.5 block text-sm font-medium text-slate-800">Frentes</p>
+        <p className="mb-1.5 block text-sm font-medium text-slate-800">
+          Frentes
+        </p>
         <p className="mb-2.5 text-xs text-slate-500">{AJUDA.fronts}</p>
         <div className="space-y-2.5">
           {Array.from({ length: LINHAS_DE_FRENTE }, (_, index) => {
@@ -462,7 +482,9 @@ function GoalForm({
                               inputMode="decimal"
                               required
                               defaultValue={
-                                salvo ? String(salvo.target).replace(".", ",") : ""
+                                salvo
+                                  ? String(salvo.target).replace(".", ",")
+                                  : ""
                               }
                               placeholder="Alvo"
                               aria-label={`Alvo de ${spec.label}`}
@@ -511,7 +533,9 @@ function GoalForm({
                     type="checkbox"
                     name="achado"
                     value={achado.id}
-                    defaultChecked={goal ? achado.goalIds.includes(goal.id) : false}
+                    defaultChecked={
+                      goal ? achado.goalIds.includes(goal.id) : false
+                    }
                     className="mt-0.5 size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-200"
                   />
                   <span className="min-w-0">
@@ -548,7 +572,12 @@ function GoalForm({
         <Button type="submit" disabled={isPending}>
           {isPending ? "Salvando…" : "Salvar meta"}
         </Button>
-        <Button type="button" variant="ghost" onClick={onDone} disabled={isPending}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onDone}
+          disabled={isPending}
+        >
           Cancelar
         </Button>
         {state.status === "success" && state.message ? (

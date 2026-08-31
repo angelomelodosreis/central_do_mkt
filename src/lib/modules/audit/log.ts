@@ -1,7 +1,11 @@
 import { desc, eq, like, or } from "drizzle-orm";
 
 import { getDb } from "@/lib/db/client";
-import { auditLog, type AuditAction, type AuditEntityType } from "@/lib/db/schema";
+import {
+  auditLog,
+  type AuditAction,
+  type AuditEntityType,
+} from "@/lib/db/schema";
 import { newId } from "@/lib/utils/id";
 
 /**

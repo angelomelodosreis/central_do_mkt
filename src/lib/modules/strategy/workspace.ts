@@ -36,7 +36,10 @@ export async function getWorkspaceCounts(
       .select({ total: count() })
       .from(persona)
       .where(
-        and(eq(persona.businessUnitId, businessUnitId), eq(persona.isActive, true)),
+        and(
+          eq(persona.businessUnitId, businessUnitId),
+          eq(persona.isActive, true),
+        ),
       ),
     db
       .select({ total: count() })
@@ -55,7 +58,10 @@ export async function getWorkspaceCounts(
           eq(documentationPage.businessUnitId, businessUnitId),
           // A visibilidade por papel continua valendo dentro da BU: trabalhar
           // na BU não dá acesso a página marcada como restrita a líderes.
-          inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+          inArray(
+            documentationPage.visibility,
+            visibilitiesFor(currentUser.role),
+          ),
         ),
       ),
     db

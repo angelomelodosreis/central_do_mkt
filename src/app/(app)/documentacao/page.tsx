@@ -3,7 +3,13 @@ import Link from "next/link";
 
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  PageHeader,
+} from "@/components/ui/card";
 import { SearchBox } from "./search-box";
 import { can, requirePermission } from "@/lib/auth/session";
 import { DOC_VISIBILITY_LABELS, isReferencePage } from "@/lib/db/schema";
@@ -46,7 +52,10 @@ export default async function DocumentationIndexPage({
         action={
           canEdit ? (
             <div className="flex flex-wrap gap-2">
-              <ButtonLink href="/documentacao/nova-categoria" variant="secondary">
+              <ButtonLink
+                href="/documentacao/nova-categoria"
+                variant="secondary"
+              >
                 Nova categoria
               </ButtonLink>
               <ButtonLink href="/documentacao/nova">Nova página</ButtonLink>
@@ -197,7 +206,8 @@ function SearchResults({
                     {/* Acerto interno de BU: sem esta marca, a pessoa não teria
                         como saber que o resultado não está na biblioteca geral e
                         que o restante do time não o encontra. */}
-                    {page.scope === "business_unit" && page.businessUnitLabel ? (
+                    {page.scope === "business_unit" &&
+                    page.businessUnitLabel ? (
                       <Badge tone="brand">
                         Interno · {page.businessUnitLabel}
                       </Badge>

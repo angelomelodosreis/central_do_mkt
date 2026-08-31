@@ -76,14 +76,16 @@ const LOCAL_ROOT = path.join(process.cwd(), ".data", "uploads");
  * nome sobrescreveriam um ao outro.
  */
 function buildKey(folder: string, filename: string): string {
-  const ext = path.extname(filename).slice(0, 12).replace(/[^\w.]/g, "");
+  const ext = path
+    .extname(filename)
+    .slice(0, 12)
+    .replace(/[^\w.]/g, "");
   const safeFolder = folder.replace(/[^\w-]/g, "").slice(0, 40) || "geral";
   return `${safeFolder}/${randomUUID()}${ext}`;
 }
 
 export type StoreResult =
-  | { ok: true; file: StoredFile }
-  | { ok: false; message: string };
+  { ok: true; file: StoredFile } | { ok: false; message: string };
 
 /** Grava o arquivo no provedor ativo, depois de validar tipo e tamanho. */
 export async function storeUpload(
@@ -160,7 +162,9 @@ export async function storeUpload(
  * "vem do banco" não é garantia suficiente para concatenar em caminho de
  * arquivo.
  */
-export async function readLocalFile(storageKey: string): Promise<Buffer | null> {
+export async function readLocalFile(
+  storageKey: string,
+): Promise<Buffer | null> {
   const resolved = path.resolve(LOCAL_ROOT, storageKey);
   if (!resolved.startsWith(LOCAL_ROOT + path.sep)) return null;
 

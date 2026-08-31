@@ -40,9 +40,7 @@ export default async function BusinessUnitDocsPage({
         description={`Testes, pesquisas de mercado e o que mais ${unit.label} documenta. Cada documento pode ficar só aqui ou também na biblioteca geral do time.`}
         action={
           canEdit ? (
-            <ButtonLink
-              href={`/planejamento/${unit.slug}/documentos/nova`}
-            >
+            <ButtonLink href={`/planejamento/${unit.slug}/documentos/nova`}>
               Novo documento
             </ButtonLink>
           ) : null
@@ -96,7 +94,10 @@ function DocGroup({
 
   return (
     <Card>
-      <CardHeader title={`${title} (${docs.length})`} description={description} />
+      <CardHeader
+        title={`${title} (${docs.length})`}
+        description={description}
+      />
       <CardBody className="px-0 py-0">
         <ul className="divide-y divide-slate-100">
           {docs.map((doc) => (

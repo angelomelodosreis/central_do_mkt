@@ -113,7 +113,10 @@ async function painCountsFor(
 
   const db = await getDb();
   const pains = await db
-    .select({ personaId: personaPain.personaId, solution: personaPain.solution })
+    .select({
+      personaId: personaPain.personaId,
+      solution: personaPain.solution,
+    })
     .from(personaPain)
     .where(inArray(personaPain.personaId, personaIds));
 
@@ -148,7 +151,10 @@ export async function getPersonaBySlug(
     .from(persona)
     .innerJoin(businessUnit, eq(persona.businessUnitId, businessUnit.id))
     .where(
-      and(eq(businessUnit.slug, businessUnitSlug), eq(persona.slug, personaSlug)),
+      and(
+        eq(businessUnit.slug, businessUnitSlug),
+        eq(persona.slug, personaSlug),
+      ),
     )
     .get();
 

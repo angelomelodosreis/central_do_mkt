@@ -42,9 +42,10 @@ export function TestLoginPanel() {
       </div>
 
       <p className="mt-4 text-xs text-amber-800">
-        Para desligar, apague a linha <code className="font-mono">ALLOW_TEST_LOGIN</code>{" "}
-        do arquivo <code className="font-mono">.env.local</code>. Este painel
-        nunca aparece na versão publicada.
+        Para desligar, apague a linha{" "}
+        <code className="font-mono">ALLOW_TEST_LOGIN</code> do arquivo{" "}
+        <code className="font-mono">.env.local</code>. Este painel nunca aparece
+        na versão publicada.
       </p>
     </div>
   );

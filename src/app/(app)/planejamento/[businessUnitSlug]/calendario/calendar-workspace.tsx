@@ -3,11 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import {
-  hydrate,
-  type ClientItem,
-  type ClientProduct,
-} from "./calendar-types";
+import { hydrate, type ClientItem, type ClientProduct } from "./calendar-types";
 import { ItemPanel } from "./item-panel";
 import { LaneView } from "./lane-view";
 import { MonthView } from "./month-view";
@@ -50,7 +46,13 @@ export function CalendarWorkspace({
 }: {
   unit: { slug: string };
   cycles: { slug: string; name: string }[];
-  cycle: { id: string; slug: string; name: string; startsAt: string; endsAt: string };
+  cycle: {
+    id: string;
+    slug: string;
+    name: string;
+    startsAt: string;
+    endsAt: string;
+  };
   zoom: Zoom;
   anchorIso: string;
   canEdit: boolean;
@@ -97,7 +99,8 @@ export function CalendarWorkspace({
   function shift(direction: -1 | 1) {
     if (zoom === "semana") return push({ em: addDays(anchor, 7 * direction) });
     if (zoom === "mes") return push({ em: addMonths(anchor, direction) });
-    if (zoom === "trimestre") return push({ em: addMonths(anchor, 3 * direction) });
+    if (zoom === "trimestre")
+      return push({ em: addMonths(anchor, 3 * direction) });
     return push({ em: addMonths(anchor, 12 * direction) });
   }
 

@@ -85,10 +85,15 @@ export function WeekView({
                           {signal ? (
                             <span
                               aria-hidden
-                              className={cn("size-1.5 shrink-0 rounded-full", signal.dot)}
+                              className={cn(
+                                "size-1.5 shrink-0 rounded-full",
+                                signal.dot,
+                              )}
                             />
                           ) : null}
-                          <span className="truncate font-medium">{item.title}</span>
+                          <span className="truncate font-medium">
+                            {item.title}
+                          </span>
                         </span>
                         {item.owner ? (
                           <span className="mt-0.5 block truncate opacity-70">

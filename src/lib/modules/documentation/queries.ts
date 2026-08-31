@@ -89,7 +89,10 @@ export async function listCategoriesWithPages(
   const categories = await db
     .select()
     .from(documentationCategory)
-    .orderBy(asc(documentationCategory.sortOrder), asc(documentationCategory.name));
+    .orderBy(
+      asc(documentationCategory.sortOrder),
+      asc(documentationCategory.name),
+    );
 
   if (categories.length === 0) return [];
 
@@ -107,7 +110,10 @@ export async function listCategoriesWithPages(
     .from(documentationPage)
     .where(
       and(
-        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+        inArray(
+          documentationPage.visibility,
+          visibilitiesFor(currentUser.role),
+        ),
         // A árvore da biblioteca mostra só o que foi publicado para todos. O
         // material interno de uma BU aparece dentro da BU — e na busca, para
         // quem tem acesso a ela.
@@ -138,7 +144,10 @@ export async function listCategories(): Promise<DocCategory[]> {
   return db
     .select()
     .from(documentationCategory)
-    .orderBy(asc(documentationCategory.sortOrder), asc(documentationCategory.name));
+    .orderBy(
+      asc(documentationCategory.sortOrder),
+      asc(documentationCategory.name),
+    );
 }
 
 /**
@@ -429,7 +438,10 @@ export async function listBusinessUnitDocs(
         eq(documentationPage.businessUnitId, businessUnitId),
         // Trabalhar na BU não supera a visibilidade da página: material
         // marcado como restrito a líderes segue restrito dentro da BU.
-        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+        inArray(
+          documentationPage.visibility,
+          visibilitiesFor(currentUser.role),
+        ),
       ),
     )
     .orderBy(desc(documentationPage.updatedAt));

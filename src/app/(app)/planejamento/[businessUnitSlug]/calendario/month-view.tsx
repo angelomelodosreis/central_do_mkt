@@ -186,8 +186,12 @@ export function MonthView({
                         className={cn(
                           "group flex h-[18px] cursor-pointer items-center gap-1 px-1.5 text-[11px] font-medium ring-1 ring-inset transition-shadow hover:shadow-sm",
                           config.chip,
-                          segment.continuesBefore ? "rounded-l-none" : "rounded-l-md",
-                          segment.continuesAfter ? "rounded-r-none" : "rounded-r-md",
+                          segment.continuesBefore
+                            ? "rounded-l-none"
+                            : "rounded-l-md",
+                          segment.continuesAfter
+                            ? "rounded-r-none"
+                            : "rounded-r-md",
                           dragId === segment.item.id && "opacity-40",
                         )}
                       >
@@ -195,7 +199,10 @@ export function MonthView({
                           <span
                             aria-hidden
                             title={signal.label}
-                            className={cn("size-1.5 shrink-0 rounded-full", signal.dot)}
+                            className={cn(
+                              "size-1.5 shrink-0 rounded-full",
+                              signal.dot,
+                            )}
                           />
                         ) : null}
                         <span className="truncate">{segment.item.title}</span>

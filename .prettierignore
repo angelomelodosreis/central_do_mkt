@@ -1,0 +1,5 @@
+# Gerado por ferramenta — reformatar só criaria ruído no diff.
+package-lock.json
+drizzle/migrations/meta/
+.next/
+backups/

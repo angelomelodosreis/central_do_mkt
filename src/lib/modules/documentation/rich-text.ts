@@ -94,7 +94,10 @@ export function richDocToPlainText(doc: RichDoc | null): string {
   };
 
   walk(doc.content);
-  return parts.join("").replace(/\n{2,}/g, "\n").trim();
+  return parts
+    .join("")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
 }
 
 /**
@@ -105,10 +108,7 @@ export function richDocToPlainText(doc: RichDoc | null): string {
  * porque só ignora maiúsculas/minúsculas em caracteres ASCII.
  */
 export function normalizeForSearch(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 /**

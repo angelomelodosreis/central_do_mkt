@@ -20,9 +20,7 @@ import {
   type GoalMetric,
 } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
-import {
-  canSeeBusinessUnit,
-} from "@/lib/modules/access/scope";
+import { canSeeBusinessUnit } from "@/lib/modules/access/scope";
 import { fromDateInput, startOfDay } from "@/lib/modules/strategy/dates";
 import { newId } from "@/lib/utils/id";
 
@@ -72,8 +70,7 @@ async function requireEditor(businessUnitId: string) {
 
   if (!unit) return { erro: "Essa Business Unit não existe mais." } as const;
 
-  const noEscopo =
-    canSeeBusinessUnit(currentUser.scope, unit.id);
+  const noEscopo = canSeeBusinessUnit(currentUser.scope, unit.id);
 
   if (!noEscopo) {
     return {
@@ -296,7 +293,8 @@ export async function saveFinding(
   const statement = field(formData, "statement");
 
   if (!isLens(lens)) return { status: "error", message: "Lente inválida." };
-  if (!isKind(kind)) return { status: "error", message: "Classifique o achado." };
+  if (!isKind(kind))
+    return { status: "error", message: "Classifique o achado." };
   if (!statement) {
     return { status: "error", message: "Escreva a frase do achado." };
   }
@@ -405,7 +403,8 @@ export async function saveMeasurements(
   const gate = await gateByRound(roundId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
 
-  const medidas: { metric: GoalMetric; actual: number; note: string | null }[] = [];
+  const medidas: { metric: GoalMetric; actual: number; note: string | null }[] =
+    [];
 
   for (const [chave, valor] of formData.entries()) {
     const match = /^realizado_([a-z_]+)$/.exec(chave);

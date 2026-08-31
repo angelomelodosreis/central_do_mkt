@@ -211,9 +211,9 @@ export function DocPageForm({
                   Também na biblioteca geral
                 </span>
                 <span className="mt-0.5 block text-xs text-slate-500">
-                  Para material que interessa ao time todo — pesquisa de mercado,
-                  aprendizado de teste. O documento continua listado dentro de{" "}
-                  {businessUnit.label}.
+                  Para material que interessa ao time todo — pesquisa de
+                  mercado, aprendizado de teste. O documento continua listado
+                  dentro de {businessUnit.label}.
                 </span>
               </span>
             </label>
@@ -237,8 +237,8 @@ export function DocPageForm({
 
       {isSystemPage ? (
         <div className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">
-          O conteúdo desta página é gerado automaticamente pelo sistema (dados ao
-          vivo do banco), por isso não há campo de texto. Você pode alterar
+          O conteúdo desta página é gerado automaticamente pelo sistema (dados
+          ao vivo do banco), por isso não há campo de texto. Você pode alterar
           título, categoria, resumo e visibilidade.
         </div>
       ) : (

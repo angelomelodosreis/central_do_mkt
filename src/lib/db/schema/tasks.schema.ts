@@ -1,9 +1,4 @@
-import {
-  sqliteTable,
-  text,
-  integer,
-  index,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 
 import { businessUnit } from "./business-units.schema";
 import { team } from "./org.schema";
@@ -63,7 +58,10 @@ export const task = sqliteTable(
     description: text("description"),
 
     status: text("status").notNull().default("todo").$type<TaskStatus>(),
-    priority: text("priority").notNull().default("normal").$type<TaskPriority>(),
+    priority: text("priority")
+      .notNull()
+      .default("normal")
+      .$type<TaskPriority>(),
     dueDate: integer("due_date", { mode: "timestamp" }),
 
     /** Dono atual. `null` quando a tarefa está endereçada ao time. */

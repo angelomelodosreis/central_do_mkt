@@ -1,0 +1,49 @@
+# Confere o código a cada envio, antes de a Vercel publicar.
+#
+# Existe porque a única rede de segurança até agora era o deploy falhar — e um
+# deploy que falha já é tarde: o commit está na `main`, e quem for empurrar em
+# cima dele parte de uma base quebrada.
+#
+# Não roda migration nem toca no banco: isto confere CÓDIGO. O banco tem o seu
+# próprio caminho, manual e com backup antes.
+name: Verificação
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Um envio novo cancela a verificação do anterior: o que importa é o estado
+# atual do ramo, não a fila de commits intermediários.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` e não `npm install`: instala exatamente o que está no
+      # package-lock, então a verificação testa as mesmas versões que a Vercel
+      # vai publicar.
+      - run: npm ci
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Formatação
+        run: npx prettier --check .
+
+      - name: Build
+        run: npm run build
+        env:
+          # O build não acessa o banco, mas o cliente é montado na importação e
+          # exige a variável. Um arquivo local vazio serve — nada é lido dele.
+          TURSO_DATABASE_URL: "file:./.data/ci.db"

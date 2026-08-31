@@ -111,7 +111,7 @@ export default async function EditDocumentationPage({
               content: isLegacyMarkdown ? "" : (page.content ?? ""),
               contentHtml,
               visibility: page.visibility,
-          scope: page.scope,
+              scope: page.scope,
               pageType: page.pageType,
             }}
           />

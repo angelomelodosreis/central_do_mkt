@@ -68,7 +68,8 @@ export function LaneView({
   while (cursor.getTime() <= to.getTime()) {
     const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
     const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0);
-    const visibleStart = monthStart.getTime() < from.getTime() ? from : monthStart;
+    const visibleStart =
+      monthStart.getTime() < from.getTime() ? from : monthStart;
     const visibleEnd = monthEnd.getTime() > to.getTime() ? to : monthEnd;
     ticks.push({
       label: monthShort(cursor.getMonth()),
@@ -194,9 +195,13 @@ export function LaneView({
                       aria-label={segment.item.title}
                       className={cn(
                         "absolute flex items-center overflow-hidden ring-1 ring-inset transition-shadow hover:shadow-sm",
-                        cabeTexto ? "px-2 text-[11px] font-medium" : "justify-center",
+                        cabeTexto
+                          ? "px-2 text-[11px] font-medium"
+                          : "justify-center",
                         config.chip,
-                        segment.clippedStart ? "rounded-l-none" : "rounded-l-md",
+                        segment.clippedStart
+                          ? "rounded-l-none"
+                          : "rounded-l-md",
                         segment.clippedEnd ? "rounded-r-none" : "rounded-r-md",
                       )}
                       style={{

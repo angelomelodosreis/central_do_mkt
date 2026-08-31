@@ -133,7 +133,10 @@ export default async function DocumentationPageView({
       <Card>
         <CardBody className="sm:px-6 sm:py-5">
           {isReferencePage(page.pageType) ? (
-            <ReferencePageBody pageType={page.pageType} canEdit={podeAdministrarBases} />
+            <ReferencePageBody
+              pageType={page.pageType}
+              canEdit={podeAdministrarBases}
+            />
           ) : !hasBody ? (
             <p className="text-sm text-slate-500">
               Esta página ainda não tem conteúdo.

@@ -18,7 +18,9 @@ export type BusinessUnitOption = {
 };
 
 /** BUs ativas, para o seletor do topo do módulo. */
-export async function listStrategyBusinessUnits(): Promise<BusinessUnitOption[]> {
+export async function listStrategyBusinessUnits(): Promise<
+  BusinessUnitOption[]
+> {
   const db = await getDb();
   return db
     .select({

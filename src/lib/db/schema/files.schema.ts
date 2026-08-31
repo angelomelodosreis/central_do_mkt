@@ -59,9 +59,7 @@ export const attachment = sqliteTable(
     createdBy: text("created_by"),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   },
-  (table) => [
-    index("attachment_owner_idx").on(table.ownerType, table.ownerId),
-  ],
+  (table) => [index("attachment_owner_idx").on(table.ownerType, table.ownerId)],
 );
 
 export type Attachment = typeof attachment.$inferSelect;

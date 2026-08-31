@@ -31,9 +31,7 @@ import {
 } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
 import { toKebabCase } from "@/lib/modules/documentation/slug";
-import {
-  canSeeBusinessUnit,
-} from "@/lib/modules/access/scope";
+import { canSeeBusinessUnit } from "@/lib/modules/access/scope";
 import {
   endOfDay,
   fromDateInput,
@@ -75,8 +73,7 @@ async function requireStrategyEditor(businessUnitId: string) {
 
   if (!unit) return { erro: "Essa Business Unit não existe mais." } as const;
 
-  const noEscopo =
-    canSeeBusinessUnit(currentUser.scope, unit.id);
+  const noEscopo = canSeeBusinessUnit(currentUser.scope, unit.id);
 
   if (!noEscopo) {
     return {
@@ -152,7 +149,10 @@ export async function saveTimelineItem(
         .get();
 
   if (!target) {
-    return { status: "error", message: "Ciclo de planejamento não encontrado." };
+    return {
+      status: "error",
+      message: "Ciclo de planejamento não encontrado.",
+    };
   }
 
   const gate = await requireStrategyEditor(target.id);
@@ -162,7 +162,9 @@ export async function saveTimelineItem(
   const owner = field(formData, "owner") || null;
   const summary = field(formData, "summary") || null;
   const statusValue = field(formData, "status");
-  const status: TimelineStatus = isStatus(statusValue) ? statusValue : "planned";
+  const status: TimelineStatus = isStatus(statusValue)
+    ? statusValue
+    : "planned";
   const details = readDetails(formData, kindValue);
   const now = new Date();
 
@@ -493,7 +495,10 @@ export async function createProduct(
 
   if (!name) return { status: "error", message: "Informe o nome do produto." };
   if (!isCadence(cadenceValue)) {
-    return { status: "error", message: "Escolha se o produto é pontual ou contínuo." };
+    return {
+      status: "error",
+      message: "Escolha se o produto é pontual ou contínuo.",
+    };
   }
 
   const gate = await requireStrategyEditor(businessUnitId);
@@ -551,10 +556,14 @@ export async function updateProduct(
   const cadenceValue = field(formData, "cadence");
   const family = field(formData, "family") || null;
 
-  if (!productId) return { status: "error", message: "Produto não identificado." };
+  if (!productId)
+    return { status: "error", message: "Produto não identificado." };
   if (!name) return { status: "error", message: "Informe o nome do produto." };
   if (!isCadence(cadenceValue)) {
-    return { status: "error", message: "Escolha se o produto é pontual ou contínuo." };
+    return {
+      status: "error",
+      message: "Escolha se o produto é pontual ou contínuo.",
+    };
   }
 
   const db = await getDb();
@@ -564,7 +573,8 @@ export async function updateProduct(
     .where(eq(strategyProduct.id, productId))
     .get();
 
-  if (!before) return { status: "error", message: "Esse produto não existe mais." };
+  if (!before)
+    return { status: "error", message: "Esse produto não existe mais." };
 
   // A BU vem do registro, e não do formulário: senão um POST adulterado moveria
   // o produto para uma BU que a pessoa nem abre.
@@ -716,7 +726,8 @@ export async function saveGoal(
     .where(eq(strategyCycle.id, cycleId))
     .get();
 
-  if (!cycle) return { status: "error", message: "Esse ciclo não existe mais." };
+  if (!cycle)
+    return { status: "error", message: "Esse ciclo não existe mais." };
 
   const gate = await requireStrategyEditor(cycle.businessUnitId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
@@ -736,7 +747,8 @@ export async function saveGoal(
   // Só entra o que foi marcado E tem número: indicador marcado sem valor é
   // seleção pela metade, e gravá-lo com zero inventaria uma meta de zero.
   const marcados = formData.getAll("indicador").map(String);
-  const alvos: { metric: GoalMetric; target: number; note: string | null }[] = [];
+  const alvos: { metric: GoalMetric; target: number; note: string | null }[] =
+    [];
 
   for (const metric of marcados) {
     if (!isGoalMetric(metric)) continue;
@@ -750,7 +762,9 @@ export async function saveGoal(
   const existing = await db
     .select()
     .from(strategyGoal)
-    .where(and(eq(strategyGoal.cycleId, cycleId), eq(strategyGoal.scope, scope)))
+    .where(
+      and(eq(strategyGoal.cycleId, cycleId), eq(strategyGoal.scope, scope)),
+    )
     .get();
 
   const campos = {
@@ -781,7 +795,10 @@ export async function saveGoal(
       nonGoals: existing.nonGoals,
       successSignal: existing.successSignal,
       risks: existing.risks,
-      indicadores: alvosAntes.map((a) => ({ metric: a.metric, target: a.target })),
+      indicadores: alvosAntes.map((a) => ({
+        metric: a.metric,
+        target: a.target,
+      })),
     };
 
     // Histórico de revisão: guarda o estado ANTERIOR, com o motivo e a rodada
@@ -807,7 +824,10 @@ export async function saveGoal(
       changedAt: now,
     });
 
-    await db.update(strategyGoal).set(campos).where(eq(strategyGoal.id, goalId));
+    await db
+      .update(strategyGoal)
+      .set(campos)
+      .where(eq(strategyGoal.id, goalId));
     await db
       .delete(strategyGoalTarget)
       .where(eq(strategyGoalTarget.goalId, goalId));
@@ -827,7 +847,10 @@ export async function saveGoal(
   // Regravado por completo, como os indicadores: desmarcar um achado tem de
   // desfazer o vínculo, e o relatório de órfãos só funciona se o conjunto for
   // exato. Só entram achados do próprio ciclo.
-  const achadosEscolhidos = formData.getAll("achado").map(String).filter(Boolean);
+  const achadosEscolhidos = formData
+    .getAll("achado")
+    .map(String)
+    .filter(Boolean);
   const achadosDoCiclo = await db
     .select({ id: strategyFinding.id })
     .from(strategyFinding)
@@ -922,7 +945,6 @@ export async function deleteGoal(formData: FormData): Promise<void> {
 
   revalidateStrategy(gate.unit.slug);
 }
-
 
 /**
  * Converte o que a pessoa digitou em número.

@@ -30,7 +30,9 @@ export type PersonaSearchInput = {
  * mesmo valor depois de restaurar uma persona — sem isso, a busca continuaria
  * apontando para o estado que acabou de ser revertido.
  */
-export function buildPersonaSearchText(input: PersonaSearchInput): string | null {
+export function buildPersonaSearchText(
+  input: PersonaSearchInput,
+): string | null {
   const parts = [
     input.name,
     input.headline,

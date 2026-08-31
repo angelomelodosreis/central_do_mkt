@@ -80,7 +80,9 @@ export function describeEmbed(raw: string): EmbedInfo | null {
 
   // Documentos do Google: .../document/d/<id>/edit → .../preview
   if (host === "docs.google.com") {
-    const match = /^\/(document|spreadsheets|presentation)\/d\/([^/]+)/.exec(path);
+    const match = /^\/(document|spreadsheets|presentation)\/d\/([^/]+)/.exec(
+      path,
+    );
     if (match) {
       const [, tipo, id] = match;
       return {
