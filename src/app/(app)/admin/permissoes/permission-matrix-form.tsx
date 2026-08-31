@@ -118,7 +118,7 @@ export function PermissionMatrixForm({
           O acesso do Administrador ao módulo de Administração fica travado de
           propósito — sem ele, ninguém conseguiria voltar a conceder permissões.
         </p>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Salvando…" : "Salvar permissões"}
         </Button>
       </div>

@@ -46,7 +46,9 @@ export function TemplatesPanel({ templates }: { templates: TemplateRow[] }) {
           {ativos} de {templates.length}{" "}
           {templates.length === 1 ? "modelo ativo" : "modelos ativos"}.
         </p>
-        <Button onClick={() => setCriando(true)}>+ Criar novo modelo</Button>
+        <Button variant="primary" onClick={() => setCriando(true)}>
+          + Criar novo modelo
+        </Button>
       </div>
 
       <Card>
@@ -255,7 +257,7 @@ function NewTemplateDrawer({
           />
         </Field>
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Criando…" : "Criar e montar os blocos"}
         </Button>
       </form>

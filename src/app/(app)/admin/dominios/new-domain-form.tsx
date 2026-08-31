@@ -44,7 +44,7 @@ export function NewDomainForm() {
             />
           </Field>
         </div>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Autorizando…" : "Autorizar"}
         </Button>
       </div>

@@ -213,7 +213,6 @@ export function TaskRow({
                 taskId={task.id}
                 status={ACTION_STATUS[acao]}
                 label={ACTION_LABELS[acao]}
-                variant={acao === "complete" ? "secondary" : "primary"}
               />
             );
           })}
@@ -353,7 +352,10 @@ function StatusButton({
   taskId,
   status,
   label,
-  variant = "primary",
+  // Ação de linha não é `primary`: numa fila de vinte tarefas seriam vinte
+  // botões vermelhos, e o destaque deixaria de destacar. Quem separa execução
+  // de gestão aqui é o agrupamento, não a cor.
+  variant = "secondary",
 }: {
   taskId: string;
   status: TaskStatus;

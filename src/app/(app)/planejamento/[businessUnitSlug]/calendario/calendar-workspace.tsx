@@ -9,6 +9,7 @@ import { LaneView } from "./lane-view";
 import { MonthView } from "./month-view";
 import { WeekView } from "./week-view";
 import { Button } from "@/components/ui/button";
+import { FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import type { TimelineKind } from "@/lib/db/schema";
 import {
@@ -137,7 +138,7 @@ export function CalendarWorkspace({
 
         <div className="flex flex-wrap items-center gap-2">
           {cycles.length > 1 ? (
-            <div className="w-48">
+            <div className={FIELD_WIDTHS.lg}>
               <Select
                 size="sm"
                 value={cycle.slug}

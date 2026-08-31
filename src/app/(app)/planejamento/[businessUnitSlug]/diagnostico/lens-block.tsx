@@ -282,7 +282,7 @@ function FindingForm({
       </Field>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" size="sm" disabled={isPending}>
+        <Button type="submit" size="sm" variant="primary" disabled={isPending}>
           {isPending
             ? "Salvando…"
             : finding

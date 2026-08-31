@@ -212,7 +212,11 @@ export function NameGeneratorForm({
             <code className="min-w-0 flex-1 break-all font-mono text-sm font-medium text-slate-900">
               {result.name}
             </code>
-            <Button type="button" onClick={handleCopyGenerated}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleCopyGenerated}
+            >
               {copiedName === result.name ? "Copiado ✓" : "Copiar"}
             </Button>
           </div>

@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PillTabs } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils/cn";
@@ -128,7 +128,9 @@ export function ProductsPanel({
             aria-label="Buscar produto"
           />
         </div>
-        <Button onClick={() => setCriando(true)}>+ Novo produto</Button>
+        <Button variant="primary" onClick={() => setCriando(true)}>
+          + Novo produto
+        </Button>
       </div>
 
       <Card>
@@ -173,7 +175,7 @@ export function ProductsPanel({
                       className="flex items-center gap-1.5"
                     >
                       <input type="hidden" name="productId" value={item.id} />
-                      <div className="w-56">
+                      <div className={FIELD_WIDTHS.lg}>
                         <Select
                           name="businessUnitId"
                           size="sm"
@@ -311,7 +313,7 @@ function NewProductDrawer({
           <Input id="product-description" name="description" maxLength={200} />
         </Field>
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Cadastrando…" : "Cadastrar produto"}
         </Button>
       </form>
@@ -361,7 +363,9 @@ function EditProductDrawer({
           </p>
 
           <div className="flex gap-2">
-            <Button type="submit">Salvar</Button>
+            <Button type="submit" variant="primary">
+              Salvar
+            </Button>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>

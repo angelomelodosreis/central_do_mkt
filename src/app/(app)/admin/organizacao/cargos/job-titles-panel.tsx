@@ -95,7 +95,9 @@ export function JobTitlesPanel({
           Cargo descreve a pessoa. Quem pode o quê é papel + escopo, na ficha
           dela.
         </p>
-        <Button onClick={() => setCriando(true)}>+ Novo cargo</Button>
+        <Button variant="primary" onClick={() => setCriando(true)}>
+          + Novo cargo
+        </Button>
       </div>
 
       {[
@@ -280,7 +282,7 @@ function NewTitleDrawer({
           />
         </Field>
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Criando…" : "Criar cargo"}
         </Button>
       </form>
@@ -355,7 +357,9 @@ function EditTitleDrawer({
           </p>
 
           <div className="flex gap-2">
-            <Button type="submit">Salvar</Button>
+            <Button type="submit" variant="primary">
+              Salvar
+            </Button>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>

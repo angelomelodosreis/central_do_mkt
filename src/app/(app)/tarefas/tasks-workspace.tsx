@@ -10,7 +10,7 @@ import {
 import { TaskRow, type Destino, type TaskRowData } from "./task-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, EmptyState } from "@/components/ui/card";
-import { Input } from "@/components/ui/field";
+import { Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PillTabs, StatSummary } from "@/components/ui/tabs";
 import {
@@ -239,7 +239,9 @@ export function TasksWorkspace({
               deleguei.some((item) => item.status === "blocked"),
           }))}
         />
-        <Button onClick={() => setCriando(true)}>+ Nova tarefa</Button>
+        <Button variant="primary" onClick={() => setCriando(true)}>
+          + Nova tarefa
+        </Button>
       </div>
 
       <p className="text-sm text-slate-500">{VISAO_DESCRICOES[visao]}</p>
@@ -280,7 +282,7 @@ export function TasksWorkspace({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <div className="w-40">
+          <div className={FIELD_WIDTHS.md}>
             <Select
               value={filtros.status}
               onValueChange={(valor) => set("status", valor)}
@@ -301,7 +303,7 @@ export function TasksWorkspace({
             />
           </div>
 
-          <div className="w-36">
+          <div className={FIELD_WIDTHS.md}>
             <Select
               value={filtros.prioridade}
               onValueChange={(valor) => set("prioridade", valor)}
@@ -321,7 +323,7 @@ export function TasksWorkspace({
           {/* Em "Para mim" o responsável é sempre a própria pessoa: o seletor
               teria uma opção só. */}
           {visao !== "para_mim" && responsaveis.length > 1 ? (
-            <div className="w-48">
+            <div className={FIELD_WIDTHS.lg}>
               <Select
                 value={filtros.responsavel}
                 onValueChange={(valor) => set("responsavel", valor)}
@@ -341,7 +343,7 @@ export function TasksWorkspace({
 
           {/* Em "Deleguei" quem delegou é sempre a própria pessoa. */}
           {visao !== "deleguei" && delegadores.length > 1 ? (
-            <div className="w-48">
+            <div className={FIELD_WIDTHS.lg}>
               <Select
                 value={filtros.delegador}
                 onValueChange={(valor) => set("delegador", valor)}
@@ -357,7 +359,7 @@ export function TasksWorkspace({
           ) : null}
 
           {businessUnits.length > 0 ? (
-            <div className="w-48">
+            <div className={FIELD_WIDTHS.lg}>
               <Select
                 value={filtros.businessUnit}
                 onValueChange={(valor) => set("businessUnit", valor)}

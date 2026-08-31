@@ -11,6 +11,13 @@ type Size = "sm" | "md";
  * usa contorno e um marsala mais escuro: com a marca em vermelho, a cor sozinha
  * não distingue mais "confirmar" de "apagar" — a diferença precisa estar também
  * no preenchimento.
+ *
+ * O PADRÃO é `secondary`, e isso é deliberado. Enquanto `primary` era o padrão,
+ * escrever `<Button>` sem pensar dava o destaque máximo de graça: a ferramenta
+ * chegou a ter 64 botões vermelhos, quatro deles competindo numa tela só. O
+ * destaque só significa alguma coisa quando é escasso, então agora ele é uma
+ * escolha explícita — `variant="primary"` — e cada tela tem de decidir qual é
+ * a sua ação principal.
  */
 const VARIANTS: Record<Variant, string> = {
   primary:
@@ -49,7 +56,7 @@ function classes(variant: Variant, size: Size, className?: string) {
 }
 
 export function Button({
-  variant = "primary",
+  variant = "secondary",
   size = "md",
   className,
   ...props
@@ -58,7 +65,7 @@ export function Button({
 }
 
 export function ButtonLink({
-  variant = "primary",
+  variant = "secondary",
   size = "md",
   className,
   children,

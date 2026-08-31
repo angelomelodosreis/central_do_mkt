@@ -57,7 +57,10 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
           {units.filter((unit) => unit.kind === "team").length} times em{" "}
           {units.filter((unit) => unit.kind === "subsector").length} subsetores.
         </p>
-        <Button onClick={() => setCriando({ parentId: null })}>
+        <Button
+          variant="primary"
+          onClick={() => setCriando({ parentId: null })}
+        >
           + Nova unidade
         </Button>
       </div>
@@ -285,7 +288,7 @@ function NewUnitDrawer({
           <Input id="unit-description" name="description" maxLength={200} />
         </Field>
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Criando…" : "Criar unidade"}
         </Button>
       </form>
@@ -356,7 +359,9 @@ function EditUnitDrawer({
           </Field>
 
           <div className="flex gap-2">
-            <Button type="submit">Salvar</Button>
+            <Button type="submit" variant="primary">
+              Salvar
+            </Button>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>

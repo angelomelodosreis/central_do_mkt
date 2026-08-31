@@ -85,3 +85,50 @@ export function EmptyState({
     </div>
   );
 }
+
+/**
+ * Título de uma seção DENTRO de um cartão.
+ *
+ * Existe porque as telas vinham escrevendo `<h3>` à mão, e cada uma escolhia o
+ * seu: seis combinações diferentes de tamanho, peso, cor e caixa alta para o
+ * mesmo nível de informação. A hierarquia deixava de ser hierarquia — virava
+ * decoração, e o olho não conseguia mais usar o tamanho do texto para saber
+ * onde estava.
+ *
+ * A escada da ferramenta, de cima para baixo:
+ *   PageHeader   → o assunto da tela
+ *   CardHeader   → o assunto do cartão
+ *   SectionTitle → uma divisão dentro do cartão   ← aqui
+ *   texto        → o conteúdo
+ */
+export function SectionTitle({
+  children,
+  count,
+  action,
+  className,
+}: {
+  children: ReactNode;
+  /** Número ao lado do título, quando a seção é uma lista. */
+  count?: number;
+  action?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "mb-2 flex flex-wrap items-center justify-between gap-2",
+        className,
+      )}
+    >
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {children}
+        {typeof count === "number" ? (
+          <span className="ml-1.5 font-normal tabular-nums text-slate-400">
+            {count}
+          </span>
+        ) : null}
+      </h3>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  );
+}

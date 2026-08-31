@@ -104,7 +104,7 @@ export function EditTaskDrawer({
           </p>
 
           <div className="flex gap-2">
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" variant="primary" disabled={isPending}>
               {isPending ? "Salvando…" : "Salvar"}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose}>

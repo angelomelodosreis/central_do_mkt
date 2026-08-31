@@ -289,7 +289,7 @@ export function ItemPanel({
 
           {canEdit ? (
             <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-5">
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" variant="primary" disabled={isPending}>
                 {isPending ? "Salvando…" : isNew ? "Criar item" : "Salvar"}
               </Button>
               <Button type="button" variant="ghost" onClick={onClose}>

@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Avatar } from "@/components/org/person-card";
 import { Badge, RoleBadge, StatusBadge } from "@/components/ui/badge";
 import { Card, CardBody } from "@/components/ui/card";
-import { Input } from "@/components/ui/field";
+import { Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PillTabs } from "@/components/ui/tabs";
 import {
@@ -138,7 +138,7 @@ export function UsersPanel({
               aria-label="Buscar pessoa"
             />
           </div>
-          <div className="w-44">
+          <div className={FIELD_WIDTHS.md}>
             <Select
               value={papel}
               onValueChange={setPapel}
@@ -153,7 +153,7 @@ export function UsersPanel({
               ]}
             />
           </div>
-          <div className="w-56">
+          <div className={FIELD_WIDTHS.lg}>
             <Select
               value={unidade}
               onValueChange={setUnidade}

@@ -14,7 +14,7 @@ import {
   type OrgSnapshot,
   type OrgView,
 } from "./types";
-import { Input } from "@/components/ui/field";
+import { Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { ORG_UNIT_KIND_LABELS } from "@/lib/db/schema";
 import { cn } from "@/lib/utils/cn";
@@ -111,7 +111,7 @@ export function OrganogramaView({
           />
         </div>
         {view === "times" ? (
-          <div className="w-56">
+          <div className={FIELD_WIDTHS.lg}>
             <Select
               value={timeFiltrado}
               onValueChange={setTimeFiltrado}

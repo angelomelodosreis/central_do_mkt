@@ -213,7 +213,7 @@ export function NewTaskDrawer({
         </Field>
 
         <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? "Criando…" : "Criar tarefa"}
           </Button>
           <Button type="button" variant="ghost" onClick={onClose}>

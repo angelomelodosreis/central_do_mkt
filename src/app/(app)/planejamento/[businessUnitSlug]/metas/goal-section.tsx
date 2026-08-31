@@ -569,7 +569,7 @@ function GoalForm({
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Salvando…" : "Salvar meta"}
         </Button>
         <Button

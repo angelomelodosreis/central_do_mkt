@@ -175,7 +175,10 @@ export function TemplateBuilder({
               <input type="hidden" name="templateId" value={template.id} />
               <Button
                 type="submit"
-                variant={template.isActive ? "danger" : "primary"}
+                // Não é `primary`: o que se vem fazer aqui é montar os
+                // blocos, e "+ Adicionar bloco" já carrega esse destaque. Com
+                // os dois em vermelho, nenhum dos dois destaca.
+                variant={template.isActive ? "danger" : "secondary"}
                 // Ativar um modelo sem blocos deixaria o gerador com um
                 // formulário vazio. O servidor também recusa.
                 disabled={!template.isActive && !temBlocos}
@@ -233,7 +236,11 @@ export function TemplateBuilder({
           title={`Blocos do nome (${template.fields.length})`}
           description="Na ordem em que aparecem no nome. Cada bloco vira um campo no formulário do gerador."
           action={
-            <Button size="sm" onClick={() => setAdicionando(true)}>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setAdicionando(true)}
+            >
               + Adicionar bloco
             </Button>
           }
@@ -587,7 +594,7 @@ function AddFieldDrawer({
           </Field>
         ) : null}
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Adicionando…" : "Adicionar bloco"}
         </Button>
       </form>
@@ -689,7 +696,7 @@ function EditFieldDrawer({
           ) : null}
 
           <div className="flex gap-2">
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" variant="primary" disabled={isPending}>
               {isPending ? "Salvando…" : "Salvar bloco"}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose}>
@@ -759,7 +766,7 @@ function IdentityDrawer({
           />
         </Field>
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Salvando…" : "Salvar"}
         </Button>
       </form>

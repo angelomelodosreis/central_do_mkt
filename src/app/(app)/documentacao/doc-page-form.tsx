@@ -258,7 +258,7 @@ export function DocPageForm({
       )}
 
       <div className="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending
             ? "Salvando…"
             : mode === "create"

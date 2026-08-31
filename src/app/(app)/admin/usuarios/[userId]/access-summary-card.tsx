@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, SectionTitle } from "@/components/ui/card";
 import type { AccessSummary } from "@/lib/modules/access/explain";
 import { cn } from "@/lib/utils/cn";
 
@@ -20,9 +20,7 @@ export function AccessSummaryCard({ summary }: { summary: AccessSummary }) {
       />
       <CardBody className="space-y-4">
         <div>
-          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Alcance
-          </h3>
+          <SectionTitle>Alcance</SectionTitle>
           <ul className="space-y-1.5">
             {summary.reachLines.map((linha) => (
               <li
@@ -47,9 +45,7 @@ export function AccessSummaryCard({ summary }: { summary: AccessSummary }) {
         </div>
 
         <div>
-          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            O que o papel permite
-          </h3>
+          <SectionTitle>O que o papel permite</SectionTitle>
           <ul className="flex flex-wrap gap-1.5">
             {summary.modules.map((modulo) => (
               <li key={modulo.key}>

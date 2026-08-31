@@ -97,7 +97,7 @@ export function CycleSetup({
             </Field>
           </div>
 
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? "Criando…" : "Criar ciclo"}
           </Button>
         </form>

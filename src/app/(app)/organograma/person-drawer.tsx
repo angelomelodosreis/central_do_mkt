@@ -10,6 +10,7 @@ import {
   toggleTeamLead,
 } from "../admin/organizacao/actions";
 import { changeUserRole } from "../admin/usuarios/actions";
+import { SectionTitle } from "@/components/ui/card";
 import { Badge, RoleBadge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
@@ -63,9 +64,7 @@ export function PersonDrawer({
       <div className="space-y-5">
         {/* Cargo — um só, e da pessoa */}
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Cargo
-          </h3>
+          <SectionTitle>Cargo</SectionTitle>
           {canEdit ? (
             <form action={setPersonJobTitle} className="flex items-end gap-2">
               <input type="hidden" name="userId" value={person.userId} />
@@ -98,9 +97,7 @@ export function PersonDrawer({
 
         {/* Papel de acesso */}
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Papel de acesso
-          </h3>
+          <SectionTitle>Papel de acesso</SectionTitle>
           {canEdit ? (
             <form action={changeUserRole} className="flex items-end gap-2">
               <input type="hidden" name="userId" value={person.userId} />
@@ -131,9 +128,7 @@ export function PersonDrawer({
 
         {/* Unidades organizacionais */}
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Unidades ({person.positions.length})
-          </h3>
+          <SectionTitle>Unidades ({person.positions.length})</SectionTitle>
 
           {person.positions.length === 0 ? (
             <p className="text-sm text-slate-400">Fora da estrutura.</p>
@@ -220,9 +215,7 @@ export function PersonDrawer({
 
         {/* Squads */}
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Squads ({person.squadIds.length})
-          </h3>
+          <SectionTitle>Squads ({person.squadIds.length})</SectionTitle>
 
           {person.squadIds.length === 0 ? (
             <p className="text-sm text-slate-400">

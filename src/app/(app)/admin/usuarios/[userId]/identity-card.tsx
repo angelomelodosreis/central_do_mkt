@@ -53,7 +53,9 @@ export function IdentityCard({
           {person.status === "pending" ? (
             <form action={approveUser}>
               <input type="hidden" name="userId" value={person.id} />
-              <Button type="submit">Aprovar acesso</Button>
+              <Button type="submit" variant="primary">
+                Aprovar acesso
+              </Button>
             </form>
           ) : null}
 

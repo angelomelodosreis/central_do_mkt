@@ -294,7 +294,7 @@ function ProductForm({
       </div>
 
       <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={isPending}>
+        <Button type="submit" size="sm" variant="primary" disabled={isPending}>
           {isPending ? "Salvando…" : "Salvar"}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDone}>

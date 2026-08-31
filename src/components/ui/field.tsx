@@ -52,6 +52,30 @@ export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
 }
 
 /**
+ * Larguras dos controles de formulário.
+ *
+ * Existe porque as telas vinham escolhendo `w-36`, `w-40`, `w-44`, `w-48`,
+ * `w-52` e `w-56` a olho — seis larguras para o mesmo tipo de campo, lado a
+ * lado, sem nenhuma delas significar coisa alguma. A escala amarra a largura ao
+ * CONTEÚDO esperado, que é a única razão legítima para um campo ser mais
+ * estreito que o outro.
+ */
+export const FIELD_WIDTHS = {
+  /** Números curtos, siglas, um caractere. Ex.: separador, ano. */
+  xs: "w-24",
+  /** Valores de uma palavra. Ex.: mês, tipo. */
+  sm: "w-36",
+  /** Rótulos de duas ou três palavras. Ex.: "Todas as situações", papel. */
+  md: "w-48",
+  /** Nomes próprios e rótulos longos. Ex.: pessoa, unidade, BU. */
+  lg: "w-56",
+  /** Ocupa o espaço disponível. */
+  full: "min-w-0 flex-1",
+} as const;
+
+export type FieldWidth = keyof typeof FIELD_WIDTHS;
+
+/**
  * O dropdown vive em `ui/select.tsx`, com desenho próprio.
  *
  * Não há `Select` nativo aqui de propósito: o `<select>` do navegador é

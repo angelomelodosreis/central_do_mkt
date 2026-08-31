@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils/cn";
 import { matchesSearch } from "@/lib/utils/text";
@@ -76,7 +76,9 @@ export function BusinessUnitsPanel({
             aria-label="Buscar Business Unit"
           />
         </div>
-        <Button onClick={() => setCriando(true)}>+ Nova Business Unit</Button>
+        <Button variant="primary" onClick={() => setCriando(true)}>
+          + Nova Business Unit
+        </Button>
       </div>
 
       {filtradas.length === 0 ? (
@@ -210,7 +212,7 @@ function Grupo({
                   name="description"
                   value={unit.description ?? ""}
                 />
-                <div className="w-52">
+                <div className={FIELD_WIDTHS.lg}>
                   <Select
                     name="divisionId"
                     size="sm"
@@ -331,7 +333,7 @@ function NewUnitDrawer({
           <Input id="unit-description" name="description" maxLength={200} />
         </Field>
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Cadastrando…" : "Cadastrar BU"}
         </Button>
       </form>
@@ -403,7 +405,9 @@ function EditUnitDrawer({
           </p>
 
           <div className="flex gap-2">
-            <Button type="submit">Salvar</Button>
+            <Button type="submit" variant="primary">
+              Salvar
+            </Button>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>

@@ -60,7 +60,9 @@ export function DivisionsPanel({
       ) : null}
 
       <div className="flex justify-end">
-        <Button onClick={() => setCriando(true)}>+ Nova divisão</Button>
+        <Button variant="primary" onClick={() => setCriando(true)}>
+          + Nova divisão
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -212,7 +214,7 @@ function NewDivisionDrawer({
           />
         </Field>
 
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Criando…" : "Criar divisão"}
         </Button>
       </form>
@@ -258,7 +260,9 @@ function EditDivisionDrawer({
           </Field>
 
           <div className="flex gap-2">
-            <Button type="submit">Salvar</Button>
+            <Button type="submit" variant="primary">
+              Salvar
+            </Button>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>
