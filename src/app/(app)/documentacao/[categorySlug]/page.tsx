@@ -8,7 +8,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/card";
 import { can, requirePermission } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { documentationPage, DOC_VISIBILITY_LABELS } from "@/lib/db/schema";
+import { documentationPage, DOC_VISIBILITY_LABELS, isReferencePage } from "@/lib/db/schema";
 import {
   getCategoryBySlug,
   visibilitiesFor,
@@ -131,7 +131,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
                         <span className="font-medium text-slate-900">
                           {page.title}
                         </span>
-                        {page.pageType === "business_units_reference" ? (
+                        {isReferencePage(page.pageType) ? (
                           <Badge tone="brand">Dados ao vivo</Badge>
                         ) : null}
                         {page.visibility !== "all_active_users" ? (

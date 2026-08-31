@@ -140,7 +140,10 @@ export async function undoAuditAction(formData: FormData): Promise<void> {
           patch.businessUnitId = before.businessUnitId;
         }
 
-        await db.update(persona).set(patch).where(eq(persona.id, entry.entityId));
+        await db
+          .update(persona)
+          .set(patch)
+          .where(eq(persona.id, entry.entityId));
 
         if (Array.isArray(before.pains)) {
           await db

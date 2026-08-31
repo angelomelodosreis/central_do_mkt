@@ -317,6 +317,9 @@ Nada disso é necessário para desenvolver localmente.
 | `npm run db:generate` | Gera uma nova migration depois de mudar o schema |
 | `npm run db:migrate` | Aplica as migrations no banco de `TURSO_DATABASE_URL` |
 | `npm run db:seed` | Recarrega os dados iniciais (seguro rodar de novo) |
+| `npm run db:backup` | Grava o banco inteiro em `backups/` como SQL |
+| `npm run db:restore` | Restaura um backup, substituindo o banco atual |
+| `npm run db:snapshot` | Conta as linhas de cada tabela — para comparar antes/depois |
 | `npm run db:studio` | Abre o Drizzle Studio para inspecionar o banco |
 | `npm run typecheck` | Confere os tipos do TypeScript |
 | `npm run build` | Build de produção |
@@ -325,6 +328,34 @@ Nada disso é necessário para desenvolver localmente.
 Os comandos de banco agem sobre o que estiver em `TURSO_DATABASE_URL` — o
 arquivo local, por padrão. Para mirar produção, passe a URL e o token na frente
 do comando (ver Parte 3, passo 4).
+
+### Subindo uma versão que muda o banco
+
+Migration aqui é de mão única: não escrevemos migrations de reversão, porque
+manter duas versões de cada mudança de schema custa mais do que restaurar um
+backup nas raras vezes em que é preciso. O preço disso é que o backup deixa de
+ser zelo e passa a ser o único caminho de volta.
+
+A sequência, com produção em `.env.producao` (copie de `.env.producao.exemplo`):
+
+```bash
+set -a; . ./.env.producao; set +a
+
+npm run db:snapshot                 # guarde a saída
+npm run db:backup                   # grava em backups/
+git push                            # a Vercel publica sozinha, ~1-2 min
+npm run db:migrate                  # assim que o deploy terminar
+npm run db:snapshot                 # compare com a primeira saída
+```
+
+Entre o `git push` e o `db:migrate` há cerca de um minuto em que o código novo
+procura tabelas que ainda não existem e as páginas dão erro. Escolha um horário
+sem ninguém usando; não vale a pena engenheirar zero downtime para uma
+ferramenta interna.
+
+Se algo der errado: volte ao deploy anterior na Vercel (um clique, reverte o
+**código**) e restaure o backup (reverte o **banco**). Os dois são necessários —
+reverter só o código deixa o schema novo debaixo do código antigo.
 
 ---
 

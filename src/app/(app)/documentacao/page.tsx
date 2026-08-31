@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/card";
 import { SearchBox } from "./search-box";
 import { can, requirePermission } from "@/lib/auth/session";
-import { DOC_VISIBILITY_LABELS } from "@/lib/db/schema";
+import { DOC_VISIBILITY_LABELS, isReferencePage } from "@/lib/db/schema";
 import {
   listCategoriesWithPages,
   searchDocPages,
@@ -42,7 +42,7 @@ export default async function DocumentationIndexPage({
     <>
       <PageHeader
         title="Documentação"
-        description="Processos, convenções e material de onboarding do time de marketing."
+        description="Biblioteca geral do time. Documentos internos de cada BU ficam dentro dela, no Planejamento — e aparecem na busca para quem trabalha lá."
         action={
           canEdit ? (
             <div className="flex flex-wrap gap-2">
@@ -120,7 +120,7 @@ export default async function DocumentationIndexPage({
                               <span className="font-medium text-slate-900">
                                 {page.title}
                               </span>
-                              {page.pageType === "business_units_reference" ? (
+                              {isReferencePage(page.pageType) ? (
                                 <Badge tone="brand">Dados ao vivo</Badge>
                               ) : null}
                               {page.visibility !== "all_active_users" ? (
@@ -163,7 +163,7 @@ function SearchResults({
     return (
       <EmptyState
         title={`Nada encontrado para "${term}"`}
-        description="Tente uma palavra mais curta ou um sinônimo. A busca procura no título, no resumo e no corpo das páginas."
+        description="Tente uma palavra mais curta ou um sinônimo. A busca procura no título, no resumo e no corpo das páginas — inclusive nos documentos internos das BUs em que você trabalha."
         action={
           <ButtonLink href="/documentacao" variant="secondary">
             Ver todas as categorias
@@ -194,6 +194,14 @@ function SearchResults({
                       {page.title}
                     </span>
                     <Badge tone="neutral">{page.categoryName}</Badge>
+                    {/* Acerto interno de BU: sem esta marca, a pessoa não teria
+                        como saber que o resultado não está na biblioteca geral e
+                        que o restante do time não o encontra. */}
+                    {page.scope === "business_unit" && page.businessUnitLabel ? (
+                      <Badge tone="brand">
+                        Interno · {page.businessUnitLabel}
+                      </Badge>
+                    ) : null}
                     {page.visibility !== "all_active_users" ? (
                       <Badge tone="warning">
                         {DOC_VISIBILITY_LABELS[page.visibility]}

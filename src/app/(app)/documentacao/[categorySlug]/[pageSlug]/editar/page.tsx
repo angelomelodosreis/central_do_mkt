@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { eq } from "drizzle-orm";
 
 import { DocPageForm } from "../../../doc-page-form";
 import { DeletePageButton } from "./delete-page-button";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/card";
 import { requirePermission } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
+import { businessUnit } from "@/lib/db/schema";
 import {
   getPageBySlug,
   listCategories,
@@ -33,6 +36,18 @@ export default async function EditDocumentationPage({
   const { category, page } = result;
   const categories = await listCategories();
   const viewHref = `/documentacao/${category.slug}/${page.slug}`;
+
+  // Página produzida dentro de uma BU: o formulário precisa da BU para oferecer
+  // a escolha entre material interno e biblioteca geral. Sem ela, publicar ou
+  // despublicar exigiria recriar a página.
+  const db = await getDb();
+  const owningUnit = page.businessUnitId
+    ? ((await db
+        .select({ id: businessUnit.id, label: businessUnit.label })
+        .from(businessUnit)
+        .where(eq(businessUnit.id, page.businessUnitId))
+        .get()) ?? undefined)
+    : undefined;
 
   // Página escrita no editor antigo: convertemos o Markdown para o editor visual
   // conseguir abri-la. Ela só muda de formato de fato quando for salva.
@@ -80,6 +95,7 @@ export default async function EditDocumentationPage({
         <CardBody className="sm:px-6 sm:py-5">
           <DocPageForm
             mode="edit"
+            businessUnit={owningUnit}
             cancelHref={viewHref}
             categories={categories.map((item) => ({
               id: item.id,
@@ -95,6 +111,7 @@ export default async function EditDocumentationPage({
               content: isLegacyMarkdown ? "" : (page.content ?? ""),
               contentHtml,
               visibility: page.visibility,
+          scope: page.scope,
               pageType: page.pageType,
             }}
           />

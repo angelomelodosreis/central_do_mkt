@@ -51,3 +51,7 @@ next-env.d.ts
 # ignorado para que o binário não entre no repositório enquanto existir.
 /.wrangler/
 
+
+# Backups do banco — contêm todos os dados de produção, inclusive e-mails
+# e sessões. Nunca vão para o repositório.
+backups/

@@ -69,7 +69,7 @@ export async function approveUser(formData: FormData): Promise<void> {
     afterData: { ...before, status: "active", approvedBy: admin.id },
   });
 
-  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/usuarios", "layout");
   revalidatePath("/painel");
 }
 
@@ -116,7 +116,7 @@ export async function suspendUser(formData: FormData): Promise<void> {
     afterData: { ...before, status: "suspended" },
   });
 
-  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/usuarios", "layout");
 }
 
 /** Reativa um usuário suspenso. */
@@ -151,7 +151,7 @@ export async function reactivateUser(formData: FormData): Promise<void> {
     afterData: { ...before, status: "active" },
   });
 
-  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/usuarios", "layout");
 }
 
 /** Altera o papel (admin/líder/membro) de um usuário. Ação reversível. */
@@ -191,5 +191,5 @@ export async function changeUserRole(formData: FormData): Promise<void> {
     afterData: { ...before, role: newRole },
   });
 
-  revalidatePath("/admin/usuarios");
+  revalidatePath("/admin/usuarios", "layout");
 }

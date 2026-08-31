@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 /**
  * Domínios de e-mail autorizados a se cadastrar na plataforma.
@@ -26,6 +32,7 @@ export const MODULE_KEYS = [
   "documentation",
   "personas",
   "strategy",
+  "tasks",
   "parameters",
   "admin",
 ] as const;
@@ -36,8 +43,23 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   documentation: "Documentação",
   personas: "Personas",
   strategy: "Planejamento",
-  parameters: "Parâmetros",
+  tasks: "Tarefas",
+  // A chave continua `parameters` porque é ela que está gravada nas linhas da
+  // matriz; o que mudou foi o alcance. Deixou de ser um menu à parte e passou a
+  // ser o que separa quem USA o Gerador de Nomes de quem DEFINE os modelos que
+  // ele monta — a única coisa que aquele menu de fato controlava.
+  parameters: "Modelos de nomenclatura",
   admin: "Administração",
+};
+
+export const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
+  name_generator: "Montar nomes padronizados a partir dos modelos.",
+  documentation: "Biblioteca de processos, bases e regras de negócio.",
+  personas: "Personas de cada Business Unit.",
+  strategy: "Planejamento anual, calendário, metas e diagnóstico das BUs.",
+  tasks: "Delegar tarefas. Executar as próprias não depende desta permissão.",
+  parameters: "Criar e editar os modelos que o Gerador de Nomes monta.",
+  admin: "Usuários, acessos, bases oficiais e auditoria.",
 };
 
 /**
@@ -56,3 +78,72 @@ export const rolePermission = sqliteTable(
   },
   (table) => [unique("role_permission_unique").on(table.role, table.moduleKey)],
 );
+
+/**
+ * Sobre QUE entidades a pessoa exerce o que o papel lhe permite.
+ *
+ * O papel (`role_permission`) responde "o que ela pode fazer"; esta tabela
+ * responde "sobre o quê". Os dois são necessários porque nenhum dos dois
+ * sozinho descreve a realidade: duas pessoas com o mesmo cargo e o mesmo papel
+ * têm alcances diferentes — uma responde por um time, a outra por três.
+ *
+ * O escopo HERDA para baixo. Responsabilidade sobre o subsetor Conteúdo alcança
+ * Design, Copy, Videomakers, Social e Comunicação sem cadastrar os cinco;
+ * responsabilidade sobre uma divisão alcança as BUs dela e os squads delas.
+ * Cadastrar folha por folha é o que faz um modelo de acesso apodrecer: o time
+ * novo nasce fora do escopo de quem deveria responder por ele, e ninguém nota.
+ */
+export const SCOPE_TYPES = [
+  "organization",
+  "org_unit",
+  "division",
+  "business_unit",
+  "squad",
+] as const;
+export type ScopeType = (typeof SCOPE_TYPES)[number];
+
+export const SCOPE_TYPE_LABELS: Record<ScopeType, string> = {
+  organization: "Toda a organização",
+  org_unit: "Unidade organizacional",
+  division: "Divisão de negócio",
+  business_unit: "Business Unit",
+  squad: "Squad",
+};
+
+/**
+ * Um escopo de responsabilidade concedido a uma pessoa.
+ *
+ * `scopeId` é nulo apenas em `organization`, que não tem alvo — é o escopo de
+ * quem responde pela frente inteira.
+ *
+ * NÃO confundir com administração da plataforma (`user.isSuperAdmin`): quem
+ * responde pelo negócio inteiro não necessariamente mexe em permissões,
+ * domínios de e-mail e auditoria, e quem constrói a plataforma não
+ * necessariamente responde por alguma frente. Os dois conceitos ficam
+ * separados porque são revogáveis em separado.
+ */
+export const accessGrant = sqliteTable(
+  "access_grant",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    scopeType: text("scope_type").notNull().$type<ScopeType>(),
+    /** Alvo do escopo. Nulo em `organization`. */
+    scopeId: text("scope_id"),
+    /** Anotação de quem concedeu — por que essa pessoa tem esse alcance. */
+    note: text("note"),
+    grantedBy: text("granted_by"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    unique("access_grant_unique").on(
+      table.userId,
+      table.scopeType,
+      table.scopeId,
+    ),
+    index("access_grant_user_idx").on(table.userId),
+    index("access_grant_scope_idx").on(table.scopeType, table.scopeId),
+  ],
+);
+
+export type AccessGrant = typeof accessGrant.$inferSelect;

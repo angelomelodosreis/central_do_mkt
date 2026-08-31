@@ -69,6 +69,41 @@ export async function listPersonasByBusinessUnit(): Promise<
   }));
 }
 
+/**
+ * Personas de uma BU só.
+ *
+ * Substitui, no dia a dia, a consulta que trazia todas as BUs: agora que as
+ * personas vivem dentro do espaço de trabalho da BU, carregar as 22 BUs para
+ * mostrar uma era desperdício — e vazamento, para quem não vê as outras.
+ */
+export async function listPersonasOfBusinessUnit(
+  businessUnitId: string,
+): Promise<PersonaListItem[]> {
+  const db = await getDb();
+
+  const rows = await db
+    .select({
+      id: persona.id,
+      slug: persona.slug,
+      name: persona.name,
+      headline: persona.headline,
+      isActive: persona.isActive,
+      updatedAt: persona.updatedAt,
+      businessUnitId: persona.businessUnitId,
+    })
+    .from(persona)
+    .where(eq(persona.businessUnitId, businessUnitId))
+    .orderBy(asc(persona.sortOrder), asc(persona.name));
+
+  const counts = await painCountsFor(rows.map((row) => row.id));
+
+  return rows.map((row) => ({
+    ...row,
+    painCount: counts.get(row.id)?.total ?? 0,
+    openPainCount: counts.get(row.id)?.open ?? 0,
+  }));
+}
+
 /** Total de dores e quantas estão sem solução, por persona. */
 async function painCountsFor(
   personaIds: string[],
@@ -183,6 +218,39 @@ export async function listOpenPains(): Promise<OpenPain[]> {
       ),
     )
     .orderBy(asc(businessUnit.sortOrder), asc(persona.name));
+}
+
+/**
+ * Dores sem solução de uma BU só.
+ *
+ * Mesma regra da consulta geral, recortada pela BU — a visão geral de uma BU não
+ * deve carregar (nem exibir) a pauta de produto das outras.
+ */
+export async function listOpenPainsOfBusinessUnit(
+  businessUnitId: string,
+): Promise<OpenPain[]> {
+  const db = await getDb();
+
+  return db
+    .select({
+      id: personaPain.id,
+      pain: personaPain.pain,
+      personaName: persona.name,
+      personaSlug: persona.slug,
+      businessUnitLabel: businessUnit.label,
+      businessUnitSlug: businessUnit.slug,
+    })
+    .from(personaPain)
+    .innerJoin(persona, eq(personaPain.personaId, persona.id))
+    .innerJoin(businessUnit, eq(persona.businessUnitId, businessUnit.id))
+    .where(
+      and(
+        eq(persona.businessUnitId, businessUnitId),
+        eq(persona.isActive, true),
+        or(isNull(personaPain.solution), eq(personaPain.solution, "")),
+      ),
+    )
+    .orderBy(asc(persona.name));
 }
 
 /** BUs ativas, para o seletor do formulário. */

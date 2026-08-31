@@ -20,17 +20,31 @@ export const businessUnit = sqliteTable(
     label: text("label").notNull(),
     description: text("description"),
     /**
-     * Quem responde pelo planejamento estratégico desta BU.
+     * Divisão de negócio a que a BU pertence. Ex.: MedCof Especialidades.
      *
-     * É esta coluna que decide quem edita o módulo de Planejamento: o dono da
-     * BU, mais os administradores. Sem ela, a permissão só saberia dizer "pode
-     * editar planejamento", sem distinguir de qual BU.
+     * Mora aqui, e não numa condicional no frontend, porque a composição das
+     * divisões muda: uma BU nova nasce dentro de uma delas, outra migra. Como
+     * regra em código, cada mudança dessas exigiria deploy.
+     *
+     * Nulo é tolerado para não travar o cadastro de uma BU antes de decidirem a
+     * qual divisão ela pertence — a administração marca essas como pendentes.
      */
-    strategyOwnerId: text("strategy_owner_id"),
+    divisionId: text("division_id"),
+    /**
+     * Quem trabalha nesta BU não vive mais aqui: virou o squad da BU
+     * (`squad` + `squad_member`). Com uma coluna só, um analista responsável
+     * por duas BUs ficava de fora de uma, e duas pessoas na mesma BU eram
+     * impossíveis de representar.
+     */
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
   },
-  (table) => [index("business_unit_is_active_idx").on(table.isActive)],
+  (table) => [
+    index("business_unit_is_active_idx").on(table.isActive),
+    index("business_unit_division_idx").on(table.divisionId),
+  ],
 );
+
+export type BusinessUnit = typeof businessUnit.$inferSelect;

@@ -14,23 +14,34 @@ type Size = "sm" | "md";
  */
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-brand-600 text-white shadow-sm hover:bg-brand-700 disabled:hover:bg-brand-600",
+    "bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:outline-brand-600 disabled:hover:bg-brand-600",
   secondary:
-    "border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50",
-  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+    "border border-slate-300 bg-white text-slate-700 shadow-sm hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-brand-600",
+  /**
+   * A ação terciária ganhou contorno no hover.
+   *
+   * Sem ele, um `ghost` ao lado de um `secondary` parecia texto solto — dava
+   * para clicar, mas não parecia clicável até o mouse passar por cima. Em linhas
+   * com três ações lado a lado, era o botão que as pessoas não achavam.
+   */
+  ghost:
+    "border border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-brand-600",
   danger:
-    "border border-danger-200 bg-white text-danger-700 shadow-sm hover:bg-danger-50 hover:border-danger-600",
+    "border border-danger-200 bg-white text-danger-700 shadow-sm hover:border-danger-600 hover:bg-danger-50 focus-visible:outline-danger-700",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-8 px-3 text-xs",
-  md: "h-10 px-4 text-sm",
+  sm: "h-8 gap-1.5 px-2.5 text-xs",
+  md: "h-10 gap-2 px-4 text-sm",
 };
 
 function classes(variant: Variant, size: Size, className?: string) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors",
-    "disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl font-medium transition-colors",
+    // Foco visível pelo teclado: não existia nenhum estilo de foco, então quem
+    // navega por Tab não tinha como saber onde estava.
+    "focus-visible:outline-2 focus-visible:outline-offset-2",
+    "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
     VARIANTS[variant],
     SIZES[size],
     className,

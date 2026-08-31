@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { NameGeneratorForm, type FormTemplate } from "./name-generator-form";
+import { GeneratorWorkspace } from "./generator-workspace";
+import type { FormTemplate } from "./name-generator-form";
 import { ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/card";
+import { EmptyState, PageHeader } from "@/components/ui/card";
 import { can, requirePermission } from "@/lib/auth/session";
+import { loadBaseOptions } from "@/lib/modules/bases/queries";
 import { getPageHrefById } from "@/lib/modules/documentation/queries";
-import {
-  listActiveBusinessUnits,
-  listActiveTemplates,
-} from "@/lib/modules/name-generator/queries";
+import { describeTemplateFormat } from "@/lib/modules/name-generator/generate";
+import { listActiveTemplates } from "@/lib/modules/name-generator/queries";
 
 export const metadata: Metadata = { title: "Gerador de Nomes" };
 export const dynamic = "force-dynamic";
@@ -24,11 +23,11 @@ const CONVENTIONS_PAGE_ID = "page_nomenclatura_listas";
 export default async function NameGeneratorPage() {
   const currentUser = await requirePermission("name_generator", "view");
 
-  // Os modelos e as BUs vêm do banco: cadastrar um modelo novo ou uma BU nova
+  // Os modelos e as bases vêm do banco: cadastrar um modelo novo ou uma BU nova
   // aparece aqui imediatamente, sem precisar mexer no código.
-  const [templates, businessUnits, conventionsHref] = await Promise.all([
+  const [templates, baseOptions, conventionsHref] = await Promise.all([
     listActiveTemplates(),
-    listActiveBusinessUnits(),
+    loadBaseOptions(),
     can(currentUser, "documentation")
       ? getPageHrefById(CONVENTIONS_PAGE_ID, currentUser)
       : null,
@@ -48,12 +47,21 @@ export default async function NameGeneratorPage() {
       placeholder: field.placeholder,
       isRequired: field.isRequired,
       options: field.options,
+      sourceKey: field.sourceKey,
     })),
   }));
 
-  // Quem cadastra modelo é quem tem a permissão de Parâmetros — não mais só o
-  // administrador, já que o Líder passou a parametrizar.
-  const podeParametrizar = can(currentUser, "parameters", "edit");
+  // Quem gere os modelos é quem tem a permissão correspondente — o menu
+  // separado de Parâmetros deixou de existir, mas a permissão continua sendo a
+  // linha que separa quem USA de quem DEFINE.
+  const podeGerir = can(currentUser, "parameters", "edit");
+
+  const formatos = Object.fromEntries(
+    templates.map((template) => [
+      template.id,
+      describeTemplateFormat(template.fields, template.blockSeparator),
+    ]),
+  );
 
   return (
     <>
@@ -61,13 +69,21 @@ export default async function NameGeneratorPage() {
         title="Gerador de Nomes"
         description="Escolha o que você quer nomear, preencha os campos e copie o nome já padronizado."
         action={
-          // Sem endereço resolvido (página excluída ou restrita), o botão não
-          // aparece — melhor não ter atalho do que ter um que leva a lugar nenhum.
-          conventionsHref ? (
-            <ButtonLink href={conventionsHref} variant="secondary">
-              Ver as convenções
-            </ButtonLink>
-          ) : null
+          <div className="flex flex-wrap gap-2">
+            {/* Sem endereço resolvido (página excluída ou restrita), o botão não
+                aparece — melhor não ter atalho do que ter um que leva a lugar
+                nenhum. */}
+            {conventionsHref ? (
+              <ButtonLink href={conventionsHref} variant="ghost">
+                Ver as convenções
+              </ButtonLink>
+            ) : null}
+            {podeGerir ? (
+              <ButtonLink href="/gerador-de-nomes/modelos" variant="secondary">
+                Gerir modelos
+              </ButtonLink>
+            ) : null}
+          </div>
         }
       />
 
@@ -75,49 +91,26 @@ export default async function NameGeneratorPage() {
         <EmptyState
           title="Nenhum modelo de nomenclatura cadastrado"
           description={
-            podeParametrizar
-              ? "Cadastre o primeiro modelo para o time começar a usar o gerador."
-              : "Quem cuida dos parâmetros precisa cadastrar os modelos antes de usar o gerador."
+            podeGerir
+              ? "Crie o primeiro modelo para o time começar a usar o gerador."
+              : "Quem cuida dos modelos precisa cadastrá-los antes de usar o gerador."
           }
           action={
-            podeParametrizar ? (
-              <ButtonLink href="/parametros/nomenclaturas">
-                Cadastrar modelo
+            podeGerir ? (
+              <ButtonLink href="/gerador-de-nomes/modelos">
+                + Criar modelo
               </ButtonLink>
             ) : null
           }
         />
       ) : (
-        <Card>
-          <CardHeader
-            title="Montar nome"
-            description={
-              businessUnits.length === 0
-                ? "Atenção: nenhuma Business Unit ativa cadastrada."
-                : undefined
-            }
-          />
-          <CardBody>
-            <NameGeneratorForm
-              templates={formTemplates}
-              businessUnits={businessUnits}
-            />
-          </CardBody>
-        </Card>
+        <GeneratorWorkspace
+          templates={formTemplates}
+          formats={formatos}
+          baseOptions={baseOptions}
+          canManage={podeGerir}
+        />
       )}
-
-      {podeParametrizar && formTemplates.length > 0 ? (
-        <p className="mt-6 text-xs text-slate-500">
-          Precisa de um formato novo?{" "}
-          <Link
-            href="/parametros/nomenclaturas"
-            className="font-medium text-brand-600 hover:underline"
-          >
-            Cadastre um modelo
-          </Link>{" "}
-          em Parâmetros → Nomenclaturas.
-        </p>
-      ) : null}
     </>
   );
 }

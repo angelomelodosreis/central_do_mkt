@@ -53,7 +53,8 @@ export const TEST_ACCOUNTS = {
     email: "lider.teste@grupomedcof.com.br",
     role: "leader" as const,
     label: "Líder",
-    description: "Edita conteúdo e define os parâmetros. Sem acesso a acessos.",
+    description:
+      "Coordenação: vê todas as BUs e define os parâmetros. Sem acesso a acessos.",
   },
   editor: {
     id: "usr_teste_editor",
@@ -62,7 +63,7 @@ export const TEST_ACCOUNTS = {
     role: "editor" as const,
     label: "Editor",
     description:
-      "Cria e edita documentação, personas e o calendário da BU que responde.",
+      "Analista: vê e edita só o planejamento das BUs em que está na equipe.",
   },
   member: {
     id: "usr_teste_membro",
@@ -70,7 +71,8 @@ export const TEST_ACCOUNTS = {
     email: "membro.teste@grupomedcof.com.br",
     role: "member" as const,
     label: "Membro",
-    description: "Só consulta: gerador, documentação, personas e calendário."
+    description:
+      "Só consulta. Sem vínculo com BU, não vê planejamento de nenhuma.",
   },
 } as const;
 

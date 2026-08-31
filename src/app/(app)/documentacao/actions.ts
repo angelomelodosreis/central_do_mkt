@@ -5,26 +5,86 @@ import { redirect } from "next/navigation";
 import { and, eq, ne } from "drizzle-orm";
 
 import type { DocFormState } from "./form-state";
-import { requirePermission } from "@/lib/auth/session";
+import { requirePermission, type CurrentUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
+  DOC_SCOPES,
   DOC_VISIBILITIES,
   documentationCategory,
   documentationPage,
+  type DocScope,
   type DocVisibility,
+  type UserRole,
 } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
 import {
   buildSearchText,
   normalizeRichInput,
 } from "@/lib/modules/documentation/rich-text";
+import { canSeeBusinessUnit } from "@/lib/modules/access/scope";
 import { toKebabCase } from "@/lib/modules/documentation/slug";
 import { newId } from "@/lib/utils/id";
+
+/**
+ * Revalida as duas casas de uma página: a biblioteca geral e a área da BU.
+ *
+ * Uma página de BU aparece nos dois lugares (dentro da BU sempre, na
+ * biblioteca quando publicada), então revalidar só `/documentacao` deixaria a
+ * listagem da BU exibindo o título antigo.
+ */
+function revalidateDocViews() {
+  revalidatePath("/documentacao", "layout");
+  revalidatePath("/planejamento", "layout");
+}
 
 function parseVisibility(value: unknown): DocVisibility {
   return DOC_VISIBILITIES.includes(value as DocVisibility)
     ? (value as DocVisibility)
     : "all_active_users";
+}
+
+function parseScope(value: unknown): DocScope {
+  return DOC_SCOPES.includes(value as DocScope)
+    ? (value as DocScope)
+    : "general";
+}
+
+/**
+ * Onde a página vive e quem pode gravar ali.
+ *
+ * Duas decisões de uma vez, porque estão amarradas:
+ *
+ * - Documento SEM BU é da biblioteca geral (processos, convenções) e escopo
+ *   `general` é o único que faz sentido — "só a minha BU" não significa nada
+ *   quando não há BU.
+ * - Documento COM BU exige vínculo com ela. Sem isso, um analista poderia
+ *   gravar dentro da BU de outra pessoa mandando outro `businessUnitId` no
+ *   POST — a tela esconde o campo, o servidor é que precisa recusar.
+ */
+async function resolvePlacement(
+  currentUser: CurrentUser,
+  businessUnitId: string | null,
+  rawScope: unknown,
+): Promise<
+  | { ok: true; businessUnitId: string | null; scope: DocScope }
+  | { ok: false; message: string }
+> {
+  const scope = parseScope(rawScope);
+
+  if (!businessUnitId) {
+    return { ok: true, businessUnitId: null, scope: "general" };
+  }
+
+  // O escopo já resolveu herança e vínculo: quem responde pela divisão, pela
+  // BU ou participa do squad passa. Repetir a regra aqui era o que fazia esta
+  // checagem divergir da que a listagem usa.
+  const podeNaBu = canSeeBusinessUnit(currentUser.scope, businessUnitId);
+
+  if (!podeNaBu) {
+    return { ok: false, message: "Você não trabalha nesta Business Unit." };
+  }
+
+  return { ok: true, businessUnitId, scope };
 }
 
 /** Cria uma página de documentação. */
@@ -40,10 +100,18 @@ export async function createDocPage(
   const content = normalizeRichInput(String(formData.get("content") ?? ""));
   const visibility = parseVisibility(formData.get("visibility"));
 
-  if (!title) return { status: "error", message: "Informe o título da página." };
+  if (!title)
+    return { status: "error", message: "Informe o título da página." };
   if (!categoryId) {
     return { status: "error", message: "Escolha uma categoria." };
   }
+
+  const placement = await resolvePlacement(
+    currentUser,
+    String(formData.get("businessUnitId") ?? "").trim() || null,
+    formData.get("scope"),
+  );
+  if (!placement.ok) return { status: "error", message: placement.message };
 
   const slug = toKebabCase(title);
   if (!slug) {
@@ -104,6 +172,8 @@ export async function createDocPage(
       contentFormat: "rich_text",
     }),
     visibility,
+    businessUnitId: placement.businessUnitId,
+    scope: placement.scope,
     sortOrder: 100,
     createdBy: currentUser.id,
     updatedBy: currentUser.id,
@@ -118,10 +188,18 @@ export async function createDocPage(
     entityType: "doc_page",
     entityId: pageId,
     summary: `Criou a página de documentação "${title}"`,
-    afterData: { title, slug, categoryId, visibility, content },
+    afterData: {
+      title,
+      slug,
+      categoryId,
+      visibility,
+      businessUnitId: placement.businessUnitId,
+      scope: placement.scope,
+      content,
+    },
   });
 
-  revalidatePath("/documentacao");
+  revalidateDocViews();
   redirect(`/documentacao/${category.slug}/${slug}`);
 }
 
@@ -140,7 +218,8 @@ export async function updateDocPage(
   const visibility = parseVisibility(formData.get("visibility"));
 
   if (!pageId) return { status: "error", message: "Página não identificada." };
-  if (!title) return { status: "error", message: "Informe o título da página." };
+  if (!title)
+    return { status: "error", message: "Informe o título da página." };
 
   const db = await getDb();
 
@@ -153,6 +232,17 @@ export async function updateDocPage(
   if (!existing) {
     return { status: "error", message: "Essa página não existe mais." };
   }
+
+  // A BU de uma página não muda numa edição: ela vem do registro, não do
+  // formulário. O que a pessoa pode mudar é o ESCOPO — de interno para
+  // biblioteca geral e de volta. Mover uma página de uma BU para outra seria
+  // outra operação, e não existe tela para isso.
+  const placement = await resolvePlacement(
+    currentUser,
+    existing.businessUnitId,
+    formData.get("scope"),
+  );
+  if (!placement.ok) return { status: "error", message: placement.message };
 
   const targetCategoryId = categoryId || existing.categoryId;
   const slug = toKebabCase(title) || existing.slug;
@@ -201,6 +291,8 @@ export async function updateDocPage(
             : existing.contentFormat,
       }),
       visibility,
+      businessUnitId: placement.businessUnitId,
+      scope: placement.scope,
       updatedBy: currentUser.id,
       updatedAt: new Date(),
     })
@@ -222,6 +314,8 @@ export async function updateDocPage(
       summary: existing.summary,
       content: existing.content,
       visibility: existing.visibility,
+      businessUnitId: existing.businessUnitId,
+      scope: existing.scope,
     },
     afterData: {
       title,
@@ -230,6 +324,8 @@ export async function updateDocPage(
       summary: summary || null,
       content: existing.pageType === "standard" ? content : existing.content,
       visibility,
+      businessUnitId: placement.businessUnitId,
+      scope: placement.scope,
     },
   });
 
@@ -239,10 +335,12 @@ export async function updateDocPage(
     .where(eq(documentationCategory.id, targetCategoryId))
     .get();
 
-  revalidatePath("/documentacao");
+  revalidateDocViews();
   // Sem a categoria não há como montar o endereço da página; voltamos para a
   // listagem em vez de gerar uma URL quebrada como /documentacao//slug.
-  redirect(category ? `/documentacao/${category.slug}/${slug}` : "/documentacao");
+  redirect(
+    category ? `/documentacao/${category.slug}/${slug}` : "/documentacao",
+  );
 }
 
 /**
@@ -279,7 +377,7 @@ export async function deleteDocPage(formData: FormData): Promise<void> {
     beforeData: existing,
   });
 
-  revalidatePath("/documentacao");
+  revalidateDocViews();
   redirect("/documentacao?aviso=pagina-excluida");
 }
 
@@ -292,9 +390,12 @@ export async function createDocCategory(
 
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const pageTemplate = normalizeRichInput(String(formData.get("pageTemplate") ?? ""));
+  const pageTemplate = normalizeRichInput(
+    String(formData.get("pageTemplate") ?? ""),
+  );
 
-  if (!name) return { status: "error", message: "Informe o nome da categoria." };
+  if (!name)
+    return { status: "error", message: "Informe o nome da categoria." };
 
   const slug = toKebabCase(name);
   if (!slug) {
@@ -313,7 +414,10 @@ export async function createDocCategory(
     .get();
 
   if (duplicate) {
-    return { status: "error", message: "Já existe uma categoria com esse nome." };
+    return {
+      status: "error",
+      message: "Já existe uma categoria com esse nome.",
+    };
   }
 
   const categoryId = newId("cat");
@@ -364,12 +468,15 @@ export async function updateDocCategory(
   const categoryId = String(formData.get("categoryId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const pageTemplate = normalizeRichInput(String(formData.get("pageTemplate") ?? ""));
+  const pageTemplate = normalizeRichInput(
+    String(formData.get("pageTemplate") ?? ""),
+  );
 
   if (!categoryId) {
     return { status: "error", message: "Categoria não identificada." };
   }
-  if (!name) return { status: "error", message: "Informe o nome da categoria." };
+  if (!name)
+    return { status: "error", message: "Informe o nome da categoria." };
 
   const db = await getDb();
   const existing = await db
@@ -396,7 +503,10 @@ export async function updateDocCategory(
     .get();
 
   if (duplicate) {
-    return { status: "error", message: "Já existe outra categoria com esse nome." };
+    return {
+      status: "error",
+      message: "Já existe outra categoria com esse nome.",
+    };
   }
 
   await db

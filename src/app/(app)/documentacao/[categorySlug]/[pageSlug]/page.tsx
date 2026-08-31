@@ -2,20 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { BusinessUnitsTable } from "@/components/business-units-table";
+import { AttachmentPanel } from "@/components/attachments/attachment-panel";
+import { ReferencePageBody } from "@/components/bases/reference-page";
 import { Markdown } from "@/components/markdown";
 import { RichTextContent } from "@/components/rich-text/renderer";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
-import { can, requirePermission } from "@/lib/auth/session";
-import { DOC_VISIBILITY_LABELS } from "@/lib/db/schema";
+import { can, isPlatformAdmin, requirePermission } from "@/lib/auth/session";
+import { DOC_VISIBILITY_LABELS, isReferencePage } from "@/lib/db/schema";
 import { getPageBySlug } from "@/lib/modules/documentation/queries";
 import {
   isRichDocEmpty,
   isRichText,
   parseRichDoc,
 } from "@/lib/modules/documentation/rich-text";
+import { listAttachments } from "@/lib/modules/files/queries";
+import { getBusinessUnitById } from "@/lib/modules/org/queries";
 import { formatDateTime } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +43,8 @@ export default async function DocumentationPageView({
 }) {
   const { categorySlug, pageSlug } = await params;
   const currentUser = await requirePermission("documentation", "view");
+  // Bases oficiais são administradas na Administração; aqui só se consulta.
+  const podeAdministrarBases = isPlatformAdmin(currentUser);
 
   const result = await getPageBySlug(categorySlug, pageSlug, currentUser);
   // Página inexistente e página restrita caem no mesmo 404, de propósito: assim
@@ -48,6 +53,11 @@ export default async function DocumentationPageView({
 
   const { category, page } = result;
   const canEdit = can(currentUser, "documentation", "edit");
+
+  const [anexos, unidade] = await Promise.all([
+    listAttachments("doc_page", page.id),
+    page.businessUnitId ? getBusinessUnitById(page.businessUnitId) : null,
+  ]);
 
   // Páginas antigas seguem em Markdown; as novas vêm do editor visual. O formato
   // gravado é quem decide, então nada precisou ser migrado à força.
@@ -84,8 +94,20 @@ export default async function DocumentationPageView({
             </p>
           ) : null}
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            {page.pageType === "business_units_reference" ? (
-              <Badge tone="brand">Dados ao vivo do sistema</Badge>
+            {isReferencePage(page.pageType) ? (
+              <Badge tone="brand">Base oficial · dados ao vivo</Badge>
+            ) : null}
+            {/* De onde o documento vem e até onde ele chega. Quem lê precisa
+                saber se o resto do time também vê isso. */}
+            {unidade ? (
+              <Link
+                href={`/planejamento/${unidade.slug}/documentos`}
+                className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-200 transition-colors hover:bg-brand-100"
+              >
+                {page.scope === "business_unit"
+                  ? `Interno · ${unidade.label}`
+                  : unidade.label}
+              </Link>
             ) : null}
             {page.visibility !== "all_active_users" ? (
               <Badge tone="warning">
@@ -110,8 +132,8 @@ export default async function DocumentationPageView({
 
       <Card>
         <CardBody className="sm:px-6 sm:py-5">
-          {page.pageType === "business_units_reference" ? (
-            <BusinessUnitsTable />
+          {isReferencePage(page.pageType) ? (
+            <ReferencePageBody pageType={page.pageType} canEdit={podeAdministrarBases} />
           ) : !hasBody ? (
             <p className="text-sm text-slate-500">
               Esta página ainda não tem conteúdo.
@@ -123,6 +145,25 @@ export default async function DocumentationPageView({
           )}
         </CardBody>
       </Card>
+
+      <div className="mt-6">
+        <AttachmentPanel
+          ownerType="doc_page"
+          ownerId={page.id}
+          items={anexos.map((item) => ({
+            id: item.id,
+            kind: item.kind,
+            title: item.title,
+            url: item.url,
+            mimeType: item.mimeType,
+            sizeBytes: item.sizeBytes,
+            authorName: item.authorName,
+          }))}
+          canEdit={canEdit}
+          revalidatePath={`/documentacao/${category.slug}/${page.slug}`}
+          description="PDFs, planilhas e links do Drive ligados a este documento. PDF e imagem abrem aqui mesmo."
+        />
+      </div>
     </>
   );
 }

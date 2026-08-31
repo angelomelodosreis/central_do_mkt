@@ -2,6 +2,7 @@ import {
   sqliteTable,
   text,
   integer,
+  real,
   index,
   unique,
 } from "drizzle-orm/sqlite-core";
@@ -172,3 +173,216 @@ export const timelineItem = sqliteTable(
 export type StrategyCycle = typeof strategyCycle.$inferSelect;
 export type StrategyProduct = typeof strategyProduct.$inferSelect;
 export type TimelineItem = typeof timelineItem.$inferSelect;
+
+/**
+ * ── METAS ──────────────────────────────────────────────────────────────────
+ *
+ * A meta é uma DEFINIÇÃO, não um acompanhamento.
+ *
+ * O acompanhamento (realizado, atingimento, evolução mês a mês) vive num
+ * dashboard fora desta plataforma. Aqui se registra o que a BU se comprometeu a
+ * entregar e por quê — o que precisa ser escrito uma vez, revisado em conjunto e
+ * consultado o ano inteiro. Guardar realizado aqui significaria pedir digitação
+ * mensal de um número que outro sistema já tem, e duas fontes para a mesma
+ * verdade sempre divergem.
+ */
+
+/**
+ * Os três escopos em que uma meta é definida.
+ *
+ * O ciclo dá a direção do ano; os semestres a quebram em dois compromissos
+ * verificáveis. Não há nível mensal de propósito: meta mensal é gestão de
+ * execução, e a execução mora no calendário e nas tarefas.
+ */
+export const GOAL_SCOPES = ["cycle", "h1", "h2"] as const;
+export type GoalScope = (typeof GOAL_SCOPES)[number];
+
+export const GOAL_SCOPE_LABELS: Record<GoalScope, string> = {
+  cycle: "Meta geral do ciclo",
+  h1: "1º semestre",
+  h2: "2º semestre",
+};
+
+export const GOAL_SCOPE_SHORT: Record<GoalScope, string> = {
+  cycle: "Ciclo",
+  h1: "1º sem.",
+  h2: "2º sem.",
+};
+
+/** Como o número é escrito na tela. */
+export type GoalMetricUnit = "count" | "currency" | "percent" | "ratio" | "score";
+
+/**
+ * Catálogo de indicadores sugeridos.
+ *
+ * É um catálogo fechado em código, e não um cadastro livre, por um motivo
+ * específico: nome e unidade iguais em todas as BUs é o que permite somar e
+ * comparar. Se cada BU escrevesse o seu, "Leads" e "Captação" seriam duas
+ * colunas diferentes para a mesma coisa.
+ *
+ * O que o analista escolhe é QUAIS indicadores entram na meta dele — nenhum é
+ * obrigatório. Uma BU de conteúdo pode metar alcance e engajamento sem nunca
+ * tocar em faturamento, e continua comparável a quem meta faturamento.
+ */
+export const GOAL_METRIC_CATALOG = {
+  // ── Captação ──
+  leads: { label: "Leads captados", unit: "count", group: "capture" },
+  cpl: { label: "Custo por lead (CPL)", unit: "currency", group: "capture" },
+  site_sessions: { label: "Sessões no site", unit: "count", group: "capture" },
+  lead_conversion: {
+    label: "Conversão visitante → lead",
+    unit: "percent",
+    group: "capture",
+  },
+  list_subscribers: {
+    label: "Inscritos na base",
+    unit: "count",
+    group: "capture",
+  },
+  social_followers: {
+    label: "Novos seguidores",
+    unit: "count",
+    group: "capture",
+  },
+  reach: { label: "Alcance", unit: "count", group: "capture" },
+
+  // ── Vendas ──
+  sales: { label: "Vendas (matrículas)", unit: "count", group: "sales" },
+  revenue: { label: "Faturamento", unit: "currency", group: "sales" },
+  average_ticket: { label: "Ticket médio", unit: "currency", group: "sales" },
+  sales_conversion: {
+    label: "Conversão lead → venda",
+    unit: "percent",
+    group: "sales",
+  },
+  cac: { label: "Custo de aquisição (CAC)", unit: "currency", group: "sales" },
+  roas: { label: "ROAS", unit: "ratio", group: "sales" },
+
+  // ── Base e retenção ──
+  active_students: { label: "Alunos ativos", unit: "count", group: "retention" },
+  renewal_rate: {
+    label: "Taxa de renovação",
+    unit: "percent",
+    group: "retention",
+  },
+  churn_rate: { label: "Churn", unit: "percent", group: "retention" },
+  nps: { label: "NPS", unit: "score", group: "retention" },
+
+  // ── Marca e conteúdo ──
+  engagement_rate: {
+    label: "Taxa de engajamento",
+    unit: "percent",
+    group: "brand",
+  },
+  email_open_rate: {
+    label: "Abertura de e-mail",
+    unit: "percent",
+    group: "brand",
+  },
+  content_published: {
+    label: "Conteúdos publicados",
+    unit: "count",
+    group: "brand",
+  },
+  events_held: { label: "Eventos realizados", unit: "count", group: "brand" },
+} as const satisfies Record<
+  string,
+  { label: string; unit: GoalMetricUnit; group: string }
+>;
+
+export type GoalMetric = keyof typeof GOAL_METRIC_CATALOG;
+
+export const GOAL_METRICS = Object.keys(GOAL_METRIC_CATALOG) as GoalMetric[];
+
+export function isGoalMetric(value: string): value is GoalMetric {
+  return Object.prototype.hasOwnProperty.call(GOAL_METRIC_CATALOG, value);
+}
+
+/** Agrupamento usado para organizar o seletor de indicadores. */
+export const GOAL_METRIC_GROUPS = [
+  { key: "capture", label: "Captação" },
+  { key: "sales", label: "Vendas" },
+  { key: "retention", label: "Base e retenção" },
+  { key: "brand", label: "Marca e conteúdo" },
+] as const;
+
+/**
+ * A meta de um escopo, seguindo o template que o analista preenche.
+ *
+ * Uma linha por (ciclo, escopo) — no máximo três por ciclo. Os campos são
+ * colunas explícitas, e não um `details` em JSON como no calendário, porque
+ * aqui a estrutura é a mesma para toda BU e é justamente o template que se quer
+ * impor: campo nomeado é campo que aparece em branco quando ninguém respondeu.
+ */
+export const strategyGoal = sqliteTable(
+  "strategy_goal",
+  {
+    id: text("id").primaryKey(),
+    cycleId: text("cycle_id")
+      .notNull()
+      .references(() => strategyCycle.id, { onDelete: "cascade" }),
+    scope: text("scope").notNull().$type<GoalScope>(),
+
+    /** A frase única: onde queremos chegar. */
+    objective: text("objective").notNull(),
+    /** O que no cenário justifica essa escolha agora. */
+    rationale: text("rationale"),
+    /**
+     * As apostas de como chegar lá — 2 a 4. Vetor JSON porque a quantidade
+     * varia e cada frente tem título e detalhe próprios; virar tabela só se
+     * algum dia uma frente precisar de dono e prazo.
+     */
+    fronts: text("fronts", { mode: "json" }).$type<
+      { title: string; detail?: string }[]
+    >(),
+    /** Recusas explícitas. É o campo que protege o foco no meio do ciclo. */
+    nonGoals: text("non_goals"),
+    /** O sinal de sucesso que o número não captura. */
+    successSignal: text("success_signal"),
+    /** O que pode derrubar a meta e de quem ela depende. */
+    risks: text("risks"),
+
+    createdBy: text("created_by"),
+    updatedBy: text("updated_by"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    unique("strategy_goal_scope_unique").on(table.cycleId, table.scope),
+    index("strategy_goal_cycle_idx").on(table.cycleId),
+  ],
+);
+
+/**
+ * Um indicador escolhido para uma meta, com o número-alvo.
+ *
+ * Tabela separada, e não colunas fixas, porque o analista escolhe quais
+ * indicadores fazem sentido: com colunas, incluir um indicador novo no catálogo
+ * exigiria migração, e toda BU carregaria colunas vazias das métricas que não
+ * usa.
+ *
+ * Só `target`. Não existe coluna de realizado — ver a nota no topo da seção.
+ */
+export const strategyGoalTarget = sqliteTable(
+  "strategy_goal_target",
+  {
+    id: text("id").primaryKey(),
+    goalId: text("goal_id")
+      .notNull()
+      .references(() => strategyGoal.id, { onDelete: "cascade" }),
+    metric: text("metric").notNull().$type<GoalMetric>(),
+    target: real("target").notNull(),
+    /** Contexto do número: de onde ele saiu, de que base parte. */
+    note: text("note"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    unique("strategy_goal_target_unique").on(table.goalId, table.metric),
+    index("strategy_goal_target_goal_idx").on(table.goalId),
+  ],
+);
+
+export type StrategyGoal = typeof strategyGoal.$inferSelect;
+export type StrategyGoalTarget = typeof strategyGoalTarget.$inferSelect;

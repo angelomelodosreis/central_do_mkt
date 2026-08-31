@@ -20,6 +20,35 @@ export const AUDIT_ACTIONS = [
   "business_unit.update", // reversível
   "business_unit.deactivate", // reversível
   "business_unit.reactivate",
+  // Squad da BU — é o vínculo que dá acesso ao Planejamento da BU, então
+  // conceder e revogar precisa ficar registrado com nome e sobrenome.
+  "squad.member_add",
+  "squad.member_remove",
+  "squad.member_move",
+  "squad.member_update",
+  "squad.toggle",
+  // Estrutura organizacional
+  "org_unit.create",
+  "org_unit.update",
+  "org_unit.toggle",
+  "job_title.create",
+  "job_title.update",
+  "job_title.toggle",
+  "job_title.delete",
+  "user.org_change",
+  // Modelo de acesso: papel + escopo. As concessões de escopo são o que
+  // explica por que alguém enxerga o que enxerga, então precisam de rastro.
+  "access_grant.create",
+  "access_grant.delete",
+  "user.super_admin_change",
+  // Bases oficiais de negócio
+  "business_division.create",
+  "business_division.update",
+  "business_division.toggle",
+  "product.create",
+  "product.update",
+  "product.toggle",
+  "product.assign_business_unit",
   // Documentação
   "doc_category.create",
   "doc_category.update", // reversível
@@ -43,6 +72,22 @@ export const AUDIT_ACTIONS = [
   "timeline_item.create",
   "timeline_item.update", // reversível
   "timeline_item.delete", // reversível
+  "strategy_product.update",
+  "strategy_product.toggle",
+  "strategy_round.create",
+  "strategy_round.update",
+  "strategy_finding.delete",
+  "strategy_goal.create",
+  "strategy_goal.update",
+  "strategy_goal.delete",
+  // Tarefas
+  "task.create",
+  "task.update",
+  "task.status_change",
+  "task.delete",
+  // Anexos
+  "attachment.create",
+  "attachment.delete",
   // Meta
   "audit.undo",
 ] as const;
@@ -50,6 +95,11 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export const AUDIT_ENTITY_TYPES = [
   "user",
+  "team",
+  "job_title",
+  "squad",
+  "business_division",
+  "product",
   "allowed_domain",
   "role_permission",
   "business_unit",
@@ -60,6 +110,11 @@ export const AUDIT_ENTITY_TYPES = [
   "strategy_cycle",
   "strategy_product",
   "timeline_item",
+  "strategy_goal",
+  "strategy_round",
+  "strategy_finding",
+  "task",
+  "attachment",
   "audit_log",
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

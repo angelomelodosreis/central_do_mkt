@@ -14,6 +14,13 @@ export type NavItem = {
   label: string;
   description: string;
   icon: NavIconKey;
+  /**
+   * Número exibido junto ao item — hoje, a fila de tarefas.
+   *
+   * No menu recolhido ele vira um ponto: o número não caberia legível em 40px,
+   * mas a informação "tem coisa aqui" é o que mais importa.
+   */
+  badge?: number;
 };
 
 /** Onde a preferência de menu recolhido fica guardada, por navegador. */
@@ -31,7 +38,13 @@ export function Nav({
   user,
 }: {
   items: NavItem[];
-  user: { name: string; email: string; roleLabel: string };
+  user: {
+    name: string;
+    email: string;
+    roleLabel: string;
+    /** Cargo no organograma, quando definido. Diferente do papel de acesso. */
+    jobTitle: string | null;
+  };
 }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -74,11 +87,41 @@ export function Nav({
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                 )}
               >
-                <NavIcon name={item.icon} className="size-5 shrink-0" />
+                <span className="relative shrink-0">
+                  <NavIcon name={item.icon} className="size-5" />
+                  {collapsed && item.badge ? (
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute -right-1 -top-0.5 size-2 rounded-full ring-2",
+                        isActive
+                          ? "bg-white ring-brand-600"
+                          : "bg-brand-500 ring-white",
+                      )}
+                    />
+                  ) : null}
+                </span>
                 {collapsed ? (
-                  <span className="sr-only">{item.label}</span>
+                  <span className="sr-only">
+                    {item.label}
+                    {item.badge ? ` (${item.badge})` : ""}
+                  </span>
                 ) : (
-                  <span className="min-w-0 truncate">{item.label}</span>
+                  <>
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    {item.badge ? (
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-brand-50 text-brand-700",
+                        )}
+                      >
+                        {item.badge}
+                      </span>
+                    ) : null}
+                  </>
                 )}
               </Link>
             </li>
@@ -92,7 +135,10 @@ export function Nav({
     <div className="border-t border-slate-200 pt-4">
       <p className="truncate text-sm font-medium text-slate-900">{user.name}</p>
       <p className="truncate text-xs text-slate-500">{user.email}</p>
-      <p className="mt-1 text-xs text-slate-400">{user.roleLabel}</p>
+      <p className="mt-1 text-xs text-slate-400">
+        {user.jobTitle ? `${user.jobTitle} · ` : ""}
+        {user.roleLabel}
+      </p>
       <SignOutButton className="mt-3" />
     </div>
   );

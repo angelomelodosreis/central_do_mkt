@@ -4,13 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 
 import { TemplateField, type FormField } from "./template-field";
 import { Button } from "@/components/ui/button";
-import { Field, Select } from "@/components/ui/field";
+import {
+  OFFICIAL_BASES,
+  isBaseKey,
+  type BaseKey,
+  type BaseOptions,
+} from "@/lib/modules/bases/registry";
 import {
   buildName,
   describeTemplateFormat,
   type FieldValues,
 } from "@/lib/modules/name-generator/generate";
-import type { BusinessUnitOption } from "@/lib/modules/name-generator/queries";
 import {
   addRecentName,
   clearRecentNames,
@@ -32,22 +36,24 @@ function buildYearOptions(): number[] {
   return Array.from({ length: 5 }, (_, index) => currentYear - 1 + index);
 }
 
+/**
+ * Monta um nome a partir de um modelo.
+ *
+ * Recebe UM modelo, não a lista: a escolha do modelo virou a tela anterior, com
+ * os modelos em cartões. Enquanto era um dropdown no topo deste formulário, o
+ * primeiro modelo da lista vinha escolhido por padrão — e quem entrava
+ * preenchia o formulário errado sem notar que havia outros.
+ */
 export function NameGeneratorForm({
-  templates,
-  businessUnits,
+  template,
+  baseOptions,
 }: {
-  templates: FormTemplate[];
-  businessUnits: BusinessUnitOption[];
+  template: FormTemplate;
+  baseOptions: BaseOptions;
 }) {
-  const [templateId, setTemplateId] = useState(templates[0]?.id ?? "");
   const [values, setValues] = useState<FieldValues>({});
   const [recent, setRecent] = useState<RecentName[]>([]);
   const [copiedName, setCopiedName] = useState<string | null>(null);
-
-  const template = useMemo(
-    () => templates.find((item) => item.id === templateId) ?? templates[0],
-    [templates, templateId],
-  );
 
   const years = useMemo(buildYearOptions, []);
 
@@ -57,32 +63,71 @@ export function NameGeneratorForm({
     setRecent(readRecentNames());
   }, []);
 
-  const result = useMemo(() => {
-    if (!template) {
-      return { ok: false as const, error: "Nenhum modelo disponível." };
-    }
-    return buildName(template.fields, values, template.blockSeparator);
-  }, [template, values]);
+  const result = useMemo(
+    () => buildName(template.fields, values, template.blockSeparator),
+    [template, values],
+  );
 
   const formatHint = useMemo(
-    () =>
-      template
-        ? describeTemplateFormat(template.fields, template.blockSeparator)
-        : "",
+    () => describeTemplateFormat(template.fields, template.blockSeparator),
     [template],
   );
 
-  // A pessoa ainda não preencheu nada: mostramos orientação, não erro.
-  const isUntouched = Object.values(values).every((value) => !value?.trim());
+  /**
+   * Para cada campo de base, qual campo do modelo é o "pai" dele.
+   *
+   * A hierarquia (divisão → BU → produto) é declarada no registro de bases, não
+   * aqui: este mapa só descobre se o modelo em questão TEM o campo pai. Um
+   * modelo que pede produto sem pedir BU continua listando todos os produtos,
+   * em vez de travar num filtro impossível de satisfazer.
+   */
+  const camposPorBase = useMemo(() => {
+    const mapa = new Map<BaseKey, FormField>();
+    for (const field of template.fields) {
+      if (field.fieldType === "official_base" && isBaseKey(field.sourceKey)) {
+        if (!mapa.has(field.sourceKey)) mapa.set(field.sourceKey, field);
+      }
+    }
+    return mapa;
+  }, [template]);
 
-  function handleTemplateChange(nextId: string) {
-    setTemplateId(nextId);
-    // Campos de modelos diferentes não se correspondem — recomeçamos limpo.
-    setValues({});
+  function parentValueOf(field: FormField): string | null {
+    if (field.fieldType !== "official_base" || !isBaseKey(field.sourceKey)) {
+      return null;
+    }
+    const parentKey = OFFICIAL_BASES[field.sourceKey].parentKey;
+    if (!parentKey) return null;
+
+    const campoPai = camposPorBase.get(parentKey);
+    if (!campoPai) return null;
+
+    return values[campoPai.id] ?? "";
   }
 
+  const isUntouched = Object.values(values).every((value) => !value?.trim());
+
   function setFieldValue(fieldId: string, value: string) {
-    setValues((current) => ({ ...current, [fieldId]: value }));
+    setValues((current) => {
+      const proximo = { ...current, [fieldId]: value };
+
+      // Trocar a divisão invalida a BU escolhida, que invalida o produto. Sem
+      // limpar em cascata, o nome sairia com uma BU que não pertence à divisão
+      // selecionada — errado, e com cara de certo.
+      const campo = template.fields.find((item) => item.id === fieldId);
+      if (campo?.fieldType === "official_base" && isBaseKey(campo.sourceKey)) {
+        for (const filho of template.fields) {
+          if (
+            filho.fieldType === "official_base" &&
+            isBaseKey(filho.sourceKey) &&
+            OFFICIAL_BASES[filho.sourceKey].parentKey === campo.sourceKey
+          ) {
+            proximo[filho.id] = "";
+          }
+        }
+      }
+
+      return proximo;
+    });
   }
 
   async function copyToClipboard(value: string) {
@@ -101,7 +146,7 @@ export function NameGeneratorForm({
 
   /** Copiar é o gesto que significa "usei este nome" — por isso guarda na lista. */
   async function handleCopyGenerated() {
-    if (!result.ok || !template) return;
+    if (!result.ok) return;
     await copyToClipboard(result.name);
     setRecent(
       addRecentName({ name: result.name, templateName: template.name }),
@@ -113,39 +158,8 @@ export function NameGeneratorForm({
     setRecent([]);
   }
 
-  if (!template) {
-    return (
-      <p className="text-sm text-slate-500">
-        Nenhum modelo de nomenclatura disponível. Um administrador precisa
-        cadastrar um em Parâmetros → Nomenclaturas.
-      </p>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {templates.length > 1 ? (
-        <Field
-          label="O que você quer nomear?"
-          htmlFor="modelo"
-          hint={template.description ?? undefined}
-        >
-          <Select
-            id="modelo"
-            value={templateId}
-            onChange={(event) => handleTemplateChange(event.target.value)}
-          >
-            {templates.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      ) : (
-        <p className="text-sm text-slate-500">{template.description}</p>
-      )}
-
       <div className="rounded-lg bg-slate-50 px-3 py-2">
         <span className="text-xs text-slate-500">Formato: </span>
         <code className="font-mono text-xs text-slate-700">{formatHint}</code>
@@ -158,7 +172,12 @@ export function NameGeneratorForm({
             field={field}
             value={values[field.id] ?? ""}
             onChange={(value) => setFieldValue(field.id, value)}
-            businessUnits={businessUnits}
+            baseOptions={
+              field.fieldType === "official_base" && isBaseKey(field.sourceKey)
+                ? baseOptions[field.sourceKey]
+                : []
+            }
+            parentValue={parentValueOf(field)}
             years={years}
           />
         ))}
@@ -166,7 +185,7 @@ export function NameGeneratorForm({
 
       {/* Prévia ao vivo */}
       <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
-        <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Resultado
         </p>
 
@@ -223,8 +242,8 @@ export function NameGeneratorForm({
                 </span>
                 <Button
                   type="button"
-                  variant="secondary"
                   size="sm"
+                  variant="secondary"
                   onClick={() => copyToClipboard(item.name)}
                 >
                   {copiedName === item.name ? "Copiado ✓" : "Copiar"}

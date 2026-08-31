@@ -1,4 +1,5 @@
 import { toSnakeCase, validateListName } from "./slugify";
+import { OFFICIAL_BASES, isBaseKey } from "@/lib/modules/bases/registry";
 import type {
   FieldType,
   NamingTemplateField,
@@ -16,14 +17,15 @@ export type TemplateFieldInput = {
   label: string;
   isRequired: boolean;
   options: SelectOption[] | null;
+  /** Qual base oficial alimenta o campo, quando `fieldType = official_base`. */
+  sourceKey: string | null;
 };
 
 /** Valores preenchidos no formulário, indexados pelo id do campo. */
 export type FieldValues = Record<string, string>;
 
 export type BuildResult =
-  | { ok: true; name: string }
-  | { ok: false; error: string; fieldId?: string };
+  { ok: true; name: string } | { ok: false; error: string; fieldId?: string };
 
 /** Mês/ano é gravado como MM_AAAA (ex.: 11_2026), que ordena corretamente. */
 export function formatMonthYear(month: string, year: string): string {
@@ -51,9 +53,10 @@ function normalizeFieldValue(
   }
 
   switch (field.fieldType) {
-    case "business_unit":
+    case "official_base":
     case "select":
-      // Já vêm padronizados da origem (slug da BU ou valor da opção).
+      // Já vêm padronizados da origem (identificador da base ou valor da
+      // opção fixa).
       return { ok: true, value: toSnakeCase(value) };
 
     case "month_year":
@@ -118,7 +121,6 @@ export function buildName(
  * bater com o que está escrito na documentação de convenções.
  */
 const FORMAT_PLACEHOLDERS: Partial<Record<FieldType, string>> = {
-  business_unit: "bu",
   month_year: "mm_aaaa",
 };
 
@@ -127,14 +129,20 @@ const FORMAT_PLACEHOLDERS: Partial<Record<FieldType, string>> = {
  * Ex.: `bu-tipo_de_lista-nome_da_lista`
  */
 export function describeTemplateFormat(
-  fields: Array<Pick<NamingTemplateField, "label" | "fieldType" | "position">>,
+  fields: Array<
+    Pick<NamingTemplateField, "label" | "fieldType" | "position" | "sourceKey">
+  >,
   blockSeparator = "-",
 ): string {
   return [...fields]
     .sort((a, b) => a.position - b.position)
-    .map(
-      (field) =>
-        FORMAT_PLACEHOLDERS[field.fieldType] ?? toSnakeCase(field.label),
-    )
+    .map((field) => {
+      // A base oficial tem apelido próprio (`bu`, `produto`), para o formato
+      // exibido bater com o que está escrito na documentação de convenções.
+      if (field.fieldType === "official_base" && isBaseKey(field.sourceKey)) {
+        return OFFICIAL_BASES[field.sourceKey].formatPlaceholder;
+      }
+      return FORMAT_PLACEHOLDERS[field.fieldType] ?? toSnakeCase(field.label);
+    })
     .join(blockSeparator);
 }

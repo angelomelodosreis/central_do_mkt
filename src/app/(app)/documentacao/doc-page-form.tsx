@@ -7,11 +7,13 @@ import { createDocPage, updateDocPage } from "./actions";
 import { INITIAL_DOC_FORM_STATE, type DocFormState } from "./form-state";
 import { RichTextEditor } from "@/components/rich-text/editor";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
+import { Select } from "@/components/ui/select";
 import {
   DOC_VISIBILITIES,
   DOC_VISIBILITY_LABELS,
   type DocPageType,
+  type DocScope,
   type DocVisibility,
 } from "@/lib/db/schema";
 import { toKebabCase } from "@/lib/modules/documentation/slug";
@@ -38,18 +40,29 @@ export type DocFormValues = {
   contentHtml?: string;
   visibility: DocVisibility;
   pageType: DocPageType;
+  scope: DocScope;
 };
+
+/**
+ * A BU a que a página pertence, quando ela é escrita de dentro de uma.
+ *
+ * Ausente = documento corporativo, que vai direto para a biblioteca geral e não
+ * tem escolha de escopo a fazer.
+ */
+export type DocFormBusinessUnit = { id: string; label: string };
 
 export function DocPageForm({
   categories,
   values,
   mode,
   cancelHref,
+  businessUnit,
 }: {
   categories: DocFormCategory[];
   values: DocFormValues;
   mode: "create" | "edit";
   cancelHref: string;
+  businessUnit?: DocFormBusinessUnit;
 }) {
   const action = mode === "create" ? createDocPage : updateDocPage;
   const [state, formAction, isPending] = useActionState<DocFormState, FormData>(
@@ -59,6 +72,7 @@ export function DocPageForm({
 
   const [title, setTitle] = useState(values.title);
   const [categoryId, setCategoryId] = useState(values.categoryId);
+  const [scope, setScope] = useState<DocScope>(values.scope);
 
   // Trocar a categoria pode trazer o modelo dela. Como o editor guarda o próprio
   // estado, isso é feito remontando-o (`key`) com o novo conteúdo inicial — e só
@@ -89,6 +103,9 @@ export function DocPageForm({
     <form action={formAction} className="space-y-5">
       {values.pageId ? (
         <input type="hidden" name="pageId" value={values.pageId} />
+      ) : null}
+      {businessUnit ? (
+        <input type="hidden" name="businessUnitId" value={businessUnit.id} />
       ) : null}
 
       {state.status === "error" && state.message ? (
@@ -127,16 +144,13 @@ export function DocPageForm({
             id="categoryId"
             name="categoryId"
             value={categoryId}
-            onChange={(event) => handleCategoryChange(event.target.value)}
+            onValueChange={handleCategoryChange}
             required
-          >
-            <option value="">Selecione…</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </Select>
+            options={categories.map((category) => ({
+              value: category.id,
+              label: category.name,
+            }))}
+          />
         </Field>
 
         <Field
@@ -148,15 +162,64 @@ export function DocPageForm({
             id="visibility"
             name="visibility"
             defaultValue={values.visibility}
-          >
-            {DOC_VISIBILITIES.map((visibility) => (
-              <option key={visibility} value={visibility}>
-                {DOC_VISIBILITY_LABELS[visibility]}
-              </option>
-            ))}
-          </Select>
+            options={DOC_VISIBILITIES.map((visibility) => ({
+              value: visibility,
+              label: DOC_VISIBILITY_LABELS[visibility],
+            }))}
+          />
         </Field>
       </div>
+
+      {/* A escolha de onde o documento vive só existe dentro de uma BU: fora
+          dela, "só a minha BU" não quer dizer nada. */}
+      {businessUnit ? (
+        <fieldset className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3.5">
+          <legend className="px-1 text-sm font-medium text-slate-800">
+            Onde este documento fica
+          </legend>
+          <div className="mt-1 space-y-2.5">
+            <label className="flex cursor-pointer gap-2.5">
+              <input
+                type="radio"
+                name="scope"
+                value="business_unit"
+                checked={scope === "business_unit"}
+                onChange={() => setScope("business_unit")}
+                className="mt-0.5 size-4 accent-brand-600"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-slate-900">
+                  Apenas em {businessUnit.label}
+                </span>
+                <span className="mt-0.5 block text-xs text-slate-500">
+                  Visível só para quem trabalha nesta BU. Continua aparecendo na
+                  busca dessas pessoas.
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer gap-2.5">
+              <input
+                type="radio"
+                name="scope"
+                value="general"
+                checked={scope === "general"}
+                onChange={() => setScope("general")}
+                className="mt-0.5 size-4 accent-brand-600"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-slate-900">
+                  Também na biblioteca geral
+                </span>
+                <span className="mt-0.5 block text-xs text-slate-500">
+                  Para material que interessa ao time todo — pesquisa de mercado,
+                  aprendizado de teste. O documento continua listado dentro de{" "}
+                  {businessUnit.label}.
+                </span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+      ) : null}
 
       <Field
         label="Resumo"

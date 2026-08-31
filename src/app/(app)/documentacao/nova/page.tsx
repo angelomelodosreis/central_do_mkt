@@ -69,6 +69,7 @@ export default async function NewDocumentationPage({
                 summary: "",
                 content: selected.pageTemplate ?? "",
                 visibility: "all_active_users",
+                scope: "general",
                 pageType: "standard",
               }}
             />

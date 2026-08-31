@@ -15,7 +15,6 @@ export type BusinessUnitOption = {
   id: string;
   slug: string;
   label: string;
-  strategyOwnerId: string | null;
 };
 
 /** BUs ativas, para o seletor do topo do módulo. */
@@ -26,7 +25,6 @@ export async function listStrategyBusinessUnits(): Promise<BusinessUnitOption[]>
       id: businessUnit.id,
       slug: businessUnit.slug,
       label: businessUnit.label,
-      strategyOwnerId: businessUnit.strategyOwnerId,
     })
     .from(businessUnit)
     .where(eq(businessUnit.isActive, true))
@@ -126,15 +124,14 @@ export async function getTimelineItem(
 }
 
 /** A BU dona de um item, para checar permissão antes de gravar. */
-export async function getItemBusinessUnit(itemId: string): Promise<
-  { id: string; slug: string; strategyOwnerId: string | null } | undefined
-> {
+export async function getItemBusinessUnit(
+  itemId: string,
+): Promise<{ id: string; slug: string } | undefined> {
   const db = await getDb();
   return db
     .select({
       id: businessUnit.id,
       slug: businessUnit.slug,
-      strategyOwnerId: businessUnit.strategyOwnerId,
     })
     .from(timelineItem)
     .innerJoin(strategyCycle, eq(timelineItem.cycleId, strategyCycle.id))

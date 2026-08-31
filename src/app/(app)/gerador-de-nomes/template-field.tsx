@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
+import { Select } from "@/components/ui/select";
 import { formatMonthYear } from "@/lib/modules/name-generator/generate";
-import type { BusinessUnitOption } from "@/lib/modules/name-generator/queries";
+import {
+  OFFICIAL_BASES,
+  isBaseKey,
+  type BaseOption,
+} from "@/lib/modules/bases/registry";
 import type { FieldType, SelectOption } from "@/lib/db/schema";
 
 export type FormField = {
@@ -16,6 +21,7 @@ export type FormField = {
   placeholder: string | null;
   isRequired: boolean;
   options: SelectOption[] | null;
+  sourceKey: string | null;
 };
 
 const MONTHS = [
@@ -58,9 +64,7 @@ function MonthYearField({
   function update(nextMonth: string, nextYear: string) {
     setMonth(nextMonth);
     setYear(nextYear);
-    onChange(
-      nextMonth && nextYear ? formatMonthYear(nextMonth, nextYear) : "",
-    );
+    onChange(nextMonth && nextYear ? formatMonthYear(nextMonth, nextYear) : "");
   }
 
   return (
@@ -71,32 +75,28 @@ function MonthYearField({
       hint={field.hint ?? "Resulta no formato MM_AAAA. Ex.: 11_2026"}
     >
       <div className="flex gap-2">
-        <Select
-          id={inputId}
-          value={month}
-          onChange={(event) => update(event.target.value, year)}
-          aria-label={`Mês — ${field.label}`}
-        >
-          <option value="">Mês…</option>
-          {MONTHS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
-        <Select
-          value={year}
-          onChange={(event) => update(month, event.target.value)}
-          aria-label={`Ano — ${field.label}`}
-          className="max-w-32"
-        >
-          <option value="">Ano…</option>
-          {years.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </Select>
+        <div className="min-w-0 flex-1">
+          <Select
+            id={inputId}
+            value={month}
+            onValueChange={(next) => update(next, year)}
+            ariaLabel={`Mês — ${field.label}`}
+            placeholder="Mês…"
+            options={MONTHS}
+          />
+        </div>
+        <div className="w-32 shrink-0">
+          <Select
+            value={year}
+            onValueChange={(next) => update(month, next)}
+            ariaLabel={`Ano — ${field.label}`}
+            placeholder="Ano…"
+            options={years.map((option) => ({
+              value: String(option),
+              label: String(option),
+            }))}
+          />
+        </div>
       </div>
     </Field>
   );
@@ -105,47 +105,83 @@ function MonthYearField({
 /**
  * Renderiza um bloco do modelo conforme o tipo do campo.
  *
- * É esta função que faz o formulário ser dinâmico: cadastrar um modelo novo na
- * administração não exige tocar em código de tela.
+ * É esta função que faz o formulário ser dinâmico: cadastrar um modelo novo não
+ * exige tocar em código de tela. E, desde que as bases viraram um registro, uma
+ * base nova também não — ela chega aqui como `official_base` com outro
+ * `sourceKey`.
  */
 export function TemplateField({
   field,
   value,
   onChange,
-  businessUnits,
+  baseOptions,
+  parentValue,
   years,
 }: {
   field: FormField;
   value: string;
   onChange: (value: string) => void;
-  businessUnits: BusinessUnitOption[];
+  /** Opções já carregadas da base deste campo. */
+  baseOptions: BaseOption[];
+  /**
+   * Valor escolhido no campo da base PAI, quando o modelo tem um.
+   *
+   * `null` significa "o modelo não tem o campo pai" — e aí a lista não filtra.
+   * Filtrar mesmo assim deixaria o campo vazio sem explicação: escolher produto
+   * num modelo que não pede BU é legítimo.
+   */
+  parentValue: string | null;
   years: number[];
 }) {
   const inputId = `campo-${field.id}`;
 
   switch (field.fieldType) {
-    case "business_unit":
+    case "official_base": {
+      const base = isBaseKey(field.sourceKey)
+        ? OFFICIAL_BASES[field.sourceKey]
+        : null;
+
+      const opcoes =
+        parentValue !== null
+          ? baseOptions.filter((option) => option.parentValue === parentValue)
+          : baseOptions;
+
+      const paiEscolhido = parentValue !== null && parentValue !== "";
+
       return (
         <Field
           label={field.label}
           htmlFor={inputId}
           required={field.isRequired}
-          hint={field.hint ?? undefined}
+          hint={
+            field.hint ??
+            (base && parentValue !== null
+              ? `Filtrado pelo campo acima. ${opcoes.length} ${opcoes.length === 1 ? "opção" : "opções"}.`
+              : undefined)
+          }
         >
           <Select
             id={inputId}
             value={value}
-            onChange={(event) => onChange(event.target.value)}
-          >
-            <option value="">Selecione…</option>
-            {businessUnits.map((unit) => (
-              <option key={unit.slug} value={unit.slug}>
-                {unit.label}
-              </option>
-            ))}
-          </Select>
+            onValueChange={onChange}
+            placeholder={
+              parentValue !== null && !paiEscolhido
+                ? "Escolha o campo acima primeiro…"
+                : "Selecione…"
+            }
+            // Quando a lista depende de outra escolha, ela é desabilitada em
+            // vez de aparecer vazia: uma lista vazia parece defeito, um campo
+            // desabilitado com essa frase explica o que fazer.
+            disabled={parentValue !== null && !paiEscolhido}
+            options={opcoes.map((option) => ({
+              value: option.value,
+              label: option.label,
+              hint: option.hint,
+            }))}
+          />
         </Field>
       );
+    }
 
     case "select":
       return (
@@ -158,15 +194,12 @@ export function TemplateField({
           <Select
             id={inputId}
             value={value}
-            onChange={(event) => onChange(event.target.value)}
-          >
-            <option value="">Selecione…</option>
-            {(field.options ?? []).map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
+            onValueChange={onChange}
+            options={(field.options ?? []).map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+          />
         </Field>
       );
 

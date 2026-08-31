@@ -11,7 +11,8 @@ import { writeAuditLog } from "@/lib/modules/audit/log";
 import { newId } from "@/lib/utils/id";
 
 /** Formato de domínio: rótulos separados por ponto, com TLD de 2+ letras. */
-const DOMAIN_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+const DOMAIN_PATTERN =
+  /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
 
 /** Autoriza um novo domínio de e-mail a se cadastrar na plataforma. */
 export async function createAllowedDomain(

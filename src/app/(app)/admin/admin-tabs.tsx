@@ -5,9 +5,16 @@ import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 
+/**
+ * A ordem segue o que se administra com mais frequência, não a hierarquia dos
+ * conceitos: pessoas mudam toda semana, a estrutura organizacional de vez em
+ * quando, as bases oficiais raramente.
+ */
 const TABS = [
-  { href: "/admin/usuarios", label: "Usuários" },
-  { href: "/admin/business-units", label: "Business Units" },
+  { href: "/admin/usuarios", label: "Usuários e acessos" },
+  { href: "/admin/organizacao", label: "Organização" },
+  { href: "/admin/squads", label: "Squads" },
+  { href: "/admin/bases", label: "Bases oficiais" },
   { href: "/admin/dominios", label: "Domínios de e-mail" },
   { href: "/admin/permissoes", label: "Permissões" },
   { href: "/admin/auditoria", label: "Auditoria" },

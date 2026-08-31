@@ -56,7 +56,10 @@ export function AuditEntryRow({ entry }: { entry: AuditEntryView }) {
 
           {entry.isUndoable && !entry.isUndone ? (
             isConfirming ? (
-              <form action={undoAuditAction} className="flex items-center gap-2">
+              <form
+                action={undoAuditAction}
+                className="flex items-center gap-2"
+              >
                 <input type="hidden" name="logId" value={entry.id} />
                 <span className="text-xs text-slate-600">Desfazer?</span>
                 <Button type="submit" size="sm">

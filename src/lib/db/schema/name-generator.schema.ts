@@ -9,15 +9,20 @@ import {
 /**
  * Tipos de campo que um modelo de nomenclatura pode ter.
  *
- * - business_unit: dropdown alimentado pela tabela `business_unit` (fonte única
- *                  de verdade — cadastrar uma BU nova a faz aparecer aqui)
+ * - official_base: dropdown alimentado por uma BASE OFICIAL do sistema
+ *                  (divisão, BU, produto…). Qual base é dita por `sourceKey`.
  * - select:        dropdown com opções fixas definidas no próprio modelo
- *                  (ex.: lead / aluno)
  * - text:          texto livre, convertido automaticamente para snake_case
  * - month_year:    mês e ano, gerados no formato MM_AAAA (ex.: 11_2026)
+ *
+ * `official_base` substituiu o antigo tipo `business_unit`, que amarrava o
+ * gerador a UMA base. Com uma base por tipo de campo, acrescentar Produto
+ * exigiria um tipo novo, um `case` novo no formulário e outro na validação — e
+ * assim a cada base. Agora a base é um dado do campo, e o conjunto de bases
+ * vive num registro só (`lib/modules/bases`).
  */
 export const FIELD_TYPES = [
-  "business_unit",
+  "official_base",
   "select",
   "text",
   "month_year",
@@ -25,15 +30,15 @@ export const FIELD_TYPES = [
 export type FieldType = (typeof FIELD_TYPES)[number];
 
 export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
-  business_unit: "Business Unit (lista oficial)",
+  official_base: "Base oficial do sistema",
   select: "Lista de opções fixas",
   text: "Texto livre",
   month_year: "Mês e ano",
 };
 
 export const FIELD_TYPE_DESCRIPTIONS: Record<FieldType, string> = {
-  business_unit:
-    "Dropdown com as BUs cadastradas. Sempre atualizado automaticamente.",
+  official_base:
+    "Divisão, BU ou Produto, sempre em dia com o cadastro oficial. Quando a base depende de outra, a lista se filtra sozinha.",
   select: "Dropdown com opções que você mesmo define. Ex.: lead, aluno.",
   text: "A pessoa digita livremente; a padronização é automática.",
   month_year: "Seletor de mês e ano. Resulta em algo como 11_2026.",
@@ -96,6 +101,12 @@ export const namingTemplateField = sqliteTable(
       .default(true),
     /** Opções do dropdown, quando `fieldType` = "select". */
     options: text("options", { mode: "json" }).$type<SelectOption[]>(),
+    /**
+     * Qual base oficial alimenta o campo, quando `fieldType` = "official_base".
+     * Ex.: `business_unit`, `product`. As chaves válidas vivem no registro de
+     * bases, não aqui — a tabela só guarda a escolha.
+     */
+    sourceKey: text("source_key"),
   },
   (table) => [
     unique("naming_template_field_position_unique").on(

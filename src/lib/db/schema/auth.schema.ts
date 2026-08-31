@@ -64,6 +64,35 @@ export const user = sqliteTable(
     status: text("status").notNull().default("pending").$type<UserStatus>(),
     role: text("role").notNull().default("member").$type<UserRole>(),
 
+    /**
+     * Administrador da plataforma.
+     *
+     * SEPARADO do papel e dos escopos de propósito. Papel e escopo descrevem
+     * responsabilidade sobre o negócio — quem responde por Conteúdo, por uma
+     * divisão, por uma BU. Isto aqui é a chave de fenda: mexer em permissões,
+     * domínios de e-mail, bases oficiais e auditoria.
+     *
+     * As duas coisas se acumulam na mesma pessoa hoje, mas são revogáveis em
+     * separado, e é exatamente por isso que não podem ser o mesmo campo: no dia
+     * em que alguém sair da gestão sem sair da plataforma (ou o contrário),
+     * um campo só obrigaria a escolher entre tirar demais e tirar de menos.
+     */
+    isSuperAdmin: integer("is_super_admin", { mode: "boolean" })
+      .notNull()
+      .default(false),
+
+    /**
+     * Cargo da pessoa — informação organizacional, não permissão.
+     *
+     * Mora aqui, e não no vínculo com o time, porque o cargo acompanha a
+     * pessoa: quem participa de três frentes não tem três cargos. Já morou no
+     * vínculo, e produzia a pergunta sem resposta "qual dos três é o cargo
+     * dela?" toda vez que a interface tinha uma linha só.
+     *
+     * Os TIMES continuam em `team_member`, no plural — essa parte estava certa.
+     */
+    jobTitleId: text("job_title_id"),
+
     approvedBy: text("approved_by"),
     approvedAt: integer("approved_at", { mode: "timestamp" }),
 
@@ -73,6 +102,7 @@ export const user = sqliteTable(
   (table) => [
     index("user_status_idx").on(table.status),
     index("user_role_idx").on(table.role),
+    index("user_job_title_idx").on(table.jobTitleId),
   ],
 );
 

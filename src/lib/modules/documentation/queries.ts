@@ -1,14 +1,17 @@
-import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 
 import type { CurrentUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
+  businessUnit,
   documentationCategory,
   documentationPage,
+  type DocScope,
   type DocVisibility,
   type UserRole,
 } from "@/lib/db/schema";
+import { loadBusinessUnitScope } from "@/lib/modules/org/scope";
 import {
   isRichText,
   normalizeForSearch,
@@ -34,6 +37,37 @@ const VISIBILITY_BY_ROLE: Record<UserRole, DocVisibility[]> = {
 
 export function visibilitiesFor(role: UserRole): DocVisibility[] {
   return VISIBILITY_BY_ROLE[role] ?? VISIBILITY_BY_ROLE.member;
+}
+
+/**
+ * Filtro de acesso a páginas, em SQL.
+ *
+ * Duas regras somadas, e as duas precisam valer:
+ *
+ * 1. VISIBILIDADE por papel (restrito a líderes, a admins, ou aberto)
+ * 2. ESCOPO: página da biblioteca geral é de todos; página interna de uma BU só
+ *    aparece para quem trabalha nela.
+ *
+ * Está numa função só porque toda consulta de página precisa das duas — e a
+ * consulta que esquecesse uma delas vazaria conteúdo sem que nada quebrasse.
+ */
+export async function docAccessFilter(currentUser: CurrentUser) {
+  const scope = await loadBusinessUnitScope(currentUser);
+
+  const porVisibilidade = inArray(
+    documentationPage.visibility,
+    visibilitiesFor(currentUser.role),
+  );
+
+  if (scope.kind === "all") return porVisibilidade;
+
+  const naBiblioteca = eq(documentationPage.scope, "general");
+  const porEscopo =
+    scope.ids.length === 0
+      ? naBiblioteca
+      : or(naBiblioteca, inArray(documentationPage.businessUnitId, scope.ids));
+
+  return and(porVisibilidade, porEscopo);
 }
 
 export type DocCategory = typeof documentationCategory.$inferSelect;
@@ -72,7 +106,13 @@ export async function listCategoriesWithPages(
     })
     .from(documentationPage)
     .where(
-      inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+      and(
+        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+        // A árvore da biblioteca mostra só o que foi publicado para todos. O
+        // material interno de uma BU aparece dentro da BU — e na busca, para
+        // quem tem acesso a ela.
+        eq(documentationPage.scope, "general"),
+      ),
     )
     .orderBy(asc(documentationPage.sortOrder), asc(documentationPage.title));
 
@@ -123,7 +163,7 @@ export async function getPageBySlug(
       and(
         eq(documentationPage.categoryId, category.id),
         eq(documentationPage.slug, pageSlug),
-        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+        await docAccessFilter(currentUser),
       ),
     )
     .get();
@@ -135,6 +175,10 @@ export async function getPageBySlug(
 export type DocSearchHit = DocPageSummary & {
   categorySlug: string;
   categoryName: string;
+  /** Preenchidos quando o acerto é material interno de uma BU. */
+  businessUnitLabel: string | null;
+  businessUnitSlug: string | null;
+  scope: DocScope;
   /** Trecho do conteúdo em volta da primeira palavra encontrada, se houver. */
   excerpt: string | null;
 };
@@ -204,15 +248,26 @@ export async function searchDocPages(
       contentFormat: documentationPage.contentFormat,
       categorySlug: documentationCategory.slug,
       categoryName: documentationCategory.name,
+      scope: documentationPage.scope,
+      businessUnitLabel: businessUnit.label,
+      businessUnitSlug: businessUnit.slug,
     })
     .from(documentationPage)
     .innerJoin(
       documentationCategory,
       eq(documentationPage.categoryId, documentationCategory.id),
     )
+    .leftJoin(
+      businessUnit,
+      eq(documentationPage.businessUnitId, businessUnit.id),
+    )
     .where(
       and(
-        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+        // A busca alcança MAIS que a árvore: inclui o material interno das BUs
+        // em que a pessoa trabalha. Era o buraco da separação — sem isso, o
+        // analista não encontraria a própria pesquisa de mercado procurando por
+        // ela.
+        await docAccessFilter(currentUser),
         // Uma condição por palavra, todas obrigatórias — "checkout comercial"
         // acha a página que fala dos dois assuntos, mesmo em trechos distantes.
         // `searchText` já traz título, resumo e corpo normalizados numa coluna
@@ -315,10 +370,7 @@ export async function getPageHrefById(
       eq(documentationPage.categoryId, documentationCategory.id),
     )
     .where(
-      and(
-        eq(documentationPage.id, id),
-        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
-      ),
+      and(eq(documentationPage.id, id), await docAccessFilter(currentUser)),
     )
     .get();
 
@@ -333,4 +385,52 @@ export async function getPageById(id: string): Promise<DocPage | undefined> {
     .from(documentationPage)
     .where(eq(documentationPage.id, id))
     .get();
+}
+
+export type BusinessUnitDoc = DocPageSummary & {
+  categorySlug: string;
+  categoryName: string;
+  scope: DocScope;
+};
+
+/**
+ * Documentos produzidos por uma BU — internos e publicados, juntos.
+ *
+ * Publicar na biblioteca geral não move nem copia a página: ela continua
+ * listada aqui. Quem escreveu não perde o material de vista ao compartilhá-lo,
+ * que era o principal receio de mandar algo para a biblioteca.
+ */
+export async function listBusinessUnitDocs(
+  businessUnitId: string,
+  currentUser: CurrentUser,
+): Promise<BusinessUnitDoc[]> {
+  const db = await getDb();
+
+  return db
+    .select({
+      id: documentationPage.id,
+      slug: documentationPage.slug,
+      title: documentationPage.title,
+      summary: documentationPage.summary,
+      pageType: documentationPage.pageType,
+      visibility: documentationPage.visibility,
+      updatedAt: documentationPage.updatedAt,
+      scope: documentationPage.scope,
+      categorySlug: documentationCategory.slug,
+      categoryName: documentationCategory.name,
+    })
+    .from(documentationPage)
+    .innerJoin(
+      documentationCategory,
+      eq(documentationPage.categoryId, documentationCategory.id),
+    )
+    .where(
+      and(
+        eq(documentationPage.businessUnitId, businessUnitId),
+        // Trabalhar na BU não supera a visibilidade da página: material
+        // marcado como restrito a líderes segue restrito dentro da BU.
+        inArray(documentationPage.visibility, visibilitiesFor(currentUser.role)),
+      ),
+    )
+    .orderBy(desc(documentationPage.updatedAt));
 }
