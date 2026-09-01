@@ -103,11 +103,7 @@ export default async function AdminDomainsPage() {
                     ) : (
                       <form action={toggleAllowedDomain}>
                         <input type="hidden" name="domainId" value={item.id} />
-                        <Button
-                          type="submit"
-                          size="sm"
-                          variant={item.isActive ? "danger" : "secondary"}
-                        >
+                        <Button type="submit" size="sm" variant="ghost">
                           {item.isActive ? "Desativar" : "Reativar"}
                         </Button>
                       </form>

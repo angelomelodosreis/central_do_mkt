@@ -103,15 +103,20 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
                     {unit.isActive ? null : <Badge>Inativa</Badge>}
                   </p>
 
+                  {/*
+                    Uma contagem só por linha. Um time mostra quem está nele;
+                    um setor mostra quantos respondem a ele no total — que é a
+                    pergunta que se faz de um setor. Os dois números em toda
+                    linha ensinavam a ignorar os dois.
+                  */}
                   <p className="mt-0.5 text-xs text-slate-500">
-                    {unit.memberCount > 0
-                      ? `${plural(unit.memberCount, "pessoa")}`
-                      : "ninguém diretamente"}
-                    {/* O total só aparece quando difere: repetir o mesmo número
-                        duas vezes ensinaria a ignorar os dois. */}
-                    {unit.totalMemberCount !== unit.memberCount
-                      ? ` · ${unit.totalMemberCount} contando as unidades abaixo`
-                      : ""}
+                    {unit.kind === "team"
+                      ? unit.memberCount > 0
+                        ? plural(unit.memberCount, "pessoa")
+                        : "sem ninguém"
+                      : unit.totalMemberCount > 0
+                        ? `${plural(unit.totalMemberCount, "pessoa")} abaixo`
+                        : "sem ninguém abaixo"}
                   </p>
 
                   {unit.memberNames.length > 0 ? (
@@ -133,18 +138,14 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
                   ) : null}
                   <Button
                     size="sm"
-                    variant="secondary"
+                    variant="ghost"
                     onClick={() => setEditando(unit)}
                   >
                     Editar
                   </Button>
                   <form action={toggleOrgUnit}>
                     <input type="hidden" name="teamId" value={unit.id} />
-                    <Button
-                      type="submit"
-                      size="sm"
-                      variant={unit.isActive ? "danger" : "secondary"}
-                    >
+                    <Button type="submit" size="sm" variant="ghost">
                       {unit.isActive ? "Desativar" : "Reativar"}
                     </Button>
                   </form>

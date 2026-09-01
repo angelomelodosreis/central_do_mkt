@@ -151,7 +151,7 @@ export function JobTitlesPanel({
                   <div className="flex shrink-0 flex-wrap gap-2">
                     <Button
                       size="sm"
-                      variant="secondary"
+                      variant="ghost"
                       onClick={() => setEditando(title)}
                     >
                       Editar

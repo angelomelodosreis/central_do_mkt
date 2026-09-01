@@ -207,11 +207,7 @@ export function ProductsPanel({
 
                     <form action={toggleProduct}>
                       <input type="hidden" name="productId" value={item.id} />
-                      <Button
-                        type="submit"
-                        size="sm"
-                        variant={item.isActive ? "danger" : "secondary"}
-                      >
+                      <Button type="submit" size="sm" variant="ghost">
                         {item.isActive ? "Desativar" : "Reativar"}
                       </Button>
                     </form>

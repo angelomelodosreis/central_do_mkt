@@ -238,11 +238,7 @@ function Grupo({
 
               <form action={toggleBusinessUnit}>
                 <input type="hidden" name="businessUnitId" value={unit.id} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant={unit.isActive ? "danger" : "secondary"}
-                >
+                <Button type="submit" size="sm" variant="ghost">
                   {unit.isActive ? "Desativar" : "Reativar"}
                 </Button>
               </form>

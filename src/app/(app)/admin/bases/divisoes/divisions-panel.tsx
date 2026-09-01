@@ -110,7 +110,7 @@ export function DivisionsPanel({
               <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
                 <Button
                   size="sm"
-                  variant="secondary"
+                  variant="ghost"
                   onClick={() => setEditando(division)}
                 >
                   Editar
@@ -124,11 +124,7 @@ export function DivisionsPanel({
                 </ButtonLink>
                 <form action={toggleDivision} className="ml-auto">
                   <input type="hidden" name="divisionId" value={division.id} />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    variant={division.isActive ? "danger" : "secondary"}
-                  >
+                  <Button type="submit" size="sm" variant="ghost">
                     {division.isActive ? "Desativar" : "Reativar"}
                   </Button>
                 </form>
