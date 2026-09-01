@@ -22,6 +22,7 @@ import {
 import { listBusinessUnitMembers } from "@/lib/modules/org/scope";
 import { monthShort } from "@/lib/modules/strategy/dates";
 import { loadCycleGoals, type CycleGoals } from "@/lib/modules/strategy/goals";
+import { plural } from "@/lib/utils/text";
 
 /* ─────────────────────────── rodadas ─────────────────────────── */
 
@@ -289,7 +290,7 @@ export async function buildEvidence(
       detail: produtos.map((p) => p.name).join(", ") || undefined,
     },
     {
-      label: `${contínuos} ${contínuos === 1 ? "contínuo" : "contínuos"}, ${pontuais} ${pontuais === 1 ? "pontual" : "pontuais"}`,
+      label: `${plural(contínuos, "contínuo")}, ${pontuais} ${pontuais === 1 ? "pontual" : "pontuais"}`,
     },
   ];
   if (semJanela.length > 0) {

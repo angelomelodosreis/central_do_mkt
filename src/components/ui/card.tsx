@@ -64,15 +64,40 @@ export function PageHeader({
   );
 }
 
+/**
+ * O vazio, em dois pesos.
+ *
+ * `page` é a tela inteira sem nada: aí o espaço grande é justo, porque não há
+ * mais nada para olhar e o convite à ação é o conteúdo.
+ *
+ * `inline` é uma lista vazia DENTRO de uma tela que tem outras coisas — uma
+ * categoria sem páginas, uma unidade sem gente. Ali o vazio não merece 150px:
+ * a ferramenta tinha 44 desses, e a soma deles era a razão de tudo parecer
+ * esparso e obrigar a rolar para achar o que existe.
+ */
 export function EmptyState({
   title,
   description,
   action,
+  variant = "page",
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  variant?: "page" | "inline";
 }) {
+  if (variant === "inline") {
+    return (
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-5 py-3 text-sm text-slate-500">
+        <span>{title}</span>
+        {description ? (
+          <span className="text-slate-400">— {description}</span>
+        ) : null}
+        {action ? <span className="ml-auto">{action}</span> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
       <p className="text-sm font-medium text-slate-900">{title}</p>

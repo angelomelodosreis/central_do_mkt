@@ -16,6 +16,7 @@ import {
   type OrgUnitKind,
 } from "@/lib/db/schema";
 import { cn } from "@/lib/utils/cn";
+import { plural } from "@/lib/utils/text";
 
 export type UnitRow = {
   id: string;
@@ -104,7 +105,7 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
 
                   <p className="mt-0.5 text-xs text-slate-500">
                     {unit.memberCount > 0
-                      ? `${unit.memberCount} ${unit.memberCount === 1 ? "pessoa" : "pessoas"}`
+                      ? `${plural(unit.memberCount, "pessoa")}`
                       : "ninguém diretamente"}
                     {/* O total só aparece quando difere: repetir o mesmo número
                         duas vezes ensinaria a ignorar os dois. */}

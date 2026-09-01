@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { asc, count, eq, inArray } from "drizzle-orm";
 
+import { plural } from "@/lib/utils/text";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -10,6 +11,7 @@ import {
   CardHeader,
   EmptyState,
   PageHeader,
+  SectionTitle,
 } from "@/components/ui/card";
 import { requirePermission } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
@@ -152,16 +154,12 @@ export default async function StrategyIndexPage({
 
           {outras.length > 0 ? (
             <section>
-              {minhas.length > 0 ? (
-                <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-slate-500">
-                  Outras Business Units
-                </h2>
-              ) : null}
+              <SectionTitle count={outras.length}>
+                {minhas.length > 0
+                  ? "Outras Business Units"
+                  : "Business Units no seu alcance"}
+              </SectionTitle>
               <Card>
-                <CardHeader
-                  title={`${outras.length} ${outras.length === 1 ? "BU" : "BUs"} no seu alcance`}
-                  description="Você acompanha estas BUs sem ser da equipe delas."
-                />
                 <CardBody className="px-0 py-0">
                   <ul className="divide-y divide-slate-100">
                     {outras.map((unit) => (
@@ -185,7 +183,9 @@ export default async function StrategyIndexPage({
                             {unit.leadName
                               ? `Responde: ${unit.leadName}`
                               : "Sem responsável"}
-                            {unit.itens > 0 ? ` · ${unit.itens} itens` : ""}
+                            {unit.itens > 0
+                              ? ` · ${plural(unit.itens, "item", "itens")}`
+                              : ""}
                           </span>
                         </Link>
                       </li>
@@ -238,11 +238,13 @@ function UnitCard({
           ? "Nenhum ciclo criado — o planejamento começa por aqui."
           : unit.itens === 0
             ? "Ciclo criado, calendário vazio."
-            : `${unit.itens} ${unit.itens === 1 ? "item no calendário" : "itens no calendário"}`}
+            : `${plural(unit.itens, "item", "itens")} no calendário`}
       </p>
       <p className="mt-2 text-xs text-slate-500">
         {unit.leadName ? `Responsável: ${unit.leadName}` : "Sem responsável"}
-        {unit.pessoas > 1 ? ` · ${unit.pessoas} pessoas na equipe` : ""}
+        {unit.pessoas > 1
+          ? ` · ${plural(unit.pessoas, "pessoa")} na equipe`
+          : ""}
       </p>
     </Link>
   );

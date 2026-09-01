@@ -10,6 +10,7 @@ import { PersonCard } from "@/components/org/person-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
+import { plural } from "@/lib/utils/text";
 
 /**
  * Estrutura de cada time: quem responde por ele, depois a equipe.
@@ -107,7 +108,7 @@ export function TeamsBoard({
                     <span className="text-xs font-normal text-slate-500">
                       {doTime.length === 0
                         ? "sem ninguém"
-                        : `${doTime.length} ${doTime.length === 1 ? "pessoa" : "pessoas"}`}
+                        : `${plural(doTime.length, "pessoa")}`}
                     </span>
                   </span>
                 }

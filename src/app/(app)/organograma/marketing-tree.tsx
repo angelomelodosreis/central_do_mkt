@@ -5,6 +5,7 @@ import { Avatar } from "@/components/org/person-card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/card";
 import { cn } from "@/lib/utils/cn";
+import { plural } from "@/lib/utils/text";
 
 /**
  * A área inteira, de cima para baixo.
@@ -111,7 +112,7 @@ function TeamNode({
         <p className="mt-0.5 text-[11px] text-slate-500">
           {doTime.length === 0
             ? "sem ninguém"
-            : `${doTime.length} ${doTime.length === 1 ? "pessoa" : "pessoas"}`}
+            : `${plural(doTime.length, "pessoa")}`}
         </p>
       </div>
 

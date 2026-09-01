@@ -19,6 +19,7 @@ import {
   type DocSearchHit,
 } from "@/lib/modules/documentation/queries";
 import { formatDate } from "@/lib/utils/format";
+import { plural } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Documentação" };
 export const dynamic = "force-dynamic";
@@ -58,7 +59,9 @@ export default async function DocumentationIndexPage({
               >
                 Nova categoria
               </ButtonLink>
-              <ButtonLink href="/documentacao/nova">Nova página</ButtonLink>
+              <ButtonLink href="/documentacao/nova" variant="primary">
+                Nova página
+              </ButtonLink>
             </div>
           ) : null
         }
@@ -84,7 +87,9 @@ export default async function DocumentationIndexPage({
           }
           action={
             canEdit ? (
-              <ButtonLink href="/documentacao/nova">Criar página</ButtonLink>
+              <ButtonLink href="/documentacao/nova" variant="primary">
+                Criar página
+              </ButtonLink>
             ) : null
           }
         />
@@ -100,22 +105,30 @@ export default async function DocumentationIndexPage({
                   title={category.name}
                   description={category.description ?? undefined}
                   action={
-                    canEdit ? (
-                      <ButtonLink
-                        href={`/documentacao/nova?categoria=${category.slug}`}
-                        variant="ghost"
-                        size="sm"
-                      >
-                        Nova página
-                      </ButtonLink>
-                    ) : null
+                    <span className="text-xs tabular-nums text-slate-500">
+                      {category.pages.length > 0
+                        ? plural(category.pages.length, "página")
+                        : "vazia"}
+                    </span>
                   }
                 />
                 <CardBody className="px-0 py-0">
                   {category.pages.length === 0 ? (
-                    <p className="px-5 py-6 text-center text-sm text-slate-500">
-                      Nenhuma página aqui ainda.
-                    </p>
+                    <EmptyState
+                      variant="inline"
+                      title="Nenhuma página aqui ainda."
+                      action={
+                        canEdit ? (
+                          <ButtonLink
+                            href={`/documentacao/nova?categoria=${category.slug}`}
+                            variant="ghost"
+                            size="sm"
+                          >
+                            Criar a primeira
+                          </ButtonLink>
+                        ) : null
+                      }
+                    />
                   ) : null}
                   <ul className="divide-y divide-slate-100">
                     {category.pages.map((page) => (

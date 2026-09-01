@@ -3,21 +3,23 @@ import Link from "next/link";
 import { count, eq } from "drizzle-orm";
 
 import { TaskRow, type TaskRowData } from "../tarefas/task-row";
-import { NavIcon, type NavIconKey } from "@/components/layout/nav-icons";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  PageHeader,
+  SectionTitle,
+} from "@/components/ui/card";
 import { can, requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import {
-  businessUnit,
-  MODULE_LABELS,
-  namingTemplate,
-  user,
-} from "@/lib/db/schema";
+import { MODULE_LABELS, user } from "@/lib/db/schema";
 import { describePositions } from "@/lib/modules/org/people";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { listMyTasks, relationFor } from "@/lib/modules/tasks/queries";
+import { plural } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Painel" };
 export const dynamic = "force-dynamic";
@@ -32,15 +34,11 @@ export default async function DashboardPage({
 
   const db = await getDb();
 
-  const [tarefas, minhasBus, templates, pendentes] = await Promise.all([
+  const [tarefas, minhasBus, pendentes] = await Promise.all([
     can(currentUser, "tasks") ? listMyTasks(currentUser) : Promise.resolve([]),
     can(currentUser, "strategy")
       ? listAccessibleBusinessUnits(currentUser)
       : Promise.resolve([]),
-    db
-      .select({ total: count() })
-      .from(namingTemplate)
-      .where(eq(namingTemplate.isActive, true)),
     currentUser.role === "admin"
       ? db
           .select({ total: count() })
@@ -59,39 +57,6 @@ export default async function DashboardPage({
   const bus = minhasBus.filter((unit) => unit.isMember);
   const buParaMostrar = bus.length > 0 ? bus : minhasBus.slice(0, 6);
 
-  const shortcuts = [
-    can(currentUser, "documentation") && {
-      href: "/documentacao",
-      title: "Documentação",
-      description:
-        "Biblioteca geral: processos, convenções e material do time todo.",
-      icon: "docs" as NavIconKey,
-    },
-    can(currentUser, "name_generator") && {
-      href: "/gerador-de-nomes",
-      title: "Gerador de Nomes",
-      description:
-        "Monte nomes padronizados de listas, tags e outros itens do CRM.",
-      icon: "generator" as NavIconKey,
-    },
-    currentUser.role === "admin" && {
-      href: "/admin/usuarios",
-      title: "Aprovar acessos",
-      description:
-        pendingUsers > 0
-          ? `${pendingUsers} ${pendingUsers === 1 ? "pessoa aguardando" : "pessoas aguardando"} aprovação.`
-          : "Ninguém aguardando aprovação no momento.",
-      icon: "admin" as NavIconKey,
-      highlight: pendingUsers > 0,
-    },
-  ].filter(Boolean) as Array<{
-    href: string;
-    title: string;
-    description: string;
-    icon: NavIconKey;
-    highlight?: boolean;
-  }>;
-
   const firstName = currentUser.name.split(" ")[0] || currentUser.name;
   const deniedModuleLabel =
     modulo && modulo in MODULE_LABELS
@@ -107,6 +72,31 @@ export default async function DashboardPage({
           "Ferramentas, processos e estratégia do marketing da MedCof em um só lugar."
         }
       />
+
+      {pendingUsers > 0 ? (
+        <Link
+          href="/admin/usuarios"
+          className="mb-6 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 transition-colors hover:border-amber-300 hover:bg-amber-100"
+        >
+          <span
+            aria-hidden
+            className="size-2 shrink-0 rounded-full bg-amber-500"
+          />
+          <span className="min-w-0 flex-1">
+            <strong className="font-medium">
+              {plural(pendingUsers, "cadastro")}
+            </strong>{" "}
+            {pendingUsers === 1 ? "aguarda" : "aguardam"} aprovação. Sem isso,
+            {pendingUsers === 1
+              ? " essa pessoa não acessa"
+              : " essas pessoas não acessam"}{" "}
+            nada.
+          </span>
+          <span aria-hidden className="shrink-0 text-amber-700">
+            →
+          </span>
+        </Link>
+      ) : null}
 
       {erro === "sem-permissao" ? (
         <div
@@ -142,9 +132,10 @@ export default async function DashboardPage({
           />
           <CardBody className="px-0 py-0">
             {tarefas.length === 0 ? (
-              <p className="px-5 py-6 text-center text-sm text-slate-500">
-                Nada pendente para você agora.
-              </p>
+              <EmptyState
+                variant="inline"
+                title="Nada pendente para você agora."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {tarefas.slice(0, 5).map((item) => (
@@ -181,18 +172,20 @@ export default async function DashboardPage({
         </Card>
       ) : null}
 
+      {/* Sem cartão: são atalhos, e um cartão com cabeçalho e descrição em
+          volta de meia dúzia de pílulas pesa mais que o conteúdo que carrega. */}
       {buParaMostrar.length > 0 ? (
-        <Card className="mb-6">
-          <CardHeader
-            title={bus.length > 0 ? "Minhas Business Units" : "Business Units"}
-            description="Calendário, personas, produtos, metas e documentos de cada uma."
+        <section className="mb-6">
+          <SectionTitle
             action={
               <ButtonLink href="/planejamento" variant="ghost" size="sm">
-                Planejamento
+                Ver planejamento
               </ButtonLink>
             }
-          />
-          <CardBody className="flex flex-wrap gap-2">
+          >
+            {bus.length > 0 ? "Minhas Business Units" : "Business Units"}
+          </SectionTitle>
+          <div className="flex flex-wrap gap-2">
             {buParaMostrar.map((unit) => (
               <Link
                 key={unit.id}
@@ -203,73 +196,9 @@ export default async function DashboardPage({
                 {unit.isLead ? <Badge tone="brand">responde</Badge> : null}
               </Link>
             ))}
-          </CardBody>
-        </Card>
-      ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {shortcuts.map((shortcut) => (
-          <Link
-            key={shortcut.href}
-            href={shortcut.href}
-            className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-brand-300 hover:shadow-md"
-          >
-            <div className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-100"
-              >
-                <NavIcon name={shortcut.icon} className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 font-medium text-slate-900 group-hover:text-brand-700">
-                  {shortcut.title}
-                  {shortcut.highlight ? (
-                    <span className="inline-flex size-2 rounded-full bg-amber-500" />
-                  ) : null}
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {shortcut.description}
-                </p>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {currentUser.role === "admin" ? (
-        <div className="mt-8 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(13rem,1fr))]">
-          <StatCard
-            label="Business Units ativas"
-            value={await countActiveBusinessUnits()}
-          />
-          <StatCard
-            label="Modelos de nomenclatura"
-            value={templates[0].total}
-          />
-          <StatCard label="Cadastros aguardando" value={pendingUsers} />
-        </div>
+          </div>
+        </section>
       ) : null}
     </>
-  );
-}
-
-async function countActiveBusinessUnits(): Promise<number> {
-  const db = await getDb();
-  const [row] = await db
-    .select({ total: count() })
-    .from(businessUnit)
-    .where(eq(businessUnit.isActive, true));
-  return row.total;
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <Card className="px-5 py-4">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">
-        {value}
-      </p>
-    </Card>
   );
 }

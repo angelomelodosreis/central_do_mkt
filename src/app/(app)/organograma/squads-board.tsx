@@ -8,6 +8,7 @@ import type { OrgPerson, OrgSquad } from "./types";
 import { Avatar } from "@/components/org/person-card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
+import { plural } from "@/lib/utils/text";
 
 /**
  * Squads por Business Unit, em colunas.
@@ -110,7 +111,7 @@ export function SquadsBoard({
                     {unit.divisionName ? `${unit.divisionName} · ` : ""}
                     {doSquad.length === 0
                       ? "sem ninguém"
-                      : `${doSquad.length} ${doSquad.length === 1 ? "pessoa" : "pessoas"}`}
+                      : `${plural(doSquad.length, "pessoa")}`}
                   </p>
                 </header>
 

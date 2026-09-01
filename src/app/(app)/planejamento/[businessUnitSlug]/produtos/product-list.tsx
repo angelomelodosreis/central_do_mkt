@@ -9,7 +9,7 @@ import {
 } from "../../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PRODUCT_CADENCE_LABELS, type ProductCadence } from "@/lib/db/schema";
@@ -109,9 +109,7 @@ function CadenceGroup({
       />
       <CardBody className="px-0 py-0">
         {products.length === 0 ? (
-          <p className="px-5 py-6 text-center text-sm text-slate-500">
-            Nenhum produto nesta cadência.
-          </p>
+          <EmptyState variant="inline" title="Nenhum produto nesta cadência." />
         ) : (
           <ul className="divide-y divide-slate-100">
             {products.map((product) => (

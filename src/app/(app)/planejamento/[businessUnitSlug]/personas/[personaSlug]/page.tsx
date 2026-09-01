@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { RichTextContent } from "@/components/rich-text/renderer";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui/card";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import {
   isRichDocEmpty,
@@ -153,9 +153,7 @@ export default async function PersonaDetailPage({
           />
           <CardBody className="px-0 py-0">
             {found.pains.length === 0 ? (
-              <p className="px-5 py-6 text-center text-sm text-slate-500">
-                Nenhuma dor mapeada ainda.
-              </p>
+              <EmptyState variant="inline" title="Nenhuma dor mapeada ainda." />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {found.pains.map((entry) => (

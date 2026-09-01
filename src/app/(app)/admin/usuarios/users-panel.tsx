@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 
 import { Avatar } from "@/components/org/person-card";
 import { Badge, RoleBadge, StatusBadge } from "@/components/ui/badge";
-import { Card, CardBody } from "@/components/ui/card";
+import { Card, CardBody, EmptyState } from "@/components/ui/card";
 import { Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PillTabs } from "@/components/ui/tabs";
@@ -17,7 +17,7 @@ import {
   type UserStatus,
 } from "@/lib/db/schema";
 import { cn } from "@/lib/utils/cn";
-import { matchesSearch } from "@/lib/utils/text";
+import { matchesSearch, plural } from "@/lib/utils/text";
 
 type PersonRow = {
   id: string;
@@ -171,9 +171,10 @@ export function UsersPanel({
       <Card>
         <CardBody className="px-0 py-0">
           {visiveis.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-500">
-              Ninguém encontrado com esses filtros.
-            </p>
+            <EmptyState
+              variant="inline"
+              title="Ninguém encontrado com esses filtros."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {visiveis.map((person) => (
@@ -241,9 +242,7 @@ function resumoDeAlcance(person: PersonRow): string {
   }
 
   if (person.squads.length > 0) {
-    partes.push(
-      `${person.squads.length} ${person.squads.length === 1 ? "squad" : "squads"}`,
-    );
+    partes.push(`${plural(person.squads.length, "squad")}`);
   }
 
   return partes.length > 0

@@ -33,3 +33,32 @@ export function matchesSearch(
 
   return termos.every((termo) => alvo.includes(termo));
 }
+
+/**
+ * Concorda o substantivo com o número.
+ *
+ * Existe porque a interface vinha escrevendo `{n} itens` direto no JSX, e o
+ * caso de um só aparecia como "1 itens" em quatro lugares. Erro pequeno e
+ * constante — o tipo de coisa que faz a ferramenta parecer descuidada mesmo
+ * quando tudo funciona.
+ *
+ * O plural do português quase sempre é o singular + "s"; quando não é
+ * (`pessoa`/`pessoas` é regular, `qual`/`quais` não), o terceiro argumento diz.
+ */
+export function plural(
+  quantidade: number,
+  singular: string,
+  formaPlural?: string,
+): string {
+  const palavra = quantidade === 1 ? singular : (formaPlural ?? `${singular}s`);
+  return `${quantidade} ${palavra}`;
+}
+
+/** Só a palavra, já concordada — para quando o número aparece separado. */
+export function pluralWord(
+  quantidade: number,
+  singular: string,
+  formaPlural?: string,
+): string {
+  return quantidade === 1 ? singular : (formaPlural ?? `${singular}s`);
+}

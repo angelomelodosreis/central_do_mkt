@@ -11,6 +11,7 @@ import { Field, Input } from "@/components/ui/field";
 import { Select, type SelectGroup } from "@/components/ui/select";
 import { TASK_PRIORITIES, TASK_PRIORITY_LABELS } from "@/lib/db/schema";
 import { cn } from "@/lib/utils/cn";
+import { plural } from "@/lib/utils/text";
 
 export type AssignablePerson = {
   id: string;
@@ -85,7 +86,7 @@ export function NewTaskDrawer({
         triggerLabel: team.name,
         hint:
           team.totalMemberCount > 0
-            ? `${team.path} · chega a ${team.totalMemberCount} ${team.totalMemberCount === 1 ? "pessoa" : "pessoas"}`
+            ? `${team.path} · chega a ${plural(team.totalMemberCount, "pessoa")}`
             : `${team.path} · ninguém nesta unidade ainda`,
       })),
     },

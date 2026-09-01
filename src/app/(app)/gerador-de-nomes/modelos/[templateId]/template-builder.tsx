@@ -15,7 +15,13 @@ import {
 import { INITIAL_TEMPLATE_STATE } from "../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  PageHeader,
+  EmptyState,
+} from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
@@ -247,9 +253,10 @@ export function TemplateBuilder({
         />
         <CardBody className="px-0 py-0">
           {!temBlocos ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-500">
-              Nenhum bloco ainda. O nome é montado a partir deles.
-            </p>
+            <EmptyState
+              variant="inline"
+              title="Nenhum bloco ainda. O nome é montado a partir deles."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {template.fields.map((field, index) => (

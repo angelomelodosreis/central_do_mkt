@@ -202,100 +202,102 @@ export default async function BusinessUnitOverviewPage({
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader
-          title="O que vem por aí"
-          description={`Próximos ${HORIZONTE_DIAS} dias no calendário.`}
-          action={
-            <ButtonLink href={`${base}/calendario`} variant="ghost" size="sm">
-              Calendário
-            </ButtonLink>
-          }
-        />
-        <CardBody className="px-0 py-0">
-          {proximos.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-slate-500">
-              Nada marcado para os próximos {HORIZONTE_DIAS} dias.
-            </p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {proximos.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-2.5"
-                >
-                  <span className="min-w-0">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span
-                        aria-hidden
-                        className={`size-2 shrink-0 rounded-full ${TIMELINE_KIND_CONFIG[item.kind].dot}`}
-                      />
-                      <span className="text-sm font-medium text-slate-900">
-                        {item.title}
-                      </span>
-                    </span>
-                    <span className="mt-0.5 block pl-4 text-xs text-slate-500">
-                      {TIMELINE_KIND_CONFIG[item.kind].label}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-xs tabular-nums text-slate-500">
-                    {formatDate(item.startsAt)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
-
-      {tarefas.length > 0 ? (
+      <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(22rem,1fr))]">
         <Card>
           <CardHeader
-            title={`Tarefas abertas nesta BU (${tarefas.length})`}
+            title="O que vem por aí"
+            description={`Próximos ${HORIZONTE_DIAS} dias no calendário.`}
             action={
-              <ButtonLink href="/tarefas" variant="ghost" size="sm">
-                Todas as tarefas
+              <ButtonLink href={`${base}/calendario`} variant="ghost" size="sm">
+                Calendário
               </ButtonLink>
             }
           />
           <CardBody className="px-0 py-0">
-            <ul className="divide-y divide-slate-100">
-              {tarefas.slice(0, 5).map((item) => (
-                <TaskRow
-                  key={item.id}
-                  destinos={[]}
-                  task={
-                    {
-                      id: item.id,
-                      title: item.title,
-                      status: item.status,
-                      priority: item.priority,
-                      dueDate: item.dueDate?.toISOString() ?? null,
-                      blockedReason: item.blockedReason,
-                      assigneeId: item.assigneeId,
-                      assigneeName: item.assigneeName,
-                      assignedTeamName: item.assignedTeamName,
-                      businessUnitLabel: null,
-                      businessUnitSlug: null,
-                      createdByName: item.createdByName,
-                      createdAt: item.createdAt.toISOString(),
-                      // A visão geral é leitura: mexer na tarefa acontece em
-                      // Tarefas, onde está o contexto completo dela.
-                      relation: {
-                        isAssignee: false,
-                        isDelegator: false,
-                        canClaim: false,
-                      },
-                    } satisfies TaskRowData
-                  }
-                />
-              ))}
-            </ul>
+            {proximos.length === 0 ? (
+              <p className="px-5 py-6 text-center text-sm text-slate-500">
+                Nada marcado para os próximos {HORIZONTE_DIAS} dias.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {proximos.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-2.5"
+                  >
+                    <span className="min-w-0">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span
+                          aria-hidden
+                          className={`size-2 shrink-0 rounded-full ${TIMELINE_KIND_CONFIG[item.kind].dot}`}
+                        />
+                        <span className="text-sm font-medium text-slate-900">
+                          {item.title}
+                        </span>
+                      </span>
+                      <span className="mt-0.5 block pl-4 text-xs text-slate-500">
+                        {TIMELINE_KIND_CONFIG[item.kind].label}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs tabular-nums text-slate-500">
+                      {formatDate(item.startsAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardBody>
         </Card>
-      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+        {tarefas.length > 0 ? (
+          <Card>
+            <CardHeader
+              title={`Tarefas abertas nesta BU (${tarefas.length})`}
+              action={
+                <ButtonLink href="/tarefas" variant="ghost" size="sm">
+                  Todas as tarefas
+                </ButtonLink>
+              }
+            />
+            <CardBody className="px-0 py-0">
+              <ul className="divide-y divide-slate-100">
+                {tarefas.slice(0, 5).map((item) => (
+                  <TaskRow
+                    key={item.id}
+                    destinos={[]}
+                    task={
+                      {
+                        id: item.id,
+                        title: item.title,
+                        status: item.status,
+                        priority: item.priority,
+                        dueDate: item.dueDate?.toISOString() ?? null,
+                        blockedReason: item.blockedReason,
+                        assigneeId: item.assigneeId,
+                        assigneeName: item.assigneeName,
+                        assignedTeamName: item.assignedTeamName,
+                        businessUnitLabel: null,
+                        businessUnitSlug: null,
+                        createdByName: item.createdByName,
+                        createdAt: item.createdAt.toISOString(),
+                        // A visão geral é leitura: mexer na tarefa acontece em
+                        // Tarefas, onde está o contexto completo dela.
+                        relation: {
+                          isAssignee: false,
+                          isDelegator: false,
+                          canClaim: false,
+                        },
+                      } satisfies TaskRowData
+                    }
+                  />
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
+        ) : null}
+      </div>
+
+      <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(22rem,1fr))]">
         {dores.length > 0 ? (
           <Card className="border-amber-200">
             <CardHeader

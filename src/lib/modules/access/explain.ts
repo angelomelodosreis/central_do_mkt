@@ -16,6 +16,7 @@ import {
   type ScopeType,
   type UserRole,
 } from "@/lib/db/schema";
+import { plural } from "@/lib/utils/text";
 
 /** Uma concessão já resolvida em nome legível. */
 export type ResolvedGrant = {
@@ -160,8 +161,7 @@ export async function listGrantsForUser(
         scopeId: id,
         targetName: divisao?.name ?? "divisão removida",
         targetPath: null,
-        reach:
-          total > 0 ? `alcança ${total} ${total === 1 ? "BU" : "BUs"}` : null,
+        reach: total > 0 ? `alcança ${plural(total, "BU")}` : null,
         note: row.note,
       };
     }
@@ -295,7 +295,7 @@ function describeReach(
 
   if (scope.squadIds.size > 0) {
     linhas.push(
-      `Participa de ${scope.squadIds.size} ${scope.squadIds.size === 1 ? "squad" : "squads"} — enxerga o planejamento dessas BUs, mas isso por si só não a torna responsável por elas.`,
+      `Participa de ${plural(scope.squadIds.size, "squad")} — enxerga o planejamento dessas BUs, mas isso por si só não a torna responsável por elas.`,
     );
   }
 

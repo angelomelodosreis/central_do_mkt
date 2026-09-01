@@ -10,6 +10,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { allowedDomain, user } from "@/lib/db/schema";
 import { formatDate } from "@/lib/utils/format";
+import { plural } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Domínios de e-mail" };
 export const dynamic = "force-dynamic";
@@ -88,7 +89,7 @@ export default async function AdminDomainsPage() {
                       <p className="mt-1 text-xs text-slate-500">
                         {userCount === 0
                           ? "Nenhum usuário cadastrado"
-                          : `${userCount} ${userCount === 1 ? "usuário" : "usuários"}`}{" "}
+                          : `${plural(userCount, "usuário")}`}{" "}
                         · adicionado em {formatDate(item.createdAt)}
                       </p>
                     </div>
