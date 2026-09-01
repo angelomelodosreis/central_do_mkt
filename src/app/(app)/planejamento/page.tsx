@@ -164,9 +164,13 @@ export default async function StrategyIndexPage({
                   <ul className="divide-y divide-slate-100">
                     {outras.map((unit) => (
                       <li key={unit.id}>
+                        {/* Nome e detalhe um embaixo do outro, os dois à
+                            esquerda. Alinhado à direita, o detalhe ficava a meia
+                            tela de distância do nome que ele descreve — e a
+                            leitura de vinte linhas virava um zigue-zague. */}
                         <Link
                           href={`/planejamento/${unit.slug}`}
-                          className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3 transition-colors hover:bg-slate-50"
+                          className="block px-5 py-3 transition-colors hover:bg-slate-50"
                         >
                           <span className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-slate-900">
@@ -179,7 +183,7 @@ export default async function StrategyIndexPage({
                               <Badge tone="warning">Sem ciclo</Badge>
                             ) : null}
                           </span>
-                          <span className="text-xs text-slate-500">
+                          <span className="mt-0.5 block text-xs text-slate-500">
                             {unit.leadName
                               ? `Responde: ${unit.leadName}`
                               : "Sem responsável"}

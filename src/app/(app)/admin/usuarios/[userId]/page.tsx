@@ -1,26 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { asc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
-import { AccessSummaryCard } from "./access-summary-card";
-import { IdentityCard } from "./identity-card";
-import { OrgCard } from "./org-card";
-import { RoleCard } from "./role-card";
-import { ScopesCard } from "./scopes-card";
-import { SquadsCard } from "./squads-card";
+import { UserFile, type OrgUnitOption, type UserFileData } from "./user-file";
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import {
-  businessDivision,
-  businessUnit,
-  jobTitle,
-  squad,
-  user,
-} from "@/lib/db/schema";
-import { summarizeAccess } from "@/lib/modules/access/explain";
+import { businessDivision, businessUnit, squad, user } from "@/lib/db/schema";
+import { listGrantsForUser } from "@/lib/modules/access/explain";
 import { loadPositions, loadSquads } from "@/lib/modules/org/people";
 import { listActiveJobTitles, listOrgUnits } from "@/lib/modules/org/queries";
+import { sortByName } from "@/lib/utils/text";
 
 export const dynamic = "force-dynamic";
 
@@ -45,13 +35,9 @@ export async function generateMetadata({
 /**
  * A ficha de uma pessoa.
  *
- * Seis blocos, na ordem em que as perguntas aparecem: quem é, onde está na
- * organização, o que pode fazer, sobre o que responde, de que squads participa
- * e — no fim — o que tudo isso significa junto.
- *
- * O resumo por último e não primeiro de propósito: ele é a CONSEQUÊNCIA das
- * cinco decisões acima, e lê-lo antes de ver de onde vem seria pedir para
- * confiar num número.
+ * Uma tela, um cartão, cinco linhas: cargo, time, papel, squads e do que ela
+ * responde. Eram seis cartões com cabeçalho e descrição cada — mais moldura do
+ * que conteúdo, para uma ficha que cabe numa tela.
  */
 export default async function UserDetailPage({ params }: { params: Params }) {
   const { userId } = await params;
@@ -63,17 +49,14 @@ export default async function UserDetailPage({ params }: { params: Params }) {
       id: user.id,
       name: user.name,
       email: user.email,
-      image: user.image,
       status: user.status,
       role: user.role,
       isSuperAdmin: user.isSuperAdmin,
       jobTitleId: user.jobTitleId,
-      jobTitleName: jobTitle.name,
       approvedAt: user.approvedAt,
       createdAt: user.createdAt,
     })
     .from(user)
-    .leftJoin(jobTitle, eq(user.jobTitleId, jobTitle.id))
     .where(eq(user.id, userId))
     .get();
 
@@ -87,7 +70,7 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     todasAsBus,
     todosOsSquads,
     divisions,
-    resumo,
+    grants,
   ] = await Promise.all([
     loadPositions([alvo.id]),
     loadSquads([alvo.id]),
@@ -96,31 +79,56 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     db
       .select({ id: businessUnit.id, label: businessUnit.label })
       .from(businessUnit)
-      .where(eq(businessUnit.isActive, true))
-      .orderBy(asc(businessUnit.sortOrder), asc(businessUnit.label)),
+      .where(eq(businessUnit.isActive, true)),
     db
       .select({
         id: squad.id,
-        name: squad.name,
-        businessUnitId: squad.businessUnitId,
-        businessUnitLabel: businessUnit.label,
+        label: businessUnit.label,
       })
       .from(squad)
-      .innerJoin(businessUnit, eq(squad.businessUnitId, businessUnit.id))
-      .orderBy(asc(businessUnit.sortOrder), asc(businessUnit.label)),
+      .innerJoin(businessUnit, eq(squad.businessUnitId, businessUnit.id)),
     db
       .select({ id: businessDivision.id, name: businessDivision.name })
-      .from(businessDivision)
-      .orderBy(asc(businessDivision.sortOrder)),
-    summarizeAccess({
-      userId: alvo.id,
-      role: alvo.role,
-      isSuperAdmin: alvo.isSuperAdmin,
-    }),
+      .from(businessDivision),
+    listGrantsForUser(alvo.id),
   ]);
 
-  const minhasPosicoes = positions.get(alvo.id) ?? [];
-  const meusSquads = squads.get(alvo.id) ?? [];
+  const person: UserFileData = {
+    id: alvo.id,
+    name: alvo.name,
+    email: alvo.email,
+    status: alvo.status,
+    role: alvo.role,
+    isSuperAdmin: alvo.isSuperAdmin,
+    jobTitleId: alvo.jobTitleId,
+    createdAt: alvo.createdAt.toISOString(),
+    approvedAt: alvo.approvedAt?.toISOString() ?? null,
+    teams: (positions.get(alvo.id) ?? []).map((position) => ({
+      membershipId: position.membershipId,
+      teamId: position.teamId,
+      teamName: position.teamName,
+      kind: position.kind,
+      path: position.path,
+      isPrimary: position.isPrimary,
+    })),
+    squads: (squads.get(alvo.id) ?? []).map((item) => ({
+      membershipId: item.membershipId,
+      squadId: item.squadId,
+      businessUnitLabel: item.businessUnitLabel,
+      isLead: item.isLead,
+    })),
+    grants,
+  };
+
+  const orgUnits: OrgUnitOption[] = sortByName(
+    units.filter((unit) => unit.isActive),
+    (unit) => unit.name,
+  ).map((unit) => ({
+    id: unit.id,
+    name: unit.name,
+    kind: unit.kind,
+    path: unit.path,
+  }));
 
   return (
     <>
@@ -134,83 +142,20 @@ export default async function UserDetailPage({ params }: { params: Params }) {
         <span className="text-slate-700">{alvo.name}</span>
       </nav>
 
-      <div className="space-y-5">
-        <IdentityCard
-          person={{
-            id: alvo.id,
-            name: alvo.name,
-            email: alvo.email,
-            status: alvo.status,
-            createdAt: alvo.createdAt.toISOString(),
-            approvedAt: alvo.approvedAt?.toISOString() ?? null,
-          }}
-          isSelf={alvo.id === admin.id}
-        />
-
-        <OrgCard
-          userId={alvo.id}
-          jobTitleId={alvo.jobTitleId}
-          jobTitles={jobTitles.map((title) => ({
+      <UserFile
+        person={person}
+        jobTitles={sortByName(jobTitles, (title) => title.name).map(
+          (title) => ({
             id: title.id,
             name: title.name,
-          }))}
-          positions={minhasPosicoes.map((position) => ({
-            membershipId: position.membershipId,
-            teamId: position.teamId,
-            teamName: position.teamName,
-            path: position.path,
-            isLead: position.isLead,
-            isPrimary: position.isPrimary,
-          }))}
-          units={units
-            .filter((unit) => unit.isActive)
-            .map((unit) => ({
-              id: unit.id,
-              name: unit.name,
-              depth: unit.depth,
-              kind: unit.kind,
-            }))}
-        />
-
-        <RoleCard
-          userId={alvo.id}
-          role={alvo.role}
-          isSuperAdmin={alvo.isSuperAdmin}
-          isSelf={alvo.id === admin.id}
-        />
-
-        <ScopesCard
-          userId={alvo.id}
-          grants={resumo.grants}
-          units={units.map((unit) => ({
-            id: unit.id,
-            name: unit.name,
-            depth: unit.depth,
-          }))}
-          divisions={divisions}
-          businessUnits={todasAsBus}
-          squads={todosOsSquads.map((item) => ({
-            id: item.id,
-            label: item.businessUnitLabel,
-          }))}
-        />
-
-        <SquadsCard
-          userId={alvo.id}
-          squads={meusSquads.map((item) => ({
-            membershipId: item.membershipId,
-            squadId: item.squadId,
-            businessUnitLabel: item.businessUnitLabel,
-            isLead: item.isLead,
-          }))}
-          allSquads={todosOsSquads.map((item) => ({
-            id: item.id,
-            label: item.businessUnitLabel,
-          }))}
-        />
-
-        <AccessSummaryCard summary={resumo} />
-      </div>
+          }),
+        )}
+        orgUnits={orgUnits}
+        divisions={sortByName(divisions, (division) => division.name)}
+        businessUnits={sortByName(todasAsBus, (unit) => unit.label)}
+        squads={sortByName(todosOsSquads, (item) => item.label)}
+        isSelf={alvo.id === admin.id}
+      />
     </>
   );
 }

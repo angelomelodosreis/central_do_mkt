@@ -62,3 +62,27 @@ export function pluralWord(
 ): string {
   return quantidade === 1 ? singular : (formaPlural ?? `${singular}s`);
 }
+
+/**
+ * Compara dois nomes como uma pessoa esperaria ver numa lista.
+ *
+ * `sensitivity: "base"` iguala maiúscula com minúscula e letra com acento, que
+ * é o que faz "Ácido" cair entre "Abono" e "Ajuste" em vez de ir para o fim da
+ * lista — e "enamed" ficar junto de "Enamed" em vez de depois de "Zebra".
+ *
+ * O `numeric` põe "R2" depois de "R1" e antes de "R10", que a ordem de texto
+ * pura inverteria.
+ */
+const COLECIONADOR = new Intl.Collator("pt-BR", {
+  sensitivity: "base",
+  numeric: true,
+});
+
+export function compareNames(a: string, b: string): number {
+  return COLECIONADOR.compare(a, b);
+}
+
+/** Ordena uma lista pelo nome extraído de cada item. */
+export function sortByName<T>(itens: T[], nome: (item: T) => string): T[] {
+  return [...itens].sort((a, b) => compareNames(nome(a), nome(b)));
+}

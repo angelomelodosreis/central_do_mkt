@@ -7,6 +7,7 @@ import {
   namingTemplateField,
   type NamingTemplateWithFields,
 } from "@/lib/db/schema";
+import { sortByName } from "@/lib/utils/text";
 
 /** Busca os modelos e junta cada um com seus campos, na ordem correta. */
 async function attachFields(
@@ -31,11 +32,13 @@ export async function listActiveTemplates(): Promise<
   NamingTemplateWithFields[]
 > {
   const db = await getDb();
-  const templates = await db
-    .select()
-    .from(namingTemplate)
-    .where(eq(namingTemplate.isActive, true))
-    .orderBy(asc(namingTemplate.sortOrder), asc(namingTemplate.name));
+  const templates = sortByName(
+    await db
+      .select()
+      .from(namingTemplate)
+      .where(eq(namingTemplate.isActive, true)),
+    (template) => template.name,
+  );
 
   // Um modelo sem campos não consegue gerar nada — não faz sentido oferecê-lo.
   return (await attachFields(templates)).filter(
@@ -46,10 +49,10 @@ export async function listActiveTemplates(): Promise<
 /** Todos os modelos, inclusive inativos e sem campos. Usado na administração. */
 export async function listAllTemplates(): Promise<NamingTemplateWithFields[]> {
   const db = await getDb();
-  const templates = await db
-    .select()
-    .from(namingTemplate)
-    .orderBy(asc(namingTemplate.sortOrder), asc(namingTemplate.name));
+  const templates = sortByName(
+    await db.select().from(namingTemplate),
+    (template) => template.name,
+  );
 
   return attachFields(templates);
 }

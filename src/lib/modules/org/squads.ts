@@ -11,6 +11,7 @@ import {
   type UserRole,
 } from "@/lib/db/schema";
 import { loadPositions, type Position } from "@/lib/modules/org/people";
+import { sortByName } from "@/lib/utils/text";
 
 export type SquadPerson = {
   membershipId: string;
@@ -123,8 +124,10 @@ export async function listSquads(): Promise<SquadOverview[]> {
     );
   }
 
-  return squads.map((linha) => ({
-    ...linha,
-    members: porSquad.get(linha.id) ?? [],
-  }));
+  return sortByName(squads, (linha) => linha.businessUnitLabel).map(
+    (linha) => ({
+      ...linha,
+      members: porSquad.get(linha.id) ?? [],
+    }),
+  );
 }

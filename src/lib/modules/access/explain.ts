@@ -128,7 +128,7 @@ export async function listGrantsForUser(
         scopeId: null,
         targetName: "Toda a organização",
         targetPath: null,
-        reach: "todas as unidades, divisões, BUs e squads",
+        reach: "todos os times, divisões, BUs e squads",
         note: row.note,
       };
     }
@@ -142,11 +142,11 @@ export async function listGrantsForUser(
         id: row.id,
         scopeType: row.scopeType,
         scopeId: id,
-        targetName: node?.name ?? "unidade removida",
+        targetName: node?.name ?? "removido da estrutura",
         targetPath: node ? describePath(arvore, id) : null,
         reach:
           abaixo > 0
-            ? `alcança ${abaixo} ${abaixo === 1 ? "unidade abaixo" : "unidades abaixo"}`
+            ? `alcança ${abaixo} ${abaixo === 1 ? "time abaixo" : "times abaixo"}`
             : null,
         note: row.note,
       };
@@ -206,114 +206,6 @@ function contarDescendentes(
     fila.push(...node.children);
   }
   return total;
-}
-
-/**
- * Monta o resumo de acesso de uma pessoa.
- *
- * Recebe o papel e o id em vez de um `CurrentUser` porque a tela de
- * administração precisa explicar o acesso de OUTRA pessoa — que não tem sessão
- * aberta.
- */
-export async function summarizeAccess({
-  userId,
-  role,
-  isSuperAdmin,
-}: {
-  userId: string;
-  role: UserRole;
-  isSuperAdmin: boolean;
-}): Promise<AccessSummary> {
-  const [scope, permissions, grants] = await Promise.all([
-    resolveScope({ id: userId, isSuperAdmin }),
-    getPermissionsForRole(role),
-    listGrantsForUser(userId),
-  ]);
-
-  return {
-    reachLines: describeReach(scope, grants),
-    modules: MODULE_KEYS.map((key) => ({
-      key,
-      label: MODULE_LABELS[key],
-      canView: permissions[key].canView || permissions[key].canEdit,
-      canEdit: permissions[key].canEdit,
-    })),
-    businessUnitCount: seesEverything(scope)
-      ? "todas"
-      : new Set([...scope.businessUnitIds, ...scope.squadBusinessUnitIds]).size,
-    grants,
-    isSuperAdmin,
-  };
-}
-
-/**
- * As frases do resumo.
- *
- * Separa RESPONDER de PARTICIPAR porque a diferença é a que mais confunde: quem
- * participa de um squad enxerga a BU, mas não responde por ela. Um resumo que
- * dissesse só "tem acesso a 3 BUs" esconderia exatamente a distinção que
- * justifica o modelo.
- */
-function describeReach(
-  scope: EffectiveScope,
-  grants: ResolvedGrant[],
-): string[] {
-  const linhas: string[] = [];
-
-  if (scope.isSuperAdmin) {
-    linhas.push(
-      "Administra a plataforma: permissões, domínios de e-mail, bases oficiais e auditoria. Enxerga tudo, independentemente de vínculo.",
-    );
-  }
-
-  if (scope.isOrganizationWide) {
-    linhas.push(
-      "Responde pela organização inteira: todas as unidades, divisões, BUs e squads.",
-    );
-  }
-
-  const orgUnits = grants.filter((grant) => grant.scopeType === "org_unit");
-  if (orgUnits.length > 0) {
-    linhas.push(
-      `Responde por ${orgUnits.map((grant) => grant.targetName).join(", ")} — e, por herança, pelas unidades abaixo.`,
-    );
-  }
-
-  const divisions = grants.filter((grant) => grant.scopeType === "division");
-  if (divisions.length > 0) {
-    linhas.push(
-      `Responde pela divisão ${divisions.map((grant) => grant.targetName).join(", ")} — e pelas BUs dela.`,
-    );
-  }
-
-  const bus = grants.filter((grant) => grant.scopeType === "business_unit");
-  if (bus.length > 0) {
-    linhas.push(
-      `Responde pelas BUs ${bus.map((grant) => grant.targetName).join(", ")}.`,
-    );
-  }
-
-  if (scope.squadIds.size > 0) {
-    linhas.push(
-      `Participa de ${plural(scope.squadIds.size, "squad")} — enxerga o planejamento dessas BUs, mas isso por si só não a torna responsável por elas.`,
-    );
-  }
-
-  if (scope.memberOrgUnitIds.size > 0) {
-    linhas.push(
-      scope.memberOrgUnitIds.size === 1
-        ? "Está em 1 unidade organizacional e recebe as tarefas endereçadas a ela — e as endereçadas às unidades acima dela."
-        : `Está em ${scope.memberOrgUnitIds.size} unidades organizacionais e recebe as tarefas endereçadas a elas — e às unidades acima delas.`,
-    );
-  }
-
-  if (linhas.length === 0) {
-    linhas.push(
-      "Nenhum escopo. Consegue entrar na plataforma, mas o planejamento das BUs não existe para ela — nem para consultar.",
-    );
-  }
-
-  return linhas;
 }
 
 export { SCOPE_TYPE_LABELS };

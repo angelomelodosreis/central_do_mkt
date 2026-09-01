@@ -14,6 +14,7 @@ import {
   type UserRole,
   type UserStatus,
 } from "@/lib/db/schema";
+import { sortByName } from "@/lib/utils/text";
 
 /**
  * Uma posição da pessoa na estrutura organizacional.
@@ -205,7 +206,7 @@ export async function listPeople({
     loadSquads(ids),
   ]);
 
-  return rows.map((row) => ({
+  return sortByName(rows, (row) => row.name).map((row) => ({
     ...row,
     jobTitleOrder: row.jobTitleOrder ?? 999,
     positions: positions.get(row.id) ?? [],

@@ -20,6 +20,7 @@ import {
   type BusinessUnitScope,
 } from "@/lib/modules/access/scope";
 import { loadPositions, type Position } from "@/lib/modules/org/people";
+import { sortByName } from "@/lib/utils/text";
 
 export type { BusinessUnitScope };
 export { scopeIncludes };
@@ -116,7 +117,7 @@ export async function listAccessibleBusinessUnits(
     memberships.map((row) => [row.businessUnitId, row.isLead]),
   );
 
-  return units.map((unit) => ({
+  return sortByName(units, (unit) => unit.label).map((unit) => ({
     ...unit,
     isMember: mine.has(unit.id),
     isLead: mine.get(unit.id) === true,

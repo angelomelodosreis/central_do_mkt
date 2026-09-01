@@ -67,7 +67,7 @@ export async function createOrgUnit(
   const kindRaw = field(formData, "kind") || "team";
   const parentId = field(formData, "parentOrgUnitId") || null;
 
-  if (!name) return { status: "error", message: "Informe o nome da unidade." };
+  if (!name) return { status: "error", message: "Informe o nome." };
   if (!isKind(kindRaw)) {
     return { status: "error", message: "Nível inválido." };
   }
@@ -90,7 +90,7 @@ export async function createOrgUnit(
   if (duplicate) {
     return {
       status: "error",
-      message: `Já existe uma unidade chamada "${name}".`,
+      message: `Já existe "${name}" na estrutura.`,
     };
   }
 
@@ -101,7 +101,7 @@ export async function createOrgUnit(
       .where(eq(team.id, parentId))
       .get();
     if (!pai) {
-      return { status: "error", message: "A unidade acima não existe mais." };
+      return { status: "error", message: "O nível acima não existe mais." };
     }
   }
 
@@ -128,7 +128,7 @@ export async function createOrgUnit(
     action: "org_unit.create",
     entityType: "team",
     entityId: orgUnitId,
-    summary: `Criou a unidade "${name}"`,
+    summary: `Criou "${name}" na estrutura`,
     afterData: { name, slug, kind: kindRaw, parentOrgUnitId: parentId },
   });
 
@@ -183,7 +183,7 @@ export async function updateOrgUnit(formData: FormData): Promise<void> {
     action: "org_unit.update",
     entityType: "team",
     entityId: orgUnitId,
-    summary: `Editou a unidade "${before.name}"`,
+    summary: `Editou "${before.name}" na estrutura`,
     beforeData: {
       name: before.name,
       description: before.description,
@@ -235,8 +235,8 @@ export async function toggleOrgUnit(formData: FormData): Promise<void> {
     entityType: "team",
     entityId: orgUnitId,
     summary: nextIsActive
-      ? `Reativou a unidade "${before.name}"`
-      : `Desativou a unidade "${before.name}"`,
+      ? `Reativou "${before.name}"`
+      : `Desativou "${before.name}"`,
     beforeData: { isActive: before.isActive },
     afterData: { isActive: nextIsActive },
   });
@@ -587,49 +587,8 @@ export async function setPrimaryTeam(formData: FormData): Promise<void> {
     action: "user.org_change",
     entityType: "user",
     entityId: alvo.userId,
-    summary: "Definiu a unidade principal de uma pessoa",
+    summary: "Definiu o time principal de uma pessoa",
     afterData: { membershipId },
-  });
-
-  revalidateOrgViews();
-}
-
-/** Marca ou desmarca a pessoa como responsável pela unidade. */
-export async function toggleTeamLead(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-
-  const membershipId = field(formData, "membershipId");
-  if (!membershipId) return;
-
-  const db = await getDb();
-  const alvo = await db
-    .select({
-      id: teamMember.id,
-      userId: teamMember.userId,
-      isLead: teamMember.isLead,
-    })
-    .from(teamMember)
-    .where(eq(teamMember.id, membershipId))
-    .get();
-
-  if (!alvo) return;
-
-  await db
-    .update(teamMember)
-    .set({ isLead: !alvo.isLead })
-    .where(eq(teamMember.id, membershipId));
-
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "user.org_change",
-    entityType: "user",
-    entityId: alvo.userId,
-    summary: alvo.isLead
-      ? "Deixou de responder por uma unidade"
-      : "Passou a responder por uma unidade",
-    beforeData: { isLead: alvo.isLead },
-    afterData: { isLead: !alvo.isLead },
   });
 
   revalidateOrgViews();
@@ -680,7 +639,7 @@ export async function removeTeamMembership(formData: FormData): Promise<void> {
     action: "user.org_change",
     entityType: "user",
     entityId: alvo.userId,
-    summary: "Removeu uma pessoa de uma unidade",
+    summary: "Tirou uma pessoa de um time",
     beforeData: { teamId: alvo.teamId, isPrimary: alvo.isPrimary },
   });
 

@@ -238,8 +238,8 @@ export async function setParentOrgUnit(formData: FormData): Promise<void> {
     entityType: "team",
     entityId: teamId,
     summary: parentId
-      ? `${alvo.name} passou a responder a ${arvore.byId.get(parentId)?.name ?? "outra unidade"}`
-      : `${alvo.name} passou a ser unidade de primeiro nível`,
+      ? `${alvo.name} passou a responder a ${arvore.byId.get(parentId)?.name ?? "outro lugar"}`
+      : `${alvo.name} passou a ser de primeiro nível`,
     beforeData: { parentOrgUnitId: alvo.parentOrgUnitId },
     afterData: { parentOrgUnitId: parentId },
   });

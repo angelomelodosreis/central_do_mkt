@@ -60,7 +60,7 @@ export default async function TasksPage() {
     assigneeId: item.assigneeId,
     assigneeName: item.assigneeName,
     assignedTeamName: item.assignedTeamName
-      ? `unidade ${item.assignedTeamName}`
+      ? `time ${item.assignedTeamName}`
       : null,
     businessUnitLabel: item.businessUnitLabel,
     businessUnitSlug: item.businessUnitSlug,
@@ -69,7 +69,7 @@ export default async function TasksPage() {
     relation: relationFor(currentUser, item, { canDelegate: podeDelegar }),
   });
 
-  const unidades = currentUser.positions
+  const times = currentUser.positions
     .map((position) => position.teamName)
     .join(", ");
 
@@ -78,9 +78,9 @@ export default async function TasksPage() {
       <PageHeader
         title="Tarefas"
         description={
-          unidades
-            ? `Sua fila e a das unidades ${unidades}.`
-            : "Sua fila de trabalho. Peça a um administrador para te colocar numa unidade e você passa a receber também as tarefas endereçadas a ela."
+          times
+            ? `Sua fila e a de ${times}.`
+            : "Sua fila de trabalho. Peça a um administrador para te colocar num time e você passa a receber também as tarefas endereçadas a ele."
         }
       />
 

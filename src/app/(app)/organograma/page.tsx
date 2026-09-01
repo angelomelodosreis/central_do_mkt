@@ -15,6 +15,7 @@ import {
   team,
 } from "@/lib/db/schema";
 import { listPeople } from "@/lib/modules/org/people";
+import { sortByName } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Organograma" };
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ export default async function OrganogramaPage() {
 
   const [people, units, squads, cargos] = await Promise.all([
     listPeople(),
-    db.select().from(team).orderBy(asc(team.sortOrder), asc(team.name)),
+    db.select().from(team),
     db
       .select({
         id: squad.id,
@@ -54,12 +55,8 @@ export default async function OrganogramaPage() {
         businessDivision,
         eq(businessUnit.divisionId, businessDivision.id),
       )
-      .orderBy(asc(businessUnit.sortOrder), asc(businessUnit.label)),
-    db
-      .select()
-      .from(jobTitle)
-      .where(eq(jobTitle.isActive, true))
-      .orderBy(asc(jobTitle.sortOrder), asc(jobTitle.name)),
+      .orderBy(asc(businessUnit.label)),
+    db.select().from(jobTitle).where(eq(jobTitle.isActive, true)),
   ]);
 
   const snapshot: OrgSnapshot = {
@@ -80,7 +77,7 @@ export default async function OrganogramaPage() {
         person.squads.map((item) => [item.squadId, item.membershipId]),
       ),
     })),
-    units: units.map((item) => ({
+    units: sortByName(units, (item) => item.name).map((item) => ({
       id: item.id,
       name: item.name,
       description: item.description,
@@ -88,14 +85,14 @@ export default async function OrganogramaPage() {
       parentOrgUnitId: item.parentOrgUnitId,
       isActive: item.isActive,
     })),
-    squads: squads.map((item) => ({
+    squads: sortByName(squads, (item) => item.label).map((item) => ({
       id: item.id,
       businessUnitId: item.businessUnitId,
       label: item.label,
       divisionName: item.divisionName,
       isActive: item.isActive,
     })),
-    jobTitles: cargos.map((item) => ({
+    jobTitles: sortByName(cargos, (item) => item.name).map((item) => ({
       id: item.id,
       name: item.name,
       sortOrder: item.sortOrder,

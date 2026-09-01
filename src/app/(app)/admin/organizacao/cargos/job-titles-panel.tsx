@@ -88,6 +88,17 @@ export function JobTitlesPanel({
   );
   const inativos = titles.filter((title) => !title.isActive);
 
+  const grupos = [
+    ...porNivel.map((grupo) => ({
+      titulo: grupo.nivel.label,
+      cargos: grupo.cargos,
+    })),
+    ...(foraDaFaixa.length > 0
+      ? [{ titulo: "Outros", cargos: foraDaFaixa }]
+      : []),
+    ...(inativos.length > 0 ? [{ titulo: "Inativos", cargos: inativos }] : []),
+  ];
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -100,90 +111,88 @@ export function JobTitlesPanel({
         </Button>
       </div>
 
-      {[
-        ...porNivel.map((grupo) => ({
-          titulo: grupo.nivel.label,
-          cargos: grupo.cargos,
-        })),
-        ...(foraDaFaixa.length > 0
-          ? [{ titulo: "Outros", cargos: foraDaFaixa }]
-          : []),
-        ...(inativos.length > 0
-          ? [{ titulo: "Inativos", cargos: inativos }]
-          : []),
-      ].map((grupo) => (
-        <Card key={grupo.titulo}>
-          <div className="border-b border-slate-200 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">
-              {grupo.titulo}
-            </h2>
-          </div>
-          <CardBody className="px-0 py-0">
-            <ul className="divide-y divide-slate-100">
-              {grupo.cargos.map((title) => (
-                <li
-                  key={title.id}
-                  className={cn(
-                    "flex flex-wrap items-center justify-between gap-3 px-5 py-2.5",
-                    !title.isActive && "bg-slate-50/60",
-                  )}
-                >
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-slate-900">
-                        {title.name}
-                      </span>
-                      {title.isActive ? null : <Badge>Inativo</Badge>}
-                      {title.peopleCount > 0 ? (
-                        <Badge tone="neutral">
-                          {title.peopleCount}{" "}
-                          {title.peopleCount === 1 ? "pessoa" : "pessoas"}
-                        </Badge>
-                      ) : null}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {title.suggestedTeamName
-                        ? `costuma ser de ${title.suggestedTeamName}`
-                        : "sem unidade típica"}
-                    </p>
-                  </div>
+      {/* Um cartão só, e as faixas viram cabeçalhos de trecho.
+          Sete cartões empilhados davam sete molduras, sete sombras e sete
+          espaçamentos para uma lista contínua de dezesseis linhas — a moldura
+          pesava mais que o conteúdo, e a leitura de cima a baixo quebrava a
+          cada faixa. */}
+      <Card>
+        <CardBody className="px-0 py-0">
+          {grupos.map((grupo) => (
+            <section key={grupo.titulo}>
+              <h2 className="border-y border-slate-200 bg-slate-50/70 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 first:border-t-0">
+                {grupo.titulo}
+              </h2>
+              <ul className="divide-y divide-slate-100">
+                {grupo.cargos.map((title) => (
+                  <li
+                    key={title.id}
+                    className={cn(
+                      "flex flex-wrap items-center justify-between gap-3 px-5 py-2.5",
+                      !title.isActive && "bg-slate-50/60",
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-slate-900">
+                          {title.name}
+                        </span>
+                        {title.isActive ? null : <Badge>Inativo</Badge>}
+                        {title.peopleCount > 0 ? (
+                          <Badge tone="neutral">
+                            {title.peopleCount}{" "}
+                            {title.peopleCount === 1 ? "pessoa" : "pessoas"}
+                          </Badge>
+                        ) : null}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {title.suggestedTeamName
+                          ? `costuma ser de ${title.suggestedTeamName}`
+                          : "sem time definido"}
+                      </p>
+                    </div>
 
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setEditando(title)}
-                    >
-                      Editar
-                    </Button>
-                    <form action={toggleJobTitle}>
-                      <input type="hidden" name="jobTitleId" value={title.id} />
-                      <Button type="submit" size="sm" variant="ghost">
-                        {title.isActive ? "Desativar" : "Reativar"}
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditando(title)}
+                      >
+                        Editar
                       </Button>
-                    </form>
-                    {/* Excluir só existe quando ninguém ocupa o cargo. Ocupado,
-                        apagar deixaria pessoas apontando para nada — e o cargo
-                        sumiria do perfil delas sem ninguém perceber. */}
-                    {title.peopleCount === 0 ? (
-                      <form action={deleteJobTitle}>
+                      <form action={toggleJobTitle}>
                         <input
                           type="hidden"
                           name="jobTitleId"
                           value={title.id}
                         />
-                        <Button type="submit" size="sm" variant="danger">
-                          Excluir
+                        <Button type="submit" size="sm" variant="ghost">
+                          {title.isActive ? "Desativar" : "Reativar"}
                         </Button>
                       </form>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-        </Card>
-      ))}
+                      {/* Excluir só existe quando ninguém ocupa o cargo. Ocupado,
+                        apagar deixaria pessoas apontando para nada — e o cargo
+                        sumiria do perfil delas sem ninguém perceber. */}
+                      {title.peopleCount === 0 ? (
+                        <form action={deleteJobTitle}>
+                          <input
+                            type="hidden"
+                            name="jobTitleId"
+                            value={title.id}
+                          />
+                          <Button type="submit" size="sm" variant="danger">
+                            Excluir
+                          </Button>
+                        </form>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </CardBody>
+      </Card>
 
       <NewTitleDrawer
         open={criando}
@@ -267,9 +276,9 @@ function NewTitleDrawer({
         </Field>
 
         <Field
-          label="Unidade típica"
+          label="Costuma ficar em"
           htmlFor="title-team"
-          hint="Opcional. Só agrupa o seletor — não impede atribuir o cargo a alguém de outra unidade."
+          hint="Opcional. Só agrupa o seletor — não impede dar o cargo a alguém de outro time."
         >
           <Select
             id="title-team"
@@ -338,7 +347,7 @@ function EditTitleDrawer({
             />
           </Field>
 
-          <Field label="Unidade típica" htmlFor="edit-title-team">
+          <Field label="Costuma ficar em" htmlFor="edit-title-team">
             <Select
               id="edit-title-team"
               name="suggestedTeamId"

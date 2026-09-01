@@ -62,7 +62,7 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
           variant="primary"
           onClick={() => setCriando({ parentId: null })}
         >
-          + Nova unidade
+          + Novo setor, subsetor ou time
         </Button>
       </div>
 
@@ -133,7 +133,7 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
                       variant="ghost"
                       onClick={() => setCriando({ parentId: unit.id })}
                     >
-                      + Unidade aqui
+                      + Criar aqui dentro
                     </Button>
                   ) : null}
                   <Button
@@ -171,7 +171,7 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
   );
 }
 
-/** Opções de "unidade acima", com o caminho visível na indentação do rótulo. */
+/** Opções de "está dentro de", com o caminho visível na indentação do rótulo. */
 function opcoesDePai(units: UnitRow[], excluirId?: string) {
   const proibidos = new Set<string>();
   if (excluirId) {
@@ -224,8 +224,8 @@ function NewUnitDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      title="Nova unidade organizacional"
-      description={pai ? `Dentro de ${pai.name}.` : "Setor, subsetor ou time."}
+      title="Novo setor, subsetor ou time"
+      description={pai ? `Dentro de ${pai.name}.` : undefined}
     >
       <form
         action={formAction}
@@ -271,16 +271,16 @@ function NewUnitDrawer({
         </Field>
 
         <Field
-          label="Unidade acima"
+          label="Está dentro de"
           htmlFor="unit-parent"
-          hint="Responsabilidade sobre a unidade de cima alcança tudo que está abaixo dela."
+          hint="Quem responde pelo nível de cima responde por tudo que está abaixo."
         >
           <Select
             id="unit-parent"
             name="parentOrgUnitId"
             defaultValue={parentId ?? ""}
             options={[
-              { value: "", label: "Nenhuma (primeiro nível)" },
+              { value: "", label: "Nada acima (primeiro nível)" },
               ...opcoesDePai(units),
             ]}
           />
@@ -291,7 +291,7 @@ function NewUnitDrawer({
         </Field>
 
         <Button type="submit" variant="primary" disabled={isPending}>
-          {isPending ? "Criando…" : "Criar unidade"}
+          {isPending ? "Criando…" : "Criar"}
         </Button>
       </form>
     </Drawer>
@@ -339,13 +339,13 @@ function EditUnitDrawer({
             />
           </Field>
 
-          <Field label="Unidade acima" htmlFor="edit-unit-parent">
+          <Field label="Está dentro de" htmlFor="edit-unit-parent">
             <Select
               id="edit-unit-parent"
               name="parentOrgUnitId"
               defaultValue={unit.parentOrgUnitId ?? ""}
               options={[
-                { value: "", label: "Nenhuma (primeiro nível)" },
+                { value: "", label: "Nada acima (primeiro nível)" },
                 ...opcoesDePai(units, unit.id),
               ]}
             />

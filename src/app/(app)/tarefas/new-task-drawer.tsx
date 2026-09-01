@@ -87,7 +87,7 @@ export function NewTaskDrawer({
         hint:
           team.totalMemberCount > 0
             ? `${team.path} · chega a ${plural(team.totalMemberCount, "pessoa")}`
-            : `${team.path} · ninguém nesta unidade ainda`,
+            : `${team.path} · ninguém aqui ainda`,
       })),
     },
     {
@@ -152,7 +152,7 @@ export function NewTaskDrawer({
             label="Para quem"
             htmlFor="task-destino"
             required
-            hint="Pessoas e unidades na mesma lista."
+            hint="Pessoas e times na mesma lista."
           >
             <Select
               id="task-destino"

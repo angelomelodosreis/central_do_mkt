@@ -27,7 +27,7 @@ type PersonRow = {
   role: UserRole;
   isSuperAdmin: boolean;
   jobTitleName: string | null;
-  teams: Array<{ id: string; name: string; isLead: boolean }>;
+  teams: Array<{ id: string; name: string }>;
   squads: Array<{ id: string; label: string; isLead: boolean }>;
   scopes: Array<{ type: ScopeType; name: string }>;
 };
@@ -157,10 +157,10 @@ export function UsersPanel({
             <Select
               value={unidade}
               onValueChange={setUnidade}
-              ariaLabel="Filtrar por unidade"
-              placeholder="Unidade"
+              ariaLabel="Filtrar por time ou setor"
+              placeholder="Time ou setor"
               options={[
-                { value: "", label: "Todas as unidades" },
+                { value: "", label: "Todos os times e setores" },
                 ...units.map((unit) => ({ value: unit.id, label: unit.name })),
               ]}
             />

@@ -33,7 +33,7 @@ export function MarketingTree({
   if (units.length === 0) {
     return (
       <EmptyState
-        title="Nenhuma unidade cadastrada"
+        title="Nenhum setor ou time cadastrado"
         description="A estrutura é montada a partir de setores, subsetores e times. Cadastre-os em Administração › Organização."
       />
     );
@@ -225,7 +225,7 @@ function PersonNode({
         </span>
         <span className="block truncate text-[11px] text-slate-500">
           {person.jobTitleName ?? "sem cargo"}
-          {destaque ? " · responde pela unidade" : ""}
+          {destaque ? "" : ""}
         </span>
       </span>
       {outros.length > 0 ? (

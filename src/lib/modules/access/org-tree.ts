@@ -1,7 +1,6 @@
-import { asc } from "drizzle-orm";
-
 import { getDb } from "@/lib/db/client";
 import { team, type OrgUnitKind } from "@/lib/db/schema";
+import { compareNames } from "@/lib/utils/text";
 
 /**
  * Um nó da estrutura organizacional, já com os filhos resolvidos.
@@ -40,10 +39,7 @@ export type OrgTree = {
  */
 export async function loadOrgTree(): Promise<OrgTree> {
   const db = await getDb();
-  const rows = await db
-    .select()
-    .from(team)
-    .orderBy(asc(team.sortOrder), asc(team.name));
+  const rows = await db.select().from(team);
 
   const byId = new Map<string, OrgUnitNode>();
   for (const row of rows) {
@@ -74,16 +70,14 @@ export async function loadOrgTree(): Promise<OrgTree> {
   function percorrer(node: OrgUnitNode, depth: number) {
     node.depth = depth;
     flat.push(node);
-    node.children.sort(
-      (a, b) =>
-        a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "pt-BR"),
-    );
+    node.children.sort((a, b) => compareNames(a.name, b.name));
     for (const filho of node.children) percorrer(filho, depth + 1);
   }
-  roots.sort(
-    (a, b) =>
-      a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "pt-BR"),
-  );
+  // Irmãos em ordem alfabética, e só isso. `sortOrder` existiu para uma ordem
+  // manual que nunca ganhou tela: toda unidade nasce com o mesmo número, então
+  // ele só preservava a ordem em que o seed inseriu — que na tela parecia
+  // aleatória (Copy, Videomakers, Social Media, Comunicação, Design).
+  roots.sort((a, b) => compareNames(a.name, b.name));
   for (const raiz of roots) percorrer(raiz, 0);
 
   return { byId, roots, flat };

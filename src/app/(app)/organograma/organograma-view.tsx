@@ -106,7 +106,7 @@ export function OrganogramaView({
           <Input
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            placeholder="Buscar por pessoa, unidade ou cargo…"
+            placeholder="Buscar por pessoa, time ou cargo…"
             aria-label="Buscar no organograma"
           />
         </div>
@@ -115,10 +115,10 @@ export function OrganogramaView({
             <Select
               value={timeFiltrado}
               onValueChange={setTimeFiltrado}
-              ariaLabel="Filtrar por unidade"
-              placeholder="Todas as unidades"
+              ariaLabel="Filtrar por time ou setor"
+              placeholder="Time ou setor"
               options={[
-                { value: "", label: "Todas as unidades" },
+                { value: "", label: "Todos os times e setores" },
                 ...snapshot.units.map((unit) => ({
                   value: unit.id,
                   label: unit.name,

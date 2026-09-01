@@ -47,7 +47,6 @@ export default async function UsersPage() {
           teams: person.positions.map((position) => ({
             id: position.teamId,
             name: position.teamName,
-            isLead: position.isLead,
           })),
           squads: person.squads.map((item) => ({
             id: item.businessUnitId,

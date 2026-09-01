@@ -8,6 +8,7 @@ import {
   type Persona,
   type PersonaPain,
 } from "@/lib/db/schema";
+import { sortByName } from "@/lib/utils/text";
 
 export type PersonaListItem = Pick<
   Persona,
@@ -40,7 +41,7 @@ export async function listPersonasByBusinessUnit(): Promise<
     })
     .from(businessUnit)
     .where(eq(businessUnit.isActive, true))
-    .orderBy(asc(businessUnit.sortOrder), asc(businessUnit.label));
+    .orderBy(asc(businessUnit.label));
 
   const rows = await db
     .select({
@@ -53,15 +54,17 @@ export async function listPersonasByBusinessUnit(): Promise<
       businessUnitId: persona.businessUnitId,
     })
     .from(persona)
-    .orderBy(asc(persona.sortOrder), asc(persona.name));
+    .orderBy(asc(persona.name));
 
   const counts = await painCountsFor(rows.map((row) => row.id));
 
-  const personas: PersonaListItem[] = rows.map((row) => ({
-    ...row,
-    painCount: counts.get(row.id)?.total ?? 0,
-    openPainCount: counts.get(row.id)?.open ?? 0,
-  }));
+  const personas: PersonaListItem[] = sortByName(rows, (row) => row.name).map(
+    (row) => ({
+      ...row,
+      painCount: counts.get(row.id)?.total ?? 0,
+      openPainCount: counts.get(row.id)?.open ?? 0,
+    }),
+  );
 
   return units.map((unit) => ({
     ...unit,
@@ -93,11 +96,11 @@ export async function listPersonasOfBusinessUnit(
     })
     .from(persona)
     .where(eq(persona.businessUnitId, businessUnitId))
-    .orderBy(asc(persona.sortOrder), asc(persona.name));
+    .orderBy(asc(persona.name));
 
   const counts = await painCountsFor(rows.map((row) => row.id));
 
-  return rows.map((row) => ({
+  return sortByName(rows, (row) => row.name).map((row) => ({
     ...row,
     painCount: counts.get(row.id)?.total ?? 0,
     openPainCount: counts.get(row.id)?.open ?? 0,
@@ -223,7 +226,7 @@ export async function listOpenPains(): Promise<OpenPain[]> {
         or(isNull(personaPain.solution), eq(personaPain.solution, "")),
       ),
     )
-    .orderBy(asc(businessUnit.sortOrder), asc(persona.name));
+    .orderBy(asc(persona.name));
 }
 
 /**
@@ -270,7 +273,7 @@ export async function listActiveBusinessUnits() {
     })
     .from(businessUnit)
     .where(eq(businessUnit.isActive, true))
-    .orderBy(asc(businessUnit.sortOrder), asc(businessUnit.label));
+    .orderBy(asc(businessUnit.label));
 }
 
 /** Verifica se já existe outra persona com o mesmo slug na mesma BU. */

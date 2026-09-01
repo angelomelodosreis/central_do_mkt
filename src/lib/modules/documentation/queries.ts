@@ -12,6 +12,7 @@ import {
   type UserRole,
 } from "@/lib/db/schema";
 import { loadBusinessUnitScope } from "@/lib/modules/org/scope";
+import { sortByName } from "@/lib/utils/text";
 import {
   isRichText,
   normalizeForSearch,
@@ -120,11 +121,14 @@ export async function listCategoriesWithPages(
         eq(documentationPage.scope, "general"),
       ),
     )
-    .orderBy(asc(documentationPage.sortOrder), asc(documentationPage.title));
+    .orderBy(asc(documentationPage.title));
 
   return categories.map((category) => ({
     ...category,
-    pages: pages.filter((page) => page.categoryId === category.id),
+    pages: sortByName(
+      pages.filter((page) => page.categoryId === category.id),
+      (page) => page.title,
+    ),
   }));
 }
 
@@ -297,7 +301,7 @@ export async function searchDocPages(
     )
     .orderBy(asc(documentationPage.title));
 
-  const hits: DocSearchHit[] = rows.map(
+  const hits: DocSearchHit[] = sortByName(rows, (row) => row.title).map(
     ({ content, contentFormat, ...page }) => ({
       ...page,
       excerpt: buildExcerpt(

@@ -14,6 +14,7 @@ import {
   type BusinessDivision,
   type Product,
 } from "@/lib/db/schema";
+import { sortByName } from "@/lib/utils/text";
 
 export type DivisionRow = BusinessDivision & {
   businessUnitCount: number;
@@ -62,7 +63,7 @@ export async function listDivisions(): Promise<DivisionRow[]> {
     }
   }
 
-  return divisions.map((division) => ({
+  return sortByName(divisions, (division) => division.name).map((division) => ({
     ...division,
     businessUnitCount: contagem.get(division.id) ?? 0,
   }));
@@ -110,7 +111,7 @@ export async function listBusinessUnits({
     }
   }
 
-  return units.map((unit) => ({
+  return sortByName(units, (unit) => unit.label).map((unit) => ({
     ...unit,
     productCount: contagem.get(unit.id) ?? 0,
   }));
@@ -145,7 +146,8 @@ export async function listProducts({
       eq(businessUnit.divisionId, businessDivision.id),
     )
     .where(includeInactive ? undefined : eq(product.isActive, true))
-    .orderBy(asc(product.sortOrder), asc(product.name));
+    .orderBy(asc(product.sortOrder), asc(product.name))
+    .then((linhas) => sortByName(linhas, (linha) => linha.name));
 }
 
 /**

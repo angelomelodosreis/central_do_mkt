@@ -7,7 +7,6 @@ import {
   addTeamMembership,
   removeSquadMember,
   removeTeamMembership,
-  toggleTeamLead,
 } from "../admin/organizacao/actions";
 import { changeUserRole } from "../admin/usuarios/actions";
 import { SectionTitle } from "@/components/ui/card";
@@ -126,9 +125,11 @@ export function PersonDrawer({
           </p>
         </section>
 
-        {/* Unidades organizacionais */}
+        {/* Onde a pessoa está na estrutura */}
         <section>
-          <SectionTitle>Unidades ({person.positions.length})</SectionTitle>
+          <SectionTitle>
+            Times e setores ({person.positions.length})
+          </SectionTitle>
 
           {person.positions.length === 0 ? (
             <p className="text-sm text-slate-500">Fora da estrutura.</p>
@@ -158,16 +159,6 @@ export function PersonDrawer({
 
                   {canEdit ? (
                     <div className="flex shrink-0 gap-1">
-                      <form action={toggleTeamLead}>
-                        <input
-                          type="hidden"
-                          name="membershipId"
-                          value={position.membershipId}
-                        />
-                        <Button type="submit" size="sm" variant="ghost">
-                          {position.isLead ? "Não responde" : "Responde"}
-                        </Button>
-                      </form>
                       <form action={removeTeamMembership}>
                         <input
                           type="hidden"
@@ -192,7 +183,7 @@ export function PersonDrawer({
             >
               <input type="hidden" name="userId" value={person.userId} />
               <div className="min-w-0 flex-1">
-                <Field label="Adicionar unidade" htmlFor="drawer-unidade">
+                <Field label="Incluir em" htmlFor="drawer-unidade">
                   <Select
                     id="drawer-unidade"
                     name="teamId"

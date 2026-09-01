@@ -14,7 +14,7 @@ export default async function OrganizacaoPage() {
   for (const person of people) {
     for (const position of person.positions) {
       const lista = membrosPorUnidade.get(position.teamId) ?? [];
-      lista.push(position.isLead ? `${person.name} (responde)` : person.name);
+      lista.push(person.name);
       membrosPorUnidade.set(position.teamId, lista);
     }
   }

@@ -143,7 +143,7 @@ export function TaskRow({
               </Badge>
             ) : null}
             {task.relation.canClaim ? (
-              <Badge tone="brand">Aberta para a unidade</Badge>
+              <Badge tone="brand">Aberta para o time</Badge>
             ) : null}
           </p>
 

@@ -118,8 +118,8 @@ export function TeamsBoard({
                 {doTime.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-500">
                     {canEdit
-                      ? "Arraste alguém para cá para incluir na unidade"
-                      : "Ninguém diretamente nesta unidade"}
+                      ? "Arraste alguém para cá"
+                      : "Ninguém aqui diretamente"}
                   </p>
                 ) : (
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -174,7 +174,7 @@ export function TeamsBoard({
         <Card className="border-amber-300">
           <CardHeader
             title={`Fora da estrutura (${semTime.length})`}
-            description="Não recebem tarefa endereçada a unidade. Arraste para uma unidade acima."
+            description="Não recebem tarefa endereçada a um time. Arraste para o time de cada pessoa."
           />
           <CardBody>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

@@ -64,15 +64,15 @@ export type OrgView = (typeof ORG_VIEWS)[number];
 
 export const ORG_VIEW_LABELS: Record<OrgView, string> = {
   squads: "Squads por BU",
-  times: "Estrutura das unidades",
+  times: "Setores, subsetores e times",
   marketing: "Marketing inteiro",
 };
 
 export const ORG_VIEW_DESCRIPTIONS: Record<OrgView, string> = {
   squads:
-    "Quem atende cada Business Unit. Squad não é time: reúne gente de várias unidades — inclusive de fora do marketing.",
+    "Quem atende cada Business Unit. Squad não é time: reúne gente de vários times — inclusive de fora do marketing.",
   times:
-    "Cada unidade organizacional com quem responde por ela e a equipe, na ordem de senioridade dos cargos.",
+    "Cada setor, subsetor e time com quem responde por ele e a equipe, na ordem de senioridade dos cargos.",
   marketing:
     "Setor → subsetor → time, de cima para baixo, seguindo a hierarquia cadastrada.",
 };
@@ -85,5 +85,5 @@ export const ORG_VIEW_DESCRIPTIONS: Record<OrgView, string> = {
  */
 export const ORG_VIEW_EDIT_HINTS: Partial<Record<OrgView, string>> = {
   squads: "Arraste alguém de um squad para outro.",
-  times: "Arraste alguém de uma unidade para outra.",
+  times: "Arraste alguém de um time para outro.",
 };

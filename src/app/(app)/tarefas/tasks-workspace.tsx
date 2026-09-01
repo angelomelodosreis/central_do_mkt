@@ -35,7 +35,7 @@ const VISAO_LABELS: Record<Visao, string> = {
 
 const VISAO_DESCRICOES: Record<Visao, string> = {
   para_mim:
-    "O que é seu e o que está aberto para as suas unidades, do mais urgente para o menos.",
+    "O que é seu e o que está aberto para o seu time, do mais urgente para o menos.",
   deleguei: "O que você passou para outras pessoas e como está cada uma.",
   todas: "Tudo em aberto no seu escopo de responsabilidade.",
   historico: "Concluídas e canceladas, na ordem em que terminaram.",
@@ -451,9 +451,9 @@ const VAZIO_TITULOS: Record<Visao, string> = {
 
 const VAZIO_DESCRICOES: Record<Visao, string> = {
   para_mim:
-    "Sua fila está limpa. Tarefas endereçadas às suas unidades também aparecem aqui.",
+    "Sua fila está limpa. Tarefas endereçadas ao seu time também aparecem aqui.",
   deleguei:
-    "Tarefas criadas para outras pessoas ou para uma unidade aparecem aqui, com a situação de cada uma.",
+    "Tarefas criadas para outras pessoas ou para um time aparecem aqui, com a situação de cada uma.",
   todas: "Ninguém no seu escopo tem tarefa em aberto.",
   historico: "Tarefas concluídas e canceladas ficam guardadas aqui.",
 };

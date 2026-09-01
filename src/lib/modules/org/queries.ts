@@ -12,6 +12,7 @@ import {
   type Team,
 } from "@/lib/db/schema";
 import { loadOrgTree, describePath } from "@/lib/modules/access/org-tree";
+import { sortByName } from "@/lib/utils/text";
 
 export async function getBusinessUnitById(
   id: string,
@@ -124,10 +125,7 @@ export async function listJobTitles(): Promise<JobTitleRow[]> {
   const db = await getDb();
 
   const [titles, people, units] = await Promise.all([
-    db
-      .select()
-      .from(jobTitle)
-      .orderBy(asc(jobTitle.sortOrder), asc(jobTitle.name)),
+    db.select().from(jobTitle),
     db.select({ jobTitleId: user.jobTitleId }).from(user),
     db.select({ id: team.id, name: team.name }).from(team),
   ]);
@@ -142,7 +140,7 @@ export async function listJobTitles(): Promise<JobTitleRow[]> {
     units.map((unidade) => [unidade.id, unidade.name]),
   );
 
-  return titles.map((title) => ({
+  return sortByName(titles, (title) => title.name).map((title) => ({
     ...title,
     peopleCount: contagem.get(title.id) ?? 0,
     suggestedTeamName: title.suggestedTeamId
@@ -154,9 +152,9 @@ export async function listJobTitles(): Promise<JobTitleRow[]> {
 /** Cargos ativos, para os seletores. */
 export async function listActiveJobTitles(): Promise<JobTitle[]> {
   const db = await getDb();
-  return db
+  const titles = await db
     .select()
     .from(jobTitle)
-    .where(eq(jobTitle.isActive, true))
-    .orderBy(asc(jobTitle.sortOrder), asc(jobTitle.name));
+    .where(eq(jobTitle.isActive, true));
+  return sortByName(titles, (title) => title.name);
 }
