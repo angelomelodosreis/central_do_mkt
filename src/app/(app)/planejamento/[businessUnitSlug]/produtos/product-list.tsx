@@ -69,21 +69,26 @@ export function ProductList({
         )
       ) : null}
 
-      <CadenceGroup
-        title="Produtos contínuos"
-        description="Correm ao longo do ciclo inteiro. Ex.: Extensivo, Semi-extensivo."
-        products={continuos}
-        canEdit={canEdit}
-        businessUnitId={businessUnitId}
-      />
-
-      <CadenceGroup
-        title="Produtos pontuais"
-        description="Acontecem em janelas. Ex.: Boot Camp, Revisão, Hands On."
-        products={pontuais}
-        canEdit={canEdit}
-        businessUnitId={businessUnitId}
-      />
+      {/* As duas cadências na mesma moldura: é uma esteira só, lida de uma
+          vez, e não duas listas independentes. */}
+      <Card>
+        <CardBody className="px-0 py-0">
+          <CadenceGroup
+            title="Contínuos"
+            description="Correm ao longo do ciclo inteiro. Ex.: Extensivo, Semi-extensivo."
+            products={continuos}
+            canEdit={canEdit}
+            businessUnitId={businessUnitId}
+          />
+          <CadenceGroup
+            title="Pontuais"
+            description="Acontecem em janelas. Ex.: Boot Camp, Revisão, Hands On."
+            products={pontuais}
+            canEdit={canEdit}
+            businessUnitId={businessUnitId}
+          />
+        </CardBody>
+      </Card>
     </div>
   );
 }
@@ -102,28 +107,33 @@ function CadenceGroup({
   businessUnitId: string;
 }) {
   return (
-    <Card>
-      <CardHeader
-        title={`${title} (${products.length})`}
-        description={description}
-      />
-      <CardBody className="px-0 py-0">
-        {products.length === 0 ? (
-          <EmptyState variant="inline" title="Nenhum produto nesta cadência." />
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {products.map((product) => (
-              <ProductItem
-                key={product.id}
-                product={product}
-                canEdit={canEdit}
-                businessUnitId={businessUnitId}
-              />
-            ))}
-          </ul>
-        )}
-      </CardBody>
-    </Card>
+    <section>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2.5 first:border-t-0">
+        <div className="min-w-0">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {title}
+          </h2>
+          <p className="text-xs text-slate-500">{description}</p>
+        </div>
+        <span className="text-xs tabular-nums text-slate-500">
+          {products.length}
+        </span>
+      </div>
+      {products.length === 0 ? (
+        <EmptyState variant="inline" title="Nenhum produto nesta cadência." />
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {products.map((product) => (
+            <ProductItem
+              key={product.id}
+              product={product}
+              canEdit={canEdit}
+              businessUnitId={businessUnitId}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

@@ -160,30 +160,32 @@ export default async function GoalsPage({
         </Card>
       ) : null}
 
-      <div className="space-y-6">
-        {GOAL_SCOPES.map((scope) => {
-          const { startsAt, endsAt, partial } = scopeRange(cycle, scope);
-          return (
-            <GoalSection
-              key={scope}
-              cycleId={cycle.id}
-              scope={scope}
-              goal={goals[scope]}
-              periodLabel={formatRange(startsAt, endsAt)}
-              partial={partial}
-              isCurrent={semestreAtual === scope}
-              isPast={scope !== "cycle" && scopeIsPast(cycle, scope)}
-              canEdit={canEdit}
-              findings={achados}
-              revisions={
-                goals[scope]
-                  ? (revisoesPorMeta.get(goals[scope]!.id) ?? [])
-                  : []
-              }
-            />
-          );
-        })}
-      </div>
+      <Card>
+        <CardBody className="px-0 py-0">
+          {GOAL_SCOPES.map((scope) => {
+            const { startsAt, endsAt, partial } = scopeRange(cycle, scope);
+            return (
+              <GoalSection
+                key={scope}
+                cycleId={cycle.id}
+                scope={scope}
+                goal={goals[scope]}
+                periodLabel={formatRange(startsAt, endsAt)}
+                partial={partial}
+                isCurrent={semestreAtual === scope}
+                isPast={scope !== "cycle" && scopeIsPast(cycle, scope)}
+                canEdit={canEdit}
+                findings={achados}
+                revisions={
+                  goals[scope]
+                    ? (revisoesPorMeta.get(goals[scope]!.id) ?? [])
+                    : []
+                }
+              />
+            );
+          })}
+        </CardBody>
+      </Card>
 
       {cycles.length > 1 ? (
         <nav className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">

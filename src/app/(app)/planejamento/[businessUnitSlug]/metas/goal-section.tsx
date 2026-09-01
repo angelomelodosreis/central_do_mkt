@@ -84,34 +84,35 @@ export function GoalSection({
   const [editing, setEditing] = useState(false);
 
   return (
-    <Card className={cn(isCurrent && "border-brand-300")}>
-      <CardHeader
-        title={
-          <span className="flex flex-wrap items-center gap-2">
+    // Ciclo e semestres são três recortes do mesmo compromisso, e a comparação
+    // entre eles é o que se lê aqui. Em três cartões separados, cada um pedia
+    // uma moldura própria para dizer "1º semestre".
+    <section className={cn(isCurrent && "bg-brand-50/30")}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2.5 first:border-t-0">
+        <div className="min-w-0">
+          <h2 className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
             {GOAL_SCOPE_LABELS[scope]}
             {isCurrent ? <Badge tone="brand">Em curso</Badge> : null}
             {isPast ? <Badge>Encerrado</Badge> : null}
-          </span>
-        }
-        description={
-          partial
-            ? `${periodLabel} — recortado pelo início do ciclo`
-            : periodLabel
-        }
-        action={
-          canEdit && !editing ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditing(true)}
-            >
-              {goal ? "Editar" : "Definir meta"}
-            </Button>
-          ) : null
-        }
-      />
-      <CardBody>
+          </h2>
+          <p className="text-xs text-slate-500">
+            {partial
+              ? `${periodLabel} — recortado pelo início do ciclo`
+              : periodLabel}
+          </p>
+        </div>
+        {canEdit && !editing ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditing(true)}
+          >
+            {goal ? "Editar" : "Definir meta"}
+          </Button>
+        ) : null}
+      </div>
+      <div className="px-5 py-4">
         {editing ? (
           <GoalForm
             cycleId={cycleId}
@@ -128,8 +129,8 @@ export function GoalSection({
             {canEdit ? " Use “Definir meta” para escrever a primeira." : ""}
           </p>
         )}
-      </CardBody>
-    </Card>
+      </div>
+    </section>
   );
 }
 
