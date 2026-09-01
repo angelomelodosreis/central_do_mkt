@@ -47,24 +47,32 @@ export function LensBlock({
   const [editando, setEditando] = useState<string | null>(null);
 
   return (
-    <Card>
-      <CardHeader
-        title={DIAGNOSIS_LENS_LABELS[lens]}
-        description={DIAGNOSIS_LENS_QUESTIONS[lens]}
-        action={
-          canEdit && roundId && !adding ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setAdding(true)}
-            >
-              Novo achado
-            </Button>
-          ) : null
-        }
-      />
-      <CardBody className="space-y-4">
+    // As cinco lentes são uma leitura só, feita de cinco ângulos — e cada
+    // cartão trazia moldura e sombra próprias para separar o que se lê em
+    // sequência. Agora a lente é um cabeçalho de trecho dentro da mesma
+    // moldura.
+    <section>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2.5 first:border-t-0">
+        <div className="min-w-0">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {DIAGNOSIS_LENS_LABELS[lens]}
+          </h2>
+          <p className="text-xs text-slate-500">
+            {DIAGNOSIS_LENS_QUESTIONS[lens]}
+          </p>
+        </div>
+        {canEdit && roundId && !adding ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setAdding(true)}
+          >
+            Novo achado
+          </Button>
+        ) : null}
+      </div>
+      <div className="space-y-4 px-5 py-4">
         {/* O que a plataforma já sabe. Leitura, não digitação. */}
         {evidence.length > 0 ? (
           <div className="rounded-lg bg-slate-50 px-3 py-2.5">
@@ -182,8 +190,8 @@ export function LensBlock({
             onDone={() => setAdding(false)}
           />
         ) : null}
-      </CardBody>
-    </Card>
+      </div>
+    </section>
   );
 }
 

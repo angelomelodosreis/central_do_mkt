@@ -73,6 +73,7 @@ export function JobTitlesPanel({
 }) {
   const [criando, setCriando] = useState(false);
   const [editando, setEditando] = useState<TitleRow | null>(null);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
 
   const porNivel = NIVEIS.map((nivel) => ({
     nivel,
@@ -170,10 +171,33 @@ export function JobTitlesPanel({
                           {title.isActive ? "Desativar" : "Reativar"}
                         </Button>
                       </form>
-                      {/* Excluir só existe quando ninguém ocupa o cargo. Ocupado,
-                        apagar deixaria pessoas apontando para nada — e o cargo
-                        sumiria do perfil delas sem ninguém perceber. */}
+                      {/* Excluir só existe quando ninguém ocupa o cargo:
+                          ocupado, apagar deixaria pessoas apontando para nada
+                          e o cargo sumiria do perfil delas sem ninguém
+                          perceber. Em `ghost` e não em vermelho porque, com
+                          dezesseis cargos na tela, dezesseis botões vermelhos
+                          gritavam "apagar" na lista inteira — o vermelho fica
+                          para a confirmação, onde a decisão acontece. */}
                       {title.peopleCount === 0 ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setExcluindo(title.id)}
+                        >
+                          Excluir
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    {/* A confirmação abre na própria linha: o nome do cargo
+                        que vai sumir continua à vista enquanto se decide. */}
+                    {excluindo === title.id ? (
+                      <div className="mt-2 flex w-full flex-wrap items-center gap-3 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2">
+                        <p className="min-w-0 flex-1 text-sm text-danger-900">
+                          Excluir <strong>{title.name}</strong>? Ninguém ocupa
+                          este cargo. Dá para desfazer em Administração ›
+                          Auditoria.
+                        </p>
                         <form action={deleteJobTitle}>
                           <input
                             type="hidden"
@@ -184,8 +208,15 @@ export function JobTitlesPanel({
                             Excluir
                           </Button>
                         </form>
-                      ) : null}
-                    </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setExcluindo(null)}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>

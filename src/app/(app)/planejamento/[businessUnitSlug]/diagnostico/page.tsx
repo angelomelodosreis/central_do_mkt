@@ -272,18 +272,20 @@ export default async function DiagnosisPage({
       ) : null}
 
       {/* ── As cinco lentes ── */}
-      <div className="space-y-6">
-        {DIAGNOSIS_LENSES.map((lens) => (
-          <LensBlock
-            key={lens}
-            lens={lens}
-            evidence={evidence[lens]}
-            findings={porLente[lens]}
-            roundId={round && round.isOpen ? round.id : null}
-            canEdit={canEdit}
-          />
-        ))}
-      </div>
+      <Card>
+        <CardBody className="px-0 py-0">
+          {DIAGNOSIS_LENSES.map((lens) => (
+            <LensBlock
+              key={lens}
+              lens={lens}
+              evidence={evidence[lens]}
+              findings={porLente[lens]}
+              roundId={round && round.isOpen ? round.id : null}
+              canEdit={canEdit}
+            />
+          ))}
+        </CardBody>
+      </Card>
 
       {/* ── Órfãos ── */}
       {orfaos.length > 0 ? (

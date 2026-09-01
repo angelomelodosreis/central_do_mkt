@@ -322,14 +322,14 @@ export function TemplateBuilder({
                     </form>
                     <Button
                       size="sm"
-                      variant="secondary"
+                      variant="ghost"
                       onClick={() => setEditando(field)}
                     >
                       Editar
                     </Button>
                     <form action={removeTemplateField}>
                       <input type="hidden" name="fieldId" value={field.id} />
-                      <Button type="submit" size="sm" variant="danger">
+                      <Button type="submit" size="sm" variant="ghost">
                         Remover
                       </Button>
                     </form>

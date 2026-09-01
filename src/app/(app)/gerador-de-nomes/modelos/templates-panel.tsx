@@ -150,7 +150,7 @@ export function TemplatesPanel({ templates }: { templates: TemplateRow[] }) {
                       </form>
                       <Button
                         size="sm"
-                        variant="danger"
+                        variant="ghost"
                         onClick={() => setExcluindo(template.id)}
                       >
                         Excluir
