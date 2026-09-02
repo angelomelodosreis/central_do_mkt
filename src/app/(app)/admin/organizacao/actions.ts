@@ -1,15 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type { OrgFormState } from "./form-state";
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
-  accessGrant,
-  businessDivision,
-  businessUnit,
   jobTitle,
   squad,
   squadMember,
@@ -17,9 +14,7 @@ import {
   teamMember,
   user,
   ORG_UNIT_KINDS,
-  SCOPE_TYPES,
   type OrgUnitKind,
-  type ScopeType,
 } from "@/lib/db/schema";
 import { loadOrgTree, wouldCreateCycle } from "@/lib/modules/access/org-tree";
 import { writeAuditLog } from "@/lib/modules/audit/log";
@@ -32,10 +27,6 @@ function field(formData: FormData, key: string): string {
 
 function isKind(value: string): value is OrgUnitKind {
   return (ORG_UNIT_KINDS as readonly string[]).includes(value);
-}
-
-function isScopeType(value: string): value is ScopeType {
-  return (SCOPE_TYPES as readonly string[]).includes(value);
 }
 
 /**
@@ -435,51 +426,6 @@ export async function deleteJobTitle(formData: FormData): Promise<void> {
   revalidateOrgViews();
 }
 
-/** Define o cargo de uma pessoa. Cargo é descrição, nunca permissão. */
-export async function setUserJobTitle(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-
-  const userId = field(formData, "userId");
-  if (!userId) return;
-
-  const jobTitleId = field(formData, "jobTitleId") || null;
-
-  const db = await getDb();
-  const before = await db
-    .select({ id: user.id, name: user.name, jobTitleId: user.jobTitleId })
-    .from(user)
-    .where(eq(user.id, userId))
-    .get();
-  if (!before) return;
-
-  if (jobTitleId) {
-    const cargo = await db
-      .select({ id: jobTitle.id })
-      .from(jobTitle)
-      .where(eq(jobTitle.id, jobTitleId))
-      .get();
-    if (!cargo) return;
-  }
-
-  await db
-    .update(user)
-    .set({ jobTitleId, updatedAt: new Date() })
-    .where(eq(user.id, userId));
-
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "user.org_change",
-    entityType: "user",
-    entityId: userId,
-    summary: `Alterou o cargo de ${before.name}`,
-    beforeData: { jobTitleId: before.jobTitleId },
-    afterData: { jobTitleId },
-  });
-
-  revalidateOrgViews();
-}
-
 // ---------------------------------------------------------------------------
 // Vínculos com unidades organizacionais
 // ---------------------------------------------------------------------------
@@ -545,50 +491,6 @@ export async function addTeamMembership(formData: FormData): Promise<void> {
     entityId: userId,
     summary: `${pessoa.name} entrou em ${unidade.name}`,
     afterData: { teamId },
-  });
-
-  revalidateOrgViews();
-}
-
-/**
- * Elege a unidade principal da pessoa.
- *
- * Uma por pessoa: é a que aparece onde só cabe uma linha. Marcar uma desmarca a
- * anterior na mesma gravação, senão a interface passaria a ter dois candidatos
- * e escolheria por ordem de consulta.
- */
-export async function setPrimaryTeam(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-
-  const membershipId = field(formData, "membershipId");
-  if (!membershipId) return;
-
-  const db = await getDb();
-  const alvo = await db
-    .select({ id: teamMember.id, userId: teamMember.userId })
-    .from(teamMember)
-    .where(eq(teamMember.id, membershipId))
-    .get();
-
-  if (!alvo) return;
-
-  await db
-    .update(teamMember)
-    .set({ isPrimary: false })
-    .where(eq(teamMember.userId, alvo.userId));
-  await db
-    .update(teamMember)
-    .set({ isPrimary: true })
-    .where(eq(teamMember.id, membershipId));
-
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "user.org_change",
-    entityType: "user",
-    entityId: alvo.userId,
-    summary: "Definiu o time principal de uma pessoa",
-    afterData: { membershipId },
   });
 
   revalidateOrgViews();
@@ -823,199 +725,4 @@ export async function toggleSquad(formData: FormData): Promise<void> {
   });
 
   revalidateOrgViews();
-}
-
-// ---------------------------------------------------------------------------
-// Escopos de responsabilidade
-// ---------------------------------------------------------------------------
-
-/**
- * Concede um escopo a alguém.
- *
- * O alvo é validado contra a tabela do tipo escolhido: sem isso, um POST
- * adulterado gravaria um escopo apontando para um id que não existe, e o
- * resumo de acesso passaria a mentir sem erro nenhum aparecer.
- */
-export async function addAccessGrant(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-
-  const userId = field(formData, "userId");
-  const scopeTypeRaw = field(formData, "scopeType");
-  if (!userId || !isScopeType(scopeTypeRaw)) return;
-
-  const scopeId =
-    scopeTypeRaw === "organization" ? null : field(formData, "scopeId") || null;
-
-  if (scopeTypeRaw !== "organization" && !scopeId) return;
-
-  const db = await getDb();
-  const pessoa = await db
-    .select({ id: user.id, name: user.name })
-    .from(user)
-    .where(eq(user.id, userId))
-    .get();
-  if (!pessoa) return;
-
-  let rotulo = "toda a organização";
-  if (scopeId) {
-    const alvo = await resolveScopeTarget(scopeTypeRaw, scopeId);
-    if (!alvo) return;
-    rotulo = alvo;
-  }
-
-  // `scope_id` nulo não casa com `=` em SQL, então o escopo da organização
-  // precisa de `IS NULL` — sem isso a checagem nunca encontrava a linha
-  // existente e a inserção batia na restrição de unicidade.
-  const existente = await db
-    .select({ id: accessGrant.id })
-    .from(accessGrant)
-    .where(
-      and(
-        eq(accessGrant.userId, userId),
-        eq(accessGrant.scopeType, scopeTypeRaw),
-        scopeId
-          ? eq(accessGrant.scopeId, scopeId)
-          : isNull(accessGrant.scopeId),
-      ),
-    )
-    .get();
-
-  if (existente) return;
-
-  await db.insert(accessGrant).values({
-    id: newId("agr"),
-    userId,
-    scopeType: scopeTypeRaw,
-    scopeId,
-    note: field(formData, "note") || null,
-    grantedBy: admin.id,
-    createdAt: new Date(),
-  });
-
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "access_grant.create",
-    entityType: "user",
-    entityId: userId,
-    summary: `${pessoa.name} passou a responder por ${rotulo}`,
-    afterData: { scopeType: scopeTypeRaw, scopeId },
-  });
-
-  revalidateOrgViews();
-}
-
-export async function removeAccessGrant(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-
-  const grantId = field(formData, "grantId");
-  if (!grantId) return;
-
-  const db = await getDb();
-  const before = await db
-    .select()
-    .from(accessGrant)
-    .where(eq(accessGrant.id, grantId))
-    .get();
-  if (!before) return;
-
-  await db.delete(accessGrant).where(eq(accessGrant.id, grantId));
-
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "access_grant.delete",
-    entityType: "user",
-    entityId: before.userId,
-    summary: "Removeu um escopo de responsabilidade",
-    beforeData: before,
-  });
-
-  revalidateOrgViews();
-}
-
-/**
- * Liga ou desliga a administração da plataforma.
- *
- * Ninguém tira a própria: com um administrador só, isso trancaria a plataforma
- * para fora dela mesma, sem caminho de volta pela interface.
- */
-export async function toggleSuperAdmin(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-
-  const userId = field(formData, "userId");
-  if (!userId || userId === admin.id) return;
-
-  const db = await getDb();
-  const before = await db
-    .select({ id: user.id, name: user.name, isSuperAdmin: user.isSuperAdmin })
-    .from(user)
-    .where(eq(user.id, userId))
-    .get();
-  if (!before) return;
-
-  await db
-    .update(user)
-    .set({ isSuperAdmin: !before.isSuperAdmin, updatedAt: new Date() })
-    .where(eq(user.id, userId));
-
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "user.super_admin_change",
-    entityType: "user",
-    entityId: userId,
-    summary: before.isSuperAdmin
-      ? `${before.name} deixou de administrar a plataforma`
-      : `${before.name} passou a administrar a plataforma`,
-    beforeData: { isSuperAdmin: before.isSuperAdmin },
-    afterData: { isSuperAdmin: !before.isSuperAdmin },
-  });
-
-  revalidateOrgViews();
-}
-
-/** Confere que o alvo do escopo existe e devolve um rótulo para a auditoria. */
-async function resolveScopeTarget(
-  scopeType: ScopeType,
-  scopeId: string,
-): Promise<string | null> {
-  const db = await getDb();
-
-  switch (scopeType) {
-    case "org_unit": {
-      const linha = await db
-        .select({ name: team.name })
-        .from(team)
-        .where(eq(team.id, scopeId))
-        .get();
-      return linha?.name ?? null;
-    }
-    case "division": {
-      const linha = await db
-        .select({ name: businessDivision.name })
-        .from(businessDivision)
-        .where(eq(businessDivision.id, scopeId))
-        .get();
-      return linha?.name ?? null;
-    }
-    case "business_unit": {
-      const linha = await db
-        .select({ label: businessUnit.label })
-        .from(businessUnit)
-        .where(eq(businessUnit.id, scopeId))
-        .get();
-      return linha?.label ?? null;
-    }
-    case "squad": {
-      const linha = await db
-        .select({ name: squad.name })
-        .from(squad)
-        .where(eq(squad.id, scopeId))
-        .get();
-      return linha?.name ?? null;
-    }
-    default:
-      return null;
-  }
 }

@@ -12,6 +12,7 @@ export const AUDIT_ACTIONS = [
   "user.suspend", // reversível
   "user.reactivate",
   "user.role_change", // reversível
+  "user.delete",
   "allowed_domain.create",
   "allowed_domain.toggle", // reversível
   "role_permission.update", // reversível

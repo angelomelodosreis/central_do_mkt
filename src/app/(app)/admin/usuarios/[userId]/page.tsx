@@ -53,7 +53,6 @@ export default async function UserDetailPage({ params }: { params: Params }) {
       role: user.role,
       isSuperAdmin: user.isSuperAdmin,
       jobTitleId: user.jobTitleId,
-      approvedAt: user.approvedAt,
       createdAt: user.createdAt,
     })
     .from(user)
@@ -102,20 +101,11 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     isSuperAdmin: alvo.isSuperAdmin,
     jobTitleId: alvo.jobTitleId,
     createdAt: alvo.createdAt.toISOString(),
-    approvedAt: alvo.approvedAt?.toISOString() ?? null,
     teams: (positions.get(alvo.id) ?? []).map((position) => ({
-      membershipId: position.membershipId,
       teamId: position.teamId,
-      teamName: position.teamName,
-      kind: position.kind,
-      path: position.path,
-      isPrimary: position.isPrimary,
     })),
     squads: (squads.get(alvo.id) ?? []).map((item) => ({
-      membershipId: item.membershipId,
       squadId: item.squadId,
-      businessUnitLabel: item.businessUnitLabel,
-      isLead: item.isLead,
     })),
     grants,
   };

@@ -59,6 +59,8 @@ export function Select({
   value,
   defaultValue,
   onValueChange,
+  values,
+  onToggleValue,
   placeholder = "Selecione…",
   disabled = false,
   required = false,
@@ -66,6 +68,7 @@ export function Select({
   className,
   ariaLabel,
   size = "md",
+  trigger = "field",
 }: {
   name?: string;
   options?: SelectOption[];
@@ -74,6 +77,23 @@ export function Select({
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
+  /**
+   * Presente = seleção MÚLTIPLA, controlada pelo pai.
+   *
+   * Existe porque quem responde por cinco BUs marcava uma, esperava a tela
+   * recarregar, abria de novo, marcava a segunda. A lista continua a mesma;
+   * o que muda é que clicar alterna em vez de fechar.
+   */
+  values?: string[];
+  /**
+   * Recebe o item que foi clicado — e não a lista pronta.
+   *
+   * De propósito: a lista pronta é calculada a partir do `values` que a Select
+   * enxergava no momento do clique, e dois cliques antes de o React
+   * re-renderizar chegariam os dois com a lista velha, com o segundo desfazendo
+   * o primeiro. Mandando só o item, quem decide aplica em cima do estado atual.
+   */
+  onToggleValue?: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
@@ -81,6 +101,14 @@ export function Select({
   className?: string;
   ariaLabel?: string;
   size?: "sm" | "md";
+  /**
+   * `field` é o campo de formulário de sempre.
+   *
+   * `inline` desenha um botão discreto com o texto do `placeholder` ("+
+   * Adicionar") — para linhas que já mostram o escolhido em pastilhas ao lado,
+   * onde um campo de largura inteira repetiria a mesma informação.
+   */
+  trigger?: "field" | "inline";
 }) {
   const generatedId = useId();
   const controlId = id ?? generatedId;
@@ -91,6 +119,7 @@ export function Select({
     [groups, options],
   );
 
+  const multiplo = values !== undefined;
   const isControlled = value !== undefined;
   const [internal, setInternal] = useState(defaultValue ?? "");
 
@@ -113,6 +142,7 @@ export function Select({
   }
 
   const selecionado = isControlled ? value : internal;
+  const marcados = useMemo(() => new Set(values ?? []), [values]);
   const opcaoAtual = flat.find((option) => option.value === selecionado);
 
   const [aberto, setAberto] = useState(false);
@@ -128,12 +158,25 @@ export function Select({
   const escolher = useCallback(
     (option: SelectOption) => {
       if (option.disabled) return;
+
+      // Na seleção múltipla a lista NÃO fecha: quem marca cinco BUs marca as
+      // cinco de uma vez, e fechar a cada clique é justamente o que tornava
+      // isso penoso.
+      if (multiplo) {
+        onToggleValue?.(option.value);
+        // Devolve o foco ao gatilho: clicar numa opção tira o foco do botão, e
+        // sem isto o Esc e as setas paravam de funcionar depois do primeiro
+        // clique — a lista ficava presa aberta para quem usa teclado.
+        triggerRef.current?.focus();
+        return;
+      }
+
       if (!isControlled) setInternal(option.value);
       onValueChange?.(option.value);
       setAberto(false);
       triggerRef.current?.focus();
     },
-    [isControlled, onValueChange],
+    [isControlled, multiplo, onToggleValue, onValueChange],
   );
 
   // ── Posicionamento ───────────────────────────────────────────────────────
@@ -212,9 +255,11 @@ export function Select({
   // Ao abrir, o foco começa na opção já escolhida.
   useEffect(() => {
     if (!aberto) return;
-    const atual = flat.findIndex((option) => option.value === selecionado);
+    const atual = multiplo
+      ? -1
+      : flat.findIndex((option) => option.value === selecionado);
     setEmFoco(atual >= 0 ? atual : proximoHabilitado(flat, -1, 1));
-  }, [aberto, flat, selecionado]);
+  }, [aberto, flat, multiplo, selecionado]);
 
   // Mantém a opção em foco visível durante a navegação por teclado.
   useEffect(() => {
@@ -300,7 +345,12 @@ export function Select({
     <>
       {/* O valor viaja no formulário por aqui: as server actions continuam
           lendo `formData.get(name)` sem saber que o controle mudou. */}
-      {name ? (
+      {name && multiplo
+        ? (values ?? []).map((item) => (
+            <input key={item} type="hidden" name={name} value={item} />
+          ))
+        : null}
+      {name && !multiplo ? (
         <input
           type="hidden"
           name={name}
@@ -324,28 +374,42 @@ export function Select({
         disabled={disabled}
         onClick={() => !disabled && setAberto((atual) => !atual)}
         onKeyDown={onKeyDown}
+        aria-multiselectable={multiplo || undefined}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 text-left shadow-sm transition-colors",
-          alturaTrigger,
-          aberto
-            ? "border-brand-500 ring-2 ring-brand-100"
-            : "border-slate-300 hover:border-slate-400",
+          trigger === "inline"
+            ? "inline-flex h-8 items-center gap-1.5 rounded-xl border border-transparent px-2.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+            : "flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 text-left shadow-sm transition-colors",
+          trigger === "inline" ? "" : alturaTrigger,
+          trigger === "field" &&
+            (aberto
+              ? "border-brand-500 ring-2 ring-brand-100"
+              : "border-slate-300 hover:border-slate-400"),
           disabled &&
             "cursor-not-allowed bg-slate-50 text-slate-500 hover:border-slate-300",
           className,
         )}
       >
-        <span
-          className={cn(
-            "min-w-0 truncate",
-            opcaoAtual ? "text-slate-900" : "text-slate-500",
-          )}
-        >
-          {opcaoAtual
-            ? (opcaoAtual.triggerLabel ?? opcaoAtual.label)
-            : placeholder}
-        </span>
-        <Chevron aberto={aberto} />
+        {trigger === "inline" ? (
+          placeholder
+        ) : (
+          <>
+            <span
+              className={cn(
+                "min-w-0 truncate",
+                opcaoAtual || marcados.size > 0
+                  ? "text-slate-900"
+                  : "text-slate-500",
+              )}
+            >
+              {multiplo
+                ? rotuloDaSelecao(flat, values ?? [], placeholder)
+                : opcaoAtual
+                  ? (opcaoAtual.triggerLabel ?? opcaoAtual.label)
+                  : placeholder}
+            </span>
+            <Chevron aberto={aberto} />
+          </>
+        )}
       </button>
 
       {montado && aberto
@@ -362,7 +426,7 @@ export function Select({
                   ? window.innerHeight - caixa.top
                   : undefined,
                 left: caixa.left,
-                width: caixa.width,
+                width: Math.max(caixa.width, trigger === "inline" ? 288 : 0),
                 maxHeight: caixa.maxHeight,
                 // Acima de cartões e cabeçalhos fixos, abaixo de nada.
                 zIndex: 60,
@@ -385,7 +449,11 @@ export function Select({
                         option={option}
                         indice={flat.indexOf(option)}
                         listId={listId}
-                        selecionado={option.value === selecionado}
+                        selecionado={
+                          multiplo
+                            ? marcados.has(option.value)
+                            : option.value === selecionado
+                        }
                         emFoco={flat.indexOf(option) === emFoco}
                         onEscolher={escolher}
                         onFocar={setEmFoco}
@@ -400,7 +468,11 @@ export function Select({
                     option={option}
                     indice={indice}
                     listId={listId}
-                    selecionado={option.value === selecionado}
+                    selecionado={
+                      multiplo
+                        ? marcados.has(option.value)
+                        : option.value === selecionado
+                    }
                     emFoco={indice === emFoco}
                     onEscolher={escolher}
                     onFocar={setEmFoco}
@@ -473,6 +545,18 @@ function Opcao({
       ) : null}
     </div>
   );
+}
+
+/** "Cardiologia" · "Cardiologia +2" — o primeiro nome e quantos mais. */
+function rotuloDaSelecao(
+  flat: SelectOption[],
+  values: string[],
+  placeholder: string,
+): string {
+  if (values.length === 0) return placeholder;
+  const primeiro = flat.find((option) => option.value === values[0]);
+  const nome = primeiro?.triggerLabel ?? primeiro?.label ?? values[0];
+  return values.length === 1 ? nome : `${nome} +${values.length - 1}`;
 }
 
 function Chevron({ aberto }: { aberto: boolean }) {

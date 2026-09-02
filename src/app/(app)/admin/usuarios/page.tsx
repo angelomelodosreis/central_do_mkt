@@ -33,7 +33,7 @@ export default async function UsersPage() {
     <>
       <PageHeader
         title="Usuários e acessos"
-        description="Quem é a pessoa, onde ela está na organização e sobre o que ela responde."
+        description="Quem é a pessoa, onde ela está na organização e qual o escopo dela."
       />
       <UsersPanel
         people={people.map((person) => ({

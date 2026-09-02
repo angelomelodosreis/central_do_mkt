@@ -229,15 +229,15 @@ export function UsersPanel({
   );
 }
 
-/** Uma linha dizendo o alcance — responsabilidade primeiro, participação depois. */
+/** Uma linha dizendo o alcance — escopo primeiro, participação depois. */
 function resumoDeAlcance(person: PersonRow): string {
   const partes: string[] = [];
 
   if (person.scopes.some((scope) => scope.type === "organization")) {
-    partes.push("responde pela organização");
+    partes.push("escopo: organização inteira");
   } else if (person.scopes.length > 0) {
     partes.push(
-      `responde por ${person.scopes.map((scope) => scope.name).join(", ")}`,
+      `escopo: ${person.scopes.map((scope) => scope.name).join(", ")}`,
     );
   }
 
@@ -245,7 +245,5 @@ function resumoDeAlcance(person: PersonRow): string {
     partes.push(`${plural(person.squads.length, "squad")}`);
   }
 
-  return partes.length > 0
-    ? partes.join(" · ")
-    : "sem escopo de responsabilidade";
+  return partes.length > 0 ? partes.join(" · ") : "sem escopo";
 }

@@ -1,34 +1,20 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
-import {
-  addAccessGrant,
-  addSquadMember,
-  addTeamMembership,
-  removeAccessGrant,
-  removeSquadMember,
-  removeTeamMembership,
-  setPrimaryTeam,
-  setUserJobTitle,
-  toggleSuperAdmin,
-} from "../../organizacao/actions";
-import {
-  approveUser,
-  changeUserRole,
-  reactivateUser,
-  suspendUser,
-} from "../actions";
+import { deleteUser, saveUserFile } from "./actions";
+import { approveUser, reactivateUser, suspendUser } from "../actions";
 import { Avatar } from "@/components/org/person-card";
-import { Badge, StatusBadge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select, type SelectGroup } from "@/components/ui/select";
-import { Input } from "@/components/ui/field";
 import {
-  ORG_UNIT_KIND_LABELS,
+  Select,
+  type SelectGroup,
+  type SelectOption,
+} from "@/components/ui/select";
+import {
   ORG_UNIT_KIND_PLURALS,
-  SCOPE_TYPE_LABELS,
   USER_ROLES,
   USER_ROLE_LABELS,
   type OrgUnitKind,
@@ -56,21 +42,8 @@ export type UserFileData = {
   isSuperAdmin: boolean;
   jobTitleId: string | null;
   createdAt: string;
-  approvedAt: string | null;
-  teams: Array<{
-    membershipId: string;
-    teamId: string;
-    teamName: string;
-    kind: OrgUnitKind;
-    path: string;
-    isPrimary: boolean;
-  }>;
-  squads: Array<{
-    membershipId: string;
-    squadId: string;
-    businessUnitLabel: string;
-    isLead: boolean;
-  }>;
+  teams: Array<{ teamId: string }>;
+  squads: Array<{ squadId: string }>;
   grants: ResolvedGrant[];
 };
 
@@ -81,16 +54,57 @@ const DESCRICAO_DO_PAPEL: Record<UserRole, string> = {
   member: "Consulta e executa as próprias tarefas.",
 };
 
+/** O tipo, em uma palavra, para caber na pastilha ao lado do nome. */
+const ESCOPO_CURTO: Record<ScopeType, string> = {
+  organization: "tudo",
+  org_unit: "time",
+  division: "divisão",
+  business_unit: "BU",
+  squad: "squad",
+};
+
+const TIPOS_DE_ESCOPO: Array<{ value: ScopeType; label: string }> = [
+  { value: "org_unit", label: "Time, subsetor ou setor" },
+  { value: "division", label: "Divisão de negócio" },
+  { value: "business_unit", label: "Business Unit" },
+  { value: "squad", label: "Squad" },
+  { value: "organization", label: "Toda a organização" },
+];
+
+/** "org_unit:tmb_123" — como um escopo viaja entre o rascunho e o servidor. */
+function chaveDoEscopo(scopeType: string, scopeId: string | null): string {
+  return `${scopeType}:${scopeId ?? ""}`;
+}
+
+type Rascunho = {
+  jobTitleId: string;
+  role: UserRole;
+  isSuperAdmin: boolean;
+  teamIds: string[];
+  squadIds: string[];
+  escopos: string[];
+};
+
+/** Compara ignorando a ordem — marcar A e depois B é o mesmo que B e depois A. */
+function mesmaCoisa(a: Rascunho, b: Rascunho): boolean {
+  const normalizar = (r: Rascunho) =>
+    JSON.stringify({
+      ...r,
+      teamIds: [...r.teamIds].sort(),
+      squadIds: [...r.squadIds].sort(),
+      escopos: [...r.escopos].sort(),
+    });
+  return normalizar(a) === normalizar(b);
+}
+
 /**
- * A ficha de uma pessoa, num cartão só.
+ * A ficha de uma pessoa: um cartão, cinco linhas, um botão de salvar.
  *
- * Eram seis cartões — identidade, organização, papel, escopos, squads e um
- * resumo — e cada um com cabeçalho, descrição e corpo. A ficha inteira cabe em
- * cinco linhas de rótulo e valor, que é o formato de uma ficha: uma coluna diz
- * o que é, a outra diz qual é.
- *
- * O "resumo de acesso" saiu. Era um parágrafo explicando o que as linhas acima
- * já mostram, e ninguém lê um resumo do que está logo ali.
+ * Cada atributo tinha o próprio "Salvar", e trocar cargo, papel, time e squad
+ * de alguém eram quatro gravações em sequência — quatro recarregamentos, e
+ * nenhuma chance de desistir no meio. Agora a tela inteira é um rascunho: as
+ * pastilhas mudam na hora, nada vai para o banco antes do "Salvar", e
+ * "Descartar" devolve tudo ao que o servidor mandou.
  */
 export function UserFile({
   person,
@@ -109,166 +123,238 @@ export function UserFile({
   squads: Array<{ id: string; label: string }>;
   isSelf: boolean;
 }) {
+  const doServidor = useMemo<Rascunho>(
+    () => ({
+      jobTitleId: person.jobTitleId ?? "",
+      role: person.role,
+      isSuperAdmin: person.isSuperAdmin,
+      teamIds: person.teams.map((time) => time.teamId),
+      squadIds: person.squads.map((squad) => squad.squadId),
+      escopos: person.grants.map((grant) =>
+        chaveDoEscopo(grant.scopeType, grant.scopeId),
+      ),
+    }),
+    [person],
+  );
+
+  const [rascunho, setRascunho] = useState(doServidor);
+
+  /**
+   * Reata com o servidor quando ele manda dado novo.
+   *
+   * Depois de salvar, o Next revalida e a página chega com os valores gravados.
+   * Sem isto o rascunho continuaria sendo o da renderização anterior e a tela
+   * diria "não salvo" logo depois de ter salvado.
+   */
+  const ultimoDoServidor = useRef(doServidor);
+  if (ultimoDoServidor.current !== doServidor) {
+    ultimoDoServidor.current = doServidor;
+    if (!mesmaCoisa(rascunho, doServidor)) setRascunho(doServidor);
+  }
+
+  const alterado = !mesmaCoisa(rascunho, doServidor);
+
+  function mudar(parte: Partial<Rascunho>) {
+    setRascunho((atual) => ({ ...atual, ...parte }));
+  }
+
+  /** Marca ou desmarca um item de uma das listas, sempre sobre o estado atual. */
+  function alternar(campo: "teamIds" | "squadIds" | "escopos", valor: string) {
+    setRascunho((atual) => ({
+      ...atual,
+      [campo]: atual[campo].includes(valor)
+        ? atual[campo].filter((item) => item !== valor)
+        : [...atual[campo], valor],
+    }));
+  }
+
+  const nomeDoTime = new Map(orgUnits.map((unidade) => [unidade.id, unidade]));
+  const nomeDoSquad = new Map(squads.map((squad) => [squad.id, squad.label]));
+
   return (
-    <Card>
-      <Cabecalho person={person} isSelf={isSelf} />
-      <Cargo person={person} jobTitles={jobTitles} />
-      <Times person={person} orgUnits={orgUnits} />
-      <Papel person={person} isSelf={isSelf} />
-      <Squads person={person} squads={squads} />
-      <Escopos
-        person={person}
-        orgUnits={orgUnits}
-        divisions={divisions}
-        businessUnits={businessUnits}
-        squads={squads}
+    <form action={saveUserFile}>
+      <input type="hidden" name="userId" value={person.id} />
+      <input type="hidden" name="jobTitleId" value={rascunho.jobTitleId} />
+      <input type="hidden" name="role" value={rascunho.role} />
+      <input
+        type="hidden"
+        name="isSuperAdmin"
+        value={rascunho.isSuperAdmin ? "1" : "0"}
       />
-      <p className="border-t border-slate-200 px-5 py-3 text-xs text-slate-500">
-        Cadastrada em {formatDate(new Date(person.createdAt))}
-        {person.approvedAt
-          ? ` · aprovada em ${formatDate(new Date(person.approvedAt))}`
-          : ""}
-      </p>
-    </Card>
+      {rascunho.teamIds.map((id) => (
+        <input key={id} type="hidden" name="teamIds" value={id} />
+      ))}
+      {rascunho.squadIds.map((id) => (
+        <input key={id} type="hidden" name="squadIds" value={id} />
+      ))}
+      {rascunho.escopos.map((chave) => (
+        <input key={chave} type="hidden" name="escopos" value={chave} />
+      ))}
+
+      <Card>
+        <Cabecalho person={person} isSelf={isSelf} alterado={alterado} />
+
+        <Linha label="Cargo">
+          <div className="max-w-sm">
+            <Select
+              value={rascunho.jobTitleId}
+              onValueChange={(valor) => mudar({ jobTitleId: valor })}
+              ariaLabel="Cargo"
+              size="sm"
+              options={[
+                { value: "", label: "Sem cargo definido" },
+                ...jobTitles.map((title) => ({
+                  value: title.id,
+                  label: title.name,
+                })),
+              ]}
+            />
+          </div>
+        </Linha>
+
+        <Linha label="Papel no sistema">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-full max-w-sm">
+              <Select
+                value={rascunho.role}
+                onValueChange={(valor) => mudar({ role: valor as UserRole })}
+                disabled={isSelf}
+                ariaLabel="Papel no sistema"
+                size="sm"
+                options={USER_ROLES.map((role) => ({
+                  value: role,
+                  label: USER_ROLE_LABELS[role],
+                  hint: DESCRICAO_DO_PAPEL[role],
+                }))}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={rascunho.isSuperAdmin}
+                disabled={isSelf}
+                onChange={(evento) =>
+                  mudar({ isSuperAdmin: evento.target.checked })
+                }
+                className="size-4 rounded border-slate-300 text-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50"
+              />
+              Administra a plataforma
+            </label>
+          </div>
+        </Linha>
+
+        <Linha label="Time">
+          <Pastilhas
+            itens={rascunho.teamIds.map((id) => ({
+              chave: id,
+              titulo: nomeDoTime.get(id)?.name ?? "Removido da estrutura",
+              detalhe: nomeDoTime.get(id)?.path,
+            }))}
+            aoTirar={(id) => alternar("teamIds", id)}
+            seletor={
+              <Select
+                trigger="inline"
+                placeholder="+ Adicionar"
+                ariaLabel="Times, subsetores e setores"
+                values={rascunho.teamIds}
+                onToggleValue={(id) => alternar("teamIds", id)}
+                groups={agruparPorNivel(orgUnits)}
+              />
+            }
+          />
+        </Linha>
+
+        <Linha label="Squads">
+          <Pastilhas
+            itens={rascunho.squadIds.map((id) => ({
+              chave: id,
+              titulo: nomeDoSquad.get(id) ?? "Squad removido",
+            }))}
+            aoTirar={(id) => alternar("squadIds", id)}
+            seletor={
+              <Select
+                trigger="inline"
+                placeholder="+ Adicionar"
+                ariaLabel="Squads"
+                values={rascunho.squadIds}
+                onToggleValue={(id) => alternar("squadIds", id)}
+                options={squads.map((squad) => ({
+                  value: squad.id,
+                  label: squad.label,
+                }))}
+              />
+            }
+          />
+        </Linha>
+
+        <Linha label="Escopo de responsabilidade">
+          <Escopos
+            escolhidos={rascunho.escopos}
+            aoAlternar={(chave) => alternar("escopos", chave)}
+            orgUnits={orgUnits}
+            divisions={divisions}
+            businessUnits={businessUnits}
+            squads={squads}
+          />
+        </Linha>
+
+        <Rodape
+          person={person}
+          isSelf={isSelf}
+          alterado={alterado}
+          aoDescartar={() => setRascunho(doServidor)}
+        />
+      </Card>
+    </form>
   );
 }
 
 /** Uma linha da ficha: à esquerda o que é, à direita qual é. */
-function Linha({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
+function Linha({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="grid gap-2 border-t border-slate-200 px-5 py-4 sm:grid-cols-[11rem_1fr] sm:gap-5">
-      <div>
-        <p className="text-sm font-medium text-slate-800">{label}</p>
-        {hint ? <p className="mt-0.5 text-xs text-slate-500">{hint}</p> : null}
-      </div>
+    <div className="grid gap-1.5 border-t border-slate-200 px-5 py-3 sm:grid-cols-[12rem_1fr] sm:items-center sm:gap-5">
+      <p className="text-sm font-medium text-slate-800">{label}</p>
       <div className="min-w-0">{children}</div>
     </div>
   );
 }
 
 /**
- * Um vínculo já existente, com o caminho embaixo e o botão de tirar ao lado.
+ * As escolhas já feitas, em pastilha, com o seletor no fim da mesma linha.
  *
- * Em pílula e não em lista: são poucos por pessoa, e a pílula deixa os três ou
- * quatro caberem numa linha em vez de virarem quatro linhas de tabela.
+ * Sem frase de estado vazio: "Fora de todos os squads" ao lado de um "+
+ * Adicionar" dizia em oito palavras o que a ausência de pastilhas já diz.
  */
-function Pastilha({
-  titulo,
-  detalhe,
-  marca,
-  acoes,
+function Pastilhas({
+  itens,
+  aoTirar,
+  seletor,
 }: {
-  titulo: string;
-  detalhe?: string | null;
-  marca?: ReactNode;
-  acoes?: ReactNode;
+  itens: Array<{ chave: string; titulo: string; detalhe?: string }>;
+  aoTirar: (chave: string) => void;
+  seletor: ReactNode;
 }) {
   return (
-    <span className="inline-flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-1.5">
-      <span className="min-w-0">
-        <span className="flex flex-wrap items-center gap-1.5">
-          <span className="truncate text-sm text-slate-900">{titulo}</span>
-          {marca}
+    <div className="flex flex-wrap items-center gap-1.5">
+      {itens.map((item) => (
+        <span
+          key={item.chave}
+          className="inline-flex max-w-full items-center gap-1 rounded-lg border border-slate-200 bg-white py-1 pl-2.5 pr-1 text-sm"
+          title={item.detalhe}
+        >
+          <span className="truncate text-slate-900">{item.titulo}</span>
+          <button
+            type="button"
+            onClick={() => aoTirar(item.chave)}
+            aria-label={`Tirar ${item.titulo}`}
+            className="rounded px-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            ✕
+          </button>
         </span>
-        {detalhe ? (
-          <span className="block truncate text-xs text-slate-500">
-            {detalhe}
-          </span>
-        ) : null}
-      </span>
-      {acoes ? (
-        <span className="flex shrink-0 items-center">{acoes}</span>
-      ) : null}
-    </span>
-  );
-}
-
-function Cabecalho({
-  person,
-  isSelf,
-}: {
-  person: UserFileData;
-  isSelf: boolean;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <Avatar name={person.name} />
-        <div className="min-w-0">
-          <h1 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-slate-900">
-            {person.name}
-            <StatusBadge status={person.status} />
-          </h1>
-          <p className="truncate text-sm text-slate-500">{person.email}</p>
-        </div>
-      </div>
-
-      <div className="flex shrink-0 flex-wrap gap-2">
-        {person.status === "pending" ? (
-          <form action={approveUser}>
-            <input type="hidden" name="userId" value={person.id} />
-            <Button type="submit" variant="primary">
-              Aprovar acesso
-            </Button>
-          </form>
-        ) : null}
-        {person.status === "suspended" ? (
-          <form action={reactivateUser}>
-            <input type="hidden" name="userId" value={person.id} />
-            <Button type="submit">Reativar</Button>
-          </form>
-        ) : null}
-        {/* Ninguém se suspende: com um administrador só, isso trancaria a
-            plataforma para fora dela mesma. O servidor também recusa. */}
-        {person.status === "active" && !isSelf ? (
-          <form action={suspendUser}>
-            <input type="hidden" name="userId" value={person.id} />
-            <Button type="submit" variant="ghost">
-              Suspender
-            </Button>
-          </form>
-        ) : null}
-      </div>
+      ))}
+      {seletor}
     </div>
-  );
-}
-
-function Cargo({
-  person,
-  jobTitles,
-}: {
-  person: UserFileData;
-  jobTitles: Array<{ id: string; name: string }>;
-}) {
-  return (
-    <Linha label="Cargo" hint="Descreve. Não dá acesso.">
-      <form action={setUserJobTitle} className="flex flex-wrap items-end gap-2">
-        <input type="hidden" name="userId" value={person.id} />
-        <div className="min-w-56 flex-1">
-          <Select
-            name="jobTitleId"
-            defaultValue={person.jobTitleId ?? ""}
-            ariaLabel="Cargo"
-            options={[
-              { value: "", label: "Sem cargo definido" },
-              ...jobTitles.map((title) => ({
-                value: title.id,
-                label: title.name,
-              })),
-            ]}
-          />
-        </div>
-        <Button type="submit">Salvar</Button>
-      </form>
-    </Linha>
   );
 }
 
@@ -289,276 +375,29 @@ function agruparPorNivel(unidades: OrgUnitOption[]): SelectGroup[] {
     .filter((grupo) => grupo.options.length > 0);
 }
 
-function Times({
-  person,
-  orgUnits,
-}: {
-  person: UserFileData;
-  orgUnits: OrgUnitOption[];
-}) {
-  const [adicionando, setAdicionando] = useState(false);
-
-  const disponiveis = orgUnits.filter(
-    (unidade) => !person.teams.some((time) => time.teamId === unidade.id),
-  );
-
-  return (
-    <Linha label="Time" hint="Setor e subsetor vêm junto.">
-      <div className="flex flex-wrap items-center gap-2">
-        {person.teams.map((time) => (
-          <Pastilha
-            key={time.membershipId}
-            titulo={time.teamName}
-            detalhe={time.path}
-            marca={
-              time.isPrimary && person.teams.length > 1 ? (
-                <Badge tone="brand">principal</Badge>
-              ) : (
-                <Badge tone="neutral">{ORG_UNIT_KIND_LABELS[time.kind]}</Badge>
-              )
-            }
-            acoes={
-              <>
-                {!time.isPrimary && person.teams.length > 1 ? (
-                  <form action={setPrimaryTeam}>
-                    <input
-                      type="hidden"
-                      name="membershipId"
-                      value={time.membershipId}
-                    />
-                    <Button
-                      type="submit"
-                      size="sm"
-                      variant="ghost"
-                      title="Usar este como o time principal da pessoa"
-                    >
-                      principal
-                    </Button>
-                  </form>
-                ) : null}
-                <form action={removeTeamMembership}>
-                  <input
-                    type="hidden"
-                    name="membershipId"
-                    value={time.membershipId}
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    variant="ghost"
-                    aria-label={`Tirar de ${time.teamName}`}
-                  >
-                    ✕
-                  </Button>
-                </form>
-              </>
-            }
-          />
-        ))}
-
-        {person.teams.length === 0 && !adicionando ? (
-          <span className="text-sm text-slate-500">
-            Fora da estrutura — não recebe tarefa endereçada a time.
-          </span>
-        ) : null}
-
-        {adicionando ? (
-          <form
-            action={addTeamMembership}
-            className="flex w-full flex-wrap items-end gap-2"
-          >
-            <input type="hidden" name="userId" value={person.id} />
-            <div className="min-w-56 flex-1">
-              <Select
-                name="teamId"
-                ariaLabel="Time"
-                placeholder="Escolha o time…"
-                groups={agruparPorNivel(disponiveis)}
-              />
-            </div>
-            <Button type="submit">Adicionar</Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setAdicionando(false)}
-            >
-              Cancelar
-            </Button>
-          </form>
-        ) : disponiveis.length > 0 ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setAdicionando(true)}
-          >
-            + Adicionar
-          </Button>
-        ) : null}
-      </div>
-    </Linha>
-  );
-}
-
-function Papel({ person, isSelf }: { person: UserFileData; isSelf: boolean }) {
-  return (
-    <Linha
-      label="Papel no sistema"
-      hint={
-        isSelf ? "Você não altera o próprio papel." : "O que ela pode fazer."
-      }
-    >
-      <div className="space-y-3">
-        <form
-          action={changeUserRole}
-          className="flex flex-wrap items-end gap-2"
-        >
-          <input type="hidden" name="userId" value={person.id} />
-          <div className="min-w-56 flex-1">
-            <Select
-              name="role"
-              defaultValue={person.role}
-              disabled={isSelf}
-              ariaLabel="Papel no sistema"
-              options={USER_ROLES.map((role) => ({
-                value: role,
-                label: USER_ROLE_LABELS[role],
-                hint: DESCRICAO_DO_PAPEL[role],
-              }))}
-            />
-          </div>
-          <Button type="submit" disabled={isSelf}>
-            Salvar
-          </Button>
-        </form>
-
-        <form action={toggleSuperAdmin} className="flex items-center gap-2">
-          <input type="hidden" name="userId" value={person.id} />
-          <Button
-            type="submit"
-            size="sm"
-            variant={person.isSuperAdmin ? "ghost" : "secondary"}
-            disabled={isSelf}
-          >
-            {person.isSuperAdmin
-              ? "Remover administração da plataforma"
-              : "Tornar administrador da plataforma"}
-          </Button>
-          {person.isSuperAdmin ? (
-            <Badge tone="brand">Administra a plataforma</Badge>
-          ) : null}
-        </form>
-      </div>
-    </Linha>
-  );
-}
-
-function Squads({
-  person,
-  squads,
-}: {
-  person: UserFileData;
-  squads: Array<{ id: string; label: string }>;
-}) {
-  const [adicionando, setAdicionando] = useState(false);
-
-  const disponiveis = squads.filter(
-    (squad) => !person.squads.some((meu) => meu.squadId === squad.id),
-  );
-
-  return (
-    <Linha label="Squads" hint="As BUs de que participa.">
-      <div className="flex flex-wrap items-center gap-2">
-        {person.squads.map((squad) => (
-          <Pastilha
-            key={squad.membershipId}
-            titulo={squad.businessUnitLabel}
-            marca={squad.isLead ? <Badge tone="brand">responde</Badge> : null}
-            acoes={
-              <form action={removeSquadMember}>
-                <input
-                  type="hidden"
-                  name="membershipId"
-                  value={squad.membershipId}
-                />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`Tirar de ${squad.businessUnitLabel}`}
-                >
-                  ✕
-                </Button>
-              </form>
-            }
-          />
-        ))}
-
-        {person.squads.length === 0 && !adicionando ? (
-          <span className="text-sm text-slate-500">
-            Fora de todos os squads.
-          </span>
-        ) : null}
-
-        {adicionando ? (
-          <form
-            action={addSquadMember}
-            className="flex w-full flex-wrap items-end gap-2"
-          >
-            <input type="hidden" name="userId" value={person.id} />
-            <div className="min-w-56 flex-1">
-              <Select
-                name="squadId"
-                ariaLabel="Squad"
-                placeholder="Escolha a BU…"
-                options={disponiveis.map((squad) => ({
-                  value: squad.id,
-                  label: squad.label,
-                }))}
-              />
-            </div>
-            <Button type="submit">Adicionar</Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setAdicionando(false)}
-            >
-              Cancelar
-            </Button>
-          </form>
-        ) : disponiveis.length > 0 ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setAdicionando(true)}
-          >
-            + Adicionar
-          </Button>
-        ) : null}
-      </div>
-    </Linha>
-  );
-}
-
+/**
+ * O escopo é de dois passos — sobre o quê, e qual — mas os dois cabem numa
+ * linha, e o segundo aceita marcar vários de uma vez: quem responde por cinco
+ * BUs marca as cinco sem fechar a lista.
+ */
 function Escopos({
-  person,
+  escolhidos,
+  aoAlternar,
   orgUnits,
   divisions,
   businessUnits,
   squads,
 }: {
-  person: UserFileData;
+  escolhidos: string[];
+  aoAlternar: (chave: string) => void;
   orgUnits: OrgUnitOption[];
   divisions: Array<{ id: string; name: string }>;
   businessUnits: Array<{ id: string; label: string }>;
   squads: Array<{ id: string; label: string }>;
 }) {
-  const [concedendo, setConcedendo] = useState(false);
   const [tipo, setTipo] = useState<ScopeType>("org_unit");
 
-  const alvos: Record<
-    ScopeType,
-    Array<{ value: string; label: string; hint?: string }>
-  > = {
+  const alvos: Record<ScopeType, SelectOption[]> = {
     organization: [],
     org_unit: orgUnits.map((unidade) => ({
       value: unidade.id,
@@ -576,100 +415,230 @@ function Escopos({
     squad: squads.map((squad) => ({ value: squad.id, label: squad.label })),
   };
 
+  const rotulos = new Map<string, string>([
+    ["organization:", "Toda a organização"],
+    ...(Object.keys(alvos) as ScopeType[]).flatMap((chave) =>
+      alvos[chave].map(
+        (option) =>
+          [chaveDoEscopo(chave, option.value), option.label] as [
+            string,
+            string,
+          ],
+      ),
+    ),
+  ]);
+
+  // Os do tipo escolhido, para o seletor múltiplo marcar o que já existe.
+  const doTipo = escolhidos
+    .filter((chave) => chave.startsWith(`${tipo}:`))
+    .map((chave) => chave.slice(tipo.length + 1));
+
   return (
-    <Linha
-      label="Responde por"
-      hint="Time, setor, BU, divisão ou squad. Alcança o que está abaixo."
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        {person.grants.map((grant) => (
-          <Pastilha
-            key={grant.id}
-            titulo={grant.targetName}
-            detalhe={grant.targetPath ?? grant.reach}
-            marca={
-              <Badge
-                tone={grant.scopeType === "organization" ? "brand" : "neutral"}
-              >
-                {SCOPE_TYPE_LABELS[grant.scopeType]}
-              </Badge>
-            }
-            acoes={
-              <form action={removeAccessGrant}>
-                <input type="hidden" name="grantId" value={grant.id} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="ghost"
-                  aria-label={`Tirar responsabilidade sobre ${grant.targetName}`}
-                >
-                  ✕
-                </Button>
-              </form>
-            }
-          />
-        ))}
-
-        {person.grants.length === 0 && !concedendo ? (
-          <span className="text-sm text-slate-500">
-            Não responde por nada — vê apenas os squads de que participa.
+    <div className="flex flex-wrap items-center gap-1.5">
+      {escolhidos.map((chave) => (
+        <span
+          key={chave}
+          className="inline-flex max-w-full items-center gap-1 rounded-lg border border-slate-200 bg-white py-1 pl-2.5 pr-1 text-sm"
+        >
+          <span className="truncate text-slate-900">
+            {rotulos.get(chave) ?? "Removido"}
           </span>
-        ) : null}
-
-        {concedendo ? (
-          <form
-            action={addAccessGrant}
-            className="w-full space-y-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3"
+          <span className="shrink-0 text-xs text-slate-500">
+            {ESCOPO_CURTO[chave.split(":")[0] as ScopeType]}
+          </span>
+          <button
+            type="button"
+            onClick={() => aoAlternar(chave)}
+            aria-label={`Tirar ${rotulos.get(chave) ?? chave}`}
+            className="rounded px-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
-            <input type="hidden" name="userId" value={person.id} />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Select
-                name="scopeType"
-                value={tipo}
-                onValueChange={(valor) => setTipo(valor as ScopeType)}
-                ariaLabel="Responde por"
-                options={[
-                  { value: "org_unit", label: "Um time, subsetor ou setor" },
-                  { value: "division", label: "Uma divisão de negócio" },
-                  { value: "business_unit", label: "Uma Business Unit" },
-                  { value: "squad", label: "Um squad" },
-                  { value: "organization", label: "Toda a organização" },
-                ]}
-              />
-              {tipo !== "organization" ? (
-                <Select
-                  name="scopeId"
-                  // Remontar ao trocar o tipo: sem isso a lista muda de
-                  // conteúdo mantendo selecionado um id do tipo anterior.
-                  key={tipo}
-                  ariaLabel="Sobre o quê"
-                  placeholder="Escolha…"
-                  options={alvos[tipo]}
-                />
-              ) : null}
-            </div>
-            <Input
-              name="note"
-              maxLength={200}
-              placeholder="Por quê? Opcional — é o que explica a escolha daqui a seis meses."
-            />
-            <div className="flex gap-2">
-              <Button type="submit">Conceder</Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setConcedendo(false)}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <Button size="sm" variant="ghost" onClick={() => setConcedendo(true)}>
+            ✕
+          </button>
+        </span>
+      ))}
+
+      <div className="flex items-center gap-1.5">
+        <div className="w-44">
+          <Select
+            value={tipo}
+            onValueChange={(valor) => setTipo(valor as ScopeType)}
+            ariaLabel="Responsável por qual tipo"
+            size="sm"
+            options={TIPOS_DE_ESCOPO}
+          />
+        </div>
+        {tipo === "organization" ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={escolhidos.includes("organization:")}
+            onClick={() => aoAlternar("organization:")}
+          >
             + Adicionar
           </Button>
+        ) : (
+          <Select
+            // Remontar ao trocar o tipo: sem isso a lista muda de conteúdo
+            // mantendo marcados ids do tipo anterior.
+            key={tipo}
+            trigger="inline"
+            placeholder="+ Adicionar"
+            ariaLabel="Sobre o quê"
+            values={doTipo}
+            onToggleValue={(valor) => aoAlternar(chaveDoEscopo(tipo, valor))}
+            options={alvos[tipo]}
+          />
         )}
       </div>
-    </Linha>
+    </div>
+  );
+}
+
+function Cabecalho({
+  person,
+  isSelf,
+  alterado,
+}: {
+  person: UserFileData;
+  isSelf: boolean;
+  alterado: boolean;
+}) {
+  // Estes botões mandam o MESMO formulário para outro destino, então clicar num
+  // deles com o rascunho aberto jogaria fora o que ainda não foi salvo — sem
+  // avisar. Enquanto houver alteração pendente, eles esperam.
+  const espera = alterado
+    ? "Salve ou descarte as alterações primeiro"
+    : undefined;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <Avatar name={person.name} />
+        <div className="min-w-0">
+          <h1 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-slate-900">
+            {person.name}
+            <StatusBadge status={person.status} />
+          </h1>
+          <p className="truncate text-sm text-slate-500">{person.email}</p>
+        </div>
+      </div>
+
+      {/* Aprovar, reativar e suspender são decisões sobre a CONTA, não
+          atributos dela: valem no clique e não esperam o "Salvar". Por isso
+          são `formAction` — o mesmo formulário, outro destino. */}
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {person.status === "pending" ? (
+          <Button
+            type="submit"
+            formAction={approveUser}
+            variant="primary"
+            disabled={alterado}
+            title={espera}
+          >
+            Aprovar acesso
+          </Button>
+        ) : null}
+        {person.status === "suspended" ? (
+          <Button
+            type="submit"
+            formAction={reactivateUser}
+            disabled={alterado}
+            title={espera}
+          >
+            Reativar
+          </Button>
+        ) : null}
+        {/* Ninguém se suspende: com um administrador só, isso trancaria a
+            plataforma para fora dela mesma. O servidor também recusa. */}
+        {person.status === "active" && !isSelf ? (
+          <Button
+            type="submit"
+            formAction={suspendUser}
+            variant="ghost"
+            disabled={alterado}
+            title={espera}
+          >
+            Suspender
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * O pé da ficha: quando entrou, o que fazer com o que mudou, e a exclusão.
+ *
+ * Salvar e descartar só aparecem quando há o que salvar — um botão permanente
+ * em cinza é indistinguível de um desabilitado, e some quando importa.
+ */
+function Rodape({
+  person,
+  isSelf,
+  alterado,
+  aoDescartar,
+}: {
+  person: UserFileData;
+  isSelf: boolean;
+  alterado: boolean;
+  aoDescartar: () => void;
+}) {
+  const [confirmando, setConfirmando] = useState(false);
+
+  return (
+    <div className="border-t border-slate-200 px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-slate-500">
+          Cadastrada em {formatDate(new Date(person.createdAt))}
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {alterado ? (
+            <>
+              <Button type="button" variant="ghost" onClick={aoDescartar}>
+                Descartar
+              </Button>
+              <Button type="submit" variant="primary">
+                Salvar alterações
+              </Button>
+            </>
+          ) : isSelf ? null : (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmando(true)}
+            >
+              Excluir pessoa
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {confirmando && !alterado ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2">
+          <p className="min-w-0 flex-1 text-sm text-danger-900">
+            Excluir <strong>{person.name}</strong> apaga a conta, os vínculos e
+            o escopo. As tarefas abertas voltam para a fila do time. Não dá para
+            desfazer — suspender guarda o histórico.
+          </p>
+          <Button
+            type="submit"
+            formAction={deleteUser}
+            size="sm"
+            variant="danger"
+          >
+            Excluir
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmando(false)}
+          >
+            Cancelar
+          </Button>
+        </div>
+      ) : null}
+    </div>
   );
 }
