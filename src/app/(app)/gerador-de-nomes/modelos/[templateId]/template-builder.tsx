@@ -267,7 +267,7 @@ export function TemplateBuilder({
                   <div className="flex min-w-0 items-center gap-3">
                     <span
                       aria-hidden
-                      className="flex size-6 shrink-0 items-center justify-center rounded-full bg-slate-100 font-mono text-[11px] text-slate-500"
+                      className="flex size-6 shrink-0 items-center justify-center rounded-full bg-slate-100 font-mono text-xs text-slate-500"
                     >
                       {index + 1}
                     </span>
@@ -287,7 +287,7 @@ export function TemplateBuilder({
                       <p className="text-xs text-slate-500">
                         {origemDoBloco(field)}
                       </p>
-                      <code className="mt-0.5 block font-mono text-[11px] text-slate-500">
+                      <code className="mt-0.5 block font-mono text-xs text-slate-500">
                         {amostraDoBloco(field, baseSamples)}
                       </code>
                     </div>
@@ -488,7 +488,7 @@ function AddFieldDrawer({
       description="Cada bloco vira um campo no formulário do gerador e um pedaço do nome."
       width="lg"
     >
-      <form action={formAction} className="space-y-5">
+      <form action={formAction} className="space-y-4">
         <input type="hidden" name="templateId" value={templateId} />
         <Mensagem status={state.status} message={state.message} />
 
@@ -630,7 +630,7 @@ function EditFieldDrawer({
       width="lg"
     >
       {field ? (
-        <form action={formAction} className="space-y-5" key={field.id}>
+        <form action={formAction} className="space-y-4" key={field.id}>
           <input type="hidden" name="fieldId" value={field.id} />
           <Mensagem status={state.status} message={state.message} />
 

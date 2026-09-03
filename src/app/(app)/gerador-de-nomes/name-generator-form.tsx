@@ -176,13 +176,13 @@ export function NameGeneratorForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="rounded-lg bg-slate-50 px-3 py-2">
         <span className="text-xs text-slate-500">Formato: </span>
         <code className="font-mono text-xs text-slate-700">{formatHint}</code>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {template.fields.map((field) => (
           <TemplateField
             key={field.id}

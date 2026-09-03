@@ -76,7 +76,7 @@ export function RecurrencesPanel({
   const ativas = regras.filter((regra) => regra.isActive).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
           {ativas} de {regras.length} ativas. A ocorrência nasce no board de

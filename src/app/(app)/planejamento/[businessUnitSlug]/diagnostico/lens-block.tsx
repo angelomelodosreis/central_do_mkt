@@ -9,7 +9,7 @@ import {
 } from "../../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, Section } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import {
   DIAGNOSIS_LENS_LABELS,
@@ -51,17 +51,11 @@ export function LensBlock({
     // cartão trazia moldura e sombra próprias para separar o que se lê em
     // sequência. Agora a lente é um cabeçalho de trecho dentro da mesma
     // moldura.
-    <section>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2.5 first:border-t-0">
-        <div className="min-w-0">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {DIAGNOSIS_LENS_LABELS[lens]}
-          </h2>
-          <p className="text-xs text-slate-500">
-            {DIAGNOSIS_LENS_QUESTIONS[lens]}
-          </p>
-        </div>
-        {canEdit && roundId && !adding ? (
+    <Section
+      title={DIAGNOSIS_LENS_LABELS[lens]}
+      description={DIAGNOSIS_LENS_QUESTIONS[lens]}
+      action={
+        canEdit && roundId && !adding ? (
           <Button
             type="button"
             variant="ghost"
@@ -70,9 +64,11 @@ export function LensBlock({
           >
             Novo achado
           </Button>
-        ) : null}
-      </div>
-      <div className="space-y-4 px-5 py-4">
+        ) : null
+      }
+      divider
+    >
+      <div className="space-y-4 px-5 pb-4 pt-2">
         {/* O que a plataforma já sabe. Leitura, não digitação. */}
         {evidence.length > 0 ? (
           <div className="rounded-lg bg-slate-50 px-3 py-2.5">
@@ -191,7 +187,7 @@ export function LensBlock({
           />
         ) : null}
       </div>
-    </section>
+    </Section>
   );
 }
 

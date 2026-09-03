@@ -90,6 +90,28 @@ export function rotuloDoIndicador(metric: Indicador): string {
   return GOAL_METRIC_CATALOG[metric].label;
 }
 
+/**
+ * O nome curto, para a pastilha de indicador.
+ *
+ * "Custo de aquisição (CAC)" numa coluna de 12rem vira "CUSTO DE AQUISIÇÃ…",
+ * que é pior que a sigla: a sigla todo mundo lê, a reticência ninguém. O nome
+ * inteiro continua no `title` de quem passar o mouse.
+ */
+const CURTO: Record<Indicador, string> = {
+  revenue: "Faturamento",
+  sales: "Vendas",
+  average_ticket: "Ticket médio",
+  leads: "Leads",
+  sales_conversion: "Conversão",
+  cpl: "CPL",
+  cac: "CAC",
+  roas: "ROAS",
+};
+
+export function rotuloCurto(metric: Indicador): string {
+  return CURTO[metric];
+}
+
 /** Soma os números-base de várias semanas. Nulo + nulo continua nulo. */
 export function somar(linhas: BaseNumbers[]): BaseNumbers {
   const acumular = (campo: CampoBase): number | null => {

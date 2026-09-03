@@ -100,7 +100,7 @@ export function DocPageForm({
       : values.content;
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-4">
       {values.pageId ? (
         <input type="hidden" name="pageId" value={values.pageId} />
       ) : null}

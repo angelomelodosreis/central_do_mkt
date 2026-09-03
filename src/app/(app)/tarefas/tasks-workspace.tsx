@@ -219,7 +219,7 @@ export function TasksWorkspace({
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PillTabs<Visao>
           value={visao}

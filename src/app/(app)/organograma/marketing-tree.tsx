@@ -109,7 +109,7 @@ function TeamNode({
         <p className="font-display text-sm font-semibold text-slate-900">
           {team.name}
         </p>
-        <p className="mt-0.5 text-[11px] text-slate-500">
+        <p className="mt-0.5 text-xs text-slate-500">
           {doTime.length === 0
             ? "sem ninguém"
             : `${plural(doTime.length, "pessoa")}`}
@@ -223,7 +223,7 @@ function PersonNode({
         <span className="block truncate text-xs font-medium text-slate-900">
           {person.name}
         </span>
-        <span className="block truncate text-[11px] text-slate-500">
+        <span className="block truncate text-xs text-slate-500">
           {person.jobTitleName ?? "sem cargo"}
           {destaque ? "" : ""}
         </span>

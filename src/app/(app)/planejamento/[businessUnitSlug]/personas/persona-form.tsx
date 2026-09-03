@@ -74,7 +74,7 @@ export function PersonaForm({
   }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="space-y-4">
       {values.personaId ? (
         <input type="hidden" name="personaId" value={values.personaId} />
       ) : null}

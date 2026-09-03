@@ -49,7 +49,7 @@ export function CycleSetup({
         description="Um ciclo é o período que o planejamento cobre. Tudo — calendário, metas, produtos — pendura nele."
       />
       <CardBody className="sm:px-6 sm:py-5">
-        <form action={formAction} className="space-y-5">
+        <form action={formAction} className="space-y-4">
           <input type="hidden" name="businessUnitId" value={businessUnitId} />
 
           {state.status === "error" && state.message ? (

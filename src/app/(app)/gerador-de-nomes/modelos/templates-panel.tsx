@@ -40,7 +40,7 @@ export function TemplatesPanel({ templates }: { templates: TemplateRow[] }) {
   const ativos = templates.filter((template) => template.isActive).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
           {ativos} de {templates.length}{" "}

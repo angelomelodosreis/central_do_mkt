@@ -112,7 +112,7 @@ export function NewTaskDrawer({
       }
       width="lg"
     >
-      <form action={formAction} key={key} className="space-y-5">
+      <form action={formAction} key={key} className="space-y-4">
         {state.status === "error" && state.message ? (
           <p
             role="alert"

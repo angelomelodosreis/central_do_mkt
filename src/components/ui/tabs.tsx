@@ -47,7 +47,7 @@ export function LinkTabs({ items }: { items: TabItem[] }) {
               {typeof tab.count === "number" && tab.count > 0 ? (
                 <span
                   className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[11px] tabular-nums",
+                    "rounded-full px-1.5 py-0.5 text-xs tabular-nums",
                     isActive
                       ? "bg-brand-50 text-brand-700"
                       : "bg-slate-100 text-slate-600",
@@ -106,7 +106,7 @@ export function PillTabs<T extends string>({
             {typeof item.count === "number" && item.count > 0 ? (
               <span
                 className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[11px] tabular-nums",
+                  "rounded-full px-1.5 py-0.5 text-xs tabular-nums",
                   value === item.value
                     ? "bg-brand-50 text-brand-700"
                     : "bg-white text-slate-500",

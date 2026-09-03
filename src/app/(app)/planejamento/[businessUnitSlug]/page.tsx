@@ -172,7 +172,7 @@ export default async function BusinessUnitOverviewPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <ResultsSummary resumo={resumo} base={base} canEdit={canEdit} />
 
       {/*

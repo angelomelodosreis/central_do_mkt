@@ -138,7 +138,7 @@ export function PersonCard({
             {visiveis.map((position) => (
               <span
                 key={position.teamId}
-                className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600"
+                className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600"
               >
                 {position.teamName}
               </span>
@@ -153,7 +153,7 @@ export function PersonCard({
         ) : null}
       </span>
       {person.role && showRole && !compact ? (
-        <span className="shrink-0 text-[11px] text-slate-500">
+        <span className="shrink-0 text-xs text-slate-500">
           {USER_ROLE_LABELS[person.role]}
         </span>
       ) : null}

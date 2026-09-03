@@ -86,7 +86,7 @@ export default async function ResultadosPage({
         description={`O realizado de ${unit.label}, semana a semana. É o que alimenta o Panorama e a comparação com as metas.`}
       />
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         <WeeklyPanel
           businessUnitId={unit.id}
           semanas={semanas}

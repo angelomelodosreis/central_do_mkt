@@ -64,7 +64,7 @@ export default async function BusinessUnitDocsPage({
           }
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <DocGroup
             title="Internos da BU"
             description="Visíveis apenas para quem trabalha nesta BU."

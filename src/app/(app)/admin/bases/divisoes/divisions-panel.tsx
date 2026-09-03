@@ -42,7 +42,7 @@ export function DivisionsPanel({
   const [editando, setEditando] = useState<DivisionCard | null>(null);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {orphanUnits.length > 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-medium">

@@ -5,14 +5,16 @@ import { useMemo, useState } from "react";
 import { saveInitiativeResults, saveWeeklyResults } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, EmptyState } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui/card";
 import { Input } from "@/components/ui/field";
+import { Stat, StatGrid } from "@/components/ui/stat";
 import type { TimelineKind } from "@/lib/db/schema";
 import {
   CAMPOS_BASE,
   INDICADORES,
   calcular,
   formatarIndicador,
+  rotuloCurto,
   rotuloDaSemana,
   rotuloDoIndicador,
   somar,
@@ -116,16 +118,16 @@ export function WeeklyPanel({
       ))}
 
       <Card>
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-5 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Fechamento semanal
-          </h2>
-          <p className="text-xs text-slate-500">
-            {preenchidas} de {semanas.length} semanas lançadas
-          </p>
-        </div>
+        <CardHeader
+          title="Fechamento semanal"
+          action={
+            <span className="text-xs text-slate-500">
+              {preenchidas} de {semanas.length} semanas lançadas
+            </span>
+          }
+        />
 
-        <div className="overflow-x-auto">
+        <div className="mt-2 overflow-x-auto border-t border-slate-100">
           <table className="w-full min-w-[46rem] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left">
@@ -159,7 +161,7 @@ export function WeeklyPanel({
                       {rotuloDaSemana(new Date(semana.epoch))}
                     </span>
                     {semana.emCurso ? (
-                      <span className="block text-[11px] text-slate-400">
+                      <span className="block text-xs text-slate-400">
                         em curso
                       </span>
                     ) : null}
@@ -209,18 +211,17 @@ export function WeeklyPanel({
         {/* O total do período fecha a tabela em vez de abrir a tela: o número
             que interessa aqui é a linha que se acabou de digitar; o
             consolidado é conferência. */}
-        <div className="grid gap-x-6 gap-y-3 border-t border-slate-200 bg-slate-50/60 px-5 py-3 sm:grid-cols-4">
+        <StatGrid>
           {INDICADORES.map(({ metric }) => (
-            <div key={metric}>
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">
-                {rotuloDoIndicador(metric)}
-              </p>
-              <p className="text-sm font-medium tabular-nums text-slate-900">
-                {formatarIndicador(metric, indicadores[metric])}
-              </p>
-            </div>
+            <Stat
+              key={metric}
+              label={rotuloCurto(metric)}
+              labelCompleto={rotuloDoIndicador(metric)}
+              value={formatarIndicador(metric, indicadores[metric])}
+              tamanho="sm"
+            />
           ))}
-        </div>
+        </StatGrid>
 
         {canEdit ? (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-3">
@@ -299,14 +300,10 @@ export function InitiativesPanel({
       <input type="hidden" name="businessUnitId" value={businessUnitId} />
 
       <Card>
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-5 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Resultado por iniciativa
-          </h2>
-          <p className="text-xs text-slate-500">
-            Não some com o semanal: aqui é a fatia atribuída a cada ação.
-          </p>
-        </div>
+        <CardHeader
+          title="Resultado por iniciativa"
+          description="Não some com o semanal: aqui é a fatia atribuída a cada ação."
+        />
 
         <ul className="divide-y divide-slate-100">
           {iniciativas.map((item) => {
@@ -353,7 +350,7 @@ export function InitiativesPanel({
                   <div className="mt-3 grid gap-3 sm:grid-cols-5">
                     {CAMPOS_BASE.map((campo) => (
                       <label key={campo.key} className="block">
-                        <span className="mb-1 block text-[11px] uppercase tracking-wide text-slate-500">
+                        <span className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
                           {campo.label}
                         </span>
                         <Input
@@ -368,7 +365,7 @@ export function InitiativesPanel({
                       </label>
                     ))}
                     <label className="block">
-                      <span className="mb-1 block text-[11px] uppercase tracking-wide text-slate-500">
+                      <span className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
                         Presenças
                       </span>
                       <Input
@@ -380,7 +377,7 @@ export function InitiativesPanel({
                       />
                     </label>
                     <label className="block sm:col-span-5">
-                      <span className="mb-1 block text-[11px] uppercase tracking-wide text-slate-500">
+                      <span className="mb-1 block text-xs uppercase tracking-wide text-slate-500">
                         O que aprendemos
                       </span>
                       <Input

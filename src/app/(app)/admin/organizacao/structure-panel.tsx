@@ -52,7 +52,7 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
   const [editando, setEditando] = useState<UnitRow | null>(null);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
           {units.filter((unit) => unit.kind === "team").length} times em{" "}

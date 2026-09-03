@@ -114,7 +114,7 @@ export function Nav({
                     {item.badge ? (
                       <span
                         className={cn(
-                          "shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                          "shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums",
                           isActive
                             ? "bg-white/20 text-white"
                             : "bg-brand-50 text-brand-700",

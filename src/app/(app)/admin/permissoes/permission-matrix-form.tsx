@@ -24,7 +24,7 @@ export function PermissionMatrixForm({
   );
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-4">
       {state.message ? (
         <div
           role="status"

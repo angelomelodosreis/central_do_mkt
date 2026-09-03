@@ -7,7 +7,7 @@ import { approveUser, reactivateUser, suspendUser } from "../actions";
 import { Avatar } from "@/components/org/person-card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, Row } from "@/components/ui/card";
 import {
   Select,
   type SelectGroup,
@@ -194,7 +194,7 @@ export function UserFile({
       <Card>
         <Cabecalho person={person} isSelf={isSelf} alterado={alterado} />
 
-        <Linha label="Cargo">
+        <Row label="Cargo">
           <div className="max-w-sm">
             <Select
               value={rascunho.jobTitleId}
@@ -210,9 +210,9 @@ export function UserFile({
               ]}
             />
           </div>
-        </Linha>
+        </Row>
 
-        <Linha label="Papel no sistema">
+        <Row label="Papel no sistema">
           <div className="flex flex-wrap items-center gap-3">
             <div className="w-full max-w-sm">
               <Select
@@ -241,9 +241,9 @@ export function UserFile({
               Administra a plataforma
             </label>
           </div>
-        </Linha>
+        </Row>
 
-        <Linha label="Time">
+        <Row label="Time">
           <Pastilhas
             itens={rascunho.teamIds.map((id) => ({
               chave: id,
@@ -262,9 +262,9 @@ export function UserFile({
               />
             }
           />
-        </Linha>
+        </Row>
 
-        <Linha label="Squads">
+        <Row label="Squads">
           <Pastilhas
             itens={rascunho.squadIds.map((id) => ({
               chave: id,
@@ -285,9 +285,9 @@ export function UserFile({
               />
             }
           />
-        </Linha>
+        </Row>
 
-        <Linha label="Escopo de responsabilidade">
+        <Row label="Escopo de responsabilidade">
           <Escopos
             escolhidos={rascunho.escopos}
             aoAlternar={(chave) => alternar("escopos", chave)}
@@ -296,7 +296,7 @@ export function UserFile({
             businessUnits={businessUnits}
             squads={squads}
           />
-        </Linha>
+        </Row>
 
         <Rodape
           person={person}
@@ -306,16 +306,6 @@ export function UserFile({
         />
       </Card>
     </form>
-  );
-}
-
-/** Uma linha da ficha: à esquerda o que é, à direita qual é. */
-function Linha({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid gap-1.5 border-t border-slate-200 px-5 py-3 sm:grid-cols-[12rem_1fr] sm:items-center sm:gap-5">
-      <p className="text-sm font-medium text-slate-800">{label}</p>
-      <div className="min-w-0">{children}</div>
-    </div>
   );
 }
 

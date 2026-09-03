@@ -97,7 +97,7 @@ export function UsersPanel({
   }, [people, aba, papel, unidade, busca]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {pendentes > 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {pendentes}{" "}

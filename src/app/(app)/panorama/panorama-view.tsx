@@ -5,8 +5,17 @@ import Link from "next/link";
 
 import { BarrasComLinha, BarrasHorizontais } from "@/components/charts/charts";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  PageHeader,
+  Section,
+  Toolbar,
+} from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
+import { Stat, StatGrid } from "@/components/ui/stat";
 import { PillTabs } from "@/components/ui/tabs";
 import type { TimelineKind, TimelineStatus } from "@/lib/db/schema";
 import {
@@ -14,6 +23,7 @@ import {
   SENTIDO,
   calcular,
   formatarIndicador,
+  rotuloCurto,
   rotuloDaSemana,
   rotuloDoIndicador,
   somar,
@@ -220,10 +230,16 @@ export function PanoramaView({
         description="Como as BUs estão indo e o que vem por aí. Os números vêm do fechamento semanal que cada BU lança em Planejamento › Resultados."
       />
 
-      {/* Os filtros valem para a tela inteira e por isso ficam acima de tudo,
-          numa faixa só — repetir um seletor de BU por cartão faria a mesma
-          pergunta quatro vezes. */}
-      <div className="mb-5 flex flex-wrap items-center gap-2">
+      <Toolbar
+        onClear={
+          busSelecionadas.length > 0 || tiposSelecionados.length > 0
+            ? () => {
+                setBusSelecionadas([]);
+                setTiposSelecionados([]);
+              }
+            : undefined
+        }
+      >
         <div className="w-48">
           <Select
             value={janela}
@@ -274,58 +290,40 @@ export function PanoramaView({
             }))}
           />
         </div>
-        {busSelecionadas.length > 0 || tiposSelecionados.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => {
-              setBusSelecionadas([]);
-              setTiposSelecionados([]);
-            }}
-            className="rounded-lg px-2 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-          >
-            Limpar filtros
-          </button>
-        ) : null}
-      </div>
+      </Toolbar>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         <Card>
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">
-              {busSelecionadas.length === 0
+          <CardHeader
+            title={`${
+              busSelecionadas.length === 0
                 ? `${unidades.length} BUs`
-                : `${busSelecionadas.length} de ${unidades.length} BUs`}{" "}
-              · últimas {semanasNaJanela} semanas
-            </h2>
-            <p className="text-xs text-slate-500">
-              variação sobre as {semanasNaJanela} anteriores
-            </p>
-          </div>
+                : `${busSelecionadas.length} de ${unidades.length} BUs`
+            } · últimas ${semanasNaJanela} semanas`}
+            description={`Variação sobre as ${semanasNaJanela} anteriores. Clique num indicador para ver o gráfico dele.`}
+          />
 
-          <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-4">
+          <StatGrid>
             {INDICADORES.map(({ metric }) => (
-              <Indicativo
+              <Stat
                 key={metric}
-                metric={metric}
-                valor={atual[metric]}
-                variacaoPct={variacao(atual[metric], anterior[metric])}
+                label={rotuloCurto(metric)}
+                labelCompleto={rotuloDoIndicador(metric)}
+                value={formatarIndicador(metric, atual[metric])}
+                variacao={variacao(atual[metric], anterior[metric])}
+                sentido={SENTIDO[metric]}
                 selecionado={indicador === metric}
                 onSelecionar={() => setIndicador(metric)}
               />
             ))}
-          </div>
+          </StatGrid>
         </Card>
 
         <div className="grid items-start gap-5 lg:grid-cols-[1fr_22rem]">
           <Card>
-            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-900">
-                {rotuloDoIndicador(indicador)}, semana a semana
-              </h2>
-              <p className="text-xs text-slate-500">
-                clique num indicador acima para trocar
-              </p>
-            </div>
+            <CardHeader
+              title={`${rotuloDoIndicador(indicador)}, semana a semana`}
+            />
             <CardBody>
               {serie.some((ponto) => ponto.valor !== null) ? (
                 <BarrasComLinha pontos={serie} />
@@ -338,12 +336,14 @@ export function PanoramaView({
           </Card>
 
           <Card>
-            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 px-5 py-3">
-              <h2 className="text-sm font-semibold text-slate-900">Por BU</h2>
-              <p className="text-xs text-slate-500">
-                {rotuloDoIndicador(indicador)}
-              </p>
-            </div>
+            <CardHeader
+              title="Por BU"
+              action={
+                <span className="text-xs text-slate-500">
+                  {rotuloDoIndicador(indicador)}
+                </span>
+              }
+            />
             <CardBody className="px-0 py-0">
               {comNumero.length === 0 ? (
                 <EmptyState
@@ -368,8 +368,8 @@ export function PanoramaView({
         </div>
 
         <Card>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-3">
-            <h2 className="text-sm font-semibold text-slate-900">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-2 pt-4">
+            <h2 className="text-base font-semibold text-slate-900">
               O que vem por aí
             </h2>
             <PillTabs
@@ -403,66 +403,6 @@ export function PanoramaView({
         </Card>
       </div>
     </>
-  );
-}
-
-/**
- * Um indicador, clicável.
- *
- * Clicar troca o que o gráfico e o ranking mostram — é o que evita oito
- * gráficos empilhados na tela: a pergunta "e o CAC?" se responde num clique,
- * no mesmo desenho.
- */
-function Indicativo({
-  metric,
-  valor,
-  variacaoPct,
-  selecionado,
-  onSelecionar,
-}: {
-  metric: Indicador;
-  valor: number | null;
-  variacaoPct: number | null;
-  selecionado: boolean;
-  onSelecionar: () => void;
-}) {
-  const bom =
-    variacaoPct === null || variacaoPct === 0
-      ? null
-      : variacaoPct > 0 === (SENTIDO[metric] === "sobe");
-
-  return (
-    <button
-      type="button"
-      onClick={onSelecionar}
-      aria-pressed={selecionado}
-      className={cn(
-        "px-5 py-3 text-left transition-colors",
-        "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600",
-        selecionado ? "bg-brand-50/60" : "hover:bg-slate-50",
-      )}
-    >
-      <p className="truncate text-[11px] uppercase tracking-wide text-slate-500">
-        {rotuloDoIndicador(metric)}
-      </p>
-      <p className="mt-0.5 font-display text-xl font-semibold tabular-nums text-slate-900">
-        {formatarIndicador(metric, valor)}
-      </p>
-      {variacaoPct === null ? (
-        <p className="text-xs text-slate-400">sem comparação</p>
-      ) : (
-        <p
-          className={cn(
-            "text-xs tabular-nums",
-            bom === null && "text-slate-500",
-            bom === true && "text-emerald-700",
-            bom === false && "text-danger-700",
-          )}
-        >
-          {formatarVariacao(variacaoPct)}
-        </p>
-      )}
-    </button>
   );
 }
 
@@ -502,15 +442,12 @@ function Agenda({ itens, agora }: { itens: ItemDaAgenda[]; agora: Date }) {
   return (
     <>
       {grupos.map((grupo) => (
-        <section key={grupo.titulo}>
-          <div className="flex items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2 first:border-t-0">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {grupo.titulo}
-            </h3>
-            <span className="text-xs tabular-nums text-slate-500">
-              {grupo.itens.length}
-            </span>
-          </div>
+        <Section
+          key={grupo.titulo}
+          title={grupo.titulo}
+          meta={grupo.itens.length}
+          divider
+        >
           <ul className="divide-y divide-slate-100">
             {grupo.itens.map((item) => {
               const config = TIMELINE_KIND_CONFIG[item.kind];
@@ -547,7 +484,7 @@ function Agenda({ itens, agora }: { itens: ItemDaAgenda[]; agora: Date }) {
               );
             })}
           </ul>
-        </section>
+        </Section>
       ))}
     </>
   );

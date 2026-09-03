@@ -37,7 +37,7 @@ export function CategoryForm({
   const slug = toKebabCase(name);
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-4">
       {values.categoryId ? (
         <input type="hidden" name="categoryId" value={values.categoryId} />
       ) : null}

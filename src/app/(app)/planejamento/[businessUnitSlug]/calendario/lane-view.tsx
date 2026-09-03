@@ -135,7 +135,7 @@ export function LaneView({
         {ticks.map((tick, index) => (
           <span
             key={index}
-            className="absolute top-0 flex h-full items-center border-l border-slate-100 pl-1.5 text-[11px] text-slate-500"
+            className="absolute top-0 flex h-full items-center border-l border-slate-100 pl-1.5 text-xs text-slate-500"
             style={{ left: `${tick.left}%`, width: `${tick.width}%` }}
           >
             {tick.label}
@@ -161,7 +161,7 @@ export function LaneView({
                 <p className="text-xs font-medium text-slate-700">
                   {group.label}
                 </p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {group.items.length}{" "}
                   {group.items.length === 1 ? "item" : "itens"}
                 </p>
@@ -196,7 +196,7 @@ export function LaneView({
                       className={cn(
                         "absolute flex items-center overflow-hidden ring-1 ring-inset transition-shadow hover:shadow-sm",
                         cabeTexto
-                          ? "px-2 text-[11px] font-medium"
+                          ? "px-2 text-xs font-medium"
                           : "justify-center",
                         config.chip,
                         segment.clippedStart

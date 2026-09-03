@@ -9,7 +9,7 @@ import {
 } from "../../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody, CardHeader, Section } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import {
   FINDING_KIND_LABELS,
@@ -87,21 +87,22 @@ export function GoalSection({
     // Ciclo e semestres são três recortes do mesmo compromisso, e a comparação
     // entre eles é o que se lê aqui. Em três cartões separados, cada um pedia
     // uma moldura própria para dizer "1º semestre".
-    <section className={cn(isCurrent && "bg-brand-50/30")}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2.5 first:border-t-0">
-        <div className="min-w-0">
-          <h2 className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {GOAL_SCOPE_LABELS[scope]}
-            {isCurrent ? <Badge tone="brand">Em curso</Badge> : null}
-            {isPast ? <Badge>Encerrado</Badge> : null}
-          </h2>
-          <p className="text-xs text-slate-500">
-            {partial
-              ? `${periodLabel} — recortado pelo início do ciclo`
-              : periodLabel}
-          </p>
-        </div>
-        {canEdit && !editing ? (
+    <Section
+      className={cn(isCurrent && "bg-brand-50/30")}
+      title={
+        <span className="flex flex-wrap items-center gap-2">
+          {GOAL_SCOPE_LABELS[scope]}
+          {isCurrent ? <Badge tone="brand">Em curso</Badge> : null}
+          {isPast ? <Badge>Encerrado</Badge> : null}
+        </span>
+      }
+      description={
+        partial
+          ? `${periodLabel} — recortado pelo início do ciclo`
+          : periodLabel
+      }
+      action={
+        canEdit && !editing ? (
           <Button
             type="button"
             variant="ghost"
@@ -110,9 +111,11 @@ export function GoalSection({
           >
             {goal ? "Editar" : "Definir meta"}
           </Button>
-        ) : null}
-      </div>
-      <div className="px-5 py-4">
+        ) : null
+      }
+      divider
+    >
+      <div className="px-5 pb-4 pt-2">
         {editing ? (
           <GoalForm
             cycleId={cycleId}
@@ -130,7 +133,7 @@ export function GoalSection({
           </p>
         )}
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -165,7 +168,7 @@ function GoalReadView({
   const vinculados = findings.filter((f) => f.goalIds.includes(goal.id));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <p className="font-display text-lg leading-snug text-slate-900">
         {goal.objective}
       </p>
@@ -202,7 +205,7 @@ function GoalReadView({
           <ol className="space-y-2">
             {goal.fronts.map((frente, index) => (
               <li key={index} className="flex gap-2.5">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[11px] font-semibold text-brand-700">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700">
                   {index + 1}
                 </span>
                 <span>
@@ -324,7 +327,7 @@ function GoalForm({
   }
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-4">
       <input type="hidden" name="cycleId" value={cycleId} />
       <input type="hidden" name="scope" value={scope} />
 

@@ -227,7 +227,7 @@ function MiniPerson({
               />
             ) : null}
           </span>
-          <span className="mt-0.5 block truncate text-[11px] text-slate-500">
+          <span className="mt-0.5 block truncate text-xs text-slate-500">
             {contexto || "fora da estrutura"}
           </span>
         </span>

@@ -248,7 +248,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
         isActive={state.h3}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
       >
-        <span className="text-[11px] font-bold">H3</span>
+        <span className="text-xs font-bold">H3</span>
       </ToolbarButton>
 
       <Divider />
@@ -292,21 +292,21 @@ function Toolbar({ editor }: { editor: Editor | null }) {
         isActive={state.orderedMarker === "1"}
         onClick={() => setOrderedList(editor, "1")}
       >
-        <span className="text-[11px] font-semibold">1.</span>
+        <span className="text-xs font-semibold">1.</span>
       </ToolbarButton>
       <ToolbarButton
         label="Lista alfabética"
         isActive={state.orderedMarker === "a"}
         onClick={() => setOrderedList(editor, "a")}
       >
-        <span className="text-[11px] font-semibold">a.</span>
+        <span className="text-xs font-semibold">a.</span>
       </ToolbarButton>
       <ToolbarButton
         label="Lista romana"
         isActive={state.orderedMarker === "i"}
         onClick={() => setOrderedList(editor, "i")}
       >
-        <span className="text-[11px] font-semibold">i.</span>
+        <span className="text-xs font-semibold">i.</span>
       </ToolbarButton>
 
       <Divider />

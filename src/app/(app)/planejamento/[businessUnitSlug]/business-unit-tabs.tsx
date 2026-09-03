@@ -62,7 +62,7 @@ export function BusinessUnitTabs({
                 {tab.count !== undefined && tab.count > 0 ? (
                   <span
                     className={cn(
-                      "rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+                      "rounded-full px-1.5 py-0.5 text-xs font-medium tabular-nums",
                       active
                         ? "bg-brand-50 text-brand-700"
                         : "bg-slate-100 text-slate-500",

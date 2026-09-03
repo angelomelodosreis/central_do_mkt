@@ -184,7 +184,7 @@ export function MonthView({
                         }}
                         title={segment.item.title}
                         className={cn(
-                          "group flex h-[18px] cursor-pointer items-center gap-1 px-1.5 text-[11px] font-medium ring-1 ring-inset transition-shadow hover:shadow-sm",
+                          "group flex h-[18px] cursor-pointer items-center gap-1 px-1.5 text-xs font-medium ring-1 ring-inset transition-shadow hover:shadow-sm",
                           config.chip,
                           segment.continuesBefore
                             ? "rounded-l-none"

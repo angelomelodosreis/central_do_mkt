@@ -9,7 +9,13 @@ import {
 } from "../../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui/card";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  Section,
+} from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PRODUCT_CADENCE_LABELS, type ProductCadence } from "@/lib/db/schema";
@@ -46,7 +52,7 @@ export function ProductList({
   const continuos = products.filter((p) => p.cadence === "ongoing");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {canEdit ? (
         creating ? (
           <Card>
@@ -107,18 +113,12 @@ function CadenceGroup({
   businessUnitId: string;
 }) {
   return (
-    <section>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2.5 first:border-t-0">
-        <div className="min-w-0">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {title}
-          </h2>
-          <p className="text-xs text-slate-500">{description}</p>
-        </div>
-        <span className="text-xs tabular-nums text-slate-500">
-          {products.length}
-        </span>
-      </div>
+    <Section
+      title={title}
+      description={description}
+      meta={products.length}
+      divider
+    >
       {products.length === 0 ? (
         <EmptyState variant="inline" title="Nenhum produto nesta cadência." />
       ) : (
@@ -133,7 +133,7 @@ function CadenceGroup({
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   );
 }
 

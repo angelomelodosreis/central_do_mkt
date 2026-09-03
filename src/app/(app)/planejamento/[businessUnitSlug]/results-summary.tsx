@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { ButtonLink } from "@/components/ui/button";
-import { Card, CardHeader } from "@/components/ui/card";
+import { Card, CardHeader, Section } from "@/components/ui/card";
+import { Stat, StatGrid } from "@/components/ui/stat";
 import {
   INDICADORES,
   SENTIDO,
   calcular,
   formatarIndicador,
+  rotuloCurto,
   rotuloDaSemana,
   rotuloDoIndicador,
   variacao,
@@ -104,46 +106,28 @@ export function ResultsSummary({
         }
       />
 
-      <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 border-t border-slate-100 sm:grid-cols-4">
-        {INDICADORES.map(({ metric }) => {
-          const variou = variacao(recente[metric], anterior[metric]);
-          const bom =
-            variou === null || variou === 0
-              ? null
-              : variou > 0 === (SENTIDO[metric] === "sobe");
-
-          return (
-            <div key={metric} className="px-5 py-3">
-              <p className="truncate text-[11px] uppercase tracking-wide text-slate-500">
-                {rotuloDoIndicador(metric)}
-              </p>
-              <p className="mt-0.5 font-display text-lg font-semibold tabular-nums text-slate-900">
-                {formatarIndicador(metric, recente[metric])}
-              </p>
-              {variou === null ? null : (
-                <p
-                  className={cn(
-                    "text-xs tabular-nums",
-                    bom === null && "text-slate-500",
-                    bom === true && "text-emerald-700",
-                    bom === false && "text-danger-700",
-                  )}
-                >
-                  {variou > 0 ? "+" : ""}
-                  {variou.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
-                  %
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <StatGrid>
+        {INDICADORES.map(({ metric }) => (
+          <Stat
+            key={metric}
+            label={rotuloCurto(metric)}
+            labelCompleto={rotuloDoIndicador(metric)}
+            value={formatarIndicador(metric, recente[metric])}
+            variacao={variacao(recente[metric], anterior[metric])}
+            sentido={SENTIDO[metric]}
+            tamanho="sm"
+          />
+        ))}
+      </StatGrid>
 
       {/* A série inteira em miniatura: a tendência é a informação, e para
           tendência não é preciso eixo nem valor em cada barra. */}
       {resumo.serie.length > 1 ? (
-        <div className="border-t border-slate-100 px-5 py-3">
-          <div className="flex h-10 items-end gap-1">
+        <Section
+          title={`Faturamento por semana · ${resumo.serie.length} últimas`}
+          divider
+        >
+          <div className="flex h-10 items-end gap-1 px-5 pb-4 pt-1">
             {resumo.serie.map((ponto) => (
               <div
                 key={ponto.weekStart}
@@ -156,20 +140,14 @@ export function ResultsSummary({
               />
             ))}
           </div>
-          <p className="mt-1 text-[11px] text-slate-400">
-            Faturamento por semana · {resumo.serie.length} últimas
-          </p>
-        </div>
+        </Section>
       ) : null}
 
       {/* Meta × realizado só aparece quando existe meta com número. Barra sem
           régua não diz nada, e inventar uma régua seria pior. */}
       {resumo.metas.length > 0 ? (
-        <div className="border-t border-slate-100 px-5 py-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Meta do ciclo × realizado
-          </p>
-          <ul className="space-y-2.5">
+        <Section title="Meta do ciclo × realizado" divider>
+          <ul className="space-y-2.5 px-5 pb-4 pt-1">
             {resumo.metas.map(({ metric, alvo }) => {
               const feito = noCiclo[metric];
               const pct =
@@ -203,7 +181,7 @@ export function ResultsSummary({
                         style={{ width: `${Math.min(pct ?? 0, 100)}%` }}
                       />
                     </div>
-                    <span className="shrink-0 text-[11px] tabular-nums text-slate-500">
+                    <span className="shrink-0 text-xs tabular-nums text-slate-500">
                       {pct === null
                         ? "—"
                         : `${pct.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`}
@@ -213,7 +191,7 @@ export function ResultsSummary({
               );
             })}
           </ul>
-          <p className="mt-2 text-[11px] text-slate-400">
+          <p className="px-5 pb-4 text-xs text-slate-500">
             Realizado somado desde o início do ciclo.{" "}
             <Link
               href={`${base}/metas`}
@@ -222,7 +200,7 @@ export function ResultsSummary({
               Ver as metas
             </Link>
           </p>
-        </div>
+        </Section>
       ) : null}
     </Card>
   );

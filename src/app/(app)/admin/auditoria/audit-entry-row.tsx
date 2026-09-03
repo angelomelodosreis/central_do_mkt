@@ -35,7 +35,7 @@ export function AuditEntryRow({ entry }: { entry: AuditEntryView }) {
             <span aria-hidden>·</span>
             <span>{formatDateTime(new Date(entry.createdAt))}</span>
             <span aria-hidden>·</span>
-            <code className="font-mono text-[11px] text-slate-400">
+            <code className="font-mono text-xs text-slate-400">
               {entry.action}
             </code>
             {entry.isUndone ? <Badge tone="neutral">Desfeita</Badge> : null}
@@ -93,7 +93,7 @@ export function AuditEntryRow({ entry }: { entry: AuditEntryView }) {
           {entry.beforeData ? (
             <div>
               <p className="mb-1 text-xs font-medium text-slate-600">Antes</p>
-              <pre className="max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[11px] leading-relaxed text-slate-100">
+              <pre className="max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-xs leading-relaxed text-slate-100">
                 {entry.beforeData}
               </pre>
             </div>
@@ -101,7 +101,7 @@ export function AuditEntryRow({ entry }: { entry: AuditEntryView }) {
           {entry.afterData ? (
             <div>
               <p className="mb-1 text-xs font-medium text-slate-600">Depois</p>
-              <pre className="max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-[11px] leading-relaxed text-slate-100">
+              <pre className="max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-xs leading-relaxed text-slate-100">
                 {entry.afterData}
               </pre>
             </div>

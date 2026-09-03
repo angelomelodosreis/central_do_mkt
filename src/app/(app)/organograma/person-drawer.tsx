@@ -60,7 +60,7 @@ export function PersonDrawer({
       title={person.name}
       description={person.email}
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Cargo — um só, e da pessoa */}
         <section>
           <SectionTitle>Cargo</SectionTitle>

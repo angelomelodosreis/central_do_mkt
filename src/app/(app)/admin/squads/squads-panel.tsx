@@ -86,7 +86,7 @@ export function SquadsPanel({
   }, [squads, filtro, busca]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <PillTabs<Filtro>
           value={filtro}
@@ -151,7 +151,7 @@ function SquadCard({
 
   return (
     <Card className={cn(!squad.isActive && "bg-slate-50/60")}>
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 px-5 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
         <div className="min-w-0">
           <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
             <Link

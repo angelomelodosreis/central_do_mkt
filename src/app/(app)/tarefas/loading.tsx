@@ -12,7 +12,7 @@ export default function TasksLoading() {
   return (
     <>
       <PageHeader title="Tarefas" description="Carregando a sua fila…" />
-      <div className="space-y-5">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Skeleton className="h-10 w-80 rounded-xl" />
           <Skeleton className="h-10 w-32 rounded-xl" />

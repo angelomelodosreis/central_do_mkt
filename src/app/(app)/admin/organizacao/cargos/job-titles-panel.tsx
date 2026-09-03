@@ -11,7 +11,7 @@ import {
 import { INITIAL_ORG_STATE } from "../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody } from "@/components/ui/card";
+import { Card, CardBody, Section } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
@@ -101,7 +101,7 @@ export function JobTitlesPanel({
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
           Cargo descreve a pessoa. Quem pode o quê é papel + escopo, na ficha
@@ -120,10 +120,7 @@ export function JobTitlesPanel({
       <Card>
         <CardBody className="px-0 py-0">
           {grupos.map((grupo) => (
-            <section key={grupo.titulo}>
-              <h2 className="border-y border-slate-200 bg-slate-50/70 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 first:border-t-0">
-                {grupo.titulo}
-              </h2>
+            <Section key={grupo.titulo} title={grupo.titulo} divider>
               <ul className="divide-y divide-slate-100">
                 {grupo.cargos.map((title) => (
                   <li
@@ -220,7 +217,7 @@ export function JobTitlesPanel({
                   </li>
                 ))}
               </ul>
-            </section>
+            </Section>
           ))}
         </CardBody>
       </Card>

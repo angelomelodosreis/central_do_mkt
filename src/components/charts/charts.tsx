@@ -142,11 +142,11 @@ export function BarrasComLinha({
         </div>
       </div>
 
-      <div className="mt-1.5 flex text-[10px] text-slate-400">
+      <div className="mt-1.5 flex gap-0.5 text-[10px] text-slate-400">
         {pontos.map((ponto, indice) => (
           <span
             key={ponto.label}
-            className="flex-1 text-center"
+            className="flex-1 truncate text-center"
             // Uma a cada duas em telas estreitas: treze rótulos lado a lado
             // viram uma mancha ilegível.
             style={{ visibility: indice % 2 === 0 ? "visible" : "hidden" }}
@@ -157,7 +157,7 @@ export function BarrasComLinha({
       </div>
 
       {rotuloLinha ? (
-        <p className="mt-1 text-[11px] text-slate-500">
+        <p className="mt-1 text-xs text-slate-500">
           <span className="mr-1 inline-block h-px w-4 align-middle bg-slate-900" />
           {rotuloLinha}
         </p>
@@ -214,7 +214,7 @@ export function BarrasHorizontais({
                 />
               </div>
               {item.detalhe ? (
-                <span className="shrink-0 text-[11px] tabular-nums text-slate-500">
+                <span className="shrink-0 text-xs tabular-nums text-slate-500">
                   {item.detalhe}
                 </span>
               ) : null}

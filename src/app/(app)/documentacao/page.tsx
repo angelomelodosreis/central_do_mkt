@@ -8,6 +8,7 @@ import {
   CardBody,
   CardHeader,
   EmptyState,
+  Section,
   PageHeader,
 } from "@/components/ui/card";
 import { SearchBox } from "./search-box";
@@ -105,27 +106,17 @@ export default async function DocumentationIndexPage({
               // enxergá-la — senão uma categoria recém-criada fica invisível.
               .filter((category) => category.pages.length > 0 || canEdit)
               .map((category) => (
-                <section key={category.id}>
-                  <div className="flex flex-wrap items-baseline justify-between gap-2 border-y border-slate-200 bg-slate-50/70 px-5 py-2.5 first:border-t-0">
-                    <div className="min-w-0">
-                      {/* Rótulo de trecho, e não título: em caixa alta e
-                          menor, a categoria não compete com os nomes das
-                          páginas que ela agrupa — que é o que se procura. */}
-                      <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        {category.name}
-                      </h2>
-                      {category.description ? (
-                        <p className="text-xs text-slate-500">
-                          {category.description}
-                        </p>
-                      ) : null}
-                    </div>
-                    <span className="text-xs tabular-nums text-slate-500">
-                      {category.pages.length > 0
-                        ? plural(category.pages.length, "página")
-                        : "vazia"}
-                    </span>
-                  </div>
+                <Section
+                  key={category.id}
+                  title={category.name}
+                  description={category.description ?? undefined}
+                  meta={
+                    category.pages.length > 0
+                      ? plural(category.pages.length, "página")
+                      : "vazia"
+                  }
+                  divider
+                >
                   {category.pages.length === 0 ? (
                     <EmptyState
                       variant="inline"
@@ -177,7 +168,7 @@ export default async function DocumentationIndexPage({
                       </li>
                     ))}
                   </ul>
-                </section>
+                </Section>
               ))}
           </CardBody>
         </Card>

@@ -136,7 +136,7 @@ export default async function StrategyIndexPage({
           description="O planejamento é sempre de uma BU, e o acesso vem do vínculo com ela. Um administrador precisa te incluir na equipe da BU em que você trabalha."
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {minhas.length > 0 ? (
             <section>
               {outras.length > 0 ? (

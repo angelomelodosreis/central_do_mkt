@@ -63,7 +63,7 @@ export default async function BusinessUnitPersonasPage({
           }
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Dores sem solução são a pauta de produto da BU — por isso vêm
               antes da lista, e não escondidas dentro de cada persona. */}
           {semSolucao > 0 ? (

@@ -50,7 +50,7 @@ export function EditTaskDrawer({
       description="Você ajusta o que a tarefa é. O andamento continua com quem executa."
     >
       {task ? (
-        <form action={formAction} className="space-y-5" key={task.id}>
+        <form action={formAction} className="space-y-4" key={task.id}>
           <input type="hidden" name="taskId" value={task.id} />
 
           {state.status === "error" && state.message ? (
