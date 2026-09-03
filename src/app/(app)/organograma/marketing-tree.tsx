@@ -33,8 +33,8 @@ export function MarketingTree({
   if (units.length === 0) {
     return (
       <EmptyState
-        title="Nenhum setor ou time cadastrado"
-        description="A estrutura é montada a partir de setores, subsetores e times. Cadastre-os em Administração › Organização."
+        title="Nenhuma área ou time cadastrado"
+        description="A estrutura é montada a partir de áreas, subáreas e times. Cadastre-os em Administração › Organização."
       />
     );
   }

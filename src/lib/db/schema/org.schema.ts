@@ -28,24 +28,37 @@ import { businessUnit } from "./business-units.schema";
  * descendência três vezes — sendo que a pergunta que o sistema faz é sempre a
  * mesma: "o que está abaixo disto?".
  */
-export const ORG_UNIT_KINDS = ["sector", "subsector", "team"] as const;
+/**
+ * Os níveis da estrutura, do topo para a base.
+ *
+ * `area` é o nível que a plataforma ganhou quando deixou de ser só do
+ * Marketing: Comercial, Novos Negócios e Corpo Docente entram como irmãs de
+ * Marketing, e não penduradas nela. Era o que o antigo "setor" já era na
+ * prática — o nome mudou porque "setor do Marketing" e "área da empresa" são
+ * coisas diferentes, e a segunda é a que passou a existir.
+ *
+ * `subarea` continua opcional e existe para quem precisa: Marketing usa
+ * (Conteúdo, Planejamento), Corpo Docente provavelmente não vai usar. Uma
+ * estrutura que obriga três níveis obriga a inventar o do meio.
+ */
+export const ORG_UNIT_KINDS = ["area", "subarea", "team"] as const;
 export type OrgUnitKind = (typeof ORG_UNIT_KINDS)[number];
 
 export const ORG_UNIT_KIND_LABELS: Record<OrgUnitKind, string> = {
-  sector: "Setor",
-  subsector: "Subsetor",
+  area: "Área",
+  subarea: "Subárea",
   team: "Time",
 };
 
 /** Plural, para títulos de listagem. */
 export const ORG_UNIT_KIND_PLURALS: Record<OrgUnitKind, string> = {
-  sector: "Setores",
-  subsector: "Subsetores",
+  area: "Áreas",
+  subarea: "Subáreas",
   team: "Times",
 };
 
 /**
- * Unidade organizacional: um setor, um subsetor ou um time.
+ * Unidade organizacional: uma área, uma subárea ou um time.
  *
  * A tabela continua se chamando `team` por compatibilidade — tarefas,
  * vínculos e cargos já apontam para ela, e renomear a tabela custaria uma
@@ -144,11 +157,12 @@ export const jobTitle = sqliteTable(
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
     /**
-     * Unidade organizacional típica deste cargo, quando existe.
+     * Onde o cargo aparecia por padrão no seletor.
      *
-     * É só uma dica para agrupar o seletor — "Copywriter" costuma ser do Copy —
-     * e NÃO restringe: nada impede atribuir um cargo a alguém de outra unidade.
-     * Restringir travaria o caso real de quem acumula frentes.
+     * Continua aqui porque a coluna tem dados, mas quem RESTRINGE agora é
+     * `job_title_team`: com Corpo Docente e Comercial na plataforma, oferecer
+     * "Coordenador Médico" para alguém do Design deixou de ser um detalhe e
+     * virou ruído numa lista de dezenas de cargos.
      */
     suggestedTeamId: text("suggested_team_id"),
     /** Ordem hierárquica, do mais sênior para o mais júnior. */
@@ -233,3 +247,35 @@ export type TeamMember = typeof teamMember.$inferSelect;
 export type JobTitle = typeof jobTitle.$inferSelect;
 export type Squad = typeof squad.$inferSelect;
 export type SquadMember = typeof squadMember.$inferSelect;
+
+/**
+ * Em que times um cargo existe.
+ *
+ * Muitos-para-muitos, e não uma coluna `teamId`, porque os dois casos reais
+ * existem: "Supervisor de Design" é de um time só, e "Coordenador Médico"
+ * vale para todos os times do Corpo Docente. Uma coluna resolveria o primeiro
+ * e obrigaria a cadastrar o segundo doze vezes.
+ *
+ * SEM nenhuma linha aqui, o cargo vale em qualquer time. É o padrão de
+ * propósito: é o que os cargos existentes eram antes desta tabela, e é o que
+ * um cargo transversal ("Estagiário") continua devendo ser.
+ */
+export const jobTitleTeam = sqliteTable(
+  "job_title_team",
+  {
+    id: text("id").primaryKey(),
+    jobTitleId: text("job_title_id")
+      .notNull()
+      .references(() => jobTitle.id, { onDelete: "cascade" }),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => team.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    unique("job_title_team_unique").on(table.jobTitleId, table.teamId),
+    index("job_title_team_job_idx").on(table.jobTitleId),
+    index("job_title_team_team_idx").on(table.teamId),
+  ],
+);
+
+export type JobTitleTeam = typeof jobTitleTeam.$inferSelect;

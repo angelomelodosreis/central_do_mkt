@@ -127,9 +127,7 @@ export function PersonDrawer({
 
         {/* Onde a pessoa está na estrutura */}
         <section>
-          <SectionTitle>
-            Times e setores ({person.positions.length})
-          </SectionTitle>
+          <SectionTitle>Times e áreas ({person.positions.length})</SectionTitle>
 
           {person.positions.length === 0 ? (
             <p className="text-sm text-slate-500">Fora da estrutura.</p>

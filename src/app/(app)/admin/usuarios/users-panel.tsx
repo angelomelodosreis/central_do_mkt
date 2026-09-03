@@ -157,10 +157,10 @@ export function UsersPanel({
             <Select
               value={unidade}
               onValueChange={setUnidade}
-              ariaLabel="Filtrar por time ou setor"
-              placeholder="Time ou setor"
+              ariaLabel="Filtrar por área ou time"
+              placeholder="Área ou time"
               options={[
-                { value: "", label: "Todos os times e setores" },
+                { value: "", label: "Todas as áreas e times" },
                 ...units.map((unit) => ({ value: unit.id, label: unit.name })),
               ]}
             />

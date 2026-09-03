@@ -33,8 +33,8 @@ export type UnitRow = {
 };
 
 const KIND_TONES: Record<OrgUnitKind, "brand" | "neutral"> = {
-  sector: "brand",
-  subsector: "brand",
+  area: "brand",
+  subarea: "brand",
   team: "neutral",
 };
 
@@ -56,13 +56,13 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
           {units.filter((unit) => unit.kind === "team").length} times em{" "}
-          {units.filter((unit) => unit.kind === "subsector").length} subsetores.
+          {units.filter((unit) => unit.kind === "area").length} áreas.
         </p>
         <Button
           variant="primary"
           onClick={() => setCriando({ parentId: null })}
         >
-          + Novo setor, subsetor ou time
+          + Nova área, subárea ou time
         </Button>
       </div>
 
@@ -92,7 +92,7 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
                     <span
                       className={cn(
                         "font-medium text-slate-900",
-                        unit.kind === "sector" && "font-display text-base",
+                        unit.kind === "area" && "font-display text-base",
                       )}
                     >
                       {unit.name}
@@ -105,8 +105,8 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
 
                   {/*
                     Uma contagem só por linha. Um time mostra quem está nele;
-                    um setor mostra quantos respondem a ele no total — que é a
-                    pergunta que se faz de um setor. Os dois números em toda
+                    uma área mostra quantos respondem a ela no total — que é a
+                    pergunta que se faz de uma área. Os dois números em toda
                     linha ensinavam a ignorar os dois.
                   */}
                   <p className="mt-0.5 text-xs text-slate-500">
@@ -218,13 +218,13 @@ function NewUnitDrawer({
   // Dentro de um subsetor, o que se cria é um time; solto, um setor. É o caso
   // esmagadoramente mais comum, e continua editável.
   const kindSugerido: OrgUnitKind =
-    pai?.kind === "subsector" ? "team" : pai ? "subsector" : "sector";
+    pai?.kind === "subarea" ? "team" : pai ? "subarea" : "area";
 
   return (
     <Drawer
       open={open}
       onClose={onClose}
-      title="Novo setor, subsetor ou time"
+      title="Nova área, subárea ou time"
       description={pai ? `Dentro de ${pai.name}.` : undefined}
     >
       <form

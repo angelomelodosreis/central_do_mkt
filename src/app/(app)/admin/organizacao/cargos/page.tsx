@@ -20,6 +20,8 @@ export default async function CargosPage() {
         suggestedTeamId: title.suggestedTeamId,
         suggestedTeamName: title.suggestedTeamName,
         peopleCount: title.peopleCount,
+        teamIds: title.teamIds,
+        teamNames: title.teamNames,
       }))}
       units={units
         .filter((unit) => unit.isActive)

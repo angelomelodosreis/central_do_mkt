@@ -31,6 +31,8 @@ export type OrgUnitOption = {
   kind: OrgUnitKind;
   /** "Marketing › Conteúdo › Design" */
   path: string;
+  /** A área no topo da árvore desta unidade. Uma área é a própria área. */
+  areaId: string;
 };
 
 export type UserFileData = {
@@ -64,7 +66,7 @@ const ESCOPO_CURTO: Record<ScopeType, string> = {
 };
 
 const TIPOS_DE_ESCOPO: Array<{ value: ScopeType; label: string }> = [
-  { value: "org_unit", label: "Time, subsetor ou setor" },
+  { value: "org_unit", label: "Time, subárea ou área" },
   { value: "division", label: "Divisão de negócio" },
   { value: "business_unit", label: "Business Unit" },
   { value: "squad", label: "Squad" },
@@ -116,7 +118,7 @@ export function UserFile({
   isSelf,
 }: {
   person: UserFileData;
-  jobTitles: Array<{ id: string; name: string }>;
+  jobTitles: Array<{ id: string; name: string; teamIds: string[] }>;
   orgUnits: OrgUnitOption[];
   divisions: Array<{ id: string; name: string }>;
   businessUnits: Array<{ id: string; label: string }>;
@@ -171,6 +173,52 @@ export function UserFile({
   const nomeDoTime = new Map(orgUnits.map((unidade) => [unidade.id, unidade]));
   const nomeDoSquad = new Map(squads.map((squad) => [squad.id, squad.label]));
 
+  /**
+   * A cascata Área → Time → Cargo.
+   *
+   * A área não é um atributo da pessoa: é o filtro que faz o seletor de time
+   * mostrar só o que interessa. Guardá-la separado seria uma terceira fonte
+   * para uma informação que a árvore já tem — a área de alguém é a área dos
+   * times dela.
+   *
+   * Começa na área do primeiro time da pessoa, e não em branco: abrir a ficha
+   * de quem já está no Design com o filtro zerado obrigaria a escolher
+   * "Marketing" para ver o time que já está ali na tela.
+   */
+  const areas = orgUnits.filter((unidade) => unidade.kind === "area");
+  const areaInicial =
+    nomeDoTime.get(rascunho.teamIds[0] ?? "")?.areaId ?? areas[0]?.id ?? "";
+  const [areaFiltro, setAreaFiltro] = useState(areaInicial);
+
+  const timesDaArea = orgUnits.filter(
+    (unidade) => unidade.areaId === areaFiltro,
+  );
+
+  /**
+   * Os cargos que existem nos times da pessoa.
+   *
+   * Cargo sem nenhum time vinculado vale em qualquer um — é o padrão, e é o
+   * que "Estagiário" deve continuar sendo. Pessoa sem time nenhum vê a lista
+   * inteira, porque filtrar por um vínculo que não existe esconderia tudo.
+   */
+  const cargosDisponiveis =
+    rascunho.teamIds.length === 0
+      ? jobTitles
+      : jobTitles.filter(
+          (title) =>
+            title.teamIds.length === 0 ||
+            title.teamIds.some((id) => rascunho.teamIds.includes(id)),
+        );
+
+  // Um cargo que deixou de valer nos times atuais continua visível enquanto
+  // for o cargo da pessoa: sumir com ele faria o seletor mentir sobre o que
+  // está gravado.
+  const cargoAtualForaDaLista =
+    rascunho.jobTitleId &&
+    !cargosDisponiveis.some((title) => title.id === rascunho.jobTitleId)
+      ? jobTitles.find((title) => title.id === rascunho.jobTitleId)
+      : null;
+
   return (
     <form action={saveUserFile}>
       <input type="hidden" name="userId" value={person.id} />
@@ -194,7 +242,14 @@ export function UserFile({
       <Card>
         <Cabecalho person={person} isSelf={isSelf} alterado={alterado} />
 
-        <Row label="Cargo">
+        <Row
+          label="Cargo"
+          hint={
+            rascunho.teamIds.length > 0
+              ? "Só os cargos que existem nos times acima."
+              : undefined
+          }
+        >
           <div className="max-w-sm">
             <Select
               value={rascunho.jobTitleId}
@@ -203,10 +258,19 @@ export function UserFile({
               size="sm"
               options={[
                 { value: "", label: "Sem cargo definido" },
-                ...jobTitles.map((title) => ({
+                ...cargosDisponiveis.map((title) => ({
                   value: title.id,
                   label: title.name,
                 })),
+                ...(cargoAtualForaDaLista
+                  ? [
+                      {
+                        value: cargoAtualForaDaLista.id,
+                        label: cargoAtualForaDaLista.name,
+                        hint: "não existe nos times atuais",
+                      },
+                    ]
+                  : []),
               ]}
             />
           </div>
@@ -243,25 +307,54 @@ export function UserFile({
           </div>
         </Row>
 
-        <Row label="Time">
-          <Pastilhas
-            itens={rascunho.teamIds.map((id) => ({
-              chave: id,
-              titulo: nomeDoTime.get(id)?.name ?? "Removido da estrutura",
-              detalhe: nomeDoTime.get(id)?.path,
-            }))}
-            aoTirar={(id) => alternar("teamIds", id)}
-            seletor={
+        <Row label="Área e time">
+          <div className="space-y-2">
+            <div className="w-full max-w-sm">
               <Select
-                trigger="inline"
-                placeholder="+ Adicionar"
-                ariaLabel="Times, subsetores e setores"
-                values={rascunho.teamIds}
-                onToggleValue={(id) => alternar("teamIds", id)}
-                groups={agruparPorNivel(orgUnits)}
+                value={areaFiltro}
+                onValueChange={setAreaFiltro}
+                ariaLabel="Área"
+                size="sm"
+                placeholder="Escolha a área…"
+                options={areas.map((area) => ({
+                  value: area.id,
+                  label: area.name,
+                }))}
               />
-            }
-          />
+            </div>
+            <Pastilhas
+              itens={rascunho.teamIds.map((id) => ({
+                chave: id,
+                titulo: nomeDoTime.get(id)?.name ?? "Removido da estrutura",
+                detalhe: nomeDoTime.get(id)?.path,
+              }))}
+              aoTirar={(id) => alternar("teamIds", id)}
+              seletor={
+                <>
+                  <Select
+                    // Remontar ao trocar de área: a lista muda de conteúdo, e
+                    // sem isto o índice em foco apontaria para o time errado.
+                    key={areaFiltro}
+                    trigger="inline"
+                    placeholder="+ Adicionar time"
+                    ariaLabel="Times da área"
+                    values={rascunho.teamIds}
+                    onToggleValue={(id) => alternar("teamIds", id)}
+                    groups={agruparPorNivel(timesDaArea)}
+                  />
+                  {/* A área sempre está na lista — dá para pertencer direto a
+                      ela, que é o caso de quem dirige a área. O aviso é para a
+                      área recém-criada, em que só ela mesma aparece. */}
+                  {timesDaArea.length === 1 ? (
+                    <span className="text-xs text-slate-500">
+                      Esta área ainda não tem times. Cadastre em Administração ›
+                      Organização.
+                    </span>
+                  ) : null}
+                </>
+              }
+            />
+          </div>
         </Row>
 
         <Row label="Squads">
@@ -350,7 +443,7 @@ function Pastilhas({
 
 /** Agrupa o seletor por nível, com o nome que as pessoas usam. */
 function agruparPorNivel(unidades: OrgUnitOption[]): SelectGroup[] {
-  const ordem: OrgUnitKind[] = ["team", "subsector", "sector"];
+  const ordem: OrgUnitKind[] = ["team", "subarea", "area"];
   return ordem
     .map((kind) => ({
       label: ORG_UNIT_KIND_PLURALS[kind],

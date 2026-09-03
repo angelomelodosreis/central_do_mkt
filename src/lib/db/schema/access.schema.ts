@@ -108,7 +108,7 @@ export type ScopeType = (typeof SCOPE_TYPES)[number];
 
 export const SCOPE_TYPE_LABELS: Record<ScopeType, string> = {
   organization: "Toda a organização",
-  org_unit: "Setor, subsetor ou time",
+  org_unit: "Área, subárea ou time",
   division: "Divisão de negócio",
   business_unit: "Business Unit",
   squad: "Squad",

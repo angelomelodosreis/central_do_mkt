@@ -28,6 +28,8 @@ type TitleRow = {
   suggestedTeamId: string | null;
   suggestedTeamName: string | null;
   peopleCount: number;
+  teamIds: string[];
+  teamNames: string[];
 };
 
 /**
@@ -144,9 +146,9 @@ export function JobTitlesPanel({
                         ) : null}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {title.suggestedTeamName
-                          ? `costuma ser de ${title.suggestedTeamName}`
-                          : "sem time definido"}
+                        {title.teamNames.length > 0
+                          ? title.teamNames.join(" · ")
+                          : "qualquer time"}
                       </p>
                     </div>
 
@@ -244,6 +246,77 @@ function opcoesDeUnidade(units: UnitRef[]) {
   }));
 }
 
+/**
+ * Em que times o cargo existe.
+ *
+ * Substitui o "costuma ficar em", que era uma dica e não restringia nada. Com
+ * Corpo Docente e Comercial na plataforma, oferecer "Coordenador Médico" para
+ * alguém do Design deixou de ser um detalhe e virou ruído numa lista de
+ * dezenas de cargos.
+ *
+ * Nenhum time marcado quer dizer "vale em qualquer um" — é o que "Estagiário"
+ * deve continuar sendo, e é o estado em que todos os cargos antigos ficaram.
+ */
+function TimesDoCargo({
+  units,
+  iniciais,
+}: {
+  units: UnitRef[];
+  iniciais: string[];
+}) {
+  const [escolhidos, setEscolhidos] = useState<string[]>(iniciais);
+  const nome = new Map(units.map((unit) => [unit.id, unit.name]));
+
+  return (
+    <Field
+      label="Existe nos times"
+      hint="Nenhum marcado = vale em qualquer time."
+    >
+      {escolhidos.map((id) => (
+        <input key={id} type="hidden" name="teamIds" value={id} />
+      ))}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {escolhidos.map((id) => (
+          <span
+            key={id}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white py-1 pl-2.5 pr-1 text-sm"
+          >
+            <span className="truncate text-slate-900">
+              {nome.get(id) ?? "removido"}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                setEscolhidos((atual) => atual.filter((item) => item !== id))
+              }
+              aria-label={`Tirar ${nome.get(id) ?? id}`}
+              className="rounded px-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            >
+              ✕
+            </button>
+          </span>
+        ))}
+        <Select
+          trigger="inline"
+          placeholder={
+            escolhidos.length === 0 ? "Escolher times…" : "+ Adicionar"
+          }
+          ariaLabel="Times em que o cargo existe"
+          values={escolhidos}
+          onToggleValue={(id) =>
+            setEscolhidos((atual) =>
+              atual.includes(id)
+                ? atual.filter((item) => item !== id)
+                : [...atual, id],
+            )
+          }
+          options={opcoesDeUnidade(units)}
+        />
+      </div>
+    </Field>
+  );
+}
+
 function NewTitleDrawer({
   open,
   units,
@@ -303,21 +376,7 @@ function NewTitleDrawer({
           />
         </Field>
 
-        <Field
-          label="Costuma ficar em"
-          htmlFor="title-team"
-          hint="Opcional. Só agrupa o seletor — não impede dar o cargo a alguém de outro time."
-        >
-          <Select
-            id="title-team"
-            name="suggestedTeamId"
-            defaultValue=""
-            options={[
-              { value: "", label: "Nenhuma" },
-              ...opcoesDeUnidade(units),
-            ]}
-          />
-        </Field>
+        <TimesDoCargo units={units} iniciais={[]} />
 
         <Button type="submit" variant="primary" disabled={isPending}>
           {isPending ? "Criando…" : "Criar cargo"}
@@ -375,17 +434,7 @@ function EditTitleDrawer({
             />
           </Field>
 
-          <Field label="Costuma ficar em" htmlFor="edit-title-team">
-            <Select
-              id="edit-title-team"
-              name="suggestedTeamId"
-              defaultValue={title.suggestedTeamId ?? ""}
-              options={[
-                { value: "", label: "Nenhuma" },
-                ...opcoesDeUnidade(units),
-              ]}
-            />
-          </Field>
+          <TimesDoCargo key={title.id} units={units} iniciais={title.teamIds} />
 
           <p className="text-xs text-slate-500">
             {title.peopleCount > 0

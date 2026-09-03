@@ -118,6 +118,7 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     name: unit.name,
     kind: unit.kind,
     path: unit.path,
+    areaId: unit.areaId,
   }));
 
   return (
@@ -138,6 +139,7 @@ export default async function UserDetailPage({ params }: { params: Params }) {
           (title) => ({
             id: title.id,
             name: title.name,
+            teamIds: title.teamIds,
           }),
         )}
         orgUnits={orgUnits}

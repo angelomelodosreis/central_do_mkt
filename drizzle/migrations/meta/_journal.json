@@ -127,6 +127,13 @@
       "when": 1788437625565,
       "tag": "0017_tarefas_recorrentes",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1788439350019,
+      "tag": "0018_areas_e_cargos_por_time",
+      "breakpoints": true
     }
   ]
 }

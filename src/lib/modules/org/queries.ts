@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db/client";
 import {
   businessUnit,
   jobTitle,
+  jobTitleTeam,
   team,
   teamMember,
   user,
@@ -40,6 +41,14 @@ export type OrgUnitRow = Team & {
   path: string;
   depth: number;
   childIds: string[];
+  /**
+   * A área no topo da árvore desta unidade.
+   *
+   * Uma área é a própria área. Vem calculado do servidor porque é o que a
+   * cascata Área → Time usa para filtrar, e refazer a subida da árvore no
+   * cliente exigiria mandar a árvore inteira junto.
+   */
+  areaId: string;
 };
 
 /**
@@ -79,8 +88,16 @@ export async function listOrgUnits(): Promise<OrgUnitRow[]> {
         fila.push(...atual.children);
       }
 
+      let raiz = node;
+      while (raiz.parentOrgUnitId) {
+        const pai = arvore.byId.get(raiz.parentOrgUnitId);
+        if (!pai) break;
+        raiz = pai;
+      }
+
       return {
         ...porId.get(node.id)!,
+        areaId: raiz.id,
         memberCount: diretos.get(node.id) ?? 0,
         totalMemberCount: total,
         path: describePath(arvore, node.id),
@@ -112,6 +129,9 @@ export type JobTitleRow = JobTitle & {
   /** Quantas pessoas ocupam o cargo — cargo ocupado não pode ser excluído. */
   peopleCount: number;
   suggestedTeamName: string | null;
+  /** Times em que o cargo existe. Vazio = vale em qualquer time. */
+  teamIds: string[];
+  teamNames: string[];
 };
 
 /**
@@ -124,10 +144,11 @@ export type JobTitleRow = JobTitle & {
 export async function listJobTitles(): Promise<JobTitleRow[]> {
   const db = await getDb();
 
-  const [titles, people, units] = await Promise.all([
+  const [titles, people, units, vinculos] = await Promise.all([
     db.select().from(jobTitle),
     db.select({ jobTitleId: user.jobTitleId }).from(user),
     db.select({ id: team.id, name: team.name }).from(team),
+    db.select().from(jobTitleTeam),
   ]);
 
   const contagem = new Map<string, number>();
@@ -140,21 +161,59 @@ export async function listJobTitles(): Promise<JobTitleRow[]> {
     units.map((unidade) => [unidade.id, unidade.name]),
   );
 
-  return sortByName(titles, (title) => title.name).map((title) => ({
-    ...title,
-    peopleCount: contagem.get(title.id) ?? 0,
-    suggestedTeamName: title.suggestedTeamId
-      ? (nomeDaUnidade.get(title.suggestedTeamId) ?? null)
-      : null,
-  }));
+  const timesPorCargo = new Map<string, string[]>();
+  for (const vinculo of vinculos) {
+    const lista = timesPorCargo.get(vinculo.jobTitleId) ?? [];
+    lista.push(vinculo.teamId);
+    timesPorCargo.set(vinculo.jobTitleId, lista);
+  }
+
+  return sortByName(titles, (title) => title.name).map((title) => {
+    const teamIds = timesPorCargo.get(title.id) ?? [];
+    return {
+      ...title,
+      peopleCount: contagem.get(title.id) ?? 0,
+      suggestedTeamName: title.suggestedTeamId
+        ? (nomeDaUnidade.get(title.suggestedTeamId) ?? null)
+        : null,
+      teamIds,
+      teamNames: teamIds
+        .map((id) => nomeDaUnidade.get(id))
+        .filter((nome): nome is string => Boolean(nome))
+        .sort(),
+    };
+  });
 }
 
 /** Cargos ativos, para os seletores. */
-export async function listActiveJobTitles(): Promise<JobTitle[]> {
+export type ActiveJobTitle = JobTitle & {
+  /** Times em que o cargo existe. Vazio = vale em qualquer time. */
+  teamIds: string[];
+};
+
+/**
+ * Cargos ativos para os seletores, cada um com os times em que existe.
+ *
+ * Os times vêm junto porque é a tela que filtra: mandar só os cargos
+ * obrigaria uma segunda consulta do lado do cliente, ou — pior — filtrar por
+ * nome.
+ */
+export async function listActiveJobTitles(): Promise<ActiveJobTitle[]> {
   const db = await getDb();
-  const titles = await db
-    .select()
-    .from(jobTitle)
-    .where(eq(jobTitle.isActive, true));
-  return sortByName(titles, (title) => title.name);
+  const [titles, vinculos] = await Promise.all([
+    db.select().from(jobTitle).where(eq(jobTitle.isActive, true)),
+    db.select().from(jobTitleTeam),
+  ]);
+
+  const timesPorCargo = new Map<string, string[]>();
+  for (const vinculo of vinculos) {
+    const lista = timesPorCargo.get(vinculo.jobTitleId) ?? [];
+    lista.push(vinculo.teamId);
+    timesPorCargo.set(vinculo.jobTitleId, lista);
+  }
+
+  return sortByName(titles, (title) => title.name).map((title) => ({
+    ...title,
+    teamIds: timesPorCargo.get(title.id) ?? [],
+  }));
 }

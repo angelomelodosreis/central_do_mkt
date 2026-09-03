@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import type { OrgFormState } from "./form-state";
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
   jobTitle,
+  jobTitleTeam,
   squad,
   squadMember,
   team,
@@ -239,6 +240,39 @@ export async function toggleOrgUnit(formData: FormData): Promise<void> {
 // Cargos — catálogo global
 // ---------------------------------------------------------------------------
 
+/**
+ * Regrava em que times o cargo existe.
+ *
+ * Apaga e reinsere em vez de calcular a diferença: são no máximo alguns
+ * vínculos por cargo, e a diferença aqui custaria mais código do que economiza
+ * escrita.
+ *
+ * Lista vazia é significativa — quer dizer "vale em qualquer time" — então
+ * apagar tudo e não inserir nada é um estado válido, não um erro.
+ */
+async function gravarTimesDoCargo(jobTitleId: string, teamIds: string[]) {
+  const db = await getDb();
+  await db.delete(jobTitleTeam).where(eq(jobTitleTeam.jobTitleId, jobTitleId));
+
+  const validos =
+    teamIds.length > 0
+      ? (
+          await db
+            .select({ id: team.id })
+            .from(team)
+            .where(inArray(team.id, teamIds))
+        ).map((linha) => linha.id)
+      : [];
+
+  for (const teamId of validos) {
+    await db.insert(jobTitleTeam).values({
+      id: newId("jtt"),
+      jobTitleId,
+      teamId,
+    });
+  }
+}
+
 export async function createJobTitle(
   _previousState: OrgFormState,
   formData: FormData,
@@ -267,7 +301,8 @@ export async function createJobTitle(
     return { status: "error", message: `Já existe o cargo "${name}".` };
   }
 
-  const suggestedTeamId = field(formData, "suggestedTeamId") || null;
+  const teamIds = formData.getAll("teamIds").map(String).filter(Boolean);
+  const suggestedTeamId = teamIds[0] ?? null;
   const sortOrderRaw = Number(field(formData, "sortOrder"));
   const jobTitleId = newId("job");
   const now = new Date();
@@ -284,6 +319,8 @@ export async function createJobTitle(
     createdAt: now,
     updatedAt: now,
   });
+
+  await gravarTimesDoCargo(jobTitleId, teamIds);
 
   await writeAuditLog({
     actorUserId: admin.id,
@@ -315,7 +352,8 @@ export async function updateJobTitle(formData: FormData): Promise<void> {
     .get();
   if (!before) return;
 
-  const suggestedTeamId = field(formData, "suggestedTeamId") || null;
+  const teamIds = formData.getAll("teamIds").map(String).filter(Boolean);
+  const suggestedTeamId = teamIds[0] ?? null;
   const sortOrderRaw = Number(field(formData, "sortOrder"));
 
   await db
@@ -330,6 +368,8 @@ export async function updateJobTitle(formData: FormData): Promise<void> {
       updatedAt: new Date(),
     })
     .where(eq(jobTitle.id, jobTitleId));
+
+  await gravarTimesDoCargo(jobTitleId, teamIds);
 
   await writeAuditLog({
     actorUserId: admin.id,
