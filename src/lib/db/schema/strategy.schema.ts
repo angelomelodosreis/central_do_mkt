@@ -179,14 +179,14 @@ export type TimelineItem = typeof timelineItem.$inferSelect;
 /**
  * ── METAS ──────────────────────────────────────────────────────────────────
  *
- * A meta é uma DEFINIÇÃO, não um acompanhamento.
+ * A meta é uma DEFINIÇÃO. O realizado mora ao lado, em `weekly_result`.
  *
- * O acompanhamento (realizado, atingimento, evolução mês a mês) vive num
- * dashboard fora desta plataforma. Aqui se registra o que a BU se comprometeu a
- * entregar e por quê — o que precisa ser escrito uma vez, revisado em conjunto e
- * consultado o ano inteiro. Guardar realizado aqui significaria pedir digitação
- * mensal de um número que outro sistema já tem, e duas fontes para a mesma
- * verdade sempre divergem.
+ * Por muito tempo estas tabelas guardaram só o compromisso, e este comentário
+ * explicava por quê: o realizado viria de um dashboard fora da plataforma, e
+ * duas fontes para a mesma verdade divergem. A premissa caiu — o dashboard de
+ * fora não existe de fato, e comparar BUs exige meta e realizado no mesmo
+ * lugar. As duas coisas continuam em tabelas separadas porque são naturezas
+ * diferentes: a meta se escreve uma vez por ciclo, o realizado toda semana.
  */
 
 /**

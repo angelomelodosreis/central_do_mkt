@@ -103,7 +103,7 @@ export default async function GoalsPage({
         title="Metas"
         // O nome do ciclo já costuma trazer o da BU ("Clínica Médica · 2026"),
         // então repetir a BU aqui soaria como erro de texto.
-        description={`O compromisso de ${cycle.name}. Aqui se define a meta; o acompanhamento fica no dashboard.`}
+        description={`O compromisso de ${cycle.name}. Quanto dele já foi feito aparece na visão geral; a conversa sobre ele, no Acompanhamento.`}
       />
 
       {divergencias.length > 0 ? (

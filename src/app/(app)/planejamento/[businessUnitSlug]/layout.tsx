@@ -65,6 +65,9 @@ export default async function BusinessUnitLayout({
   // Resultados fecha o ciclo do trabalho: diagnostica, se compromete, executa e
   // presta conta. É a única aba onde se digita número realizado.
   tabs.push({ href: `${base}/resultados`, label: "Resultados" });
+  // Acompanhamento fecha o ciclo: é onde o número vira conversa, a conversa
+  // vira decisão e a decisão vira tarefa de alguém.
+  tabs.push({ href: `${base}/acompanhamento`, label: "Acompanhamento" });
 
   if (can(currentUser, "documentation")) {
     tabs.push({

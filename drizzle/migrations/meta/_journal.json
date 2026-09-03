@@ -134,6 +134,13 @@
       "when": 1788439350019,
       "tag": "0018_areas_e_cargos_por_time",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1788440415434,
+      "tag": "0019_acompanhamento",
+      "breakpoints": true
     }
   ]
 }

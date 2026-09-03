@@ -41,6 +41,8 @@ export const AUDIT_ACTIONS = [
   "task_recurrence.create",
   "task_recurrence.update",
   "task_recurrence.delete",
+  "bu_review.create",
+  "bu_review.update",
   "weekly_result.update",
   "initiative_result.update",
   // Modelo de acesso: papel + escopo. As concessões de escopo são o que
