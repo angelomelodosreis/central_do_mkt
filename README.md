@@ -354,20 +354,21 @@ Nada disso é necessário para desenvolver localmente.
 
 ## Comandos disponíveis
 
-| Comando               | Para que serve                                              |
-| --------------------- | ----------------------------------------------------------- |
-| `npm run dev`         | Sobe a aplicação em <http://localhost:3000>                 |
-| `npm run setup:local` | Cria as tabelas e carrega os dados iniciais                 |
-| `npm run db:generate` | Gera uma nova migration depois de mudar o schema            |
-| `npm run db:migrate`  | Aplica as migrations no banco de `TURSO_DATABASE_URL`       |
-| `npm run db:seed`     | Recarrega os dados iniciais (seguro rodar de novo)          |
-| `npm run db:backup`   | Grava o banco inteiro em `backups/` como SQL                |
-| `npm run db:restore`  | Restaura um backup, substituindo o banco atual              |
-| `npm run db:snapshot` | Conta as linhas de cada tabela — para comparar antes/depois |
-| `npm run db:studio`   | Abre o Drizzle Studio para inspecionar o banco              |
-| `npm run typecheck`   | Confere os tipos do TypeScript                              |
-| `npm run build`       | Build de produção                                           |
-| `npm start`           | Roda o build de produção localmente                         |
+| Comando                         | Para que serve                                                      |
+| ------------------------------- | ------------------------------------------------------------------- |
+| `npm run dev`                   | Sobe a aplicação em <http://localhost:3000>                         |
+| `npm run setup:local`           | Cria as tabelas e carrega os dados iniciais                         |
+| `npm run db:generate`           | Gera uma nova migration depois de mudar o schema                    |
+| `npm run db:migrate`            | Aplica as migrations no banco de `TURSO_DATABASE_URL`               |
+| `npm run db:seed`               | Recarrega os dados iniciais (seguro rodar de novo)                  |
+| `node scripts/db-seed-demo.mjs` | Cria a BU **Demonstração**, com dados fictícios (`--remover` apaga) |
+| `npm run db:backup`             | Grava o banco inteiro em `backups/` como SQL                        |
+| `npm run db:restore`            | Restaura um backup, substituindo o banco atual                      |
+| `npm run db:snapshot`           | Conta as linhas de cada tabela — para comparar antes/depois         |
+| `npm run db:studio`             | Abre o Drizzle Studio para inspecionar o banco                      |
+| `npm run typecheck`             | Confere os tipos do TypeScript                                      |
+| `npm run build`                 | Build de produção                                                   |
+| `npm start`                     | Roda o build de produção localmente                                 |
 
 Os comandos de banco agem sobre o que estiver em `TURSO_DATABASE_URL` — o
 arquivo local, por padrão. Para mirar produção, passe a URL e o token na frente
