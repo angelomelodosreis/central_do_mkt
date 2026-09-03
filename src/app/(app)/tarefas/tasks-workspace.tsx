@@ -8,7 +8,7 @@ import {
   type AssignableTeam,
 } from "./new-task-drawer";
 import { TaskRow, type Destino, type TaskRowData } from "./task-row";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, EmptyState } from "@/components/ui/card";
 import { Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
@@ -238,9 +238,18 @@ export function TasksWorkspace({
               deleguei.some((item) => item.status === "blocked"),
           }))}
         />
-        <Button variant="primary" onClick={() => setCriando(true)}>
-          + Nova tarefa
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Recorrentes fica ao lado da criação porque é a outra forma de
+              colocar trabalho na fila — e não uma configuração escondida. */}
+          {podeDelegar ? (
+            <ButtonLink href="/tarefas/recorrentes" variant="secondary">
+              Recorrentes
+            </ButtonLink>
+          ) : null}
+          <Button variant="primary" onClick={() => setCriando(true)}>
+            + Nova tarefa
+          </Button>
+        </div>
       </div>
 
       <p className="text-sm text-slate-500">{VISAO_DESCRICOES[visao]}</p>

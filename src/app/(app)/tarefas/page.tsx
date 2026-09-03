@@ -7,6 +7,7 @@ import { can, requirePermission } from "@/lib/auth/session";
 import { seesEverything } from "@/lib/modules/access/scope";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { listOrgUnits } from "@/lib/modules/org/queries";
+import { materializeRecurrences } from "@/lib/modules/tasks/recurrence";
 import {
   listAllTasks,
   listAssignableUsers,
@@ -27,6 +28,12 @@ export default async function TasksPage() {
   // organização inteira ou por responder por alguma unidade.
   const podeVerTodas =
     seesEverything(currentUser.scope) || currentUser.scope.orgUnitIds.size > 0;
+
+  // As ocorrências vencidas nascem ANTES da leitura das listas: sem isto, a
+  // tarefa da semana só apareceria na segunda visita à tela. É aqui e não num
+  // agendador porque a plataforma não tem processo de fundo — e a primeira
+  // visita do dia resolve o mesmo problema sem infraestrutura nova.
+  await materializeRecurrences();
 
   const [paraMim, deleguei, todas, historico, people, teams, units] =
     await Promise.all([
@@ -66,6 +73,7 @@ export default async function TasksPage() {
     businessUnitSlug: item.businessUnitSlug,
     createdByName: item.createdByName,
     createdAt: item.createdAt.toISOString(),
+    recorrente: item.recurrenceId !== null,
     relation: relationFor(currentUser, item, { canDelegate: podeDelegar }),
   });
 

@@ -41,6 +41,8 @@ export type TaskRowData = {
   businessUnitSlug: string | null;
   createdByName: string | null;
   createdAt: string;
+  /** Nasceu de uma tarefa recorrente. */
+  recorrente?: boolean;
   relation: TaskRelation;
 };
 
@@ -172,6 +174,12 @@ export function TaskRow({
             ) : null}
             {task.createdByName ? (
               <span className="text-slate-500">· de {task.createdByName}</span>
+            ) : null}
+            {/* Uma palavra, e não uma etiqueta colorida: saber que a tarefa
+                volta toda semana muda como se decide adiá-la, mas não é mais
+                importante que o prazo ou a situação ao lado. */}
+            {task.recorrente ? (
+              <span className="text-slate-500">· recorrente</span>
             ) : null}
           </p>
 
