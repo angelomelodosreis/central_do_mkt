@@ -37,6 +37,9 @@ export const AUDIT_ACTIONS = [
   "job_title.toggle",
   "job_title.delete",
   "user.org_change",
+  // Resultados lançados à mão
+  "weekly_result.update",
+  "initiative_result.update",
   // Modelo de acesso: papel + escopo. As concessões de escopo são o que
   // explica por que alguém enxerga o que enxerga, então precisam de rastro.
   "access_grant.create",

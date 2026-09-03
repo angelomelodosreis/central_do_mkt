@@ -13,6 +13,7 @@ export const NAV_ICON_KEYS = [
   "docs",
   "personas",
   "strategy",
+  "panorama",
   "tasks",
   "org",
   "admin",
@@ -73,6 +74,12 @@ const ICONS: Record<
       <path d="M3 9.5h18" />
       <path d="M8 3v3M16 3v3" />
       <path d="M7.5 13h4M7.5 16.5h8" />
+    </Svg>
+  ),
+  panorama: (props) => (
+    <Svg {...props}>
+      <path d="M3.5 20.5h17" />
+      <path d="M6.5 20.5v-6M11 20.5V8M15.5 20.5v-9M20 20.5V4.5" />
     </Svg>
   ),
   tasks: (props) => (

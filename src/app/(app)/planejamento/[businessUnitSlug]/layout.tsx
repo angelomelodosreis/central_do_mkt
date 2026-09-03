@@ -62,6 +62,9 @@ export default async function BusinessUnitLayout({
   // trabalho — diagnostica, depois se compromete.
   tabs.push({ href: `${base}/diagnostico`, label: "Diagnóstico" });
   tabs.push({ href: `${base}/metas`, label: "Metas" });
+  // Resultados fecha o ciclo do trabalho: diagnostica, se compromete, executa e
+  // presta conta. É a única aba onde se digita número realizado.
+  tabs.push({ href: `${base}/resultados`, label: "Resultados" });
 
   if (can(currentUser, "documentation")) {
     tabs.push({

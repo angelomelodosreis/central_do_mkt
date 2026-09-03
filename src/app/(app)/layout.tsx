@@ -71,6 +71,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     });
   }
 
+  // Panorama vem depois de Planejamento porque é o que se lê DEPOIS de o
+  // planejamento existir: ele consolida o que cada BU lançou.
+  if (can(currentUser, "panorama")) {
+    items.push({
+      href: "/panorama",
+      label: "Panorama",
+      description: "Números e agenda das BUs",
+      icon: "panorama",
+    });
+  }
+
   if (can(currentUser, "tasks")) {
     items.push({
       href: "/tarefas",

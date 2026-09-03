@@ -32,6 +32,7 @@ export const MODULE_KEYS = [
   "documentation",
   "personas",
   "strategy",
+  "panorama",
   "tasks",
   "parameters",
   "admin",
@@ -43,6 +44,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   documentation: "Documentação",
   personas: "Personas",
   strategy: "Planejamento",
+  panorama: "Panorama",
   tasks: "Tarefas",
   // A chave continua `parameters` porque é ela que está gravada nas linhas da
   // matriz; o que mudou foi o alcance. Deixou de ser um menu à parte e passou a
@@ -57,6 +59,8 @@ export const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
   documentation: "Biblioteca de processos, bases e regras de negócio.",
   personas: "Personas de cada Business Unit.",
   strategy: "Planejamento anual, calendário, metas e diagnóstico das BUs.",
+  panorama:
+    "Números e agenda de todas as BUs de uma vez. Editar aqui é lançar o resultado semanal.",
   tasks: "Delegar tarefas. Executar as próprias não depende desta permissão.",
   parameters: "Criar e editar os modelos que o Gerador de Nomes monta.",
   admin: "Usuários, acessos, bases oficiais e auditoria.",

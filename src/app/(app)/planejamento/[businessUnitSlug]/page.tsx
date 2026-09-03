@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 
+import { ResultsSummary, type ResumoDeResultados } from "./results-summary";
 import { TaskRow, type TaskRowData } from "../../tarefas/task-row";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
@@ -20,6 +21,13 @@ import {
   loadCycleGoals,
   metricLabel,
 } from "@/lib/modules/strategy/goals";
+import {
+  INDICADORES,
+  inicioDaSemana,
+  somar,
+  type Indicador,
+} from "@/lib/modules/results/metrics";
+import { listWeeklyResultsOfPeriod } from "@/lib/modules/results/queries";
 import { listCycles, pickDefaultCycle } from "@/lib/modules/strategy/queries";
 import { TIMELINE_KIND_CONFIG } from "@/lib/modules/strategy/timeline-kinds";
 import { listTasksOfBusinessUnit } from "@/lib/modules/tasks/queries";
@@ -49,38 +57,103 @@ export default async function BusinessUnitOverviewPage({
   const agora = new Date();
   const limite = new Date(agora.getTime() + HORIZONTE_DIAS * 86_400_000);
 
-  const [proximos, dores, docs, tarefas, equipe, metas] = await Promise.all([
-    cycle
-      ? db
-          .select()
-          .from(timelineItem)
-          .where(
-            and(
-              eq(timelineItem.cycleId, cycle.id),
-              // Item que já começou mas ainda não terminou também conta como
-              // "o que vem": uma janela de venda aberta é justamente o que está
-              // em jogo agora.
-              gte(timelineItem.endsAt, agora),
-              lte(timelineItem.startsAt, limite),
+  const [proximos, dores, docs, tarefas, equipe, metas, semanais] =
+    await Promise.all([
+      cycle
+        ? db
+            .select()
+            .from(timelineItem)
+            .where(
+              and(
+                eq(timelineItem.cycleId, cycle.id),
+                // Item que já começou mas ainda não terminou também conta como
+                // "o que vem": uma janela de venda aberta é justamente o que está
+                // em jogo agora.
+                gte(timelineItem.endsAt, agora),
+                lte(timelineItem.startsAt, limite),
+              ),
+            )
+            .orderBy(asc(timelineItem.startsAt))
+            .limit(8)
+        : Promise.resolve([]),
+      can(currentUser, "personas")
+        ? listOpenPainsOfBusinessUnit(unit.id)
+        : Promise.resolve([]),
+      can(currentUser, "documentation")
+        ? listBusinessUnitDocs(unit.id, currentUser)
+        : Promise.resolve([]),
+      can(currentUser, "tasks")
+        ? listTasksOfBusinessUnit(unit.id)
+        : Promise.resolve([]),
+      listBusinessUnitMembers(unit.id),
+      cycle ? loadCycleGoals(cycle.id) : Promise.resolve(null),
+      cycle
+        ? listWeeklyResultsOfPeriod(
+            [unit.id],
+            // O mais antigo entre o começo do ciclo e oito semanas atrás: o
+            // primeiro alimenta a comparação com a meta, o segundo alimenta a
+            // variação recente de uma BU cujo ciclo começou ontem.
+            new Date(
+              Math.min(
+                cycle.startsAt.getTime(),
+                inicioDaSemana(agora).getTime() - 8 * 7 * 86_400_000,
+              ),
             ),
+            agora,
           )
-          .orderBy(asc(timelineItem.startsAt))
-          .limit(8)
-      : Promise.resolve([]),
-    can(currentUser, "personas")
-      ? listOpenPainsOfBusinessUnit(unit.id)
-      : Promise.resolve([]),
-    can(currentUser, "documentation")
-      ? listBusinessUnitDocs(unit.id, currentUser)
-      : Promise.resolve([]),
-    can(currentUser, "tasks")
-      ? listTasksOfBusinessUnit(unit.id)
-      : Promise.resolve([]),
-    listBusinessUnitMembers(unit.id),
-    cycle ? loadCycleGoals(cycle.id) : Promise.resolve(null),
-  ]);
+        : Promise.resolve([]),
+    ]);
 
   const semestreEmCurso = cycle ? currentSemester(cycle) : null;
+
+  // ── Resumo dos resultados ─────────────────────────────────────────────────
+  // Quatro semanas contra as quatro anteriores: é o horizonte em que uma
+  // mudança de rota ainda cabe. Trimestre é balanço, semana é ruído.
+  const SEMANAS_COMPARADAS = 4;
+  const semanaAtual = inicioDaSemana(agora);
+  const corteRecente =
+    semanaAtual.getTime() - SEMANAS_COMPARADAS * 7 * 86_400_000;
+  const corteAnterior = corteRecente - SEMANAS_COMPARADAS * 7 * 86_400_000;
+
+  const noPeriodo = (de: number, ate: number) =>
+    semanais.filter(
+      (linha) =>
+        linha.weekStart.getTime() >= de && linha.weekStart.getTime() < ate,
+    );
+
+  const alvosDoCiclo = (metas?.cycle?.targets ?? []).filter(
+    (alvo): alvo is typeof alvo & { metric: Indicador } =>
+      INDICADORES.some((indicador) => indicador.metric === alvo.metric),
+  );
+
+  const resumo: ResumoDeResultados = {
+    recente: somar(noPeriodo(corteRecente, semanaAtual.getTime())),
+    anterior: somar(noPeriodo(corteAnterior, corteRecente)),
+    semanasComparadas: SEMANAS_COMPARADAS,
+    noCiclo: somar(
+      cycle
+        ? semanais.filter(
+            (linha) => linha.weekStart.getTime() >= cycle.startsAt.getTime(),
+          )
+        : [],
+    ),
+    // A miniatura mostra as últimas semanas lançadas, e não as do ciclo: um
+    // ciclo que ainda não começou (o de 2027 aberto em setembro de 2026)
+    // deixaria a tendência em branco justamente para quem já está lançando.
+    serie: semanais
+      .slice()
+      .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
+      .slice(-13)
+      .map((linha) => ({
+        weekStart: linha.weekStart.getTime(),
+        revenue: linha.revenue,
+      })),
+    metas: alvosDoCiclo.map((alvo) => ({
+      metric: alvo.metric,
+      alvo: alvo.target,
+    })),
+    vazio: semanais.length === 0,
+  };
 
   if (!cycle) {
     return (
@@ -100,6 +173,8 @@ export default async function BusinessUnitOverviewPage({
 
   return (
     <div className="space-y-6">
+      <ResultsSummary resumo={resumo} base={base} canEdit={canEdit} />
+
       {/*
         A meta como direção, não como placar.
         O objetivo do ciclo e o do semestre em curso são o que orienta decisão

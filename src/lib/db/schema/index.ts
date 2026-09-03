@@ -9,5 +9,6 @@ export * from "./name-generator.schema";
 export * from "./personas.schema";
 export * from "./strategy.schema";
 export * from "./diagnosis.schema";
+export * from "./results.schema";
 export * from "./tasks.schema";
 export * from "./files.schema";
