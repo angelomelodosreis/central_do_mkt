@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
 
-import { deleteUser, saveUserFile } from "./actions";
+import { deleteUser, resetTwoFactor, saveUserFile } from "./actions";
 import { approveUser, reactivateUser, suspendUser } from "../actions";
 import { Avatar } from "@/components/org/person-card";
 import { StatusBadge } from "@/components/ui/badge";
@@ -42,6 +42,8 @@ export type UserFileData = {
   status: UserStatus;
   role: UserRole;
   isSuperAdmin: boolean;
+  /** Se a pessoa já registrou o aplicativo autenticador. */
+  twoFactorEnabled: boolean;
   jobTitleId: string | null;
   createdAt: string;
   teams: Array<{ teamId: string }>;
@@ -391,6 +393,10 @@ export function UserFile({
           />
         </Row>
 
+        <Row label="Verificação em duas etapas">
+          <SegundoFator person={person} />
+        </Row>
+
         <Rodape
           person={person}
           isSelf={isSelf}
@@ -645,6 +651,70 @@ function Cabecalho({
           </Button>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Situação do segundo fator, e o botão que o redefine.
+ *
+ * Fica na ficha e não numa tela própria porque a pergunta só aparece junto com
+ * a pessoa: "fulano perdeu o celular". A confirmação em dois passos existe
+ * porque redefinir DERRUBA as sessões dela — quem clicar sem querer tira
+ * alguém do meio do trabalho.
+ */
+function SegundoFator({ person }: { person: UserFileData }) {
+  const [confirmando, setConfirmando] = useState(false);
+
+  if (!person.twoFactorEnabled) {
+    return (
+      <p className="text-sm text-slate-500">
+        Ainda não cadastrou o aplicativo. Vai cadastrar no próximo acesso.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="text-sm text-slate-700">Aplicativo cadastrado.</p>
+        {confirmando ? null : (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmando(true)}
+          >
+            Redefinir
+          </Button>
+        )}
+      </div>
+
+      {confirmando ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <p className="min-w-0 flex-1 text-sm text-slate-700">
+            Redefinir apaga o cadastro do aplicativo e encerra as sessões
+            abertas de {person.name}. A pessoa entra pelo Google e cadastra o
+            aplicativo de novo.
+          </p>
+          <Button
+            type="submit"
+            formAction={resetTwoFactor}
+            size="sm"
+            variant="secondary"
+          >
+            Redefinir
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmando(false)}
+          >
+            Cancelar
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

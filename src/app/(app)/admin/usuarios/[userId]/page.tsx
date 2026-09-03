@@ -6,7 +6,13 @@ import { eq } from "drizzle-orm";
 import { UserFile, type OrgUnitOption, type UserFileData } from "./user-file";
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { businessDivision, businessUnit, squad, user } from "@/lib/db/schema";
+import {
+  businessDivision,
+  businessUnit,
+  squad,
+  twoFactor,
+  user,
+} from "@/lib/db/schema";
 import { listGrantsForUser } from "@/lib/modules/access/explain";
 import { loadPositions, loadSquads } from "@/lib/modules/org/people";
 import { listActiveJobTitles, listOrgUnits } from "@/lib/modules/org/queries";
@@ -92,6 +98,19 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     listGrantsForUser(alvo.id),
   ]);
 
+  // O sinal de cadastro concluído é `two_factor.verified`, e não
+  // `user.two_factor_enabled`: este último é ligado assim que a pessoa gera o
+  // segredo, antes de ela confirmar o primeiro código — ver
+  // `ligarFatorSemTrocarSessao` em src/lib/auth/two-factor.ts.
+  const cadastrouOAplicativo =
+    (
+      await db
+        .select({ verified: twoFactor.verified })
+        .from(twoFactor)
+        .where(eq(twoFactor.userId, alvo.id))
+        .get()
+    )?.verified === true;
+
   const person: UserFileData = {
     id: alvo.id,
     name: alvo.name,
@@ -99,6 +118,7 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     status: alvo.status,
     role: alvo.role,
     isSuperAdmin: alvo.isSuperAdmin,
+    twoFactorEnabled: cadastrouOAplicativo,
     jobTitleId: alvo.jobTitleId,
     createdAt: alvo.createdAt.toISOString(),
     teams: (positions.get(alvo.id) ?? []).map((position) => ({

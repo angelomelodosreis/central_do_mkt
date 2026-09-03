@@ -5,6 +5,10 @@ import { and, eq } from "drizzle-orm";
 
 import { getAuth } from "./auth";
 import {
+  lerEstadoDoSegundoFator,
+  type EstadoDoSegundoFator,
+} from "./two-factor";
+import {
   getPermissionsForRole,
   hasPermission,
   type ModulePermission,
@@ -30,6 +34,13 @@ import { loadPositions, type Position } from "@/lib/modules/org/people";
 
 export type CurrentUser = {
   id: string;
+  /**
+   * A sessão em que a pessoa está agora.
+   *
+   * Necessário porque o segundo fator é confirmado POR SESSÃO — ver
+   * `src/lib/auth/two-factor.ts`.
+   */
+  sessionId: string;
   name: string;
   email: string;
   image: string | null;
@@ -58,6 +69,8 @@ export type CurrentUser = {
   /** SOBRE O QUE a pessoa pode agir. A outra metade do modelo de acesso. */
   scope: EffectiveScope;
   permissions: PermissionMap;
+  /** Cadastro do app autenticador e confirmação desta sessão. */
+  segundoFator: EstadoDoSegundoFator;
 };
 
 /**
@@ -113,21 +126,24 @@ export const getCurrentUser = cache(
 
     const status: UserStatus = domainStillAllowed ? row.status : "suspended";
 
-    const [positions, permissions, scope] = await Promise.all([
+    const [positions, permissions, scope, segundoFator] = await Promise.all([
       loadPositions([row.id]),
       getPermissionsForRole(row.role),
       resolveScope({ id: row.id, isSuperAdmin: row.isSuperAdmin }),
+      lerEstadoDoSegundoFator(row.id, session.session.id),
     ]);
 
     const minhasPosicoes = positions.get(row.id) ?? [];
 
     return {
       ...row,
+      sessionId: session.session.id,
       status,
       positions: minhasPosicoes,
       teamIds: minhasPosicoes.map((position) => position.teamId),
       scope,
       permissions,
+      segundoFator,
     };
   },
 );
@@ -137,6 +153,29 @@ export const getCurrentUser = cache(
  * Use no layout do grupo de rotas autenticadas e em toda server action.
  */
 export async function requireUser(): Promise<CurrentUser> {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) redirect("/login");
+  if (currentUser.status === "pending") redirect("/aguardando-aprovacao");
+  if (currentUser.status === "suspended") redirect("/acesso-suspenso");
+
+  // O segundo fator vem depois da situação do cadastro de propósito: não faz
+  // sentido pedir que alguém registre um app autenticador para uma conta que
+  // ainda pode nunca ser aprovada.
+  if (!currentUser.segundoFator.cadastrado) redirect("/verificacao/cadastrar");
+  if (!currentUser.segundoFator.confirmado) redirect("/verificacao");
+
+  return currentUser;
+}
+
+/**
+ * Sessão válida e cadastro aprovado, SEM exigir o segundo fator.
+ *
+ * É o portão das próprias telas de verificação. Usar `requireUser()` nelas
+ * criaria um redirecionamento em círculo: a tela que resolve a pendência não
+ * pode ser a mesma que a pendência bloqueia.
+ */
+export async function requireUserForTwoFactor(): Promise<CurrentUser> {
   const currentUser = await getCurrentUser();
 
   if (!currentUser) redirect("/login");
@@ -222,4 +261,4 @@ export function can(
 }
 
 export type { ModulePermission, PermissionMap, PermissionAction };
-export type { Position, EffectiveScope };
+export type { Position, EffectiveScope, EstadoDoSegundoFator };

@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins/two-factor";
 import { count, eq, like, not } from "drizzle-orm";
 
 import {
@@ -165,7 +166,33 @@ function buildAuth(db: Awaited<ReturnType<typeof getDb>>) {
       },
     },
 
-    // Deve ser o último plugin: cuida da escrita dos cookies em server actions.
-    plugins: [nextCookies()],
+    plugins: [
+      /**
+       * Segundo fator por app autenticador (TOTP).
+       *
+       * O plugin cuida do segredo, da cifra, dos códigos de recuperação e da
+       * conta de tentativas erradas. O que ele NÃO faz aqui é interceptar o
+       * login: a interceptação dele cobre só login por senha
+       * (`/sign-in/email` e afins), e nesta plataforma o login é o do Google.
+       * A exigência em si é nossa e mora em `requireUser()` — ver
+       * `src/lib/auth/two-factor.ts`.
+       *
+       * `allowPasswordless` é obrigatório justamente por isso: ninguém aqui
+       * tem senha para confirmar antes de cadastrar ou desligar o fator, e sem
+       * essa opção o plugin recusaria toda tentativa.
+       *
+       * Pela mesma razão, o limite de tentativas do plugin não vale para nós:
+       * ele só conta erros quando NÃO há sessão, e no nosso fluxo sempre há.
+       * O nosso limite está em `src/lib/auth/two-factor.ts`, usando as mesmas
+       * colunas.
+       */
+      twoFactor({
+        issuer: "Central do Marketing",
+        allowPasswordless: true,
+      }),
+
+      // Deve ser o último plugin: cuida da escrita dos cookies em server actions.
+      nextCookies(),
+    ],
   });
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import { requireAdmin } from "@/lib/auth/session";
+import { resetarSegundoFator } from "@/lib/auth/two-factor";
 import { getDb } from "@/lib/db/client";
 import {
   accessGrant,
@@ -487,4 +488,44 @@ export async function deleteUser(formData: FormData): Promise<void> {
 
   revalidateTudo();
   redirect("/admin/usuarios");
+}
+
+/**
+ * Apaga o cadastro do aplicativo autenticador de alguém.
+ *
+ * É o que se faz quando a pessoa perde o celular e não guardou os códigos de
+ * recuperação — sem isso ela ficaria trancada para fora para sempre.
+ *
+ * Derrubar as sessões faz parte da operação, e não é zelo excessivo: uma
+ * sessão já confirmada continuaria valendo, e o reset viraria uma forma
+ * silenciosa de manter acesso sem passar por segundo fator nenhum. Quem for
+ * redefinido volta pelo Google e cadastra o aplicativo de novo.
+ */
+export async function resetTwoFactor(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+
+  const userId = field(formData, "userId");
+  if (!userId) return;
+
+  const db = await getDb();
+  const pessoa = await db
+    .select({ id: user.id, name: user.name, email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .get();
+
+  if (!pessoa) return;
+
+  await resetarSegundoFator(userId);
+
+  await writeAuditLog({
+    actorUserId: admin.id,
+    actorEmail: admin.email,
+    action: "user.two_factor_reset",
+    entityType: "user",
+    entityId: userId,
+    summary: `Redefiniu a verificação em duas etapas de ${pessoa.name} (${pessoa.email})`,
+  });
+
+  revalidatePath(`/admin/usuarios/${userId}`);
 }

@@ -13,6 +13,12 @@ export const AUDIT_ACTIONS = [
   "user.reactivate",
   "user.role_change", // reversível
   "user.delete",
+  // Segundo fator. O rastro importa nos três momentos: quem cadastrou o app,
+  // quem precisou usar um código de recuperação (sinal de celular perdido ou
+  // de conta em risco) e quem redefiniu o cadastro de outra pessoa.
+  "user.two_factor_enabled",
+  "user.two_factor_backup_used",
+  "user.two_factor_reset",
   "allowed_domain.create",
   "allowed_domain.toggle", // reversível
   "role_permission.update", // reversível

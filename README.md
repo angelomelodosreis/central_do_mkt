@@ -198,20 +198,57 @@ sessão"_ fica apenas no navegador da pessoa e some quando ela sai da plataforma
 
 ## Parte 2 — Como a segurança funciona
 
-São quatro camadas independentes. Uma falhar não abre a porta:
+São cinco camadas independentes. Uma falhar não abre a porta:
 
 1. **Domínio de e-mail** — só e-mails dos domínios cadastrados em
    _Administração → Domínios de e-mail_ conseguem criar cadastro. Qualquer outra
    conta Google é recusada antes de qualquer dado ser gravado.
 2. **Aprovação manual** — todo cadastro novo nasce _pendente_ e não acessa nada
    até um administrador aprovar.
-3. **Papel e permissões** — cada papel (Administrador, Líder, Membro) tem
+3. **Verificação em duas etapas** — depois do login do Google, a plataforma
+   pede um código de seis dígitos gerado num aplicativo autenticador. Vale para
+   todo mundo, sem exceção por papel (ver abaixo).
+4. **Papel e permissões** — cada papel (Administrador, Líder, Membro) tem
    permissão de ver/editar por módulo, configurável em
    _Administração → Permissões_ sem precisar mexer no código.
-4. **Revalidação a cada acesso** — a cada página aberta, a plataforma reconfere no
+5. **Revalidação a cada acesso** — a cada página aberta, a plataforma reconfere no
    banco se a pessoa continua ativa e se o domínio dela continua autorizado.
    Por isso, suspender alguém tem efeito imediato: as sessões dele são derrubadas
    na hora, sem esperar expirar.
+
+### Verificação em duas etapas (TOTP)
+
+**Como funciona para quem usa.** No primeiro acesso depois desta versão, a
+plataforma pede o cadastro de um aplicativo autenticador — Google
+Authenticator, Authy, Microsoft Authenticator, ou a função equivalente do
+1Password e do Bitwarden. É ler um QR e digitar o código que o aplicativo
+mostra. Feito isso, aparecem **dez códigos de recuperação**, que servem uma vez
+cada e são a saída quando o celular não está à mão. Eles aparecem uma única
+vez.
+
+Depois do cadastro, o código é pedido **uma vez por sessão** — na prática, mais
+ou menos uma vez por semana.
+
+**Por que aplicativo e não código por e-mail.** O código por e-mail chegaria na
+mesma caixa do Google que acabou de autenticar a pessoa: quem tomasse a conta
+de e-mail passaria pelos dois fatores, e o segundo fator não seria segundo
+fator nenhum. Além disso, e-mail exigiria contratar um serviço de envio.
+
+**Quando alguém perde o celular sem ter os códigos.** Um administrador abre a
+ficha da pessoa em _Administração → Usuários e acessos_ e clica em **Redefinir**
+na linha _Verificação em duas etapas_. Isso apaga o cadastro do aplicativo e
+encerra as sessões abertas dela — as duas coisas juntas, de propósito: sem
+encerrar as sessões, a redefinição viraria uma forma silenciosa de manter
+acesso sem passar por segundo fator.
+
+**Uma consequência que vale saber.** Os segredos são guardados cifrados com uma
+chave derivada de `BETTER_AUTH_SECRET`. Trocar essa variável invalida o
+cadastro de todo mundo, e cada pessoa precisa registrar o aplicativo de novo.
+
+**No modo de teste local**, a própria tela mostra o código válido no momento —
+dá para conhecer a plataforma sem instalar aplicativo nenhum. Isso não existe
+em produção: o recurso é eliminado do código publicado, como o resto do modo de
+teste.
 
 **Trilha de auditoria.** Toda ação relevante fica registrada em
 _Administração → Auditoria_: quem fez, o quê, quando, e o estado anterior.
