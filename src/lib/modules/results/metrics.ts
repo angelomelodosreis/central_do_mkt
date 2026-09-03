@@ -67,6 +67,16 @@ export const INDICADORES = [
   { metric: "roas", derivado: true },
 ] as const satisfies ReadonlyArray<{ metric: GoalMetric; derivado: boolean }>;
 
+/**
+ * Investimento em mídia fica FORA da faixa de oito.
+ *
+ * Ele é um número-base como faturamento, mas não é um indicador de
+ * desempenho: gastar mais não é bom nem ruim por si só — o que importa é o
+ * CPL e o CAC, que já estão ali. Aparece onde a leitura pede o valor bruto,
+ * como no roteiro da reunião.
+ */
+export const INVESTIMENTO = "media_spend" as const satisfies GoalMetric;
+
 export type Indicador = (typeof INDICADORES)[number]["metric"];
 
 /**
@@ -75,7 +85,11 @@ export type Indicador = (typeof INDICADORES)[number]["metric"];
  * Sem isto, a variação percentual seria pintada de verde sempre que subisse — e
  * um CPL que sobe 40% não é uma boa notícia.
  */
-export const SENTIDO: Record<Indicador, "sobe" | "desce"> = {
+export const SENTIDO: Record<Indicador | typeof INVESTIMENTO, Direcao> = {
+  // Gastar mais em mídia não é bom nem ruim: o julgamento está no CPL e no
+  // CAC. Pintar de vermelho um investimento que subiu diria que economizar é
+  // sempre o certo, o que é falso num período de lançamento.
+  media_spend: "neutro",
   revenue: "sobe",
   sales: "sobe",
   average_ticket: "sobe",
@@ -86,7 +100,11 @@ export const SENTIDO: Record<Indicador, "sobe" | "desce"> = {
   roas: "sobe",
 };
 
-export function rotuloDoIndicador(metric: Indicador): string {
+export type Direcao = "sobe" | "desce" | "neutro";
+
+export function rotuloDoIndicador(
+  metric: Indicador | typeof INVESTIMENTO,
+): string {
   return GOAL_METRIC_CATALOG[metric].label;
 }
 
@@ -97,7 +115,8 @@ export function rotuloDoIndicador(metric: Indicador): string {
  * que é pior que a sigla: a sigla todo mundo lê, a reticência ninguém. O nome
  * inteiro continua no `title` de quem passar o mouse.
  */
-const CURTO: Record<Indicador, string> = {
+const CURTO: Record<Indicador | typeof INVESTIMENTO, string> = {
+  media_spend: "Investimento",
   revenue: "Faturamento",
   sales: "Vendas",
   average_ticket: "Ticket médio",
@@ -108,7 +127,7 @@ const CURTO: Record<Indicador, string> = {
   roas: "ROAS",
 };
 
-export function rotuloCurto(metric: Indicador): string {
+export function rotuloCurto(metric: Indicador | typeof INVESTIMENTO): string {
   return CURTO[metric];
 }
 
@@ -143,13 +162,16 @@ function dividir(a: number | null, b: number | null): number | null {
 }
 
 /** Os oito indicadores a partir dos quatro números-base. */
-export function calcular(base: BaseNumbers): Record<Indicador, number | null> {
+export function calcular(
+  base: BaseNumbers,
+): Record<Indicador | typeof INVESTIMENTO, number | null> {
   const conversao = dividir(base.sales, base.leads);
 
   return {
     revenue: base.revenue,
     sales: base.sales,
     leads: base.leads,
+    media_spend: base.mediaSpend,
     average_ticket: dividir(base.revenue, base.sales),
     sales_conversion: conversao === null ? null : conversao * 100,
     cpl: dividir(base.mediaSpend, base.leads),
@@ -175,7 +197,7 @@ export function variacao(
  * faturamento trimestral.
  */
 export function formatarIndicador(
-  metric: Indicador,
+  metric: Indicador | typeof INVESTIMENTO,
   valor: number | null,
   { compacto = true }: { compacto?: boolean } = {},
 ): string {

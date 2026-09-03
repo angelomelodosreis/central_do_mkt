@@ -231,6 +231,11 @@ export const GOAL_METRIC_CATALOG = {
   // ── Captação ──
   leads: { label: "Leads captados", unit: "count", group: "capture" },
   cpl: { label: "Custo por lead (CPL)", unit: "currency", group: "capture" },
+  media_spend: {
+    label: "Investimento em mídia",
+    unit: "currency",
+    group: "capture",
+  },
   site_sessions: { label: "Sessões no site", unit: "count", group: "capture" },
   lead_conversion: {
     label: "Conversão visitante → lead",

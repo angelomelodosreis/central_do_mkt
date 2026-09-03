@@ -8,27 +8,32 @@ import {
 
 import { businessUnit } from "./business-units.schema";
 import { task } from "./tasks.schema";
-import { user } from "./auth.schema";
 
 /**
  * ── ACOMPANHAMENTO ─────────────────────────────────────────────────────────
  *
- * O ritual de weekly/quinzenal da BU, virado sistema.
+ * O roteiro da weekly da BU — usado AO VIVO, e não preenchido depois.
  *
- * O que existia era um documento de checklist preenchido a cada reunião e
- * arquivado depois. O problema do documento não é ele ser manual: é ser
- * ISOLADO. A reunião de hoje não sabe o que a de duas semanas atrás decidiu, e
- * a ação combinada lá morre no arquivo se ninguém reabrir.
+ * Quem abre a tela é o Coordenador Médico, durante a conversa com o Analista
+ * de Marketing. Ele é leigo em marketing. A tela existe para dizer a ele o que
+ * olhar e o que perguntar, não para coletar o que foi dito.
  *
- * O que muda aqui é a continuidade. Uma reunião puxa o que ficou em aberto na
- * anterior, o que foi decidido continua consultável, e a ação combinada vira
- * trabalho de verdade no board de alguém.
+ * Três consequências que atravessam todo o modelo:
  *
- * A leitura da tela responde cinco perguntas, nesta ordem: como estamos, o que
- * aconteceu, por quê, o que aprendemos e o que precisa acontecer agora.
+ * 1. NADA QUE A PLATAFORMA JÁ SABE é perguntado de novo. Os números vêm do
+ *    fechamento semanal que o Analista lança em Resultados; a data é hoje; o
+ *    que ficou pendente vem da reunião anterior.
+ *
+ * 2. SÓ A EXCEÇÃO É GRAVADA. Tema revisado sem problema gera uma linha com
+ *    `status = ok` e nenhum texto. Digitar só acontece quando há problema,
+ *    decisão ou ação.
+ *
+ * 3. O APRENDIZADO NASCE DENTRO DO ASSUNTO. Não há bloco de "aprendizados" no
+ *    fim: a observação e a decisão moram no tema que as gerou, e a ação vira
+ *    encaminhamento — que é uma tarefa de verdade.
  */
 
-/** Como a BU está. Exige justificativa — semáforo sem motivo não informa. */
+/** Como a BU está. Escolhido no FIM da reunião, não no começo. */
 export const REVIEW_STATUSES = ["on_track", "attention", "critical"] as const;
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
 
@@ -51,24 +56,19 @@ export const buReview = sqliteTable(
     businessUnitId: text("business_unit_id")
       .notNull()
       .references(() => businessUnit.id, { onDelete: "cascade" }),
-    /** O dia da reunião. Uma por BU por dia. */
+    /** O dia da reunião — sempre hoje. Uma por BU por dia. */
     meetingDate: integer("meeting_date", { mode: "timestamp" }).notNull(),
 
-    status: text("status").notNull().default("on_track").$type<ReviewStatus>(),
-    /** Por que este status. Obrigatório na gravação. */
+    /**
+     * Nulo enquanto a reunião corre.
+     *
+     * A avaliação da BU é a última coisa que acontece: no começo o
+     * Coordenador ainda não viu os números nem ouviu o Analista, e pedir o
+     * semáforo ali é pedir um palpite.
+     */
+    status: text("status").$type<ReviewStatus>(),
     statusNote: text("status_note"),
 
-    /** O resultado mais importante do período. */
-    highlight: text("highlight"),
-    /** O principal ponto de atenção. */
-    concern: text("concern"),
-
-    /**
-     * A reunião foi fechada.
-     *
-     * Fechar não trava a edição — trava a expectativa: uma reunião aberta é
-     * uma pauta em preparação, uma fechada é o que de fato foi conversado.
-     */
     closedAt: integer("closed_at", { mode: "timestamp" }),
 
     createdBy: text("created_by"),
@@ -83,139 +83,74 @@ export const buReview = sqliteTable(
 );
 
 /**
- * Quem estava na reunião.
+ * Os temas do roteiro.
  *
- * `userId` quando a pessoa tem conta; `name` para quem não tem — um convidado,
- * alguém de fora. Sem a segunda opção, a lista de participantes ficaria falsa
- * na primeira reunião com visita.
- */
-export const buReviewParticipant = sqliteTable(
-  "bu_review_participant",
-  {
-    id: text("id").primaryKey(),
-    reviewId: text("review_id")
-      .notNull()
-      .references(() => buReview.id, { onDelete: "cascade" }),
-    userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
-    name: text("name"),
-  },
-  (table) => [index("bu_review_participant_idx").on(table.reviewId)],
-);
-
-/**
- * Uma coisa que foi feita e o que ela ensinou.
+ * Vêm do checklist que a BU já usava. A ordem é a da conversa: dinheiro
+ * gasto, o que foi feito com ele, o que aconteceu no funil, e por último o que
+ * é investigação (testes, benchmark, público) e olhar para a frente.
  *
- * Quatro campos, sempre os mesmos: o que fizemos, o que aconteceu, o que
- * aprendemos, o que vamos fazer com isso. O documento antigo tinha um bloco
- * por tipo de ação — mídia, campanha, criativo, CRM, teste, benchmark — e a
- * maior parte deles voltava vazia toda semana. Aqui o tipo é uma etiqueta, e
- * registra-se só o que foi relevante no período.
+ * Ficam em código e não em cadastro porque comparar BUs depende de todo mundo
+ * responder às mesmas perguntas — e porque a pergunta certa a fazer sobre
+ * mídia não muda de BU para BU.
  */
-export const LEARNING_CATEGORIES = [
+export const REVIEW_TOPICS = [
   "media",
-  "campaign",
-  "creative",
+  "campaigns",
+  "funnel",
+  "sales",
   "crm",
-  "test",
+  "tracking",
+  "tests",
   "benchmark",
   "audience",
-  "other",
+  "projections",
 ] as const;
-export type LearningCategory = (typeof LEARNING_CATEGORIES)[number];
+export type ReviewTopic = (typeof REVIEW_TOPICS)[number];
 
-export const LEARNING_CATEGORY_LABELS: Record<LearningCategory, string> = {
-  media: "Mídia",
-  campaign: "Campanha",
-  creative: "Criativo",
-  crm: "CRM",
-  test: "Teste",
-  benchmark: "Benchmarking",
-  audience: "Conversa com o público",
-  other: "Outro",
-};
-
-export const buReviewLearning = sqliteTable(
-  "bu_review_learning",
-  {
-    id: text("id").primaryKey(),
-    reviewId: text("review_id")
-      .notNull()
-      .references(() => buReview.id, { onDelete: "cascade" }),
-    category: text("category").notNull().$type<LearningCategory>(),
-    /** O que fizemos. É o único obrigatório. */
-    whatWeDid: text("what_we_did").notNull(),
-    whatHappened: text("what_happened"),
-    whatWeLearned: text("what_we_learned"),
-    nextStep: text("next_step"),
-    sortOrder: integer("sort_order").notNull().default(0),
-  },
-  (table) => [index("bu_review_learning_idx").on(table.reviewId)],
-);
+/** Como o tema foi resolvido na reunião. */
+export const TOPIC_STATUSES = ["ok", "attention"] as const;
+export type TopicStatus = (typeof TOPIC_STATUSES)[number];
 
 /**
- * O raciocínio da reunião: problema, oportunidade, hipótese, decisão, bloqueio.
+ * Um tema revisado nesta reunião.
  *
- * É o registro que o documento antigo não fazia. Sem ele a ferramenta guarda o
- * que foi feito e esquece POR QUE foi feito — e seis meses depois ninguém
- * lembra se a mudança de canal foi decisão consciente ou acidente.
- *
- * Decisão e bloqueio atravessam reuniões: a decisão continua valendo até
- * alguém revê-la, e o bloqueio continua bloqueando até ser resolvido.
+ * Só existe linha para tema que o Coordenador tocou — a ausência de linha
+ * significa "não falamos disso hoje", que é um resultado legítimo e diferente
+ * de "está tudo bem".
  */
-export const NOTE_KINDS = [
-  "problem",
-  "opportunity",
-  "hypothesis",
-  "decision",
-  "blocker",
-] as const;
-export type NoteKind = (typeof NOTE_KINDS)[number];
-
-export const NOTE_KIND_LABELS: Record<NoteKind, string> = {
-  problem: "Problema",
-  opportunity: "Oportunidade",
-  hypothesis: "Hipótese",
-  decision: "Decisão",
-  blocker: "Bloqueio",
-};
-
-export const buReviewNote = sqliteTable(
-  "bu_review_note",
+export const buReviewTopic = sqliteTable(
+  "bu_review_topic",
   {
     id: text("id").primaryKey(),
     reviewId: text("review_id")
       .notNull()
       .references(() => buReview.id, { onDelete: "cascade" }),
-    kind: text("kind").notNull().$type<NoteKind>(),
-    text: text("text").notNull(),
-    /** De quem depende, quando é bloqueio. Texto livre. */
-    dependsOn: text("depends_on"),
-    /** Bloqueio resolvido / hipótese verificada. */
-    resolvedAt: integer("resolved_at", { mode: "timestamp" }),
-    sortOrder: integer("sort_order").notNull().default(0),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    topic: text("topic").notNull().$type<ReviewTopic>(),
+    status: text("status").notNull().$type<TopicStatus>(),
+    /** O que precisa ser acompanhado. Só aparece quando há atenção. */
+    note: text("note"),
+    /** A decisão tomada sobre este tema, quando houve uma. */
+    decision: text("decision"),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
   },
   (table) => [
-    index("bu_review_note_idx").on(table.reviewId),
-    index("bu_review_note_kind_idx").on(table.kind),
+    unique("bu_review_topic_unique").on(table.reviewId, table.topic),
+    index("bu_review_topic_review_idx").on(table.reviewId),
   ],
 );
 
 /**
- * A próxima ação combinada na reunião — que é uma TAREFA.
+ * Um encaminhamento — que é uma TAREFA.
  *
- * Esta tabela é só o elo. A ação em si mora em `task`: tem responsável, prazo,
+ * Esta tabela é só o elo. A ação mora em `task`: tem responsável, prazo,
  * situação e histórico, aparece no board de quem ficou com ela e passa pela
- * mesma máquina de estados de todo o resto.
+ * mesma máquina de estados de todo o resto. Uma lista de ações própria da
+ * reunião seria um segundo sistema de "coisas para fazer", e o segundo é
+ * justamente o que ninguém abre entre uma reunião e outra.
  *
- * A alternativa seria uma lista de ações própria do acompanhamento, com o
- * próprio status. Seriam dois sistemas de "coisas para fazer" na mesma
- * ferramenta, e o segundo — o que só existe dentro da reunião — é justamente o
- * que ninguém abre entre uma reunião e outra. O documento que estamos
- * substituindo já era isso.
- *
- * `expectedResult` fica aqui e não na tarefa porque é uma pergunta da reunião
- * ("o que esperamos que aconteça?"), não um atributo de toda tarefa.
+ * `topic` guarda de qual assunto o encaminhamento nasceu — é o que permite,
+ * mais adiante, responder "quantas vezes mídia gerou pendência este
+ * trimestre?".
  */
 export const buReviewAction = sqliteTable(
   "bu_review_action",
@@ -227,7 +162,14 @@ export const buReviewAction = sqliteTable(
     taskId: text("task_id")
       .notNull()
       .references(() => task.id, { onDelete: "cascade" }),
-    expectedResult: text("expected_result"),
+    topic: text("topic").$type<ReviewTopic>(),
+    /**
+     * O que o Coordenador anotou sobre esta pendência na reunião seguinte.
+     *
+     * Fica no elo e não na tarefa porque é uma observação da REUNIÃO — "não
+     * foi feito porque o fornecedor atrasou" —, não uma mudança no trabalho.
+     */
+    followUpNote: text("follow_up_note"),
     sortOrder: integer("sort_order").notNull().default(0),
   },
   (table) => [
@@ -238,6 +180,5 @@ export const buReviewAction = sqliteTable(
 );
 
 export type BuReview = typeof buReview.$inferSelect;
-export type BuReviewLearning = typeof buReviewLearning.$inferSelect;
-export type BuReviewNote = typeof buReviewNote.$inferSelect;
+export type BuReviewTopic = typeof buReviewTopic.$inferSelect;
 export type BuReviewAction = typeof buReviewAction.$inferSelect;

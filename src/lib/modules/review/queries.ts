@@ -1,70 +1,49 @@
-import { and, asc, desc, eq, inArray, isNull, lt, ne } from "drizzle-orm";
+import { and, asc, desc, eq, lt } from "drizzle-orm";
 
 import { getDb } from "@/lib/db/client";
 import {
   buReview,
   buReviewAction,
-  buReviewLearning,
-  buReviewNote,
-  buReviewParticipant,
+  buReviewTopic,
   task,
   user,
   TASK_CLOSED_STATUSES,
   type BuReview,
-  type NoteKind,
-  type TaskPriority,
+  type ReviewTopic,
   type TaskStatus,
+  type TopicStatus,
 } from "@/lib/db/schema";
 import {
-  INDICADORES,
   calcular,
   somar,
   variacao,
   type Indicador,
+  type INVESTIMENTO,
 } from "@/lib/modules/results/metrics";
 import { listWeeklyResultsOfPeriod } from "@/lib/modules/results/queries";
+import { loadCycleGoals, scopeRange } from "@/lib/modules/strategy/goals";
+import { listCycles, pickDefaultCycle } from "@/lib/modules/strategy/queries";
 
-export type ParticipanteView = {
-  id: string;
-  userId: string | null;
-  name: string;
+export type TemaRevisado = {
+  topic: ReviewTopic;
+  status: TopicStatus;
+  note: string | null;
+  decision: string | null;
 };
 
-export type AprendizadoView = {
-  id: string;
-  category: string;
-  whatWeDid: string;
-  whatHappened: string | null;
-  whatWeLearned: string | null;
-  nextStep: string | null;
-};
-
-export type AnotacaoView = {
-  id: string;
-  kind: NoteKind;
-  text: string;
-  dependsOn: string | null;
-  resolvedAt: Date | null;
-  /** A reunião em que foi registrada — o histórico precisa dizer quando. */
-  meetingDate: Date;
-};
-
-export type AcaoView = {
+export type Encaminhamento = {
   id: string;
   taskId: string;
   title: string;
-  expectedResult: string | null;
+  topic: ReviewTopic | null;
+  followUpNote: string | null;
   status: TaskStatus;
-  priority: TaskPriority;
   dueDate: Date | null;
   assigneeName: string | null;
-  blockedReason: string | null;
-  /** Em que reunião a ação foi combinada. */
   fromReviewId: string;
   fromMeetingDate: Date;
 };
 
-/** A lista de acompanhamentos de uma BU, do mais recente para o mais antigo. */
 export async function listReviews(businessUnitId: string) {
   const db = await getDb();
   return db
@@ -79,7 +58,6 @@ export async function getReview(id: string): Promise<BuReview | undefined> {
   return db.select().from(buReview).where(eq(buReview.id, id)).get();
 }
 
-/** O acompanhamento imediatamente anterior a uma data. */
 export async function previousReview(
   businessUnitId: string,
   antesDe: Date,
@@ -98,119 +76,33 @@ export async function previousReview(
     .get();
 }
 
-export async function loadParticipants(
-  reviewId: string,
-): Promise<ParticipanteView[]> {
-  const db = await getDb();
-  const linhas = await db
-    .select({
-      id: buReviewParticipant.id,
-      userId: buReviewParticipant.userId,
-      nome: buReviewParticipant.name,
-      nomeDaConta: user.name,
-    })
-    .from(buReviewParticipant)
-    .leftJoin(user, eq(buReviewParticipant.userId, user.id))
-    .where(eq(buReviewParticipant.reviewId, reviewId));
-
-  return linhas.map((linha) => ({
-    id: linha.id,
-    userId: linha.userId,
-    name: linha.nomeDaConta ?? linha.nome ?? "—",
-  }));
-}
-
-export async function loadLearnings(
-  reviewId: string,
-): Promise<AprendizadoView[]> {
+export async function loadTopics(reviewId: string): Promise<TemaRevisado[]> {
   const db = await getDb();
   const linhas = await db
     .select()
-    .from(buReviewLearning)
-    .where(eq(buReviewLearning.reviewId, reviewId))
-    .orderBy(asc(buReviewLearning.sortOrder));
+    .from(buReviewTopic)
+    .where(eq(buReviewTopic.reviewId, reviewId));
 
   return linhas.map((linha) => ({
-    id: linha.id,
-    category: linha.category,
-    whatWeDid: linha.whatWeDid,
-    whatHappened: linha.whatHappened,
-    whatWeLearned: linha.whatWeLearned,
-    nextStep: linha.nextStep,
+    topic: linha.topic,
+    status: linha.status,
+    note: linha.note,
+    decision: linha.decision,
   }));
 }
 
-export async function loadNotes(reviewId: string): Promise<AnotacaoView[]> {
-  const db = await getDb();
-  const linhas = await db
-    .select({
-      id: buReviewNote.id,
-      kind: buReviewNote.kind,
-      text: buReviewNote.text,
-      dependsOn: buReviewNote.dependsOn,
-      resolvedAt: buReviewNote.resolvedAt,
-      meetingDate: buReview.meetingDate,
-    })
-    .from(buReviewNote)
-    .innerJoin(buReview, eq(buReviewNote.reviewId, buReview.id))
-    .where(eq(buReviewNote.reviewId, reviewId))
-    .orderBy(asc(buReviewNote.sortOrder));
-
-  return linhas;
-}
-
-/**
- * O que continua valendo de reuniões anteriores.
- *
- * Decisão e bloqueio atravessam a reunião em que nasceram: a decisão vale até
- * alguém revê-la, e o bloqueio bloqueia até ser resolvido. Problema, hipótese
- * e oportunidade ficam na reunião — são leitura daquele momento.
- *
- * É esta consulta que impede a reunião de recomeçar do zero toda vez.
- */
-export async function loadStandingNotes(
-  businessUnitId: string,
-  exceptoReviewId: string,
-): Promise<AnotacaoView[]> {
+/** Os encaminhamentos criados numa reunião. */
+export async function loadActions(reviewId: string): Promise<Encaminhamento[]> {
   const db = await getDb();
   return db
     .select({
-      id: buReviewNote.id,
-      kind: buReviewNote.kind,
-      text: buReviewNote.text,
-      dependsOn: buReviewNote.dependsOn,
-      resolvedAt: buReviewNote.resolvedAt,
-      meetingDate: buReview.meetingDate,
-    })
-    .from(buReviewNote)
-    .innerJoin(buReview, eq(buReviewNote.reviewId, buReview.id))
-    .where(
-      and(
-        eq(buReview.businessUnitId, businessUnitId),
-        inArray(buReviewNote.kind, ["decision", "blocker"]),
-        isNull(buReviewNote.resolvedAt),
-        // A própria reunião fica de fora: o que foi escrito hoje já aparece na
-        // seção acima, e repeti-lo no bloco de "o que continua valendo" faria
-        // a tela dizer duas vezes a mesma coisa.
-        ne(buReviewNote.reviewId, exceptoReviewId),
-      ),
-    )
-    .orderBy(desc(buReview.meetingDate));
-}
-
-/** As ações combinadas numa reunião, com a situação atual de cada tarefa. */
-export async function loadActions(reviewId: string): Promise<AcaoView[]> {
-  const db = await getDb();
-  const linhas = await db
-    .select({
       id: buReviewAction.id,
       taskId: buReviewAction.taskId,
-      expectedResult: buReviewAction.expectedResult,
+      topic: buReviewAction.topic,
+      followUpNote: buReviewAction.followUpNote,
       title: task.title,
       status: task.status,
-      priority: task.priority,
       dueDate: task.dueDate,
-      blockedReason: task.blockedReason,
       assigneeName: user.name,
       fromReviewId: buReviewAction.reviewId,
       fromMeetingDate: buReview.meetingDate,
@@ -221,32 +113,30 @@ export async function loadActions(reviewId: string): Promise<AcaoView[]> {
     .leftJoin(user, eq(task.assigneeId, user.id))
     .where(eq(buReviewAction.reviewId, reviewId))
     .orderBy(asc(buReviewAction.sortOrder));
-
-  return linhas;
 }
 
 /**
- * O que ficou em aberto de reuniões anteriores.
+ * O que ficou em aberto das reuniões anteriores.
  *
- * É a primeira coisa que a reunião seguinte precisa ver: sem isso, combinar
- * uma ação e nunca mais falar dela é o comportamento padrão — foi o que o
- * documento arquivado sempre produziu.
+ * É o primeiro bloco da tela. Antes de discutir qualquer coisa nova, a reunião
+ * confere o que foi combinado — sem isso, combinar uma ação e nunca mais falar
+ * dela é o comportamento padrão, que é o que o documento arquivado sempre
+ * produziu.
  */
 export async function loadPendingActions(
   businessUnitId: string,
-  ateAReuniao: string,
-): Promise<AcaoView[]> {
+  exceptoReviewId: string,
+): Promise<Encaminhamento[]> {
   const db = await getDb();
   const linhas = await db
     .select({
       id: buReviewAction.id,
       taskId: buReviewAction.taskId,
-      expectedResult: buReviewAction.expectedResult,
+      topic: buReviewAction.topic,
+      followUpNote: buReviewAction.followUpNote,
       title: task.title,
       status: task.status,
-      priority: task.priority,
       dueDate: task.dueDate,
-      blockedReason: task.blockedReason,
       assigneeName: user.name,
       fromReviewId: buReviewAction.reviewId,
       fromMeetingDate: buReview.meetingDate,
@@ -260,57 +150,107 @@ export async function loadPendingActions(
 
   return linhas.filter(
     (linha) =>
-      linha.fromReviewId !== ateAReuniao &&
+      linha.fromReviewId !== exceptoReviewId &&
       !TASK_CLOSED_STATUSES.includes(linha.status),
   );
 }
 
-// ── Bloco de resultados ────────────────────────────────────────────────────
+// ── Números do período ─────────────────────────────────────────────────────
 
-export type ResultadoDoPeriodo = {
-  metric: Indicador;
+export type NumeroDoPeriodo = {
+  metric: Indicador | typeof INVESTIMENTO;
   realizado: number | null;
-  anterior: number | null;
-  variacao: number | null;
+  /** Meta proporcional ao período, quando a BU definiu uma para o ciclo. */
+  meta: number | null;
+  /** Quanto o realizado está acima ou abaixo da meta, em %. */
+  versusMeta: number | null;
+  /** Variação sobre o período anterior de mesma duração, em %. */
+  versusAnterior: number | null;
 };
 
 /**
- * Os números do período entre duas reuniões.
+ * Os números que o Analista já lançou, prontos para leitura.
  *
- * NÃO se digita nada aqui. Vem do fechamento semanal que a BU já lança em
- * Planejamento › Resultados — pedir os mesmos números de novo na reunião
- * criaria duas fontes para a mesma verdade, e a segunda seria preenchida com
- * pressa cinco minutos antes.
+ * O Coordenador não digita nada aqui — nem deveria: o fechamento semanal é
+ * trabalho do Analista, feito antes da reunião, e pedir o mesmo número duas
+ * vezes cria duas versões da verdade.
  *
- * O período anterior tem a mesma duração, e não "a semana passada": comparar
- * quinze dias com sete faria toda reunião quinzenal parecer um sucesso.
+ * A META é PROPORCIONAL ao período. A BU se compromete com um número de ciclo;
+ * comparar catorze dias com a meta do ano inteiro não diz nada. A conta é
+ * simples e a tela avisa que é proporcional — esconder isso faria o
+ * Coordenador ver "2% da meta" e entrar em pânico em toda reunião.
  */
-export async function loadPeriodResults(
+export async function loadPeriodNumbers(
   businessUnitId: string,
   de: Date,
   ate: Date,
-): Promise<{ resultados: ResultadoDoPeriodo[]; dias: number }> {
+): Promise<{
+  numeros: NumeroDoPeriodo[];
+  secundarios: NumeroDoPeriodo[];
+  dias: number;
+}> {
   const dias = Math.max(
     1,
     Math.round((ate.getTime() - de.getTime()) / 86_400_000),
   );
   const inicioAnterior = new Date(de.getTime() - dias * 86_400_000);
 
-  const [atuais, anteriores] = await Promise.all([
+  const [atuais, anteriores, ciclos] = await Promise.all([
     listWeeklyResultsOfPeriod([businessUnitId], de, ate),
     listWeeklyResultsOfPeriod([businessUnitId], inicioAnterior, de),
+    listCycles(businessUnitId),
   ]);
 
   const agora = calcular(somar(atuais));
   const antes = calcular(somar(anteriores));
 
+  const ciclo = pickDefaultCycle(ciclos);
+  const metas = ciclo ? await loadCycleGoals(ciclo.id) : null;
+
+  /** Que fatia do ciclo este período representa. */
+  const fracao = (() => {
+    if (!ciclo) return null;
+    const { startsAt, endsAt } = scopeRange(ciclo, "cycle");
+    const duracao = endsAt.getTime() - startsAt.getTime();
+    if (duracao <= 0) return null;
+    return (dias * 86_400_000) / duracao;
+  })();
+
+  const alvoDoCiclo = new Map(
+    (metas?.cycle?.targets ?? []).map((alvo) => [alvo.metric, alvo.target]),
+  );
+
+  const montar = (metric: Indicador | typeof INVESTIMENTO): NumeroDoPeriodo => {
+    const realizado = agora[metric];
+    const alvo = alvoDoCiclo.get(metric);
+    const meta = alvo !== undefined && fracao !== null ? alvo * fracao : null;
+
+    return {
+      metric,
+      realizado,
+      meta,
+      versusMeta:
+        realizado !== null && meta !== null && meta !== 0
+          ? ((realizado - meta) / meta) * 100
+          : null,
+      versusAnterior: variacao(realizado, antes[metric]),
+    };
+  };
+
+  /**
+   * Quatro números respondem "estamos indo bem?", e não oito.
+   *
+   * Ticket médio, conversão, CAC e ROAS são a EXPLICAÇÃO do que aconteceu, não
+   * a resposta — ficam numa linha secundária, para quando a conversa
+   * aprofundar.
+   */
   return {
     dias,
-    resultados: INDICADORES.map(({ metric }) => ({
-      metric,
-      realizado: agora[metric],
-      anterior: antes[metric],
-      variacao: variacao(agora[metric], antes[metric]),
-    })),
+    numeros: (["revenue", "sales", "leads", "media_spend"] as const).map(
+      montar,
+    ),
+    secundarios: (
+      ["average_ticket", "sales_conversion", "cac", "roas"] as const
+    ).map(montar),
   };
 }

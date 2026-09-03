@@ -31,14 +31,18 @@ export function Stat({
   value: ReactNode;
   /** Variação percentual sobre o período anterior. `null` = sem comparação. */
   variacao?: number | null;
-  sentido?: "sobe" | "desce";
+  /** `neutro` = a variação aparece em cinza. Gastar mais não é bom nem ruim. */
+  sentido?: "sobe" | "desce" | "neutro";
   /** Presente = o indicador comanda o que o resto da tela mostra. */
   selecionado?: boolean;
   onSelecionar?: () => void;
   tamanho?: "sm" | "md";
 }) {
   const bom =
-    variacao === null || variacao === undefined || variacao === 0
+    variacao === null ||
+    variacao === undefined ||
+    variacao === 0 ||
+    sentido === "neutro"
       ? null
       : variacao > 0 === (sentido === "sobe");
 
