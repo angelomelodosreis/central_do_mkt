@@ -380,10 +380,10 @@ function KpiGoalForm({
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+            <Button type="button" variant="ghost" size="sm" onClick={onDone} disabled={isPending}>
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" size="sm" disabled={isPending}>
+            <Button type="submit" variant="primary" size="sm" loading={isPending}>
               {isPending ? "Salvando…" : initialData ? "Salvar Alterações" : "Adicionar Meta"}
             </Button>
           </div>

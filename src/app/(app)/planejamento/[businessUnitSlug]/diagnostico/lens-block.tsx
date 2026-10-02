@@ -105,7 +105,7 @@ function PillarDiagnosisBox({
         <Button
           type="submit"
           size="sm"
-          disabled={isPending}
+          loading={isPending}
           className="text-xs font-medium"
         >
           {isPending ? "Salvando…" : "Salvar diagnóstico do pilar"}
