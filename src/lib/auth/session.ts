@@ -214,6 +214,27 @@ export function isPlatformAdmin(currentUser: CurrentUser): boolean {
   return currentUser.isSuperAdmin || can(currentUser, "admin", "edit");
 }
 
+/** Verifica se o usuário tem privilégio para gerenciar usuários e acessos (Admin ou Líder) */
+export function canManageUsers(currentUser: CurrentUser): boolean {
+  return (
+    isPlatformAdmin(currentUser) ||
+    currentUser.role === "admin" ||
+    currentUser.role === "leader" ||
+    can(currentUser, "admin")
+  );
+}
+
+/** Exige privilégio de gestão de usuários (Admin ou Líder). */
+export async function requireUserManagementAccess(): Promise<CurrentUser> {
+  const currentUser = await requireUser();
+
+  if (!canManageUsers(currentUser)) {
+    redirect("/painel?erro=sem-permissao&modulo=admin");
+  }
+
+  return currentUser;
+}
+
 /** Exige que o usuário seja administrador da plataforma. */
 export async function requireAdmin(): Promise<CurrentUser> {
   const currentUser = await requireUser();

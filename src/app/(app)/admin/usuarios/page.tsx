@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { UsersGovernanceTabs } from "./users-governance-tabs";
 import { PageHeader } from "@/components/ui/card";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireUserManagementAccess } from "@/lib/auth/session";
 import { loadGovernanceMatrix } from "@/lib/modules/access/cascade";
 import { listGrantsForUser } from "@/lib/modules/access/explain";
 import { getPendingBuRequestsSummary } from "@/lib/modules/access/bu-requests";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Usuários e Governança" };
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-  await requireAdmin();
+  await requireUserManagementAccess();
 
   const [people, units, matrixData, pendingBuMap] = await Promise.all([
     listPeople({ includeInactive: true }),

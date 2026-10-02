@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 
 import { UserFile, type OrgUnitOption, type UserFileData } from "./user-file";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireUserManagementAccess } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
   businessDivision,
@@ -29,7 +29,7 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { userId } = await params;
-  await requireAdmin();
+  await requireUserManagementAccess();
   const db = await getDb();
   const alvo = await db
     .select({ name: user.name })
@@ -48,7 +48,7 @@ export async function generateMetadata({
  */
 export default async function UserDetailPage({ params }: { params: Params }) {
   const { userId } = await params;
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
 
   const db = await getDb();
   const alvo = await db

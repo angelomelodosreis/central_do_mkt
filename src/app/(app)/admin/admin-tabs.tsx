@@ -20,13 +20,24 @@ const TABS = [
   { href: "/admin/auditoria", label: "Auditoria" },
 ];
 
-export function AdminTabs() {
+export function AdminTabs({
+  isLeaderOnly = false,
+}: {
+  isLeaderOnly?: boolean;
+}) {
   const pathname = usePathname();
+
+  const tabsToDisplay = isLeaderOnly
+    ? [
+        { href: "/admin/usuarios", label: "Usuários e acessos" },
+        { href: "/admin/squads", label: "Squads" },
+      ]
+    : TABS;
 
   return (
     <div className="mb-8 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <nav className="flex min-w-max gap-1 border-b border-slate-200">
-        {TABS.map((tab) => {
+        {tabsToDisplay.map((tab) => {
           const isActive = pathname.startsWith(tab.href);
           return (
             <Link

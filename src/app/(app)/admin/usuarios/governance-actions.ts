@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireUserManagementAccess } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
   accessGrant,
@@ -27,7 +27,7 @@ export async function toggleDirectScopeAction(
   scopeType: ScopeType,
   scopeId: string | null,
 ): Promise<GovernanceActionResult> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
   const db = await getDb();
 
   // Verifica usuário alvo
@@ -108,7 +108,7 @@ export async function updateUserRoleAction(
   userId: string,
   newRole: UserRole,
 ): Promise<GovernanceActionResult> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
   const db = await getDb();
 
   if (admin.id === userId && newRole !== "admin") {

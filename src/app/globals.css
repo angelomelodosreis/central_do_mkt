@@ -59,7 +59,7 @@
   }
 
   body {
-    @apply bg-[#edf1f7] font-sans text-slate-900 antialiased;
+    @apply bg-slate-50 font-sans text-slate-900 antialiased;
   }
 
   /*

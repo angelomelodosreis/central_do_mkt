@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { SquadsPanel } from "./squads-panel";
 import { PageHeader } from "@/components/ui/card";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireUserManagementAccess } from "@/lib/auth/session";
 import { listPeople } from "@/lib/modules/org/people";
 import { listSquads } from "@/lib/modules/org/squads";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Squads" };
 export const dynamic = "force-dynamic";
 
 export default async function SquadsPage() {
-  await requireAdmin();
+  await requireUserManagementAccess();
 
   const [squads, people] = await Promise.all([listSquads(), listPeople()]);
 

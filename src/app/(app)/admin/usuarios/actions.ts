@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireUserManagementAccess } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { session, USER_ROLES, user, type UserRole } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
@@ -35,7 +35,7 @@ async function revokeAllSessions(userId: string) {
 
 /** Aprova um cadastro pendente, liberando o acesso. */
 export async function approveUser(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
   const targetId = String(formData.get("userId") ?? "");
   if (!targetId) return;
 
@@ -82,7 +82,7 @@ export async function approveUser(formData: FormData): Promise<void> {
  * Ação reversível pela tela de auditoria.
  */
 export async function suspendUser(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
   const targetId = String(formData.get("userId") ?? "");
   if (!targetId) return;
 
@@ -125,7 +125,7 @@ export async function suspendUser(formData: FormData): Promise<void> {
 
 /** Reativa um usuário suspenso. */
 export async function reactivateUser(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
   const targetId = String(formData.get("userId") ?? "");
   if (!targetId) return;
 
