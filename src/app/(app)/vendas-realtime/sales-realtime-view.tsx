@@ -28,6 +28,11 @@ import { BuGrowthMatrix } from "@/components/sales/bu-growth-matrix";
 import { MarketingDiagnostics } from "@/components/sales/marketing-diagnostics";
 import { ExportSalesButton } from "@/components/sales/export-sales-button";
 import {
+  ComparativePeriodPicker,
+  type ComparativePeriodFilterParams,
+} from "@/components/sales/comparative-period-picker";
+
+import {
   refreshSalesDataAction,
   getComparativeSalesAction,
 } from "./actions";
@@ -107,37 +112,59 @@ export function SalesRealtimeView({
     });
   }
 
-  function handleMonthChange(newCurrent: string, newPrev: string) {
-    setCurrentMonthKey(newCurrent);
-    setPreviousMonthKey(newPrev);
+  const [activeStartDate, setActiveStartDate] = useState<string | undefined>(undefined);
+  const [activeEndDate, setActiveEndDate] = useState<string | undefined>(undefined);
+  const [activeCompareStartDate, setActiveCompareStartDate] = useState<string | undefined>(undefined);
+  const [activeCompareEndDate, setActiveCompareEndDate] = useState<string | undefined>(undefined);
+
+  function handleComparativeFilterChange(params: ComparativePeriodFilterParams) {
+    const buCode = selectedBu === "ALL" ? undefined : selectedBu;
     startTransition(async () => {
       try {
-        const buCode = selectedBu === "ALL" ? undefined : selectedBu;
-        const res = await getComparativeSalesAction({
-          currentMonthKey: newCurrent,
-          previousMonthKey: newPrev,
-          targetBuCode: buCode,
-        });
-        setComparative(res.comparative);
+        if (params.mode === "custom_range") {
+          setActiveStartDate(params.startDate);
+          setActiveEndDate(params.endDate);
+          setActiveCompareStartDate(params.compareStartDate);
+          setActiveCompareEndDate(params.compareEndDate);
+
+          const res = await getComparativeSalesAction({
+            startDate: params.startDate,
+            endDate: params.endDate,
+            compareStartDate: params.compareStartDate,
+            compareEndDate: params.compareEndDate,
+            targetBuCode: buCode,
+          });
+          setComparative(res.comparative);
+          toast.success(
+            `Comparativo aplicado: ${res.comparative.currentPeriod.label} vs ${res.comparative.previousPeriod.label}`,
+          );
+        } else {
+          setActiveStartDate(undefined);
+          setActiveEndDate(undefined);
+          setActiveCompareStartDate(undefined);
+          setActiveCompareEndDate(undefined);
+
+          const cur = params.currentMonthKey || currentMonthKey;
+          const prev = params.previousMonthKey || previousMonthKey;
+          setCurrentMonthKey(cur);
+          setPreviousMonthKey(prev);
+
+          const res = await getComparativeSalesAction({
+            currentMonthKey: cur,
+            previousMonthKey: prev,
+            targetBuCode: buCode,
+          });
+          setComparative(res.comparative);
+          toast.success(
+            `Comparativo aplicado: ${res.comparative.currentPeriod.label} vs ${res.comparative.previousPeriod.label}`,
+          );
+        }
       } catch {
-        toast.error("Erro ao recalcular comparativo entre meses.");
+        toast.error("Erro ao aplicar período comparativo.");
       }
     });
   }
 
-  // Atalhos rápidos: MoM anterior ou YoY (mesmo mês ano anterior)
-  function applyQuickComparison(type: "mom" | "yoy") {
-    if (type === "mom") {
-      const idx = availableMonths.findIndex((m) => m.key === currentMonthKey);
-      if (idx >= 0 && idx + 1 < availableMonths.length) {
-        handleMonthChange(currentMonthKey, availableMonths[idx + 1].key);
-      }
-    } else if (type === "yoy") {
-      const [y, m] = currentMonthKey.split("-").map(Number);
-      const yoyKey = `${y - 1}-${String(m).padStart(2, "0")}`;
-      handleMonthChange(currentMonthKey, yoyKey);
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -274,61 +301,18 @@ export function SalesRealtimeView({
       {/* ======================================================== */}
       {activeTab === "comparative" && (
         <div className="space-y-6">
-          {/* Barra de Seleção de Meses Comparativos */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5 text-xs text-blue-950 font-semibold">
-                <Calendar className="size-3.5 text-brand-600" />
-                <span>Mês Base:</span>
-                <select
-                  value={currentMonthKey}
-                  onChange={(e) => handleMonthChange(e.target.value, previousMonthKey)}
-                  className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 text-xs font-bold text-blue-900 shadow-2xs focus:border-brand-500 focus:outline-none"
-                >
-                  {availableMonths.map((m) => (
-                    <option key={m.key} value={m.key}>
-                      {m.label} ({m.count} vendas)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <span className="text-xs font-medium text-slate-400">vs</span>
-
-              <div className="flex items-center gap-1.5 text-xs text-blue-950 font-semibold">
-                <span>Mês Comparado:</span>
-                <select
-                  value={previousMonthKey}
-                  onChange={(e) => handleMonthChange(currentMonthKey, e.target.value)}
-                  className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 shadow-2xs focus:border-brand-500 focus:outline-none"
-                >
-                  {availableMonths.map((m) => (
-                    <option key={m.key} value={m.key}>
-                      {m.label} ({m.count} vendas)
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Atalhos Rápidos MoM / YoY */}
-            <div className="flex items-center gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => applyQuickComparison("mom")}
-                className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 font-semibold text-blue-700 shadow-2xs transition hover:bg-blue-50"
-              >
-                MoM (Mês Anterior)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyQuickComparison("yoy")}
-                className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 font-semibold text-blue-700 shadow-2xs transition hover:bg-blue-50"
-              >
-                YoY (Mesmo Mês Ano Anterior)
-              </button>
-            </div>
-          </div>
+          {/* Seletor Avançado de Período & Comparativo (com botão Buscar e seleção Dia/Mês/Ano) */}
+          <ComparativePeriodPicker
+            availableMonths={availableMonths}
+            currentMonthKey={currentMonthKey}
+            previousMonthKey={previousMonthKey}
+            activeStartDate={activeStartDate}
+            activeEndDate={activeEndDate}
+            activeCompareStartDate={activeCompareStartDate}
+            activeCompareEndDate={activeCompareEndDate}
+            isPending={isPending}
+            onApply={handleComparativeFilterChange}
+          />
 
           {/* Cards de KPIs com Deltas e Decomposição de Crescimento */}
           <PeriodComparisonCards comparative={comparative} />

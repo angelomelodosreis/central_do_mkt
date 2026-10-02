@@ -173,5 +173,30 @@ describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
     assert.equal(formatMonthYearLabel("2026-10"), "Outubro/2026");
     assert.equal(formatMonthYearLabel("2026-03"), "Março/2026");
     assert.equal(formatMonthYearLabel("2025-12"), "Dezembro/2025");
+    assert.equal(formatMonthYearLabel("2026-10-01_2026-10-05"), "01/10/2026 a 05/10/2026");
+  });
+
+  test("Análise Comparativa com intervalo exato por Ano, Mês e Dia", () => {
+    // Período Base: apenas 2026-10-01 (tx-3: 10000, 2 vendas)
+    // Período Comparado: apenas 2026-09-10 (tx-1: 5000, 1 venda)
+    const customComp = calculateComparativeAnalysis(mockTransactions, {
+      startDate: "2026-10-01",
+      endDate: "2026-10-01",
+      compareStartDate: "2026-09-10",
+      compareEndDate: "2026-09-10",
+    });
+
+    assert.equal(customComp.currentPeriod.sales, 2);
+    assert.equal(customComp.currentPeriod.revenue, 10000);
+    assert.equal(customComp.currentPeriod.label, "01/10/2026");
+
+    assert.equal(customComp.previousPeriod.sales, 1);
+    assert.equal(customComp.previousPeriod.revenue, 5000);
+    assert.equal(customComp.previousPeriod.label, "10/09/2026");
+
+    assert.equal(customComp.deltas.revenueDelta, 5000);
+    assert.equal(customComp.deltas.salesDelta, 1);
+    assert.equal(customComp.deltas.revenueGrowthPercent, 100);
+    assert.ok(customComp.dayByDaySeries.length > 0);
   });
 });

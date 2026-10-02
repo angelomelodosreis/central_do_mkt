@@ -309,13 +309,30 @@ const DAY_NAMES_PT = [
 ];
 
 export function formatMonthYearLabel(monthKey: string): string {
+  if (!monthKey) return "";
+  if (monthKey.includes(" a ") || monthKey.includes("/")) return monthKey;
+  if (monthKey.includes("_")) {
+    const [s, e] = monthKey.split("_");
+    const fmt = (iso: string) => {
+      const p = iso.split("-");
+      return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+    };
+    return s === e ? fmt(s) : `${fmt(s)} a ${fmt(e)}`;
+  }
   const parts = monthKey.split("-");
-  if (parts.length < 2) return monthKey;
-  const year = parts[0];
-  const monthNum = parseInt(parts[1], 10);
-  const name = MONTH_NAMES_PT[monthNum - 1] ?? parts[1];
-  return `${name}/${year}`;
+  if (parts.length === 2) {
+    const year = parts[0];
+    const monthNum = parseInt(parts[1], 10);
+    const name = MONTH_NAMES_PT[monthNum - 1] ?? parts[1];
+    return `${name}/${year}`;
+  }
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
+  }
+  return monthKey;
 }
+
 
 export function getAvailableMonths(transactions: SaleTransaction[]): Array<{
   key: string; // "2026-10"
@@ -576,6 +593,10 @@ export function calculateComparativeAnalysis(
     previousMonthKey?: string;
     targetBuCode?: string | string[];
     targetBuCodes?: string[];
+    startDate?: string;
+    endDate?: string;
+    compareStartDate?: string;
+    compareEndDate?: string;
   } = {},
 ): ComparativeAnalysisResult {
   let filtered = transactions.filter(
@@ -598,30 +619,101 @@ export function calculateComparativeAnalysis(
 
   const availableMonths = getAvailableMonths(filtered);
 
-  // Defaults inteligentes: se não passados, usa os 2 meses mais recentes
-  const currentKey =
-    options.currentMonthKey ||
-    (availableMonths.length > 0 ? availableMonths[0].key : "2026-10");
+  const isCustomRange = Boolean(options.startDate && options.endDate);
 
-  let previousKey = options.previousMonthKey;
-  if (!previousKey || previousKey === currentKey) {
-    // Procura o mês imediatamente anterior na lista ou decrementa 1 mês
-    const currentIndex = availableMonths.findIndex((m) => m.key === currentKey);
-    if (currentIndex >= 0 && currentIndex + 1 < availableMonths.length) {
-      previousKey = availableMonths[currentIndex + 1].key;
-    } else if (availableMonths.length > 1) {
-      const alt = availableMonths.find((m) => m.key !== currentKey);
-      previousKey = alt ? alt.key : currentKey;
-    } else {
-      const [y, m] = currentKey.split("-").map(Number);
-      const prevM = m === 1 ? 12 : m - 1;
-      const prevY = m === 1 ? y - 1 : y;
-      previousKey = `${prevY}-${String(prevM).padStart(2, "0")}`;
+  let currentKey = options.currentMonthKey || "";
+  let previousKey = options.previousMonthKey || "";
+  let currentLabel = "";
+  let previousLabel = "";
+  let currentDaysCount = 30;
+  let previousDaysCount = 30;
+  let currentTxs: SaleTransaction[] = [];
+  let previousTxs: SaleTransaction[] = [];
+
+  const formatDateBR = (str: string) => {
+    if (!str) return "";
+    const p = str.split("-");
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : str;
+  };
+
+  if (isCustomRange) {
+    const sDate = options.startDate!;
+    const eDate = options.endDate!;
+    currentTxs = filtered.filter((t) => {
+      const d = t.date.slice(0, 10);
+      return d >= sDate && d <= eDate;
+    });
+
+    currentLabel = sDate === eDate ? formatDateBR(sDate) : `${formatDateBR(sDate)} a ${formatDateBR(eDate)}`;
+    currentKey = `${sDate}_${eDate}`;
+
+    const startMs = new Date(`${sDate}T00:00:00`).getTime();
+    const endMs = new Date(`${eDate}T00:00:00`).getTime();
+    const rangeDays = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+    currentDaysCount = rangeDays;
+
+    let cmpStart = options.compareStartDate;
+    let cmpEnd = options.compareEndDate;
+
+    if (!cmpStart || !cmpEnd) {
+      const [sY, sM, sD] = sDate.split("-").map(Number);
+      const [eY, eM, eD] = eDate.split("-").map(Number);
+
+      if (sY === eY && sM === eM) {
+        const prevM = sM === 1 ? 12 : sM - 1;
+        const prevY = sM === 1 ? sY - 1 : sY;
+        const prevMaxDays = new Date(prevY, prevM, 0).getDate();
+        const prevSd = Math.min(sD, prevMaxDays);
+        const prevEd = Math.min(eD, prevMaxDays);
+        cmpStart = `${prevY}-${String(prevM).padStart(2, "0")}-${String(prevSd).padStart(2, "0")}`;
+        cmpEnd = `${prevY}-${String(prevM).padStart(2, "0")}-${String(prevEd).padStart(2, "0")}`;
+      } else {
+        const prevEndMs = startMs - 86400000;
+        const prevStartMs = prevEndMs - (rangeDays - 1) * 86400000;
+        cmpStart = new Date(prevStartMs).toISOString().slice(0, 10);
+        cmpEnd = new Date(prevEndMs).toISOString().slice(0, 10);
+      }
     }
-  }
 
-  const currentTxs = filtered.filter((t) => t.date.startsWith(currentKey));
-  const previousTxs = filtered.filter((t) => t.date.startsWith(previousKey!));
+    previousTxs = filtered.filter((t) => {
+      const d = t.date.slice(0, 10);
+      return d >= cmpStart! && d <= cmpEnd!;
+    });
+
+    previousLabel = cmpStart === cmpEnd ? formatDateBR(cmpStart) : `${formatDateBR(cmpStart)} a ${formatDateBR(cmpEnd)}`;
+    previousKey = `${cmpStart}_${cmpEnd}`;
+    previousDaysCount = rangeDays;
+  } else {
+    if (!currentKey) {
+      currentKey = availableMonths.length > 0 ? availableMonths[0].key : "2026-10";
+    }
+
+    if (!previousKey || previousKey === currentKey) {
+      const currentIndex = availableMonths.findIndex((m) => m.key === currentKey);
+      if (currentIndex >= 0 && currentIndex + 1 < availableMonths.length) {
+        previousKey = availableMonths[currentIndex + 1].key;
+      } else if (availableMonths.length > 1) {
+        const alt = availableMonths.find((m) => m.key !== currentKey);
+        previousKey = alt ? alt.key : currentKey;
+      } else {
+        const [y, m] = currentKey.split("-").map(Number);
+        const prevM = m === 1 ? 12 : m - 1;
+        const prevY = m === 1 ? y - 1 : y;
+        previousKey = `${prevY}-${String(prevM).padStart(2, "0")}`;
+      }
+    }
+
+    currentTxs = filtered.filter((t) => t.date.startsWith(currentKey));
+    previousTxs = filtered.filter((t) => t.date.startsWith(previousKey!));
+
+    currentLabel = formatMonthYearLabel(currentKey);
+    previousLabel = formatMonthYearLabel(previousKey);
+
+    const [currY, currM] = currentKey.split("-").map(Number);
+    const [prevY, prevM] = previousKey!.split("-").map(Number);
+    currentDaysCount = new Date(currY, currM, 0).getDate();
+    previousDaysCount = new Date(prevY, prevM, 0).getDate();
+  }
 
   // 1. Totais do Período Atual
   let currentRevenue = 0;
@@ -663,67 +755,124 @@ export function calculateComparativeAnalysis(
   const priceEffectRevenue =
     (currentAvgTicket - previousAvgTicket) * currentSales;
 
-  // 4. Pacing Dia a Dia (1..31)
-  const currentDaysMap = new Map<number, { revenue: number; sales: number }>();
-  for (const t of currentTxs) {
-    const day = parseInt(t.date.slice(8, 10), 10);
-    if (!isNaN(day)) {
-      const cur = currentDaysMap.get(day) ?? { revenue: 0, sales: 0 };
-      cur.revenue += t.amount;
-      cur.sales += t.quantity;
-      currentDaysMap.set(day, cur);
-    }
-  }
-
-  const prevDaysMap = new Map<number, { revenue: number; sales: number }>();
-  for (const t of previousTxs) {
-    const day = parseInt(t.date.slice(8, 10), 10);
-    if (!isNaN(day)) {
-      const cur = prevDaysMap.get(day) ?? { revenue: 0, sales: 0 };
-      cur.revenue += t.amount;
-      cur.sales += t.quantity;
-      prevDaysMap.set(day, cur);
-    }
-  }
-
-  const [currY, currM] = currentKey.split("-").map(Number);
-  const [prevY, prevM] = previousKey!.split("-").map(Number);
-  const daysInCurrentMonth = new Date(currY, currM, 0).getDate();
-  const daysInPrevMonth = new Date(prevY, prevM, 0).getDate();
-  const maxDays = Math.max(daysInCurrentMonth, daysInPrevMonth, 31);
-
+  // 4. Pacing Dia a Dia
   const dayByDaySeries: DayByDayPoint[] = [];
-  let cumCurRev = 0;
-  let cumCurSales = 0;
-  let cumPrevRev = 0;
-  let cumPrevSales = 0;
+  const currentDaysMap = new Map<number, { revenue: number; sales: number }>();
+  const prevDaysMap = new Map<number, { revenue: number; sales: number }>();
 
-  for (let d = 1; d <= maxDays; d++) {
-    const curData = currentDaysMap.get(d) ?? { revenue: 0, sales: 0 };
-    const prevData = prevDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+  if (isCustomRange) {
+    const sDateMs = new Date(`${options.startDate}T00:00:00`).getTime();
+    for (const t of currentTxs) {
+      const tMs = new Date(t.date.slice(0, 10) + "T00:00:00").getTime();
+      const dayIdx = Math.max(1, Math.round((tMs - sDateMs) / 86400000) + 1);
+      const cur = currentDaysMap.get(dayIdx) ?? { revenue: 0, sales: 0 };
+      cur.revenue += t.amount;
+      cur.sales += t.quantity;
+      currentDaysMap.set(dayIdx, cur);
+    }
 
-    cumCurRev += curData.revenue;
-    cumCurSales += curData.sales;
-    cumPrevRev += prevData.revenue;
-    cumPrevSales += prevData.sales;
+    const cmpStartStr = options.compareStartDate || options.startDate!;
+    const cmpStartMs = new Date(`${cmpStartStr}T00:00:00`).getTime();
+    for (const t of previousTxs) {
+      const tMs = new Date(t.date.slice(0, 10) + "T00:00:00").getTime();
+      const dayIdx = Math.max(1, Math.round((tMs - cmpStartMs) / 86400000) + 1);
+      const cur = prevDaysMap.get(dayIdx) ?? { revenue: 0, sales: 0 };
+      cur.revenue += t.amount;
+      cur.sales += t.quantity;
+      prevDaysMap.set(dayIdx, cur);
+    }
 
-    dayByDaySeries.push({
-      day: d,
-      dayLabel: `Dia ${String(d).padStart(2, "0")}`,
-      currentRevenue: Math.round(curData.revenue * 100) / 100,
-      previousRevenue: Math.round(prevData.revenue * 100) / 100,
-      currentCumulativeRevenue: Math.round(cumCurRev * 100) / 100,
-      previousCumulativeRevenue: Math.round(cumPrevRev * 100) / 100,
-      currentSales: curData.sales,
-      previousSales: prevData.sales,
-      currentCumulativeSales: cumCurSales,
-      previousCumulativeSales: cumPrevSales,
-      currentAvgTicket:
-        curData.sales > 0 ? Math.round((curData.revenue / curData.sales) * 100) / 100 : 0,
-      previousAvgTicket:
-        prevData.sales > 0 ? Math.round((prevData.revenue / prevData.sales) * 100) / 100 : 0,
-    });
+    const maxDays = Math.max(currentDaysCount, previousDaysCount, 1);
+    let cumCurRev = 0;
+    let cumCurSales = 0;
+    let cumPrevRev = 0;
+    let cumPrevSales = 0;
+
+    for (let d = 1; d <= maxDays; d++) {
+      const curData = currentDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+      const prevData = prevDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+
+      cumCurRev += curData.revenue;
+      cumCurSales += curData.sales;
+      cumPrevRev += prevData.revenue;
+      cumPrevSales += prevData.sales;
+
+      const pointDateMs = sDateMs + (d - 1) * 86400000;
+      const pointD = new Date(pointDateMs);
+      const dayLabel = `${String(pointD.getDate()).padStart(2, "0")}/${String(pointD.getMonth() + 1).padStart(2, "0")}`;
+
+      dayByDaySeries.push({
+        day: d,
+        dayLabel: maxDays <= 31 ? dayLabel : `D${d}`,
+        currentRevenue: Math.round(curData.revenue * 100) / 100,
+        previousRevenue: Math.round(prevData.revenue * 100) / 100,
+        currentCumulativeRevenue: Math.round(cumCurRev * 100) / 100,
+        previousCumulativeRevenue: Math.round(cumPrevRev * 100) / 100,
+        currentSales: curData.sales,
+        previousSales: prevData.sales,
+        currentCumulativeSales: cumCurSales,
+        previousCumulativeSales: cumPrevSales,
+        currentAvgTicket:
+          curData.sales > 0 ? Math.round((curData.revenue / curData.sales) * 100) / 100 : 0,
+        previousAvgTicket:
+          prevData.sales > 0 ? Math.round((prevData.revenue / prevData.sales) * 100) / 100 : 0,
+      });
+    }
+  } else {
+    for (const t of currentTxs) {
+      const day = parseInt(t.date.slice(8, 10), 10);
+      if (!isNaN(day)) {
+        const cur = currentDaysMap.get(day) ?? { revenue: 0, sales: 0 };
+        cur.revenue += t.amount;
+        cur.sales += t.quantity;
+        currentDaysMap.set(day, cur);
+      }
+    }
+
+    for (const t of previousTxs) {
+      const day = parseInt(t.date.slice(8, 10), 10);
+      if (!isNaN(day)) {
+        const cur = prevDaysMap.get(day) ?? { revenue: 0, sales: 0 };
+        cur.revenue += t.amount;
+        cur.sales += t.quantity;
+        prevDaysMap.set(day, cur);
+      }
+    }
+
+    const maxDays = Math.max(currentDaysCount, previousDaysCount, 31);
+    let cumCurRev = 0;
+    let cumCurSales = 0;
+    let cumPrevRev = 0;
+    let cumPrevSales = 0;
+
+    for (let d = 1; d <= maxDays; d++) {
+      const curData = currentDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+      const prevData = prevDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+
+      cumCurRev += curData.revenue;
+      cumCurSales += curData.sales;
+      cumPrevRev += prevData.revenue;
+      cumPrevSales += prevData.sales;
+
+      dayByDaySeries.push({
+        day: d,
+        dayLabel: `Dia ${String(d).padStart(2, "0")}`,
+        currentRevenue: Math.round(curData.revenue * 100) / 100,
+        previousRevenue: Math.round(prevData.revenue * 100) / 100,
+        currentCumulativeRevenue: Math.round(cumCurRev * 100) / 100,
+        previousCumulativeRevenue: Math.round(cumPrevRev * 100) / 100,
+        currentSales: curData.sales,
+        previousSales: prevData.sales,
+        currentCumulativeSales: cumCurSales,
+        previousCumulativeSales: cumPrevSales,
+        currentAvgTicket:
+          curData.sales > 0 ? Math.round((curData.revenue / curData.sales) * 100) / 100 : 0,
+        previousAvgTicket:
+          prevData.sales > 0 ? Math.round((prevData.revenue / prevData.sales) * 100) / 100 : 0,
+      });
+    }
   }
+
 
   // MTD (Month to Date) pacing comparativo até o dia decorrido
   const currentDaysWithSales = Array.from(currentDaysMap.keys());
@@ -927,20 +1076,21 @@ export function calculateComparativeAnalysis(
   return {
     currentPeriod: {
       key: currentKey,
-      label: formatMonthYearLabel(currentKey),
+      label: currentLabel || formatMonthYearLabel(currentKey),
       revenue: Math.round(currentRevenue * 100) / 100,
       sales: currentSales,
       avgTicket: Math.round(currentAvgTicket * 100) / 100,
-      daysCount: daysInCurrentMonth,
+      daysCount: currentDaysCount,
     },
     previousPeriod: {
       key: previousKey!,
-      label: formatMonthYearLabel(previousKey!),
+      label: previousLabel || formatMonthYearLabel(previousKey!),
       revenue: Math.round(previousRevenue * 100) / 100,
       sales: previousSales,
       avgTicket: Math.round(previousAvgTicket * 100) / 100,
-      daysCount: daysInPrevMonth,
+      daysCount: previousDaysCount,
     },
+
     deltas: {
       revenueDelta: Math.round(revenueDelta * 100) / 100,
       revenueGrowthPercent: Math.round(revenueGrowthPercent * 10) / 10,

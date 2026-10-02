@@ -23,7 +23,12 @@ export async function getComparativeSalesAction(options?: {
   previousMonthKey?: string;
   targetBuCode?: string | string[];
   targetBuCodes?: string[];
+  startDate?: string;
+  endDate?: string;
+  compareStartDate?: string;
+  compareEndDate?: string;
 }) {
   return getLiveComparativeAnalytics(options);
 }
+
 

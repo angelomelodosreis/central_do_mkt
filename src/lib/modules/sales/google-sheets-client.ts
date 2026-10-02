@@ -398,10 +398,15 @@ export async function getLiveComparativeAnalytics(options: {
   previousMonthKey?: string;
   targetBuCode?: string | string[];
   targetBuCodes?: string[];
+  startDate?: string;
+  endDate?: string;
+  compareStartDate?: string;
+  compareEndDate?: string;
 } = {}): Promise<{
   comparative: ComparativeAnalysisResult;
   availableMonths: Array<{ key: string; label: string; count: number }>;
 }> {
+
   const { transactions } = await fetchGoogleSheetsSalesData();
   const availableMonths = getAvailableMonths(transactions);
   const comparative = calculateComparativeAnalysis(transactions, options);
