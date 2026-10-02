@@ -14,6 +14,8 @@ import { Field, Input, Textarea } from "@/components/ui/field";
 import {
   DIAGNOSIS_LENS_LABELS,
   DIAGNOSIS_LENS_QUESTIONS,
+  DIAGNOSIS_LENS_PROVOCATIONS,
+  DIAGNOSIS_LENS_EVIDENCE_HINTS,
   FINDING_KINDS,
   FINDING_KIND_HINTS,
   FINDING_KIND_LABELS,
@@ -69,6 +71,29 @@ export function LensBlock({
       divider
     >
       <div className="space-y-4 px-5 pb-4 pt-2">
+        {/* Provocações e Onde buscar evidências (Metodologia Oficial) */}
+        {(DIAGNOSIS_LENS_PROVOCATIONS[lens] ||
+          DIAGNOSIS_LENS_EVIDENCE_HINTS[lens]) && (
+          <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3 text-xs space-y-1.5">
+            {DIAGNOSIS_LENS_PROVOCATIONS[lens] && (
+              <p className="text-slate-700 leading-relaxed">
+                <span className="font-semibold text-brand-900">
+                  Perguntas provocativas:{" "}
+                </span>
+                {DIAGNOSIS_LENS_PROVOCATIONS[lens]}
+              </p>
+            )}
+            {DIAGNOSIS_LENS_EVIDENCE_HINTS[lens] && (
+              <p className="text-slate-600">
+                <span className="font-semibold text-slate-800">
+                  Onde buscar dados:{" "}
+                </span>
+                {DIAGNOSIS_LENS_EVIDENCE_HINTS[lens]}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* O que a plataforma já sabe. Leitura, não digitação. */}
         {evidence.length > 0 ? (
           <div className="rounded-lg bg-slate-50 px-3 py-2.5">

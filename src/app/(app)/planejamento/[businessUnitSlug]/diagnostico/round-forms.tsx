@@ -88,13 +88,21 @@ export function OpenRoundForm({
   );
 }
 
-/** A leitura geral da rodada, escrita depois dos achados. */
+/** A síntese do diagnóstico (desafio e oportunidade) e objetivo do ciclo. */
 export function RoundSummaryForm({
   roundId,
   summary,
+  mainChallenge,
+  mainOpportunity,
+  cycleObjective,
+  cyclePeriod,
 }: {
   roundId: string;
   summary: string | null;
+  mainChallenge?: string | null;
+  mainOpportunity?: string | null;
+  cycleObjective?: string | null;
+  cyclePeriod?: string | null;
 }) {
   const [state, formAction, isPending] = useActionState<
     StrategyFormState,
@@ -102,25 +110,111 @@ export function RoundSummaryForm({
   >(saveRoundSummary, INITIAL_STRATEGY_STATE);
 
   return (
-    <form action={formAction} className="space-y-3">
+    <form action={formAction} className="space-y-5">
       <input type="hidden" name="roundId" value={roundId} />
-      <Textarea
-        name="summary"
-        rows={3}
-        className="font-sans text-sm"
-        defaultValue={summary ?? ""}
-        placeholder="Em duas ou três frases: o que esta rodada mostrou que a anterior não mostrava."
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="submit"
-          variant="secondary"
-          size="sm"
-          disabled={isPending}
+      <Aviso state={state} />
+
+      {/* Parte 2: Síntese do Diagnóstico */}
+      <div className="rounded-xl border border-brand-200 bg-brand-50/20 p-4 space-y-4">
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-brand-900">
+            Parte 2 · Síntese do Diagnóstico
+          </h4>
+          <p className="mt-0.5 text-xs text-slate-500">
+            A conclusão estratégica extraída da análise dos 5 pilares.
+          </p>
+        </div>
+
+        <Field
+          label="Qual é o principal desafio da BU hoje?"
+          hint="O principal gargalo, risco ou problema crítico identificado no diagnóstico."
+          htmlFor="mainChallenge"
         >
-          {isPending ? "Salvando…" : "Salvar leitura"}
+          <Textarea
+            id="mainChallenge"
+            name="mainChallenge"
+            rows={2}
+            className="font-sans text-sm"
+            defaultValue={mainChallenge ?? ""}
+            placeholder="Ex.: Perda de relevância e conversão no produto Extensivo frente a novos concorrentes regionais..."
+          />
+        </Field>
+
+        <Field
+          label="Qual é a principal oportunidade de crescimento?"
+          hint="A alavanca mais promissora para destravar resultado nos próximos 6 meses."
+          htmlFor="mainOpportunity"
+        >
+          <Textarea
+            id="mainOpportunity"
+            name="mainOpportunity"
+            rows={2}
+            className="font-sans text-sm"
+            defaultValue={mainOpportunity ?? ""}
+            placeholder="Ex.: Reposicionamento com foco no Internato e expansão da base de leads qualificados via eventos ao vivo..."
+          />
+        </Field>
+      </div>
+
+      {/* Parte 3: Objetivo do Ciclo */}
+      <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-4">
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            Parte 3 · Objetivo do Ciclo
+          </h4>
+          <p className="mt-0.5 text-xs text-slate-500">
+            O objetivo estratégico que guiará todas as ações e metas do período.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
+          <Field
+            label="Objetivo Macro do Ciclo"
+            hint="Aonde a BU precisa chegar ao final destes 6 meses."
+            htmlFor="cycleObjective"
+          >
+            <Input
+              id="cycleObjective"
+              name="cycleObjective"
+              defaultValue={cycleObjective ?? ""}
+              placeholder="Ex.: Consolidar liderança e atingir 3.000 matrículas no Extensivo"
+            />
+          </Field>
+
+          <Field
+            label="Período do Ciclo"
+            hint="Ex.: Jan a Jun/2026"
+            htmlFor="cyclePeriod"
+          >
+            <Input
+              id="cyclePeriod"
+              name="cyclePeriod"
+              defaultValue={cyclePeriod ?? ""}
+              placeholder="Jan a Jun/2026"
+            />
+          </Field>
+        </div>
+
+        <Field
+          label="Leitura geral e observações da rodada"
+          hint="Em duas ou três frases: o que esta rodada mostrou que a anterior não mostrava."
+          htmlFor="summary"
+        >
+          <Textarea
+            id="summary"
+            name="summary"
+            rows={2}
+            className="font-sans text-sm"
+            defaultValue={summary ?? ""}
+            placeholder="Síntese adicional da leitura do comitê..."
+          />
+        </Field>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" variant="primary" size="sm" disabled={isPending}>
+          {isPending ? "Salvando…" : "Salvar Síntese e Objetivo"}
         </Button>
-        <Aviso state={state} />
       </div>
     </form>
   );

@@ -1,12 +1,15 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db/client";
 import {
   businessUnit,
+  generatedNameHistory,
   namingTemplate,
   namingTemplateField,
+  type GeneratedNameHistory,
   type NamingTemplateWithFields,
 } from "@/lib/db/schema";
+import { newId } from "@/lib/utils/id";
 import { sortByName } from "@/lib/utils/text";
 
 /** Busca os modelos e junta cada um com seus campos, na ordem correta. */
@@ -84,4 +87,40 @@ export async function listActiveBusinessUnits(): Promise<BusinessUnitOption[]> {
     .from(businessUnit)
     .where(eq(businessUnit.isActive, true))
     .orderBy(asc(businessUnit.sortOrder), asc(businessUnit.label));
+}
+
+export async function saveGeneratedName(input: {
+  templateId?: string | null;
+  templateName: string;
+  generatedName: string;
+  parameters?: Record<string, string>;
+  userId?: string | null;
+  userName?: string | null;
+  userEmail?: string | null;
+}): Promise<GeneratedNameHistory> {
+  const db = await getDb();
+  const row = {
+    id: newId("gn"),
+    templateId: input.templateId ?? null,
+    templateName: input.templateName,
+    generatedName: input.generatedName,
+    parameters: input.parameters ?? null,
+    userId: input.userId ?? null,
+    userName: input.userName ?? null,
+    userEmail: input.userEmail ?? null,
+    createdAt: new Date(),
+  };
+  await db.insert(generatedNameHistory).values(row);
+  return row;
+}
+
+export async function listGeneratedNameHistory(
+  limit = 40,
+): Promise<GeneratedNameHistory[]> {
+  const db = await getDb();
+  return db
+    .select()
+    .from(generatedNameHistory)
+    .orderBy(desc(generatedNameHistory.createdAt))
+    .limit(limit);
 }

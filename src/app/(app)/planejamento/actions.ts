@@ -774,6 +774,11 @@ export async function saveGoal(
     nonGoals: field(formData, "nonGoals") || null,
     successSignal: field(formData, "successSignal") || null,
     risks: field(formData, "risks") || null,
+    diagnosisBaseline: field(formData, "diagnosisBaseline") || null,
+    primaryKpiName: field(formData, "primaryKpiName") || null,
+    primaryKpiTarget: field(formData, "primaryKpiTarget") || null,
+    secondaryKpiName: field(formData, "secondaryKpiName") || null,
+    secondaryKpiTarget: field(formData, "secondaryKpiTarget") || null,
     updatedBy: gate.currentUser.id,
     updatedAt: now,
   };
@@ -795,6 +800,11 @@ export async function saveGoal(
       nonGoals: existing.nonGoals,
       successSignal: existing.successSignal,
       risks: existing.risks,
+      diagnosisBaseline: existing.diagnosisBaseline,
+      primaryKpiName: existing.primaryKpiName,
+      primaryKpiTarget: existing.primaryKpiTarget,
+      secondaryKpiName: existing.secondaryKpiName,
+      secondaryKpiTarget: existing.secondaryKpiTarget,
       indicadores: alvosAntes.map((a) => ({
         metric: a.metric,
         target: a.target,

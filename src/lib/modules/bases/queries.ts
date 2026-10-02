@@ -23,6 +23,7 @@ export type DivisionRow = BusinessDivision & {
 export type BusinessUnitRow = {
   id: string;
   slug: string;
+  code: string | null;
   label: string;
   description: string | null;
   isActive: boolean;
@@ -80,6 +81,7 @@ export async function listBusinessUnits({
       .select({
         id: businessUnit.id,
         slug: businessUnit.slug,
+        code: businessUnit.code,
         label: businessUnit.label,
         description: businessUnit.description,
         isActive: businessUnit.isActive,

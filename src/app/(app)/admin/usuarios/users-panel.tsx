@@ -30,6 +30,7 @@ type PersonRow = {
   teams: Array<{ id: string; name: string }>;
   squads: Array<{ id: string; label: string; isLead: boolean }>;
   scopes: Array<{ type: ScopeType; name: string }>;
+  requestedBUs?: string[];
 };
 
 type Aba = "todos" | "pending" | "sem_escopo";
@@ -200,6 +201,16 @@ export function UsersPanel({
                         {person.status === "active" ? null : (
                           <StatusBadge status={person.status} />
                         )}
+                        {person.status === "pending" &&
+                        person.requestedBUs &&
+                        person.requestedBUs.length > 0 ? (
+                          <Badge tone="brand">
+                            {person.requestedBUs.length}{" "}
+                            {person.requestedBUs.length === 1
+                              ? "BU solicitada"
+                              : "BUs solicitadas"}
+                          </Badge>
+                        ) : null}
                       </p>
                       <p className="truncate text-xs text-slate-500">
                         {person.jobTitleName ?? "sem cargo"}

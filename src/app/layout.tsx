@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist_Mono, Inter } from "next/font/google";
 import localFont from "next/font/local";
+import { Toaster } from "sonner";
 
 import "./globals.css";
 
@@ -71,7 +72,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       lang="pt-BR"
       className={`${inter.variable} ${switzer.variable} ${geistMono.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <Toaster position="top-right" richColors closeButton />
+      </body>
     </html>
   );
 }

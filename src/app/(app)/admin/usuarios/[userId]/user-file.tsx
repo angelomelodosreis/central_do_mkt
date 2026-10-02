@@ -49,6 +49,12 @@ export type UserFileData = {
   teams: Array<{ teamId: string }>;
   squads: Array<{ squadId: string }>;
   grants: ResolvedGrant[];
+  requestedBUs?: Array<{
+    businessUnitId: string;
+    label: string;
+    code: string | null;
+    note: string | null;
+  }>;
 };
 
 const DESCRICAO_DO_PAPEL: Record<UserRole, string> = {
@@ -611,6 +617,41 @@ function Cabecalho({
           <p className="truncate text-sm text-slate-500">{person.email}</p>
         </div>
       </div>
+
+      {person.requestedBUs &&
+        person.requestedBUs.length > 0 &&
+        person.status === "pending" && (
+          <div className="w-full rounded-xl border border-brand-200 bg-brand-50/60 p-3.5 text-xs text-brand-950">
+            <div className="flex items-center gap-1.5 font-semibold text-brand-900">
+              <span>
+                ✨ BUs solicitadas no onboarding ({person.requestedBUs.length}):
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {person.requestedBUs.map((bu) => (
+                <span
+                  key={bu.businessUnitId}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200/80 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs"
+                >
+                  <span>{bu.label}</span>
+                  <code className="font-mono text-[10px] text-brand-700">
+                    {bu.code ?? `MEDCOF_${bu.businessUnitId}`}
+                  </code>
+                </span>
+              ))}
+            </div>
+            {person.requestedBUs[0]?.note && (
+              <p className="mt-2 text-slate-600 italic">
+                &ldquo;{person.requestedBUs[0].note}&rdquo;
+              </p>
+            )}
+            <p className="mt-2 text-[11px] text-brand-700 font-medium">
+              💡 Ao aprovar este cadastro, o acesso a essas{" "}
+              {person.requestedBUs.length} Business Units será concedido
+              automaticamente.
+            </p>
+          </div>
+        )}
 
       {/* Aprovar, reativar e suspender são decisões sobre a CONTA, não
           atributos dela: valem no clique e não esperam o "Salvar". Por isso

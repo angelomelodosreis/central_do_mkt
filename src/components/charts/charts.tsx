@@ -1,42 +1,88 @@
-import { cn } from "@/lib/utils/cn";
+"use client";
 
-/**
- * Gráficos em SVG escrito à mão.
- *
- * Sem biblioteca de propósito. As três formas de que o Panorama precisa —
- * barras por semana, uma linha sobreposta e uma barra horizontal de
- * comparação — cabem em cem linhas de SVG, enquanto uma biblioteca de gráficos
- * traz 50–200 kB para o navegador, um tema próprio que não é o desta
- * ferramenta e um conjunto de comportamentos que teríamos de desligar um a um.
- *
- * O que se perde: interatividade rica (zoom, seleção de faixa). O que se
- * ganha: o gráfico usa as mesmas cores, a mesma tipografia e o mesmo
- * arredondamento do resto da tela, e o valor aparece no `title` de cada barra —
- * que é o que se lê ao passar o mouse.
- */
+import { useId } from "react";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  BarChart,
+} from "recharts";
+
+import { cn } from "@/lib/utils/cn";
 
 export type PontoDaSerie = {
   label: string;
-  /** Barra. `null` = sem dado, e sem dado não é zero. */
+  /** Barra. `null` = sem dado. */
   valor: number | null;
-  /** Linha sobreposta, na escala do eixo direito. */
+  /** Linha sobreposta opcional. */
   linha?: number | null;
-  /** O que aparece ao passar o mouse. */
+  /** Título personalizado para o tooltip. */
   titulo?: string;
 };
 
 /**
- * Barras por período, com uma linha opcional por cima.
- *
- * As duas séries têm escalas independentes: faturamento em reais e CPL em
- * reais por lead não cabem no mesmo eixo, e forçar isso achata uma das duas
- * numa reta colada no chão.
+ * Custom Tooltip no padrão shadcn/ui e MedCof Design System.
+ */
+function ChartCustomTooltip({
+  active,
+  payload,
+  label,
+  rotuloLinha,
+}: {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  rotuloLinha?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+      <p className="text-xs font-semibold text-slate-900">{label}</p>
+      <div className="mt-1.5 space-y-1">
+        {payload.map((entry, index) => {
+          const isLine = entry.dataKey === "linha";
+          const title = isLine ? (rotuloLinha ?? "Linha") : "Valor";
+          const val = entry.value;
+
+          return (
+            <div
+              key={`item-${index}`}
+              className="flex items-center justify-between gap-4 text-xs"
+            >
+              <span className="flex items-center gap-1.5 text-slate-500">
+                <span
+                  className="size-2 rounded-full"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span>{title}:</span>
+              </span>
+              <span className="font-semibold tabular-nums text-slate-900">
+                {typeof val === "number"
+                  ? val.toLocaleString("pt-BR", { maximumFractionDigits: 2 })
+                  : (val ?? "—")}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Barras com Linha opcional implementado com Recharts (ComposedChart).
  */
 export function BarrasComLinha({
   pontos,
-  altura = 180,
-  corBarra = "fill-brand-500",
-  corLinha = "stroke-slate-900",
+  altura = 220,
+  corBarra = "#dc2626", // brand-600 MedCof
+  corLinha = "#0f172a", // slate-900
   rotuloLinha,
 }: {
   pontos: PontoDaSerie[];
@@ -45,120 +91,108 @@ export function BarrasComLinha({
   corLinha?: string;
   rotuloLinha?: string;
 }) {
+  const chartId = useId();
+
   if (pontos.length === 0) return null;
 
-  const valores = pontos
-    .map((ponto) => ponto.valor)
-    .filter((valor): valor is number => valor !== null);
-  const teto = Math.max(...valores, 0) || 1;
+  // Converte a série para o formato do Recharts
+  const data = pontos.map((p) => ({
+    label: p.label,
+    valor: p.valor,
+    linha: p.linha ?? null,
+  }));
 
-  const daLinha = pontos
-    .map((ponto) => ponto.linha)
-    .filter((valor): valor is number => valor !== null && valor !== undefined);
-  const tetoLinha = daLinha.length > 0 ? Math.max(...daLinha) || 1 : null;
+  const temLinha = pontos.some(
+    (p) => p.linha !== null && p.linha !== undefined,
+  );
 
-  const largura = 100 / pontos.length;
+  // Mapeia classes Tailwind se passadas como string para cores hex
+  const fillBarra = corBarra.startsWith("#")
+    ? corBarra
+    : corBarra.includes("brand")
+      ? "#dc2626"
+      : "#475569";
 
-  // O caminho da linha é montado em percentuais do viewBox: o SVG estica junto
-  // com o cartão, e coordenadas em pixel deixariam a linha fora das barras em
-  // qualquer largura diferente da de projeto.
-  const caminho =
-    tetoLinha === null
-      ? null
-      : pontos
-          .map((ponto, indice) => {
-            if (ponto.linha === null || ponto.linha === undefined) return null;
-            const x = largura * indice + largura / 2;
-            const y = 100 - (ponto.linha / tetoLinha) * 90;
-            return { x, y };
-          })
-          .filter((p): p is { x: number; y: number } => p !== null)
-          .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
-          .join(" ");
+  const strokeLinha = corLinha.startsWith("#")
+    ? corLinha
+    : corLinha.includes("slate")
+      ? "#0f172a"
+      : "#dc2626";
 
   return (
-    <div>
-      <div className="relative" style={{ height: altura }}>
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          className="size-full"
-          aria-hidden
-        >
-          {/* Três linhas de referência. Sem elas, comparar a terceira barra com
-              a nona vira estimativa a olho. */}
-          {[25, 50, 75].map((y) => (
-            <line
-              key={y}
-              x1="0"
-              x2="100"
-              y1={y}
-              y2={y}
-              className="stroke-slate-200"
-              strokeWidth="0.3"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-
-          {pontos.map((ponto, indice) => {
-            if (ponto.valor === null) return null;
-            const h = (ponto.valor / teto) * 90;
-            return (
-              <rect
-                key={ponto.label}
-                x={largura * indice + largura * 0.18}
-                y={100 - h}
-                width={largura * 0.64}
-                height={h}
-                rx="0.8"
-                className={corBarra}
-              />
-            );
-          })}
-
-          {caminho ? (
-            <path
-              d={caminho}
-              fill="none"
-              className={corLinha}
-              strokeWidth="1.5"
-              vectorEffect="non-scaling-stroke"
-              strokeLinejoin="round"
-            />
-          ) : null}
-        </svg>
-
-        {/* Área sensível ao mouse por cima do SVG: dá o valor de cada período
-            sem depender de eventos no próprio desenho, que com
-            `preserveAspectRatio="none"` teriam coordenadas distorcidas. */}
-        <div className="absolute inset-0 flex">
-          {pontos.map((ponto) => (
-            <div
-              key={ponto.label}
-              title={ponto.titulo ?? `${ponto.label}: ${ponto.valor ?? "—"}`}
-              className="flex-1"
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-1.5 flex gap-0.5 text-[10px] text-slate-400">
-        {pontos.map((ponto, indice) => (
-          <span
-            key={ponto.label}
-            className="flex-1 truncate text-center"
-            // Uma a cada duas em telas estreitas: treze rótulos lado a lado
-            // viram uma mancha ilegível.
-            style={{ visibility: indice % 2 === 0 ? "visible" : "hidden" }}
+    <div className="w-full">
+      <div style={{ width: "100%", height: altura }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={data}
+            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
           >
-            {ponto.label}
-          </span>
-        ))}
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#e2e8f0"
+            />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={{ stroke: "#e2e8f0" }}
+              tick={{ fill: "#64748b", fontSize: 11 }}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              yAxisId="left"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "#94a3b8", fontSize: 11 }}
+              tickFormatter={(v) =>
+                typeof v === "number"
+                  ? v >= 1000
+                    ? `${(v / 1000).toFixed(0)}k`
+                    : `${v}`
+                  : `${v}`
+              }
+            />
+            {temLinha && (
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "#94a3b8", fontSize: 11 }}
+              />
+            )}
+            <Tooltip
+              content={<ChartCustomTooltip rotuloLinha={rotuloLinha} />}
+              cursor={{ fill: "rgba(241, 245, 249, 0.6)" }}
+            />
+            <Bar
+              yAxisId="left"
+              dataKey="valor"
+              fill={fillBarra}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={38}
+            />
+            {temLinha && (
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="linha"
+                stroke={strokeLinha}
+                strokeWidth={2.5}
+                dot={{ r: 3, fill: strokeLinha }}
+                activeDot={{ r: 5 }}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
 
       {rotuloLinha ? (
-        <p className="mt-1 text-xs text-slate-500">
-          <span className="mr-1 inline-block h-px w-4 align-middle bg-slate-900" />
+        <p className="mt-2 text-center text-xs text-slate-500">
+          <span
+            className="mr-1.5 inline-block size-2 rounded-full align-middle"
+            style={{ backgroundColor: strokeLinha }}
+          />
           {rotuloLinha}
         </p>
       ) : null}
@@ -167,10 +201,7 @@ export function BarrasComLinha({
 }
 
 /**
- * Uma linha por BU, ordenada, com a barra proporcional ao maior.
- *
- * É a forma certa de comparar categorias: barra horizontal deixa o nome ao
- * lado do número, e não em pé embaixo de uma coluna estreita.
+ * Barras horizontais ordenadas por BU / Categoria com Recharts e fallback estilizado.
  */
 export function BarrasHorizontais({
   itens,
@@ -181,7 +212,6 @@ export function BarrasHorizontais({
     label: string;
     valor: number | null;
     valorFormatado: string;
-    /** Segunda linha do rótulo. Ex.: a variação sobre o período anterior. */
     detalhe?: string;
     href?: string;
   }>;
@@ -197,19 +227,22 @@ export function BarrasHorizontais({
       {itens.map((item) => {
         const largura = item.valor === null ? 0 : (item.valor / teto) * 100;
         return (
-          <li key={item.id} className="px-5 py-2.5">
+          <li
+            key={item.id}
+            className="px-5 py-2.5 transition hover:bg-slate-50/50"
+          >
             <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate text-sm text-slate-800">
+              <span className="min-w-0 truncate text-sm font-medium text-slate-800">
                 {item.label}
               </span>
-              <span className="shrink-0 text-sm font-medium tabular-nums text-slate-900">
+              <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900">
                 {item.valorFormatado}
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-2">
-              <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-brand-500"
+                  className="h-full rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: `${largura}%` }}
                 />
               </div>

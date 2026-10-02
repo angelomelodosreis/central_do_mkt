@@ -8,7 +8,10 @@ import { can, requirePermission } from "@/lib/auth/session";
 import { loadBaseOptions } from "@/lib/modules/bases/queries";
 import { getPageHrefById } from "@/lib/modules/documentation/queries";
 import { describeTemplateFormat } from "@/lib/modules/name-generator/generate";
-import { listActiveTemplates } from "@/lib/modules/name-generator/queries";
+import {
+  listActiveTemplates,
+  listGeneratedNameHistory,
+} from "@/lib/modules/name-generator/queries";
 
 export const metadata: Metadata = { title: "Gerador de Nomes" };
 export const dynamic = "force-dynamic";
@@ -25,12 +28,13 @@ export default async function NameGeneratorPage() {
 
   // Os modelos e as bases vêm do banco: cadastrar um modelo novo ou uma BU nova
   // aparece aqui imediatamente, sem precisar mexer no código.
-  const [templates, baseOptions, conventionsHref] = await Promise.all([
+  const [templates, baseOptions, conventionsHref, history] = await Promise.all([
     listActiveTemplates(),
     loadBaseOptions(),
     can(currentUser, "documentation")
       ? getPageHrefById(CONVENTIONS_PAGE_ID, currentUser)
       : null,
+    listGeneratedNameHistory(30),
   ]);
 
   const formTemplates: FormTemplate[] = templates.map((template) => ({
@@ -110,6 +114,13 @@ export default async function NameGeneratorPage() {
           formats={formatos}
           baseOptions={baseOptions}
           canManage={podeGerir}
+          history={history.map((h) => ({
+            id: h.id,
+            templateName: h.templateName,
+            generatedName: h.generatedName,
+            userName: h.userName,
+            createdAt: h.createdAt.toISOString(),
+          }))}
         />
       )}
     </>

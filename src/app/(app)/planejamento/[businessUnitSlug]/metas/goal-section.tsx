@@ -173,6 +173,53 @@ function GoalReadView({
         {goal.objective}
       </p>
 
+      {/* Metas 2.0: KPIs Principal e Secundário */}
+      {(goal.primaryKpiName || goal.secondaryKpiName) && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {goal.primaryKpiName && (
+            <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-3.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+                🎯 KPI Principal
+              </span>
+              <p className="mt-1 font-medium text-slate-900">
+                {goal.primaryKpiName}
+              </p>
+              {goal.primaryKpiTarget && (
+                <p className="mt-0.5 text-xs text-brand-800">
+                  <span className="font-semibold">Alvo:</span>{" "}
+                  {goal.primaryKpiTarget}
+                </p>
+              )}
+            </div>
+          )}
+          {goal.secondaryKpiName && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                📊 KPI Secundário
+              </span>
+              <p className="mt-1 font-medium text-slate-900">
+                {goal.secondaryKpiName}
+              </p>
+              {goal.secondaryKpiTarget && (
+                <p className="mt-0.5 text-xs text-slate-600">
+                  <span className="font-semibold">Alvo:</span>{" "}
+                  {goal.secondaryKpiTarget}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Metas 2.0: Embasamento no Diagnóstico */}
+      {goal.diagnosisBaseline && (
+        <Bloco titulo="🔗 Embasamento no Diagnóstico">
+          <p className="whitespace-pre-line rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">
+            {goal.diagnosisBaseline}
+          </p>
+        </Bloco>
+      )}
+
       {goal.targets.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {goal.targets.map((alvo) => (
@@ -353,6 +400,65 @@ function GoalForm({
           placeholder="Onde queremos chegar neste período"
         />
       </Field>
+
+      <div className="space-y-3 rounded-xl border border-brand-200/80 bg-brand-50/20 p-4">
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-brand-800">
+            Metas 2.0 · Embasamento e Indicadores Chave
+          </h4>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Metodologia oficial: toda meta deve ser ancorada em uma constatação
+            do diagnóstico e possuir indicador de sucesso claro.
+          </p>
+        </div>
+
+        <Field
+          label="🔗 Embasamento no Diagnóstico"
+          hint="Qual achado, dor ou oportunidade do diagnóstico sustenta esta meta?"
+        >
+          <Textarea
+            name="diagnosisBaseline"
+            rows={2}
+            className={PROSA}
+            defaultValue={goal?.diagnosisBaseline ?? ""}
+            placeholder="Ex.: Diagnóstico de Funil apontou gargalo na conversão de leads para R1; precisamos otimizar páginas e ofertas..."
+          />
+        </Field>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold text-slate-800">
+              🎯 KPI Principal
+            </p>
+            <Input
+              name="primaryKpiName"
+              placeholder="Nome do KPI (ex: Faturamento R1)"
+              defaultValue={goal?.primaryKpiName ?? ""}
+            />
+            <Input
+              name="primaryKpiTarget"
+              placeholder="Alvo (ex: R$ 10.000.000 ou 2.000 matrículas)"
+              defaultValue={goal?.primaryKpiTarget ?? ""}
+            />
+          </div>
+
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold text-slate-800">
+              📊 KPI Secundário
+            </p>
+            <Input
+              name="secondaryKpiName"
+              placeholder="Nome do KPI (ex: CAC ou Taxa de Conversão)"
+              defaultValue={goal?.secondaryKpiName ?? ""}
+            />
+            <Input
+              name="secondaryKpiTarget"
+              placeholder="Alvo (ex: < R$ 400 ou 3,8%)"
+              defaultValue={goal?.secondaryKpiTarget ?? ""}
+            />
+          </div>
+        </div>
+      </div>
 
       <Field label="Por que este é o foco agora" hint={AJUDA.rationale}>
         <Textarea

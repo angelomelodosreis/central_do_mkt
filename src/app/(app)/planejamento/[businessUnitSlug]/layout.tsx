@@ -61,6 +61,10 @@ export default async function BusinessUnitLayout({
   // Diagnóstico vem antes de Metas de propósito: a ordem das abas é a ordem do
   // trabalho — diagnostica, depois se compromete.
   tabs.push({ href: `${base}/diagnostico`, label: "Diagnóstico" });
+  tabs.push({
+    href: `${base}/revisao-trimestral`,
+    label: "Revisão Trimestral",
+  });
   tabs.push({ href: `${base}/metas`, label: "Metas" });
   // Resultados fecha o ciclo do trabalho: diagnostica, se compromete, executa e
   // presta conta. É a única aba onde se digita número realizado.

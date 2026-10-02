@@ -21,6 +21,7 @@ import {
   readRecentNames,
   type RecentName,
 } from "@/lib/modules/name-generator/recent-names";
+import { recordGeneratedNameAction } from "./actions";
 
 export type FormTemplate = {
   id: string;
@@ -161,13 +162,20 @@ export function NameGeneratorForm({
     }
   }
 
-  /** Copiar é o gesto que significa "usei este nome" — por isso guarda na lista. */
+  /** Copiar é o gesto que significa "usei este nome" — por isso guarda na lista e grava no banco. */
   async function handleCopyGenerated() {
     if (!result.ok) return;
     await copyToClipboard(result.name);
     setRecent(
       addRecentName({ name: result.name, templateName: template.name }),
     );
+    // Salva no banco de forma assíncrona para não travar a UI
+    recordGeneratedNameAction({
+      templateId: template.id,
+      templateName: template.name,
+      generatedName: result.name,
+      parameters: values as Record<string, string>,
+    }).catch(() => {});
   }
 
   function handleClearRecent() {

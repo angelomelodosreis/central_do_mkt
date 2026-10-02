@@ -13,6 +13,7 @@ import {
   strategyGoal,
   type GoalMetric,
 } from "./strategy.schema";
+import { businessUnit } from "./business-units.schema";
 
 /**
  * ── DIAGNÓSTICO ────────────────────────────────────────────────────────────
@@ -43,31 +44,70 @@ import {
  * fato, e as quatro primeiras têm evidência que a própria plataforma calcula.
  */
 export const DIAGNOSIS_LENSES = [
-  "portfolio",
-  "audience",
-  "seasonality",
-  "previous_cycle",
-  "external",
+  "negocio_mercado",
+  "cliente_marca",
+  "portfolio_oferta",
+  "funil_conversao",
+  "contexto_capacidade",
 ] as const;
-export type DiagnosisLens = (typeof DIAGNOSIS_LENSES)[number];
+export type DiagnosisLens =
+  | (typeof DIAGNOSIS_LENSES)[number]
+  | "portfolio"
+  | "audience"
+  | "seasonality"
+  | "previous_cycle"
+  | "external";
 
-export const DIAGNOSIS_LENS_LABELS: Record<DiagnosisLens, string> = {
-  portfolio: "Portfólio",
-  audience: "Público",
-  seasonality: "Ano e sazonalidade",
-  previous_cycle: "Ciclo anterior",
-  external: "Externo e capacidade",
+export const DIAGNOSIS_LENS_LABELS: Record<string, string> = {
+  negocio_mercado: "1. Negócio e mercado",
+  cliente_marca: "2. Cliente e marca",
+  portfolio_oferta: "3. Portfólio e oferta",
+  funil_conversao: "4. Funil e conversão",
+  contexto_capacidade: "5. Contexto e capacidade",
+  portfolio: "Portfólio e oferta",
+  audience: "Cliente e marca",
+  seasonality: "Contexto e capacidade",
+  previous_cycle: "Negócio e mercado",
+  external: "Funil e conversão",
 };
 
-export const DIAGNOSIS_LENS_QUESTIONS: Record<DiagnosisLens, string> = {
-  portfolio:
-    "O que carrega o ciclo, o que estagnou e onde está a lacuna do portfólio?",
-  audience: "Quem atendemos e o que o público sente que ainda não respondemos?",
-  seasonality: "O que dita a demanda ao longo do ano e onde estão os vazios?",
-  previous_cycle:
-    "O que prometemos no ciclo anterior e o que de fato aconteceu?",
-  external:
-    "O que muda fora de casa — concorrência, canais — e o que nos limita dentro?",
+export const DIAGNOSIS_LENS_QUESTIONS: Record<string, string> = {
+  negocio_mercado: "Onde estamos e como estamos em relação ao mercado?",
+  cliente_marca: "Estamos relevantes para o público certo?",
+  portfolio_oferta: "Nossa oferta continua competitiva e adequada ao mercado?",
+  funil_conversao: "Estamos conseguindo transformar demanda em resultado?",
+  contexto_capacidade: "Temos as condições para sustentar o crescimento?",
+  portfolio: "Nossa oferta continua competitiva e adequada ao mercado?",
+  audience: "Estamos relevantes para o público certo?",
+  seasonality: "Temos as condições para sustentar o crescimento?",
+  previous_cycle: "Onde estamos e como estamos em relação ao mercado?",
+  external: "Estamos conseguindo transformar demanda em resultado?",
+};
+
+export const DIAGNOSIS_LENS_PROVOCATIONS: Record<string, string> = {
+  negocio_mercado:
+    "Estamos crescendo? Perdemos volume? O mercado cresceu mais que a MedCof? Estamos ganhando ou perdendo participação? Entraram concorrentes mais agressivos?",
+  cliente_marca:
+    "Perdemos algum público? Estamos conseguindo alcançar novos segmentos? A marca continua sendo considerada? Perdemos relevância ou diferenciação? As necessidades do público mudaram?",
+  portfolio_oferta:
+    "Estamos concentrados demais em um produto? Algum produto perdeu relevância? Temos alguma necessidade importante sem solução? Perdemos competitividade em preço ou valor percebido?",
+  funil_conversao:
+    "A conversão piorou? Estamos gerando leads suficientes? Em qual etapa estamos perdendo pessoas? O problema está em aquisição, oferta, experiência ou venda?",
+  contexto_capacidade:
+    "Estamos aproveitando as melhores janelas do ano? Existem períodos em que deixamos oportunidades na mesa? Temos equipe, verba e capacidade operacional para crescer? O que pode limitar o próximo ciclo?",
+};
+
+export const DIAGNOSIS_LENS_EVIDENCE_HINTS: Record<string, string> = {
+  negocio_mercado:
+    "Faturamento, vendas, crescimento, tamanho do mercado, market share, concorrência",
+  cliente_marca:
+    "Personas, base de alunos, aquisição, pesquisas, awareness, consideração, percepção de marca",
+  portfolio_oferta:
+    "Vendas e faturamento por produto, mix, ticket, preços, ofertas, concorrência, pesquisas de mercado",
+  funil_conversao:
+    "Leads, leads qualificados, conversão, CAC, CPL, ROAS, canais, vendas, funil",
+  contexto_capacidade:
+    "Sazonalidade, calendário, eventos, orçamento, equipe, capacidade operacional",
 };
 
 /**
@@ -118,6 +158,14 @@ export const strategyRound = sqliteTable(
     isOpen: integer("is_open", { mode: "boolean" }).notNull().default(true),
     /** A leitura geral da rodada, escrita depois dos achados. */
     summary: text("summary"),
+    /** Parte 2: Qual é o principal desafio da BU hoje? */
+    mainChallenge: text("main_challenge"),
+    /** Parte 2: Qual é a principal oportunidade de crescimento? */
+    mainOpportunity: text("main_opportunity"),
+    /** Parte 3: Objetivo do Ciclo (ex: Ser o preparatório número 1 de aprovados no TEGO) */
+    cycleObjective: text("cycle_objective"),
+    /** Parte 3: Período do Ciclo (ex: Jan - Jun/2027) */
+    cyclePeriod: text("cycle_period"),
     createdBy: text("created_by"),
     updatedBy: text("updated_by"),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
@@ -245,3 +293,52 @@ export type StrategyRound = typeof strategyRound.$inferSelect;
 export type StrategyFinding = typeof strategyFinding.$inferSelect;
 export type StrategyMeasurement = typeof strategyMeasurement.$inferSelect;
 export type StrategyGoalRevision = typeof strategyGoalRevision.$inferSelect;
+
+/**
+ * ── REVISÃO TRIMESTRAL (CADÊNCIA DE 3 MESES) ──────────────────────────────
+ *
+ * Rito trimestral para checar a validade do diagnóstico inicial e das metas:
+ * 1. O diagnóstico feito há 3 meses ainda é válido?
+ * 2. O que mudou no mercado, no cliente ou na concorrência?
+ * 3. Surgiram novos problemas que não estavam no diagnóstico inicial?
+ * 4. Deixamos de aproveitar alguma oportunidade importante?
+ * 5. As premissas que sustentavam o objetivo ainda se mantêm?
+ * 6. Precisamos revisar alguma meta para o próximo trimestre?
+ * 7. Qual é o foco principal dos próximos 3 meses?
+ */
+export const strategyQuarterlyReview = sqliteTable(
+  "strategy_quarterly_review",
+  {
+    id: text("id").primaryKey(),
+    businessUnitId: text("business_unit_id")
+      .notNull()
+      .references(() => businessUnit.id, { onDelete: "restrict" }),
+    cycleId: text("cycle_id").references(() => strategyCycle.id, {
+      onDelete: "cascade",
+    }),
+    roundId: text("round_id").references(() => strategyRound.id, {
+      onDelete: "set null",
+    }),
+    quarter: text("quarter").notNull(), // "Q1", "Q2", "Q3", "Q4"
+    reviewDate: integer("review_date", { mode: "timestamp" }).notNull(),
+    diagnosticValid: text("diagnostic_valid"), // 'sim' | 'nao' | 'parcialmente'
+    marketChanges: text("market_changes"),
+    newProblems: text("new_problems"),
+    missedOpportunities: text("missed_opportunities"),
+    objectiveAssumptions: text("objective_assumptions"),
+    needsGoalRevision: text("needs_goal_revision"), // 'sim' | 'nao'
+    nextQuarterFocus: text("next_quarter_focus"),
+    status: text("status").notNull().default("completed"),
+    createdBy: text("created_by"),
+    updatedBy: text("updated_by"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("strategy_quarterly_review_bu_idx").on(table.businessUnitId),
+    index("strategy_quarterly_review_cycle_idx").on(table.cycleId),
+  ],
+);
+
+export type StrategyQuarterlyReview =
+  typeof strategyQuarterlyReview.$inferSelect;

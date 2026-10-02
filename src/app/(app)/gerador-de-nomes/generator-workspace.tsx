@@ -18,16 +18,26 @@ import { matchesSearch } from "@/lib/utils/text";
  * antes torna a escolha um ato consciente, e é ela que define o resultado
  * inteiro.
  */
+export type HistoryItem = {
+  id: string;
+  templateName: string;
+  generatedName: string;
+  userName: string | null;
+  createdAt: string;
+};
+
 export function GeneratorWorkspace({
   templates,
   formats,
   baseOptions,
   canManage,
+  history = [],
 }: {
   templates: FormTemplate[];
   formats: Record<string, string>;
   baseOptions: BaseOptions;
   canManage: boolean;
+  history?: HistoryItem[];
 }) {
   const [escolhido, setEscolhido] = useState<string | null>(
     // Com um modelo só, escolher não é escolha — abre direto no formulário.
@@ -122,6 +132,56 @@ export function GeneratorWorkspace({
           </ButtonLink>
         </p>
       ) : null}
+
+      {/* Histórico Persistente do Time (Salvo no Banco) */}
+      {history.length > 0 && (
+        <Card className="mt-8">
+          <CardHeader
+            title="Últimos Nomes Gerados pela Equipe"
+            description="Histórico real sincronizado no banco de dados para evitar duplicação no CRM."
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="px-4 py-2.5 font-semibold">Nome Gerado</th>
+                  <th className="px-4 py-2.5 font-semibold">Modelo</th>
+                  <th className="px-4 py-2.5 font-semibold">Gerado Por</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {history.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-2.5">
+                      <code className="font-mono font-medium text-slate-900">
+                        {item.generatedName}
+                      </code>
+                    </td>
+                    <td className="px-4 py-2.5 text-slate-600">
+                      {item.templateName}
+                    </td>
+                    <td className="px-4 py-2.5 text-slate-500">
+                      {item.userName ?? "Equipe MedCof"}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(item.generatedName);
+                        }}
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 shadow-2xs hover:bg-slate-50 active:scale-95"
+                      >
+                        Copiar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

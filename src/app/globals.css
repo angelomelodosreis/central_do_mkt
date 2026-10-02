@@ -38,6 +38,19 @@
   /* Títulos: a Switzer é a fonte de display da identidade MedCof. */
   --font-display: var(--font-switzer), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Sombras táteis e elevação suave (Taste UI / Soft Elevation) */
+  --shadow-soft-card:
+    0 12px 32px -8px rgba(15, 23, 42, 0.05),
+    0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  --shadow-soft-float:
+    0 20px 48px -12px rgba(15, 23, 42, 0.09),
+    0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  --shadow-soft-glow: 0 12px 28px -6px rgba(226, 38, 60, 0.35);
+  --shadow-soft-clay:
+    0 8px 20px -4px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-soft-inset: inset 0 2px 4px 0 rgba(15, 23, 42, 0.05);
 }
 
 @layer base {
@@ -46,7 +59,7 @@
   }
 
   body {
-    @apply bg-slate-50 font-sans text-slate-900 antialiased;
+    @apply bg-[#edf1f7] font-sans text-slate-900 antialiased;
   }
 
   /*

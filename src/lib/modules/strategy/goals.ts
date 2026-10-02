@@ -107,6 +107,11 @@ export type Goal = {
   nonGoals: string | null;
   successSignal: string | null;
   risks: string | null;
+  diagnosisBaseline: string | null;
+  primaryKpiName: string | null;
+  primaryKpiTarget: string | null;
+  secondaryKpiName: string | null;
+  secondaryKpiTarget: string | null;
   targets: GoalTarget[];
   updatedAt: Date;
 };
@@ -162,6 +167,11 @@ export async function loadCycleGoals(cycleId: string): Promise<CycleGoals> {
       nonGoals: row.nonGoals,
       successSignal: row.successSignal,
       risks: row.risks,
+      diagnosisBaseline: row.diagnosisBaseline ?? null,
+      primaryKpiName: row.primaryKpiName ?? null,
+      primaryKpiTarget: row.primaryKpiTarget ?? null,
+      secondaryKpiName: row.secondaryKpiName ?? null,
+      secondaryKpiTarget: row.secondaryKpiTarget ?? null,
       targets: byGoal.get(row.id) ?? [],
       updatedAt: row.updatedAt,
     };

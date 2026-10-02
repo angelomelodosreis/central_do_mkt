@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { session, USER_ROLES, user, type UserRole } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
+import { grantRequestedBuAccess } from "@/lib/modules/access/bu-requests";
 
 /**
  * Snapshot dos campos de acesso de um usuário. É o que gravamos em `beforeData`
@@ -57,6 +58,9 @@ export async function approveUser(formData: FormData): Promise<void> {
       updatedAt: new Date(),
     })
     .where(eq(user.id, targetId));
+
+  // Concede acesso automático às BUs que o usuário solicitou durante o onboarding
+  const buCount = await grantRequestedBuAccess(targetId, admin.id);
 
   await writeAuditLog({
     actorUserId: admin.id,

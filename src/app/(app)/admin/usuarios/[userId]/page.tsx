@@ -14,6 +14,7 @@ import {
   user,
 } from "@/lib/db/schema";
 import { listGrantsForUser } from "@/lib/modules/access/explain";
+import { getUserBuRequests } from "@/lib/modules/access/bu-requests";
 import { loadPositions, loadSquads } from "@/lib/modules/org/people";
 import { listActiveJobTitles, listOrgUnits } from "@/lib/modules/org/queries";
 import { sortByName } from "@/lib/utils/text";
@@ -76,6 +77,7 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     todosOsSquads,
     divisions,
     grants,
+    buRequests,
   ] = await Promise.all([
     loadPositions([alvo.id]),
     loadSquads([alvo.id]),
@@ -96,6 +98,7 @@ export default async function UserDetailPage({ params }: { params: Params }) {
       .select({ id: businessDivision.id, name: businessDivision.name })
       .from(businessDivision),
     listGrantsForUser(alvo.id),
+    getUserBuRequests(alvo.id),
   ]);
 
   // O sinal de cadastro concluído é `two_factor.verified`, e não
@@ -128,6 +131,12 @@ export default async function UserDetailPage({ params }: { params: Params }) {
       squadId: item.squadId,
     })),
     grants,
+    requestedBUs: buRequests.map((r) => ({
+      businessUnitId: r.businessUnitId,
+      label: r.businessUnitLabel,
+      code: r.businessUnitCode,
+      note: r.note,
+    })),
   };
 
   const orgUnits: OrgUnitOption[] = sortByName(

@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 import { asc, count, eq, inArray } from "drizzle-orm";
 
 import { plural } from "@/lib/utils/text";
+import { cn } from "@/lib/utils/cn";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardBody,
-  CardHeader,
   EmptyState,
   PageHeader,
   SectionTitle,
@@ -26,32 +26,40 @@ import {
   listAccessibleBusinessUnits,
   seesAllBusinessUnits,
 } from "@/lib/modules/org/scope";
+import { listBusinessUnits } from "@/lib/modules/bases/queries";
+import { BuDirectory, type BuDirectoryItem } from "./bu-directory";
 
-export const metadata: Metadata = { title: "Planejamento" };
+export const metadata: Metadata = { title: "Planejamento e Business Units" };
 export const dynamic = "force-dynamic";
 
 export default async function StrategyIndexPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; aba?: string }>;
 }) {
   const currentUser = await requirePermission("strategy", "view");
-  const { erro } = await searchParams;
+  const { erro, aba } = await searchParams;
+  const currentTab = aba === "lista" ? "lista" : "planejamento";
 
-  const units = await listAccessibleBusinessUnits(currentUser);
+  const [units, allUnits] = await Promise.all([
+    listAccessibleBusinessUnits(currentUser),
+    listBusinessUnits({ includeInactive: false }),
+  ]);
 
-  // Quem trabalha numa BU só cai direto nela. Para um analista, esta lista
-  // intermediária seria uma tela com um único link — um clique a mais, todo dia,
-  // para chegar onde ele sempre vai.
-  if (units.length === 1 && !seesAllBusinessUnits(currentUser)) {
+  // Quem trabalha numa BU só cai direto nela apenas se não estiver navegando para a aba de lista
+  if (
+    currentTab === "planejamento" &&
+    units.length === 1 &&
+    !seesAllBusinessUnits(currentUser)
+  ) {
     redirect(`/planejamento/${units[0].slug}`);
   }
 
   const db = await getDb();
-  const unitIds = units.map((unit) => unit.id);
+  const allUnitIds = allUnits.map((unit) => unit.id);
 
   const cycles =
-    unitIds.length === 0
+    allUnitIds.length === 0
       ? []
       : await db
           .select({
@@ -59,7 +67,7 @@ export default async function StrategyIndexPage({
             businessUnitId: strategyCycle.businessUnitId,
           })
           .from(strategyCycle)
-          .where(inArray(strategyCycle.businessUnitId, unitIds))
+          .where(inArray(strategyCycle.businessUnitId, allUnitIds))
           .orderBy(asc(strategyCycle.startsAt));
 
   const itemCounts = new Map<string, number>();
@@ -73,7 +81,7 @@ export default async function StrategyIndexPage({
 
   // Uma consulta só: dela saem o responsável e o tamanho da equipe de cada BU.
   const memberships =
-    unitIds.length === 0
+    allUnitIds.length === 0
       ? []
       : await db
           .select({
@@ -84,7 +92,7 @@ export default async function StrategyIndexPage({
           .from(squadMember)
           .innerJoin(squad, eq(squadMember.squadId, squad.id))
           .innerJoin(user, eq(squadMember.userId, user.id))
-          .where(inArray(squad.businessUnitId, unitIds));
+          .where(inArray(squad.businessUnitId, allUnitIds));
 
   const leadByUnit = new Map<string, string>();
   const teamSize = new Map<string, number>();
@@ -113,11 +121,35 @@ export default async function StrategyIndexPage({
   const minhas = cards.filter((unit) => unit.isMember);
   const outras = cards.filter((unit) => !unit.isMember);
 
+  const accessibleIds = new Set(units.map((u) => u.id));
+  const directoryUnits: BuDirectoryItem[] = allUnits.map((u) => {
+    const uCycles = cycles.filter((c) => c.businessUnitId === u.id);
+    return {
+      id: u.id,
+      slug: u.slug,
+      code: u.code,
+      label: u.label,
+      description: u.description,
+      divisionId: u.divisionId,
+      divisionName: u.divisionName,
+      isActive: u.isActive,
+      leadName: leadByUnit.get(u.id) ?? null,
+      pessoas: teamSize.get(u.id) ?? 0,
+      ciclos: uCycles.length,
+      itens: uCycles.reduce(
+        (sum, cycle) => sum + (itemCounts.get(cycle.id) ?? 0),
+        0,
+      ),
+      hasAccess: accessibleIds.has(u.id),
+      isLead: units.find((item) => item.id === u.id)?.isLead ?? false,
+    };
+  });
+
   return (
     <>
       <PageHeader
-        title="Planejamento"
-        description="O ano de cada Business Unit: calendário, personas, produtos, metas e documentação."
+        title="Planejamento e Business Units"
+        description="O ano de cada Business Unit: calendário, personas, produtos, metas e catálogo oficial."
       />
 
       {erro === "fora-do-escopo" ? (
@@ -130,13 +162,77 @@ export default async function StrategyIndexPage({
         </div>
       ) : null}
 
-      {units.length === 0 ? (
-        <EmptyState
-          title="Você ainda não está em nenhuma Business Unit"
-          description="O planejamento é sempre de uma BU, e o acesso vem do vínculo com ela. Um administrador precisa te incluir na equipe da BU em que você trabalha."
+      {/* Abas: Meu Planejamento vs Lista Oficial de BUs */}
+      <div className="mb-6 border-b border-slate-200">
+        <div className="flex gap-6">
+          <Link
+            href="/planejamento"
+            className={cn(
+              "flex items-center gap-2 border-b-2 pb-3 text-sm font-semibold transition-colors",
+              currentTab === "planejamento"
+                ? "border-brand-600 text-brand-600"
+                : "border-transparent text-slate-500 hover:text-slate-900",
+            )}
+          >
+            <span>Meu Planejamento</span>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-semibold",
+                currentTab === "planejamento"
+                  ? "bg-brand-50 text-brand-700"
+                  : "bg-slate-100 text-slate-600",
+              )}
+            >
+              {units.length}
+            </span>
+          </Link>
+
+          <Link
+            href="/planejamento?aba=lista"
+            className={cn(
+              "flex items-center gap-2 border-b-2 pb-3 text-sm font-semibold transition-colors",
+              currentTab === "lista"
+                ? "border-brand-600 text-brand-600"
+                : "border-transparent text-slate-500 hover:text-slate-900",
+            )}
+          >
+            <span>Lista Oficial de BUs</span>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-semibold",
+                currentTab === "lista"
+                  ? "bg-brand-50 text-brand-700"
+                  : "bg-slate-100 text-slate-600",
+              )}
+            >
+              {allUnits.length}
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      {currentTab === "lista" ? (
+        <BuDirectory
+          units={directoryUnits}
+          userAccessibleCount={units.length}
         />
-      ) : (
+      ) : units.length === 0 ? (
         <div className="space-y-4">
+          <EmptyState
+            title="Você ainda não está em nenhuma Business Unit"
+            description="O planejamento é sempre de uma BU, e o acesso vem do vínculo com ela. Você pode consultar o catálogo na aba 'Lista Oficial de BUs' e solicitar acesso no seu Perfil."
+          />
+          <div className="flex justify-center">
+            <Link
+              href="/planejamento?aba=lista"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-brand-700"
+            >
+              Ver Lista Oficial das 23 BUs →
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
           {minhas.length > 0 ? (
             <section>
               {outras.length > 0 ? (
@@ -164,10 +260,6 @@ export default async function StrategyIndexPage({
                   <ul className="divide-y divide-slate-100">
                     {outras.map((unit) => (
                       <li key={unit.id}>
-                        {/* Nome e detalhe um embaixo do outro, os dois à
-                            esquerda. Alinhado à direita, o detalhe ficava a meia
-                            tela de distância do nome que ele descreve — e a
-                            leitura de vinte linhas virava um zigue-zague. */}
                         <Link
                           href={`/planejamento/${unit.slug}`}
                           className="block px-5 py-3 transition-colors hover:bg-slate-50"

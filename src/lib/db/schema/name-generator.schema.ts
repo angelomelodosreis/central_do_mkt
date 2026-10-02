@@ -151,3 +151,32 @@ export type NamingTemplateField = typeof namingTemplateField.$inferSelect;
 export type NamingTemplateWithFields = NamingTemplate & {
   fields: NamingTemplateField[];
 };
+
+/**
+ * Histórico de nomes gerados e copiados pela equipe.
+ * Permite persistência real, auditoria e reutilização de nomes para CRMs.
+ */
+export const generatedNameHistory = sqliteTable(
+  "generated_name_history",
+  {
+    id: text("id").primaryKey(),
+    templateId: text("template_id").references(() => namingTemplate.id, {
+      onDelete: "set null",
+    }),
+    templateName: text("template_name").notNull(),
+    generatedName: text("generated_name").notNull(),
+    parameters: text("parameters", { mode: "json" }).$type<
+      Record<string, string>
+    >(),
+    userId: text("user_id"),
+    userName: text("user_name"),
+    userEmail: text("user_email"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("generated_name_user_idx").on(table.userId),
+    index("generated_name_created_idx").on(table.createdAt),
+  ],
+);
+
+export type GeneratedNameHistory = typeof generatedNameHistory.$inferSelect;

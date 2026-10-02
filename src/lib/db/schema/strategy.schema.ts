@@ -354,6 +354,15 @@ export const strategyGoal = sqliteTable(
     /** O que pode derrubar a meta e de quem ela depende. */
     risks: text("risks"),
 
+    /** Metas 2.0: Embasamento no Diagnóstico */
+    diagnosisBaseline: text("diagnosis_baseline"),
+    /** Metas 2.0: KPI Principal */
+    primaryKpiName: text("primary_kpi_name"),
+    primaryKpiTarget: text("primary_kpi_target"),
+    /** Metas 2.0: KPI Secundário */
+    secondaryKpiName: text("secondary_kpi_name"),
+    secondaryKpiTarget: text("secondary_kpi_target"),
+
     createdBy: text("created_by"),
     updatedBy: text("updated_by"),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),

@@ -151,3 +151,31 @@ export const accessGrant = sqliteTable(
 );
 
 export type AccessGrant = typeof accessGrant.$inferSelect;
+
+/**
+ * Solicitação de acesso a Business Unit feita por um usuário (novo ou existente).
+ * Permite ao usuário escolher BUs no onboarding/aguardando aprovação ou no seu perfil,
+ * e ao administrador aprovar concedendo acesso imediato.
+ */
+export const buAccessRequest = sqliteTable(
+  "bu_access_request",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    businessUnitId: text("business_unit_id").notNull(),
+    note: text("note"),
+    status: text("status", { enum: ["pending", "approved", "rejected"] })
+      .notNull()
+      .default("pending"),
+    requestedAt: integer("requested_at", { mode: "timestamp" }).notNull(),
+    reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+    reviewedBy: text("reviewed_by"),
+  },
+  (table) => [
+    index("bu_access_request_user_idx").on(table.userId),
+    index("bu_access_request_bu_idx").on(table.businessUnitId),
+    index("bu_access_request_status_idx").on(table.status),
+  ],
+);
+
+export type BuAccessRequest = typeof buAccessRequest.$inferSelect;

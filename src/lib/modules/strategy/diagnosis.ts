@@ -32,6 +32,10 @@ export type Round = {
   referenceDate: Date;
   isOpen: boolean;
   summary: string | null;
+  mainChallenge: string | null;
+  mainOpportunity: string | null;
+  cycleObjective: string | null;
+  cyclePeriod: string | null;
   updatedAt: Date;
 };
 
@@ -49,6 +53,10 @@ export async function listRounds(cycleId: string): Promise<Round[]> {
     referenceDate: row.referenceDate,
     isOpen: row.isOpen,
     summary: row.summary,
+    mainChallenge: row.mainChallenge ?? null,
+    mainOpportunity: row.mainOpportunity ?? null,
+    cycleObjective: row.cycleObjective ?? null,
+    cyclePeriod: row.cyclePeriod ?? null,
     updatedAt: row.updatedAt,
   }));
 }
@@ -437,7 +445,47 @@ export async function buildEvidence(
     });
   }
 
-  return { portfolio, audience, seasonality, previous_cycle, external };
+  // ── Funil e conversão ──
+  const funil_conversao: EvidenceItem[] = [];
+  if (goals.cycle?.targets && goals.cycle.targets.length > 0) {
+    const metasCapta = goals.cycle.targets.filter(
+      (t) =>
+        t.metric === "leads" ||
+        t.metric === "cpl" ||
+        t.metric === "lead_conversion" ||
+        t.metric === "sales" ||
+        t.metric === "sales_conversion",
+    );
+    if (metasCapta.length > 0) {
+      funil_conversao.push({
+        label: `${metasCapta.length} indicadores de funil na meta do ciclo`,
+        detail: metasCapta
+          .map((t) => `${GOAL_METRIC_CATALOG[t.metric].label}: ${t.target}`)
+          .join(" · "),
+      });
+    }
+  }
+  if (funil_conversao.length === 0) {
+    funil_conversao.push({
+      label: "Acompanhamento do funil de conversão da BU",
+      detail:
+        "Analise leads qualificados, taxas de conversão de landing page e CAC do produto principal.",
+    });
+  }
+
+  return {
+    negocio_mercado: previous_cycle,
+    cliente_marca: audience,
+    portfolio_oferta: portfolio,
+    funil_conversao,
+    contexto_capacidade: [...seasonality, ...external],
+    // Fallback legado
+    portfolio,
+    audience,
+    seasonality,
+    previous_cycle,
+    external,
+  } as LensEvidence;
 }
 
 /* ─────────────────────── relatório de órfãos ─────────────────────── */

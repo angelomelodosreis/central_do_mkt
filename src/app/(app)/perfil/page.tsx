@@ -1,0 +1,76 @@
+import type { Metadata } from "next";
+import { eq } from "drizzle-orm";
+
+import { PageHeader } from "@/components/ui/card";
+import { requireUser } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
+import { twoFactor, type UserRole } from "@/lib/db/schema";
+import { USER_ROLE_LABELS } from "@/lib/db/schema/auth.schema";
+import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
+import { listBusinessUnits } from "@/lib/modules/bases/queries";
+import { getUserBuRequests } from "@/lib/modules/access/bu-requests";
+import { loadPositions } from "@/lib/modules/org/people";
+import { ProfileEditor, type ProfileData } from "./profile-editor";
+
+export const metadata: Metadata = {
+  title: "Meu Perfil | Central do Marketing",
+};
+export const dynamic = "force-dynamic";
+
+export default async function ProfilePage() {
+  const currentUser = await requireUser();
+  const db = await getDb();
+
+  const [accessibleUnits, allUnits, myRequests, positions, twoFactorRecord] =
+    await Promise.all([
+      listAccessibleBusinessUnits(currentUser),
+      listBusinessUnits({ includeInactive: false }),
+      getUserBuRequests(currentUser.id),
+      loadPositions([currentUser.id]),
+      db
+        .select({ verified: twoFactor.verified })
+        .from(twoFactor)
+        .where(eq(twoFactor.userId, currentUser.id))
+        .get(),
+    ]);
+
+  const role = currentUser.role as UserRole;
+  const profileData: ProfileData = {
+    id: currentUser.id,
+    name: currentUser.name,
+    email: currentUser.email,
+    emailDomain: currentUser.emailDomain,
+    role,
+    roleLabel: USER_ROLE_LABELS[role] ?? role,
+    jobTitleName: currentUser.jobTitleName,
+    isSuperAdmin: currentUser.isSuperAdmin,
+    twoFactorEnabled: Boolean(twoFactorRecord),
+    twoFactorVerified: twoFactorRecord?.verified === true,
+    teams: (positions.get(currentUser.id) ?? []).map((p) => ({
+      id: p.teamId,
+      name: p.teamName,
+    })),
+    accessibleUnits,
+    allUnits: allUnits.map((u) => ({
+      id: u.id,
+      slug: u.slug,
+      code: u.code,
+      label: u.label,
+      divisionName: u.divisionName,
+    })),
+    myRequests,
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Meu Perfil"
+        description="Visualize seus acessos, configure seu nome de exibição, consulte suas Business Units e gerencie sua segurança."
+      />
+
+      <div className="mt-6">
+        <ProfileEditor data={profileData} />
+      </div>
+    </>
+  );
+}

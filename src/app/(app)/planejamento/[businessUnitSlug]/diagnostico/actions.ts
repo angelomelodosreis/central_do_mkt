@@ -204,7 +204,7 @@ export async function openRound(
   return { status: "success", message: `${sequence}ª rodada aberta.` };
 }
 
-/** Grava a leitura geral da rodada. */
+/** Grava a leitura geral da rodada, síntese (desafio e oportunidade) e objetivo do ciclo. */
 export async function saveRoundSummary(
   _previousState: StrategyFormState,
   formData: FormData,
@@ -218,13 +218,20 @@ export async function saveRoundSummary(
     .update(strategyRound)
     .set({
       summary: field(formData, "summary") || null,
+      mainChallenge: field(formData, "mainChallenge") || null,
+      mainOpportunity: field(formData, "mainOpportunity") || null,
+      cycleObjective: field(formData, "cycleObjective") || null,
+      cyclePeriod: field(formData, "cyclePeriod") || null,
       updatedBy: gate.currentUser.id,
       updatedAt: new Date(),
     })
     .where(eq(strategyRound.id, roundId));
 
   revalidateStrategy(gate.unit.slug);
-  return { status: "success", message: "Leitura da rodada salva." };
+  return {
+    status: "success",
+    message: "Diagnóstico (síntese e objetivo) salvo com sucesso.",
+  };
 }
 
 /** Fecha ou reabre a rodada. */

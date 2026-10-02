@@ -143,12 +143,66 @@ export default async function DiagnosisPage({
               </p>
 
               {canEdit && round.isOpen ? (
-                <RoundSummaryForm roundId={round.id} summary={round.summary} />
-              ) : round.summary ? (
-                <p className="whitespace-pre-line text-sm text-slate-700">
-                  {round.summary}
-                </p>
-              ) : null}
+                <RoundSummaryForm
+                  roundId={round.id}
+                  summary={round.summary}
+                  mainChallenge={round.mainChallenge}
+                  mainOpportunity={round.mainOpportunity}
+                  cycleObjective={round.cycleObjective}
+                  cyclePeriod={round.cyclePeriod}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {(round.mainChallenge || round.mainOpportunity) && (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {round.mainChallenge && (
+                        <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-3.5">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">
+                            Principal desafio da BU hoje
+                          </p>
+                          <p className="mt-1 text-sm text-slate-800 whitespace-pre-line">
+                            {round.mainChallenge}
+                          </p>
+                        </div>
+                      )}
+                      {round.mainOpportunity && (
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3.5">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
+                            Principal oportunidade de crescimento
+                          </p>
+                          <p className="mt-1 text-sm text-slate-800 whitespace-pre-line">
+                            {round.mainOpportunity}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {round.cycleObjective && (
+                    <div className="rounded-lg border border-brand-200 bg-brand-50/40 p-3.5">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-800">
+                          Objetivo Macro do Ciclo
+                        </p>
+                        {round.cyclePeriod && (
+                          <span className="text-xs font-medium text-brand-700">
+                            Período: {round.cyclePeriod}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-base font-semibold text-slate-900">
+                        {round.cycleObjective}
+                      </p>
+                    </div>
+                  )}
+
+                  {round.summary && (
+                    <p className="whitespace-pre-line text-sm text-slate-700">
+                      {round.summary}
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           ) : canEdit ? (
             <OpenRoundForm cycleId={cycle.id} isFirst />

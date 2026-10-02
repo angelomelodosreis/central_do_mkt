@@ -16,6 +16,8 @@ export const businessUnit = sqliteTable(
     id: text("id").primaryKey(),
     /** Valor usado na nomenclatura, já em snake_case. Ex.: `clinica_medica` */
     slug: text("slug").notNull().unique(),
+    /** Código oficial padronizado da BU. Ex.: `MEDCOF_CLINICA_MEDICA` */
+    code: text("code"),
     /** Nome de exibição na interface. Ex.: `Clínica Médica` */
     label: text("label").notNull(),
     description: text("description"),

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { CommandPalette } from "@/components/layout/command-palette";
 import { Nav, type NavItem } from "@/components/layout/nav";
 import { TestModeBanner } from "@/components/layout/test-mode-banner";
 import { ROLE_LABELS } from "@/components/ui/badge";
@@ -117,9 +118,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className="flex min-h-screen flex-1 flex-col bg-[#edf1f7] p-2 sm:p-4 lg:p-5">
       <TestModeBanner />
-      <div className="flex min-h-full flex-1 flex-col lg:flex-row">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[1720px] flex-1 flex-col rounded-[2.25rem] bg-white shadow-[0_20px_50px_-15px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/60 lg:flex-row lg:p-3">
         <Nav
           items={items}
           user={{
@@ -132,10 +133,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             ),
           }}
         />
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-          <div className="mx-auto max-w-5xl">{children}</div>
+        <main className="min-w-0 flex-1 px-3 py-4 sm:px-6 lg:px-8 lg:py-6">
+          <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

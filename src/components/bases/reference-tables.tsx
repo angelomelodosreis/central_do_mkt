@@ -125,13 +125,24 @@ export async function BusinessUnitsTable({
       </p>
 
       <Tabela
-        headers={["Business Unit", "Identificador", "Divisão", "Produtos"]}
+        headers={[
+          "Business Unit",
+          "Código Oficial",
+          "Identificador",
+          "Divisão",
+          "Produtos",
+        ]}
       >
         {units.map((unit) => (
           <tr key={unit.id} className={unit.isActive ? "" : "bg-slate-50"}>
             <td className="px-3 py-2 font-medium text-slate-900">
               {unit.label}
               {unit.isActive ? null : <Badge className="ml-2">Inativa</Badge>}
+            </td>
+            <td className="px-3 py-2">
+              <code className="rounded bg-brand-50 px-1.5 py-0.5 font-mono text-xs font-semibold text-brand-700">
+                {unit.code ?? `MEDCOF_${unit.slug.toUpperCase()}`}
+              </code>
             </td>
             <td className="px-3 py-2">
               <code className="font-mono text-xs text-slate-600">

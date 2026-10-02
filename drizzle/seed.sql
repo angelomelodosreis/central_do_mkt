@@ -19,30 +19,31 @@ INSERT OR IGNORE INTO allowed_domain (id, domain, is_active, created_by, created
   ('dom_medcof_tech', 'medcof.tech',        1, NULL, unixepoch());
 
 -- Business Units --------------------------------------------------------------
--- `slug` é o valor usado na nomenclatura; `label` é o nome exibido na tela.
-INSERT OR IGNORE INTO business_unit (id, slug, label, description, is_active, sort_order, created_at, updated_at) VALUES
-  ('bu_anestesiologia',             'anestesiologia',             'Anestesiologia',             NULL, 1,  10, unixepoch(), unixepoch()),
-  ('bu_cardiologia',                'cardiologia',                'Cardiologia',                NULL, 1,  20, unixepoch(), unixepoch()),
-  ('bu_cirurgia',                   'cirurgia',                   'Cirurgia',                   NULL, 1,  30, unixepoch(), unixepoch()),
-  ('bu_clinica_medica',             'clinica_medica',             'Clínica Médica',             NULL, 1,  40, unixepoch(), unixepoch()),
-  ('bu_concursus',                  'concursus',                  'Concursus',                  NULL, 1,  50, unixepoch(), unixepoch()),
-  ('bu_dermatologia',               'dermatologia',               'Dermatologia',               NULL, 1,  60, unixepoch(), unixepoch()),
-  ('bu_enamed',                     'enamed',                     'Enamed',                     NULL, 1,  70, unixepoch(), unixepoch()),
-  ('bu_endocrinologia',             'endocrinologia',             'Endocrinologia',             NULL, 1,  80, unixepoch(), unixepoch()),
-  ('bu_endocrinologia_pediatrica',  'endocrinologia_pediatrica',  'Endocrinologia Pediátrica',  NULL, 1,  90, unixepoch(), unixepoch()),
-  ('bu_ginecologia_e_obstetricia',  'ginecologia_e_obstetricia',  'Ginecologia e Obstetrícia',  NULL, 1, 100, unixepoch(), unixepoch()),
-  ('bu_internato',                  'internato',                  'Internato',                  NULL, 1, 110, unixepoch(), unixepoch()),
-  ('bu_lifehacks',                  'ps',                         'PS',                         NULL, 1, 120, unixepoch(), unixepoch()),
-  ('bu_medicina_de_emergencia',     'medicina_de_emergencia',     'Medicina de Emergência',     NULL, 1, 130, unixepoch(), unixepoch()),
-  ('bu_medicina_intensiva',         'medicina_intensiva',         'Medicina Intensiva',         NULL, 1, 140, unixepoch(), unixepoch()),
-  ('bu_oftalmologia',               'oftalmologia',               'Oftalmologia',               NULL, 1, 150, unixepoch(), unixepoch()),
-  ('bu_ortopedia',                  'ortopedia',                  'Ortopedia',                  NULL, 1, 160, unixepoch(), unixepoch()),
-  ('bu_pediatria',                  'pediatria',                  'Pediatria',                  NULL, 1, 170, unixepoch(), unixepoch()),
-  ('bu_radiologia',                 'radiologia',                 'Radiologia',                 NULL, 1, 180, unixepoch(), unixepoch()),
-  ('bu_residencia',                 'residencia',                 'Residência',                 NULL, 1, 190, unixepoch(), unixepoch()),
-  ('bu_revalida',                   'revalida',                   'Revalida',                   NULL, 1, 200, unixepoch(), unixepoch()),
-  ('bu_urologia',                   'urologia',                   'Urologia',                   NULL, 1, 210, unixepoch(), unixepoch()),
-  ('bu_usa',                        'usa',                        'USA',                        NULL, 1, 220, unixepoch(), unixepoch());
+-- `slug` é o valor usado na nomenclatura; `code` é o código oficial padronizado; `label` é o nome exibido.
+INSERT OR IGNORE INTO business_unit (id, slug, code, label, description, is_active, sort_order, created_at, updated_at) VALUES
+  ('bu_anestesiologia',             'anestesiologia',             'MEDCOF_ANESTESIOLOGIA',             'Anestesiologia',             NULL, 1,  10, unixepoch(), unixepoch()),
+  ('bu_cardiologia',                'cardiologia',                'MEDCOF_CARDIOLOGIA',                'Cardiologia',                NULL, 1,  20, unixepoch(), unixepoch()),
+  ('bu_cirurgia',                   'cirurgia',                   'MEDCOF_CIRURGIA',                   'Cirurgia',                   NULL, 1,  30, unixepoch(), unixepoch()),
+  ('bu_clinica_medica',             'clinica_medica',             'MEDCOF_CLINICA_MEDICA',             'Clínica Médica',             NULL, 1,  40, unixepoch(), unixepoch()),
+  ('bu_concursus',                  'concursus',                  'MEDCOF_CONCURSUS',                  'Concursus',                  NULL, 1,  50, unixepoch(), unixepoch()),
+  ('bu_dermatologia',               'dermatologia',               'MEDCOF_DERMATOLOGIA',               'Dermatologia',               NULL, 1,  60, unixepoch(), unixepoch()),
+  ('bu_enamed',                     'enamed',                     'MEDCOF_ENAMED',                     'Enamed',                     NULL, 1,  70, unixepoch(), unixepoch()),
+  ('bu_endocrinologia',             'endocrinologia',             'MEDCOF_ENDOCRINOLOGIA',             'Endocrinologia',             NULL, 1,  80, unixepoch(), unixepoch()),
+  ('bu_endocrinologia_pediatrica',  'endocrinologia_pediatrica',  'MEDCOF_ENDOCRINOLOGIA_PEDIATRICA',  'Endocrinologia Pediátrica',  NULL, 1,  90, unixepoch(), unixepoch()),
+  ('bu_ginecologia_e_obstetricia',  'ginecologia_e_obstetricia',  'MEDCOF_GINECOLOGIA_E_OBSTETRICIA',  'Ginecologia e Obstetrícia',  NULL, 1, 100, unixepoch(), unixepoch()),
+  ('bu_internato',                  'internato',                  'MEDCOF_INTERNATO',                  'Internato',                  NULL, 1, 110, unixepoch(), unixepoch()),
+  ('bu_lifehacks',                  'lifehacks',                  'MEDCOF_LIFEHACKS',                  'Lifehacks',                  NULL, 1, 120, unixepoch(), unixepoch()),
+  ('bu_medicina_de_emergencia',     'medicina_de_emergencia',     'MEDCOF_MEDICINA_DE_EMERGENCIA',     'Medicina de Emergência',     NULL, 1, 130, unixepoch(), unixepoch()),
+  ('bu_medicina_intensiva',         'medicina_intensiva',         'MEDCOF_MEDICINA_INTENSIVA',         'Medicina Intensiva',         NULL, 1, 140, unixepoch(), unixepoch()),
+  ('bu_oftalmologia',               'oftalmologia',               'MEDCOF_OFTALMOLOGIA',               'Oftalmologia',               NULL, 1, 150, unixepoch(), unixepoch()),
+  ('bu_ortopedia',                  'ortopedia',                  'MEDCOF_ORTOPEDIA',                  'Ortopedia',                  NULL, 1, 160, unixepoch(), unixepoch()),
+  ('bu_otorrinolaringologia',        'otorrinolaringologia',        'MEDCOF_OTORRINOLARINGOLOGIA',        'Otorrinolaringologia',        NULL, 1, 165, unixepoch(), unixepoch()),
+  ('bu_pediatria',                  'pediatria',                  'MEDCOF_PEDIATRIA',                  'Pediatria',                  NULL, 1, 170, unixepoch(), unixepoch()),
+  ('bu_radiologia',                 'radiologia',                 'MEDCOF_RADIOLOGIA',                 'Radiologia',                 NULL, 1, 180, unixepoch(), unixepoch()),
+  ('bu_residencia',                 'residencia',                 'MEDCOF_RESIDENCIA',                 'Residência',                 NULL, 1, 190, unixepoch(), unixepoch()),
+  ('bu_revalida',                   'revalida',                   'MEDCOF_REVALIDA',                   'Revalida',                   NULL, 1, 200, unixepoch(), unixepoch()),
+  ('bu_urologia',                   'urologia',                   'MEDCOF_UROLOGIA',                   'Urologia',                   NULL, 1, 210, unixepoch(), unixepoch()),
+  ('bu_usa',                        'usa',                        'MEDCOF_USA',                        'USA',                        NULL, 1, 220, unixepoch(), unixepoch());
 
 -- Matriz de permissões padrão (papel × módulo) --------------------------------
 -- Pode ser alterada depois pela tela Administração > Permissões, sem deploy.
