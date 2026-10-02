@@ -18,6 +18,7 @@ export default async function ProductsPage() {
         id: item.id,
         slug: item.slug,
         name: item.name,
+        description: item.description,
         isActive: item.isActive,
         businessUnitId: item.businessUnitId,
         businessUnitLabel: item.businessUnitLabel,

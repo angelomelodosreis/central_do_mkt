@@ -64,6 +64,7 @@ export function ReviewListClient({
           />
           <CardBody>
             <QuarterlyReviewForm
+              key={editingId ?? "novo"}
               businessUnitId={businessUnitId}
               cycleId={cycleId}
               initialData={reviewSendoEditada}

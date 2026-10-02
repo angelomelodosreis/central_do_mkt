@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { CommandPalette } from "@/components/layout/command-palette";
 import { Nav, type NavItem } from "@/components/layout/nav";
+import { RouteLoadingIndicator } from "@/components/layout/route-loading-indicator";
 import { TestModeBanner } from "@/components/layout/test-mode-banner";
 import { ROLE_LABELS } from "@/components/ui/badge";
 import { can, isPlatformAdmin, requireUser } from "@/lib/auth/session";
@@ -130,6 +131,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
+      <RouteLoadingIndicator />
       <TestModeBanner />
       <div className="flex min-h-full flex-1 flex-col lg:flex-row">
         <Nav

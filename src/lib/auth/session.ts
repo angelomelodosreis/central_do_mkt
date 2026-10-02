@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { and, eq } from "drizzle-orm";
 
-import { getAuth } from "./auth";
+import { DEFAULT_ALLOWED_DOMAINS, getAuth } from "./auth";
 import {
   lerEstadoDoSegundoFator,
   type EstadoDoSegundoFator,
@@ -114,16 +114,23 @@ export const getCurrentUser = cache(
 
     // O domínio precisa continuar autorizado — desativar um domínio revoga o
     // acesso de todo mundo que o usa, sem precisar suspender um por um.
-    const domainStillAllowed = await db
-      .select({ id: allowedDomain.id })
-      .from(allowedDomain)
-      .where(
-        and(
-          eq(allowedDomain.domain, row.emailDomain),
-          eq(allowedDomain.isActive, true),
-        ),
-      )
-      .get();
+    // Domínios corporativos oficiais (@medcof.com.br, @grupomedcof.com.br) são sempre válidos.
+    const isDefaultCorpDomain = DEFAULT_ALLOWED_DOMAINS.includes(
+      row.emailDomain as any,
+    );
+
+    const domainStillAllowed =
+      isDefaultCorpDomain ||
+      (await db
+        .select({ id: allowedDomain.id })
+        .from(allowedDomain)
+        .where(
+          and(
+            eq(allowedDomain.domain, row.emailDomain),
+            eq(allowedDomain.isActive, true),
+          ),
+        )
+        .get());
 
     const status: UserStatus = domainStillAllowed ? row.status : "suspended";
 

@@ -225,11 +225,17 @@ export function metricLabel(metric: GoalMetric): string {
  * mais 45% no 2º não são 85%. Para esses a conferência compara ordem de
  * grandeza em vez de soma — ou melhor, não compara.
  */
-const NAO_SOMAVEIS: ReadonlySet<string> = new Set(
-  Object.entries(GOAL_METRIC_CATALOG)
+const NAO_SOMAVEIS: ReadonlySet<string> = new Set([
+  ...Object.entries(GOAL_METRIC_CATALOG)
     .filter(([, spec]) => spec.unit !== "count" && spec.unit !== "currency")
     .map(([key]) => key),
-);
+  // Ticket médio, CAC e CPL são em moeda (currency), mas são médias ou custos unitários — não se somam entre semestres.
+  "average_ticket",
+  "cac",
+  "cpl",
+  // Alunos ativos é contagem pontual de base (headcount/estoque), não fluxo cumulativo.
+  "active_students",
+]);
 
 export function isSummable(metric: GoalMetric): boolean {
   return !NAO_SOMAVEIS.has(metric);

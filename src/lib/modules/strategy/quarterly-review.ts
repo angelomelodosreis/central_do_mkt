@@ -75,6 +75,9 @@ export async function saveQuarterlyReview(
     if (!existing) {
       throw new Error("Revisão trimestral não encontrada para atualização.");
     }
+    if (existing.businessUnitId !== input.businessUnitId) {
+      throw new Error("Permissão negada: esta revisão trimestral pertence a outra Business Unit.");
+    }
 
     await db
       .update(strategyQuarterlyReview)

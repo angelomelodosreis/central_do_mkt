@@ -252,8 +252,9 @@ export function WeeklyPanel({
 }
 
 function paraNumero(valor: string | undefined): number | null {
-  if (!valor) return null;
+  if (!valor || !valor.trim()) return null;
   const limpo = valor
+    .trim()
     .replace(/[R$\s]/g, "")
     .replace(/\.(?=\d{3}(\D|$))/g, "")
     .replace(",", ".");
@@ -312,8 +313,6 @@ export function InitiativesPanel({
 
             return (
               <li key={item.itemId} className="px-5 py-3">
-                <input type="hidden" name="iniciativas" value={item.itemId} />
-
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2">
@@ -348,6 +347,11 @@ export function InitiativesPanel({
 
                 {aberta ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-5">
+                    <input
+                      type="hidden"
+                      name="iniciativas"
+                      value={item.itemId}
+                    />
                     {CAMPOS_BASE.map((campo) => (
                       <label key={campo.key} className="block">
                         <span className="mb-1 block text-xs uppercase tracking-wide text-slate-500">

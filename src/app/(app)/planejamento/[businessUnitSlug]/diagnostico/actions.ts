@@ -10,6 +10,7 @@ import {
   businessUnit,
   strategyCycle,
   strategyFinding,
+  strategyGoalFinding,
   strategyMeasurement,
   strategyRound,
   DIAGNOSIS_LENSES,
@@ -212,6 +213,12 @@ export async function saveRoundSummary(
   const roundId = field(formData, "roundId");
   const gate = await gateByRound(roundId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
+  if (!gate.round.isOpen) {
+    return {
+      status: "error",
+      message: "Esta rodada está fechada para edição.",
+    };
+  }
 
   const db = await getDb();
   const updatePayload: Record<string, any> = {
@@ -240,6 +247,16 @@ export async function saveRoundSummary(
     .set(updatePayload)
     .where(eq(strategyRound.id, roundId));
 
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "strategy_round.update",
+    entityType: "strategy_round",
+    entityId: roundId,
+    summary: `Atualizou a síntese e objetivo da ${gate.round.sequence}ª rodada de ${gate.unit.label}`,
+    afterData: updatePayload,
+  });
+
   revalidateStrategy(gate.unit.slug);
   return {
     status: "success",
@@ -255,9 +272,28 @@ export async function savePillarDiagnosisAction(
   const roundId = field(formData, "roundId");
   const gate = await gateByRound(roundId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
+  if (!gate.round.isOpen) {
+    return {
+      status: "error",
+      message: "Esta rodada está fechada para edição.",
+    };
+  }
 
   const lens = field(formData, "lens");
   const text = field(formData, "diagnosisText");
+
+  if (
+    lens !== "negocio_mercado" &&
+    lens !== "cliente_marca" &&
+    lens !== "portfolio_oferta" &&
+    lens !== "funil_conversao" &&
+    lens !== "contexto_capacidade"
+  ) {
+    return {
+      status: "error",
+      message: "Pilar inválido para diagnóstico.",
+    };
+  }
 
   const db = await getDb();
   const updateData: Record<string, string | null> = {};
@@ -275,6 +311,16 @@ export async function savePillarDiagnosisAction(
       updatedAt: new Date(),
     })
     .where(eq(strategyRound.id, roundId));
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "strategy_round.update",
+    entityType: "strategy_round",
+    entityId: roundId,
+    summary: `Atualizou o diagnóstico do pilar "${lens}" na ${gate.round.sequence}ª rodada de ${gate.unit.label}`,
+    afterData: updateData,
+  });
 
   revalidateStrategy(gate.unit.slug);
   return {
@@ -344,6 +390,12 @@ export async function saveFinding(
   const roundId = field(formData, "roundId");
   const gate = await gateByRound(roundId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
+  if (!gate.round.isOpen) {
+    return {
+      status: "error",
+      message: "Esta rodada está fechada para edição.",
+    };
+  }
 
   const lens = field(formData, "lens");
   const kind = field(formData, "kind");
@@ -379,6 +431,16 @@ export async function saveFinding(
       .set({ lens, kind, statement, evidence, updatedAt: now })
       .where(eq(strategyFinding.id, findingId));
 
+    await writeAuditLog({
+      actorUserId: gate.currentUser.id,
+      actorEmail: gate.currentUser.email,
+      action: "strategy_finding.update",
+      entityType: "strategy_finding",
+      entityId: findingId,
+      summary: `Atualizou o achado "${statement.slice(0, 60)}" de ${gate.unit.label}`,
+      afterData: { lens, kind, statement, evidence },
+    });
+
     revalidateStrategy(gate.unit.slug);
     return { status: "success", message: "Achado atualizado." };
   }
@@ -389,8 +451,9 @@ export async function saveFinding(
     .where(eq(strategyFinding.roundId, roundId))
     .get();
 
+  const id = newId("find");
   await db.insert(strategyFinding).values({
-    id: newId("find"),
+    id,
     roundId,
     lens,
     kind,
@@ -400,6 +463,16 @@ export async function saveFinding(
     createdBy: gate.currentUser.id,
     createdAt: now,
     updatedAt: now,
+  });
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "strategy_finding.create",
+    entityType: "strategy_finding",
+    entityId: id,
+    summary: `Registrou o achado "${statement.slice(0, 60)}" em ${gate.unit.label}`,
+    afterData: { lens, kind, statement, evidence },
   });
 
   revalidateStrategy(gate.unit.slug);
@@ -416,6 +489,7 @@ export async function deleteFinding(formData: FormData): Promise<void> {
       id: strategyFinding.id,
       statement: strategyFinding.statement,
       businessUnitId: strategyCycle.businessUnitId,
+      isOpen: strategyRound.isOpen,
     })
     .from(strategyFinding)
     .innerJoin(strategyRound, eq(strategyFinding.roundId, strategyRound.id))
@@ -424,9 +498,14 @@ export async function deleteFinding(formData: FormData): Promise<void> {
     .get();
 
   if (!achado) return;
+  if (!achado.isOpen) return;
 
   const gate = await requireEditor(achado.businessUnitId);
   if ("erro" in gate) return;
+
+  await db
+    .delete(strategyGoalFinding)
+    .where(eq(strategyGoalFinding.findingId, findingId));
 
   await db.delete(strategyFinding).where(eq(strategyFinding.id, findingId));
 
@@ -459,6 +538,12 @@ export async function saveMeasurements(
   const roundId = field(formData, "roundId");
   const gate = await gateByRound(roundId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
+  if (!gate.round.isOpen) {
+    return {
+      status: "error",
+      message: "Esta rodada está fechada para edição.",
+    };
+  }
 
   const medidas: { metric: GoalMetric; actual: number; note: string | null }[] =
     [];
@@ -505,6 +590,16 @@ export async function saveMeasurements(
     .update(strategyRound)
     .set({ updatedBy: gate.currentUser.id, updatedAt: now })
     .where(eq(strategyRound.id, roundId));
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "strategy_measurement.save",
+    entityType: "strategy_round",
+    entityId: roundId,
+    summary: `Registrou ${medidas.length} indicadores realizados na ${gate.round.sequence}ª rodada de ${gate.unit.label}`,
+    afterData: { totalIndicadores: medidas.length },
+  });
 
   revalidateStrategy(gate.unit.slug);
   return {

@@ -24,6 +24,31 @@ export const UNAUTHORIZED_DOMAIN_MESSAGE =
   "Entre com seu e-mail corporativo ou fale com o administrador da Central do Marketing.";
 
 /**
+ * Domínios corporativos oficiais da MedCof liberados por padrão para login social.
+ * Garante que usuários @medcof.com.br e @grupomedcof.com.br consigam se autenticar
+ * mesmo se a tabela allowed_domain ainda não tiver sido sincronizada.
+ */
+export const DEFAULT_ALLOWED_DOMAINS = [
+  "medcof.com.br",
+  "grupomedcof.com.br",
+  "medcof.tech",
+] as const;
+
+export function isAllowedCorporateDomain(
+  domain: string,
+  domainRow?: { isActive: boolean } | null,
+): boolean {
+  if (
+    DEFAULT_ALLOWED_DOMAINS.includes(
+      domain as (typeof DEFAULT_ALLOWED_DOMAINS)[number],
+    )
+  ) {
+    return true;
+  }
+  return Boolean(domainRow?.isActive);
+}
+
+/**
  * Extrai o domínio de um e-mail, normalizado em minúsculas.
  * Retorna string vazia se o e-mail for malformado.
  */
@@ -132,12 +157,31 @@ function buildAuth(db: Awaited<ReturnType<typeof getDb>>) {
               .where(eq(allowedDomain.domain, domain))
               .get();
 
-            if (!domainRow || !domainRow.isActive) {
+            const isAllowed = isAllowedCorporateDomain(domain, domainRow);
+
+            if (!isAllowed) {
               // Aborta a criação: nenhuma linha de usuário, conta ou sessão é
               // gravada para um domínio não autorizado.
               throw new APIError("FORBIDDEN", {
                 message: UNAUTHORIZED_DOMAIN_MESSAGE,
               });
+            }
+
+            // Se o domínio for oficial e não existir na tabela allowed_domain, garante inserção
+            if (!domainRow && DEFAULT_ALLOWED_DOMAINS.includes(domain as any)) {
+              try {
+                await db
+                  .insert(allowedDomain)
+                  .values({
+                    id: `dom_${domain.replace(/[^a-z0-9]/g, "_")}`,
+                    domain,
+                    isActive: true,
+                    createdAt: new Date(),
+                  })
+                  .onConflictDoNothing();
+              } catch {
+                // Silencioso caso já exista ou colida
+              }
             }
 
             // Contas fictícias do modo de teste local (prefixo `usr_teste_`)

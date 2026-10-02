@@ -25,6 +25,7 @@ type ProductCard = {
   id: string;
   slug: string;
   name: string;
+  description?: string | null;
   isActive: boolean;
   businessUnitId: string | null;
   businessUnitLabel: string | null;
@@ -350,6 +351,7 @@ function EditProductDrawer({
               id="edit-product-description"
               name="description"
               maxLength={200}
+              defaultValue={product.description ?? ""}
             />
           </Field>
 

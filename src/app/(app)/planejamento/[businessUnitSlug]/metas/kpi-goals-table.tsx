@@ -93,6 +93,7 @@ export function KpiGoalsTable({
       {/* Formulário de Criação / Edição */}
       {(isAdding || editingGoal) && (
         <KpiGoalForm
+          key={editingGoal?.id ?? "new"}
           businessUnitId={businessUnitId}
           cycleId={cycleId}
           initialData={editingGoal}
@@ -152,14 +153,18 @@ export function KpiGoalsTable({
                     <td className="px-4 py-3.5">
                       {g.diagnosisBaseline ? (
                         <div className="flex flex-wrap gap-1.5">
-                          {g.diagnosisBaseline.split(/(?=🔗)/).map((tag, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200/60"
-                            >
-                              {tag.trim()}
-                            </span>
-                          ))}
+                          {g.diagnosisBaseline
+                            .split(/(?=🔗)/)
+                            .map((tag) => tag.trim())
+                            .filter((tag) => tag.length > 0)
+                            .map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200/60"
+                              >
+                                {tag}
+                              </span>
+                            ))}
                         </div>
                       ) : (
                         <span className="text-slate-400 italic">Sem embasamento vinculado</span>
@@ -207,7 +212,14 @@ export function KpiGoalsTable({
                           >
                             <Edit2 className="size-3.5" />
                           </button>
-                          <form action={deleteKpiGoalAction}>
+                          <form
+                            action={deleteKpiGoalAction}
+                            onSubmit={(e) => {
+                              if (!window.confirm("Deseja realmente excluir esta meta 2.0?")) {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
                             <input type="hidden" name="goalId" value={g.id} />
                             <input type="hidden" name="businessUnitId" value={businessUnitId} />
                             <button

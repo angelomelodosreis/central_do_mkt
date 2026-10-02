@@ -5,6 +5,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { GoogleSignInButton } from "./google-sign-in-button";
 import { TestLoginPanel } from "./test-login-panel";
 import { Logo } from "@/components/layout/logo";
+import { DEFAULT_ALLOWED_DOMAINS } from "@/lib/auth/auth";
 import { getCurrentUser } from "@/lib/auth/session";
 import { isTestLoginEnabled } from "@/lib/auth/test-login";
 import { getDb } from "@/lib/db/client";
@@ -33,11 +34,20 @@ export default async function LoginPage({
   const testLoginEnabled = await isTestLoginEnabled();
 
   const db = await getDb();
-  const domains = await db
+  const dbDomains = await db
     .select({ domain: allowedDomain.domain })
     .from(allowedDomain)
     .where(eq(allowedDomain.isActive, true))
     .orderBy(asc(allowedDomain.domain));
+
+  // Garante que os domínios corporativos oficiais (@medcof.com.br, @grupomedcof.com.br, @medcof.tech)
+  // sempre apareçam na lista de e-mails aceitos mesmo antes da sincronização inicial
+  const allDomains = Array.from(
+    new Set([...DEFAULT_ALLOWED_DOMAINS, ...dbDomains.map((d) => d.domain)]),
+  )
+    .sort()
+    .map((domain) => ({ domain }));
+  const domains = allDomains;
 
   // Só aceitamos destinos internos, para o parâmetro não virar um redirecionador
   // aberto que possa ser usado em phishing.

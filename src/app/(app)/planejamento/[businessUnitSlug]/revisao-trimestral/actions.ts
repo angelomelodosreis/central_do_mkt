@@ -69,6 +69,16 @@ export async function saveQuarterlyReviewAction(
   const gate = await requireEditor(businessUnitId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
 
+  if (reviewId) {
+    const existing = await getQuarterlyReview(reviewId);
+    if (!existing || existing.businessUnitId !== gate.unit.id) {
+      return {
+        status: "error",
+        message: "Revisão trimestral não encontrada ou permissão negada.",
+      };
+    }
+  }
+
   const diagnosticValid = field(formData, "diagnosticValid") || null;
   const marketChanges = field(formData, "marketChanges") || null;
   const newProblems = field(formData, "newProblems") || null;
@@ -139,6 +149,8 @@ export async function deleteQuarterlyReviewAction(
 
   const review = await getQuarterlyReview(reviewId);
   if (!review) return;
+
+  if (review.businessUnitId !== gate.unit.id) return;
 
   await deleteQuarterlyReview(reviewId);
 

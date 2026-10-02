@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
-import { requireAdmin, requireUserManagementAccess } from "@/lib/auth/session";
+import {
+  isPlatformAdmin,
+  requireAdmin,
+  requireUserManagementAccess,
+} from "@/lib/auth/session";
 import { resetarSegundoFator } from "@/lib/auth/two-factor";
 import { getDb } from "@/lib/db/client";
 import {
@@ -133,6 +137,7 @@ export async function saveUserFile(formData: FormData): Promise<void> {
   // Ninguém muda o próprio papel nem tira a própria administração: com um
   // administrador só, isso trancaria a plataforma para fora dela mesma.
   const ehEuMesmo = userId === admin.id;
+  const isPlatform = isPlatformAdmin(admin);
 
   const papel = field(formData, "role");
   if (
@@ -140,14 +145,16 @@ export async function saveUserFile(formData: FormData): Promise<void> {
     (USER_ROLES as readonly string[]).includes(papel) &&
     papel !== pessoa.role
   ) {
-    patch.role = papel as UserRole;
-    antes.role = pessoa.role;
-    depois.role = papel;
-    mudancas.push("papel");
+    if (isPlatform || (papel !== "admin" && pessoa.role !== "admin")) {
+      patch.role = papel as UserRole;
+      antes.role = pessoa.role;
+      depois.role = papel;
+      mudancas.push("papel");
+    }
   }
 
   const superAdmin = field(formData, "isSuperAdmin") === "1";
-  if (!ehEuMesmo && superAdmin !== pessoa.isSuperAdmin) {
+  if (!ehEuMesmo && isPlatform && superAdmin !== pessoa.isSuperAdmin) {
     patch.isSuperAdmin = superAdmin;
     antes.isSuperAdmin = pessoa.isSuperAdmin;
     depois.isSuperAdmin = superAdmin;

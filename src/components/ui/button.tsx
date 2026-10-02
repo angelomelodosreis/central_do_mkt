@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
 
@@ -59,9 +60,31 @@ export function Button({
   variant = "secondary",
   size = "md",
   className,
+  loading = false,
+  disabled,
+  children,
   ...props
-}: ComponentProps<"button"> & { variant?: Variant; size?: Size }) {
-  return <button className={classes(variant, size, className)} {...props} />;
+}: ComponentProps<"button"> & {
+  variant?: Variant;
+  size?: Size;
+  loading?: boolean;
+}) {
+  return (
+    <button
+      className={classes(variant, size, className)}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? (
+        <>
+          <Loader2 className={cn("animate-spin shrink-0", size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4")} />
+          <span>{children}</span>
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  );
 }
 
 export function ButtonLink({

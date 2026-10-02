@@ -17,35 +17,111 @@ export type { MedcofBuDef } from "./bu-catalog";
 
 
 
-function parseCurrency(val: string | number): number {
-  if (typeof val === "number") return val;
+export function parseCurrency(val: string | number): number {
+  if (typeof val === "number") return isNaN(val) ? 0 : val;
   if (!val) return 0;
-  // Converte "6921,66", "10497", "R$ 11.350,20"
-  const clean = String(val)
-    .replace(/[R$\s"]/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
-  const num = parseFloat(clean);
+  const s = String(val).replace(/[R$\s"]/g, "").trim();
+  if (!s) return 0;
+
+  // Se contém '.' e ',', '.' é milhar e ',' é decimal (padrão pt-BR: "1.250,50")
+  if (s.includes(".") && s.includes(",")) {
+    const clean = s.replace(/\./g, "").replace(",", ".");
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Se contém ',', trata como decimal pt-BR (ex: "1250,50")
+  if (s.includes(",")) {
+    const clean = s.replace(",", ".");
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Se contém apenas '.', verificar se é milhar ("1.250", "10.000") ou decimal US ("1250.50", "98.5")
+  if (s.includes(".")) {
+    const parts = s.split(".");
+    // Múltiplos pontos: sempre milhar (ex: "1.250.000")
+    if (parts.length > 2) {
+      const clean = s.replace(/\./g, "");
+      const num = parseFloat(clean);
+      return isNaN(num) ? 0 : num;
+    }
+    // Exato 1 ponto com 3 dígitos na parte fracionária e inteiro até 3 dígitos: milhar ("1.250", "50.000")
+    if (parts[1].length === 3 && parts[0].length >= 1 && parts[0].length <= 3) {
+      const clean = s.replace(/\./g, "");
+      const num = parseFloat(clean);
+      return isNaN(num) ? 0 : num;
+    }
+    // Caso padrão: decimal US de exportação (ex: "1250.50", "980.00", "49.9")
+    const num = parseFloat(s);
+    return isNaN(num) ? 0 : num;
+  }
+
+  const num = parseFloat(s);
   return isNaN(num) ? 0 : num;
 }
 
-function parseBrazilianDate(rawDate: string): { iso: string; timestamp: number } {
-  if (!rawDate) {
-    const d = new Date();
-    return { iso: d.toISOString(), timestamp: d.getTime() };
+export function parseBrazilianDate(rawDate: string): {
+  iso: string;
+  timestamp: number;
+  isValid: boolean;
+} {
+  if (!rawDate || typeof rawDate !== "string") {
+    return { iso: "", timestamp: 0, isValid: false };
   }
-  // Se for "DD/MM/AAAA"
-  const brMatch = rawDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  const trimmed = rawDate.trim();
+  if (
+    !trimmed ||
+    trimmed === "-" ||
+    trimmed.toLowerCase() === "n/a" ||
+    trimmed.toLowerCase() === "null" ||
+    trimmed.toLowerCase() === "undefined"
+  ) {
+    return { iso: "", timestamp: 0, isValid: false };
+  }
+
+  // 1. Formato brasileiro: DD/MM/AAAA [HH:mm[:ss]]
+  const brMatch = trimmed.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/,
+  );
   if (brMatch) {
     const dia = parseInt(brMatch[1], 10);
     const mes = parseInt(brMatch[2], 10) - 1;
-    const ano = parseInt(brMatch[3], 10);
-    const d = new Date(ano, mes, dia, 12, 0, 0);
-    return { iso: d.toISOString(), timestamp: d.getTime() };
+    let ano = parseInt(brMatch[3], 10);
+    if (ano < 100) ano += 2000;
+    const hora = brMatch[4] !== undefined ? parseInt(brMatch[4], 10) : 12;
+    const min = brMatch[5] !== undefined ? parseInt(brMatch[5], 10) : 0;
+    const seg = brMatch[6] !== undefined ? parseInt(brMatch[6], 10) : 0;
+    const d = new Date(ano, mes, dia, hora, min, seg);
+    if (!isNaN(d.getTime())) {
+      return { iso: d.toISOString(), timestamp: d.getTime(), isValid: true };
+    }
   }
-  const d = new Date(rawDate);
-  const valid = isNaN(d.getTime()) ? new Date() : d;
-  return { iso: valid.toISOString(), timestamp: valid.getTime() };
+
+  // 2. Formato ISO / SQL: YYYY-MM-DD [HH:mm[:ss]]
+  const isoMatch = trimmed.match(
+    /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/,
+  );
+  if (isoMatch) {
+    const ano = parseInt(isoMatch[1], 10);
+    const mes = parseInt(isoMatch[2], 10) - 1;
+    const dia = parseInt(isoMatch[3], 10);
+    const hora = isoMatch[4] !== undefined ? parseInt(isoMatch[4], 10) : 12;
+    const min = isoMatch[5] !== undefined ? parseInt(isoMatch[5], 10) : 0;
+    const seg = isoMatch[6] !== undefined ? parseInt(isoMatch[6], 10) : 0;
+    const d = new Date(ano, mes, dia, hora, min, seg);
+    if (!isNaN(d.getTime())) {
+      return { iso: d.toISOString(), timestamp: d.getTime(), isValid: true };
+    }
+  }
+
+  // 3. Fallback para Date parser nativo
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    return { iso: d.toISOString(), timestamp: d.getTime(), isValid: true };
+  }
+
+  return { iso: "", timestamp: 0, isValid: false };
 }
 
 type FetchSalesResult = {

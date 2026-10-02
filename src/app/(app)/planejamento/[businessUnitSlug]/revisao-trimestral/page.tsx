@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ReviewListClient } from "./review-list-client";
+import { ButtonLink } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/card";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import { listQuarterlyReviews } from "@/lib/modules/strategy/quarterly-review";
@@ -35,7 +36,7 @@ export default async function QuarterlyReviewPage({
     <>
       <PageHeader
         title="Revisão Trimestral"
-        description="Cadência de 3 meses: checar se ainda estamos pensando certo. O comitê responde às 7 perguntas estratégicas para validar o diagnóstico e decidir revisões de metas."
+        description={`Cadência de 3 meses: checar se ainda estamos pensando certo${cycle ? ` · ${cycle.name}` : ""}. O comitê responde às 7 perguntas estratégicas para validar o diagnóstico e decidir revisões de metas.`}
       />
 
       <ReviewListClient
@@ -44,6 +45,24 @@ export default async function QuarterlyReviewPage({
         reviews={reviews}
         canEdit={canEdit}
       />
+
+      {cycles.length > 1 ? (
+        <nav className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
+          <span className="text-xs text-slate-500">Outros ciclos:</span>
+          {cycles
+            .filter((c) => c.id !== cycle?.id)
+            .map((c) => (
+              <ButtonLink
+                key={c.id}
+                href={`/planejamento/${unit.slug}/revisao-trimestral?ciclo=${c.slug}`}
+                variant="ghost"
+                size="sm"
+              >
+                {c.name}
+              </ButtonLink>
+            ))}
+        </nav>
+      ) : null}
     </>
   );
 }

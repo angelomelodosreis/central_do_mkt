@@ -1005,19 +1005,36 @@ export async function saveKpiGoalAction(
   const gate = await requireStrategyEditor(businessUnitId);
   if ("erro" in gate) return { status: "error", message: gate.erro };
 
-  await saveKpiGoal({
-    id: goalId,
-    businessUnitId,
-    cycleId,
-    title,
-    diagnosisBaseline: field(formData, "diagnosisBaseline") || null,
-    primaryKpiName: field(formData, "primaryKpiName") || null,
-    primaryKpiTarget: field(formData, "primaryKpiTarget") || null,
-    secondaryKpiName: field(formData, "secondaryKpiName") || null,
-    secondaryKpiTarget: field(formData, "secondaryKpiTarget") || null,
-    sortOrder: Number(field(formData, "sortOrder")) || 0,
-    userId: gate.currentUser.id,
-  });
+  try {
+    const saved = await saveKpiGoal({
+      id: goalId,
+      businessUnitId,
+      cycleId,
+      title,
+      diagnosisBaseline: field(formData, "diagnosisBaseline") || null,
+      primaryKpiName: field(formData, "primaryKpiName") || null,
+      primaryKpiTarget: field(formData, "primaryKpiTarget") || null,
+      secondaryKpiName: field(formData, "secondaryKpiName") || null,
+      secondaryKpiTarget: field(formData, "secondaryKpiTarget") || null,
+      sortOrder: Number(field(formData, "sortOrder")) || 0,
+      userId: gate.currentUser.id,
+    });
+
+    await writeAuditLog({
+      actorUserId: gate.currentUser.id,
+      actorEmail: gate.currentUser.email,
+      action: goalId ? "kpi_goal.update" : "kpi_goal.create",
+      entityType: "strategy_kpi_goal",
+      entityId: saved.id,
+      summary: `${goalId ? "Atualizou" : "Criou"} a Meta 2.0 "${title}" de ${gate.unit.label}`,
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof Error ? error.message : "Falha ao salvar Meta 2.0.",
+    };
+  }
 
   revalidateStrategy(gate.unit.slug);
   return { status: "success", message: "Meta 2.0 salva com sucesso." };
@@ -1031,7 +1048,17 @@ export async function deleteKpiGoalAction(formData: FormData): Promise<void> {
   const gate = await requireStrategyEditor(businessUnitId);
   if ("erro" in gate) return;
 
-  await deleteKpiGoal(goalId);
+  await deleteKpiGoal(goalId, businessUnitId);
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "kpi_goal.delete",
+    entityType: "strategy_kpi_goal",
+    entityId: goalId,
+    summary: `Excluiu a Meta 2.0 de ${gate.unit.label}`,
+  });
+
   revalidateStrategy(gate.unit.slug);
 }
 
@@ -1046,6 +1073,16 @@ export async function seedDefaultKpiGoalsAction(
   if ("erro" in gate) return;
 
   await seedDefaultKpiGoalsIfEmpty(businessUnitId, cycleId, gate.currentUser.id);
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "kpi_goal.seed",
+    entityType: "strategy_kpi_goal",
+    entityId: cycleId,
+    summary: `Carregou as Metas 2.0 recomendadas da Metodologia MedCof para ${gate.unit.label}`,
+  });
+
   revalidateStrategy(gate.unit.slug);
 }
 

@@ -37,17 +37,45 @@ function PillarDiagnosisBox({
   lens,
   initialText,
   canEdit,
+  isOpen = true,
 }: {
   roundId: string;
   lens: DiagnosisLens;
   initialText?: string | null;
   canEdit: boolean;
+  isOpen?: boolean;
 }) {
   const [state, formAction, isPending] = useActionState(
     savePillarDiagnosisAction,
     INITIAL_STRATEGY_STATE,
   );
   const [text, setText] = useState(initialText ?? "");
+
+  useEffect(() => {
+    setText(initialText ?? "");
+  }, [initialText, roundId]);
+
+  const editable = canEdit && isOpen;
+
+  if (!editable) {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm space-y-1.5">
+        <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-slate-400" />
+          Diagnóstico da BU neste Pilar (Coluna E · Síntese Executiva)
+        </label>
+        {initialText ? (
+          <p className="mt-1 text-sm text-slate-800 whitespace-pre-line bg-slate-50/50 rounded p-2.5 border border-slate-100">
+            {initialText}
+          </p>
+        ) : (
+          <p className="text-xs italic text-slate-500">
+            Nenhum diagnóstico registrado para este pilar nesta rodada.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm space-y-2">
@@ -70,26 +98,19 @@ function PillarDiagnosisBox({
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={3}
-        placeholder={
-          canEdit
-            ? `Registre a síntese da BU para este pilar (responda se estamos crescendo, onde perdemos volume ou eficiência)...`
-            : "Nenhum diagnóstico registrado para este pilar."
-        }
-        disabled={!canEdit}
+        placeholder="Registre a síntese da BU para este pilar (responda se estamos crescendo, onde perdemos volume ou eficiência)..."
         className="text-sm bg-slate-50/50 focus:bg-white resize-y"
       />
-      {canEdit && (
-        <div className="flex justify-end pt-1">
-          <Button
-            type="submit"
-            size="sm"
-            disabled={isPending}
-            className="text-xs font-medium"
-          >
-            {isPending ? "Salvando…" : "Salvar diagnóstico do pilar"}
-          </Button>
-        </div>
-      )}
+      <div className="flex justify-end pt-1">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={isPending}
+          className="text-xs font-medium"
+        >
+          {isPending ? "Salvando…" : "Salvar diagnóstico do pilar"}
+        </Button>
+      </div>
     </form>
   );
 }
@@ -100,6 +121,7 @@ export function LensBlock({
   findings,
   roundId,
   canEdit,
+  isOpen = true,
   pillarDiagnosis,
 }: {
   lens: DiagnosisLens;
@@ -107,6 +129,7 @@ export function LensBlock({
   findings: Finding[];
   roundId: string | null;
   canEdit: boolean;
+  isOpen?: boolean;
   pillarDiagnosis?: string | null;
 }) {
   const [adding, setAdding] = useState(false);
@@ -121,7 +144,7 @@ export function LensBlock({
       title={DIAGNOSIS_LENS_LABELS[lens]}
       description={DIAGNOSIS_LENS_QUESTIONS[lens]}
       action={
-        canEdit && roundId && !adding ? (
+        canEdit && roundId && isOpen && !adding ? (
           <Button
             type="button"
             variant="ghost"

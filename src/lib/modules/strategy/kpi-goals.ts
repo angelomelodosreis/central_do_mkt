@@ -50,7 +50,12 @@ export async function saveKpiGoal(data: {
         updatedBy: data.userId ?? null,
         updatedAt: now,
       })
-      .where(eq(strategyKpiGoal.id, data.id));
+      .where(
+        and(
+          eq(strategyKpiGoal.id, data.id),
+          eq(strategyKpiGoal.businessUnitId, data.businessUnitId),
+        ),
+      );
 
     const updated = await db
       .select()
@@ -86,9 +91,23 @@ export async function saveKpiGoal(data: {
   return created!;
 }
 
-export async function deleteKpiGoal(goalId: string): Promise<void> {
+export async function deleteKpiGoal(
+  goalId: string,
+  businessUnitId?: string,
+): Promise<void> {
   const db = await getDb();
-  await db.delete(strategyKpiGoal).where(eq(strategyKpiGoal.id, goalId));
+  if (businessUnitId) {
+    await db
+      .delete(strategyKpiGoal)
+      .where(
+        and(
+          eq(strategyKpiGoal.id, goalId),
+          eq(strategyKpiGoal.businessUnitId, businessUnitId),
+        ),
+      );
+  } else {
+    await db.delete(strategyKpiGoal).where(eq(strategyKpiGoal.id, goalId));
+  }
 }
 
 /**

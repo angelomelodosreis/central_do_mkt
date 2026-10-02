@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
 
 import type { OrgFormState } from "./form-state";
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireUserManagementAccess } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
   jobTitle,
@@ -594,7 +594,7 @@ export async function removeTeamMembership(formData: FormData): Promise<void> {
 
 /** Coloca uma pessoa no squad de uma BU. */
 export async function addSquadMember(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
 
   const userId = field(formData, "userId");
   const squadId = field(formData, "squadId");
@@ -650,7 +650,7 @@ export async function addSquadMember(formData: FormData): Promise<void> {
 
 /** Marca ou desmarca quem responde pelo squad. */
 export async function toggleSquadLead(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
 
   const membershipId = field(formData, "membershipId");
   if (!membershipId) return;
@@ -692,7 +692,7 @@ export async function toggleSquadLead(formData: FormData): Promise<void> {
 
 /** Tira a pessoa de um squad. */
 export async function removeSquadMember(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
 
   const membershipId = field(formData, "membershipId");
   if (!membershipId) return;
@@ -733,7 +733,7 @@ export async function removeSquadMember(formData: FormData): Promise<void> {
  * ficariam indistinguíveis.
  */
 export async function toggleSquad(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
 
   const squadId = field(formData, "squadId");
   if (!squadId) return;
