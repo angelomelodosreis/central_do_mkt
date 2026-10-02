@@ -6,6 +6,7 @@ import {
   getAvailableMonths,
   formatMonthYearLabel,
 } from "../src/lib/modules/sales/calculations.ts";
+import { BU_CATALOG } from "../src/lib/modules/sales/bu-catalog.ts";
 
 describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
   const mockTransactions = [
@@ -198,5 +199,20 @@ describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
     assert.equal(customComp.deltas.salesDelta, 1);
     assert.equal(customComp.deltas.revenueGrowthPercent, 100);
     assert.ok(customComp.dayByDaySeries.length > 0);
+  });
+
+  test("Catálogo oficial das 23 Business Units da MedCof e integridade de códigos", () => {
+    assert.equal(BU_CATALOG.length, 23);
+    const codes = new Set(BU_CATALOG.map((b) => b.code));
+    assert.ok(codes.has("MEDCOF_CARDIOLOGIA"));
+    assert.ok(codes.has("MEDCOF_DERMATOLOGIA"));
+    assert.ok(codes.has("MEDCOF_ANESTESIOLOGIA"));
+    assert.ok(codes.has("MEDCOF_UROLOGIA"));
+    assert.ok(codes.has("MEDCOF_ORTOPEDIA"));
+    assert.ok(codes.has("MEDCOF_RADIOLOGIA"));
+    assert.ok(codes.has("MEDCOF_REVALIDA"));
+    assert.ok(codes.has("MEDCOF_USA"));
+    assert.ok(codes.has("MEDCOF_INTERNATO"));
+    assert.ok(codes.has("MEDCOF_CONCURSUS"));
   });
 });
