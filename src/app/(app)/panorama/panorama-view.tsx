@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
+  AlertCircle,
   ArrowLeftRight,
   ArrowRight,
   BarChart3,
@@ -165,25 +166,55 @@ export function PanoramaView({
       ? busSelecionadas
       : unidades.map((unidade) => unidade.id);
 
-  // BU selecionada para filtros de vendas em tempo real
-  const selectedBuCode = useMemo(() => {
-    if (busSelecionadas.length === 1) {
-      const bu = unidades.find((u) => u.id === busSelecionadas[0]);
-      return bu?.code || undefined;
-    }
-    return undefined;
-  }, [busSelecionadas, unidades]);
-
-  // Sincronização geral
-  function handleSync() {
+  // Atualização reativa de vendas ao alterar filtros de BU ou Meses
+  function updateSalesData(
+    bus: string[],
+    currMonth = currentMonthKey,
+    prevMonth = previousMonthKey,
+  ) {
+    const codes = bus.length > 0 ? bus : undefined;
     startTransition(async () => {
       try {
         const [updatedLive, updatedComp] = await Promise.all([
-          refreshSalesDataAction({ targetBuCode: selectedBuCode }),
+          refreshSalesDataAction({ targetBuCodes: codes }),
+          getComparativeSalesAction({
+            currentMonthKey: currMonth,
+            previousMonthKey: prevMonth,
+            targetBuCodes: codes,
+          }),
+        ]);
+        setSalesData(updatedLive);
+        setCompData(updatedComp.comparative);
+      } catch {
+        toast.error("Erro ao aplicar filtro de Business Unit.");
+      }
+    });
+  }
+
+  function handleToggleBu(id: string) {
+    const next = busSelecionadas.includes(id)
+      ? busSelecionadas.filter((item) => item !== id)
+      : [...busSelecionadas, id];
+    setBusSelecionadas(next);
+    updateSalesData(next, currentMonthKey, previousMonthKey);
+  }
+
+  function handleClearBus() {
+    setBusSelecionadas([]);
+    updateSalesData([], currentMonthKey, previousMonthKey);
+  }
+
+  // Sincronização geral
+  function handleSync() {
+    const codes = busSelecionadas.length > 0 ? busSelecionadas : undefined;
+    startTransition(async () => {
+      try {
+        const [updatedLive, updatedComp] = await Promise.all([
+          refreshSalesDataAction({ targetBuCodes: codes }),
           getComparativeSalesAction({
             currentMonthKey,
             previousMonthKey,
-            targetBuCode: selectedBuCode,
+            targetBuCodes: codes,
           }),
         ]);
         setSalesData(updatedLive);
@@ -198,12 +229,13 @@ export function PanoramaView({
   function handleMonthChange(newCurrent: string, newPrev: string) {
     setCurrentMonthKey(newCurrent);
     setPreviousMonthKey(newPrev);
+    const codes = busSelecionadas.length > 0 ? busSelecionadas : undefined;
     startTransition(async () => {
       try {
         const res = await getComparativeSalesAction({
           currentMonthKey: newCurrent,
           previousMonthKey: newPrev,
-          targetBuCode: selectedBuCode,
+          targetBuCodes: codes,
         });
         setCompData(res.comparative);
       } catch {
@@ -438,27 +470,60 @@ export function PanoramaView({
             placeholder={isMaster ? "Todas as 23 BUs (Acesso Total)" : "Minhas BUs"}
             ariaLabel="Filtrar por Business Unit"
             values={busSelecionadas}
-            onToggleValue={(id) =>
-              setBusSelecionadas((atuais) =>
-                atuais.includes(id)
-                  ? atuais.filter((item) => item !== id)
-                  : [...atuais, id],
-              )
-            }
+            onToggleValue={handleToggleBu}
             options={unidades.map((unidade) => ({
               value: unidade.id,
               label: unidade.label,
               hint: unidade.divisionName ?? undefined,
             }))}
           />
+          {busSelecionadas.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearBus}
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50 transition"
+              title="Limpar filtro de BUs"
+            >
+              Limpar
+            </button>
+          )}
         </div>
       </div>
+
+      {isPending && (
+        <div className="flex items-center gap-2 rounded-xl bg-blue-50/80 px-4 py-2 text-xs font-semibold text-blue-700 animate-pulse border border-blue-100 shadow-2xs">
+          <RefreshCw className="size-3.5 animate-spin" />
+          <span>Atualizando métricas para o filtro selecionado...</span>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* ABA 1: VENDAS EM TEMPO REAL & PACING MoM / YoY           */}
       {/* ======================================================== */}
       {activeTab === "vendas_realtime" && (
         <div className="space-y-6">
+          {busSelecionadas.length > 0 && salesData.summary.totalSales === 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-900 shadow-2xs">
+              <div className="flex items-start sm:items-center gap-2.5">
+                <AlertCircle className="size-4 shrink-0 text-amber-600 mt-0.5 sm:mt-0" />
+                <div>
+                  <span className="font-bold text-amber-950">
+                    Nenhuma venda registrada para esta seleção na esteira R+ Especialidades
+                  </span>
+                  <p className="mt-0.5 text-amber-800">
+                    A planilha conectada ao vivo possui 8.600 vendas das esteiras de Clínica Médica, Cirurgia Geral, Pediatria, Ginecologia e Residência. Seus lançamentos de outras BUs acontecem em ciclos sazonais distintos.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleClearBus}
+                className="shrink-0 rounded-xl border border-amber-300 bg-white px-3 py-1.5 font-bold text-amber-900 shadow-2xs transition hover:bg-amber-100/50"
+              >
+                Ver Todas as BUs (8.600 vendas)
+              </button>
+            </div>
+          )}
           {/* Seletor de Meses para Comparativo */}
           <div className="flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-3">

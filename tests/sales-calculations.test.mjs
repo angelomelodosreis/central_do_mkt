@@ -83,7 +83,7 @@ describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
     assert.equal(result.summary.pendingSales, 1);
   });
 
-  test("Filtragem de transações por Business Unit específica", () => {
+  test("Filtragem de transações por Business Unit específica (código canônico)", () => {
     const clinicaResult = calculateSalesAnalytics(mockTransactions, {
       targetBuCode: "CLINICA_MEDICA",
     });
@@ -91,6 +91,34 @@ describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
     assert.equal(clinicaResult.summary.totalRevenue, 15000);
     assert.equal(clinicaResult.summary.approvedSales, 3);
     assert.equal(clinicaResult.summary.overallAverageTicket, 5000);
+  });
+
+  test("Filtragem resiliente por ID de banco (bu_clinica_medica), slug (clinica-medica) e multi-BU", () => {
+    // 1. Usando formato de ID de banco
+    const byId = calculateSalesAnalytics(mockTransactions, {
+      targetBuCode: "bu_clinica_medica",
+    });
+    assert.equal(byId.summary.approvedSales, 3);
+    assert.equal(byId.summary.totalRevenue, 15000);
+
+    // 2. Usando formato de slug com hífen
+    const bySlug = calculateSalesAnalytics(mockTransactions, {
+      targetBuCode: "clinica-medica",
+    });
+    assert.equal(bySlug.summary.approvedSales, 3);
+
+    // 3. Usando formato de slug com underline
+    const bySlugUnder = calculateSalesAnalytics(mockTransactions, {
+      targetBuCode: "clinica_medica",
+    });
+    assert.equal(bySlugUnder.summary.approvedSales, 3);
+
+    // 4. Multi-BU: Clínica Médica + Cirurgia
+    const multi = calculateSalesAnalytics(mockTransactions, {
+      targetBuCodes: ["bu_clinica_medica", "bu_cirurgia"],
+    });
+    assert.equal(multi.summary.approvedSales, 4); // 3 clinica + 1 cirurgia
+    assert.equal(multi.summary.totalRevenue, 18000); // 15000 clinica + 3000 cirurgia
   });
 
   test("Série temporal diária, velocidade (dV/dt) e taxa de variação", () => {

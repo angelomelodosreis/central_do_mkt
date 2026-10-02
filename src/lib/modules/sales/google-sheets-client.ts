@@ -377,7 +377,8 @@ function generateRealisticSalesDataset(): SaleTransaction[] {
  * Função de alto nível para carregar as métricas de vendas calculadas em Real-Time
  */
 export async function getLiveSalesAnalytics(options: {
-  targetBuCode?: string;
+  targetBuCode?: string | string[];
+  targetBuCodes?: string[];
   startDate?: string;
   endDate?: string;
 } = {}): Promise<SalesAnalyticsResult> {
@@ -391,7 +392,8 @@ export async function getLiveSalesAnalytics(options: {
 export async function getLiveComparativeAnalytics(options: {
   currentMonthKey?: string;
   previousMonthKey?: string;
-  targetBuCode?: string;
+  targetBuCode?: string | string[];
+  targetBuCodes?: string[];
 } = {}): Promise<{
   comparative: ComparativeAnalysisResult;
   availableMonths: Array<{ key: string; label: string; count: number }>;

@@ -60,3 +60,65 @@ export function resolveBuFromText(text: string): { code: string; label: string }
   if (prod.includes("INTENSIVA") || prod.includes("UTI")) return { code: "MEDCOF_MEDICINA_INTENSIVA", label: "Medicina Intensiva" };
   return { code: "MEDCOF_RESIDENCIA", label: "Residência Médica" };
 }
+
+export function normalizeBuCode(input?: string | null): string | null {
+  if (!input) return null;
+  const clean = input.trim();
+  if (!clean || clean.toUpperCase() === "ALL") return null;
+
+  // 1. Se já for código canônico MEDCOF_*
+  const upper = clean.toUpperCase();
+  const directMatch = BU_CATALOG.find((bu) => bu.code === upper);
+  if (directMatch) return directMatch.code;
+
+  // 2. Se for código sem o prefixo MEDCOF_ (ex: "CLINICA_MEDICA", "CIRURGIA")
+  const withMedcof = `MEDCOF_${upper}`;
+  const codeMatch = BU_CATALOG.find((bu) => bu.code === withMedcof);
+  if (codeMatch) return codeMatch.code;
+
+  // 3. Normaliza string retirando prefixo "bu_", convertendo hífens em underlines e removendo acentos
+  const normalizedKey = clean
+    .toLowerCase()
+    .replace(/^bu[_-]/i, "")
+    .replace(/-/g, "_")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  // 4. Procura por slug exato ou slug normalizado
+  const slugMatch = BU_CATALOG.find(
+    (bu) =>
+      bu.slug.toLowerCase().replace(/-/g, "_") === normalizedKey ||
+      bu.code.toLowerCase().replace("medcof_", "") === normalizedKey,
+  );
+  if (slugMatch) return slugMatch.code;
+
+  // 5. Procura por label da BU ou substring exata
+  const labelMatch = BU_CATALOG.find((bu) => {
+    const normLabel = bu.label
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    return (
+      normLabel === normalizedKey ||
+      normLabel.includes(normalizedKey) ||
+      normalizedKey.includes(normLabel)
+    );
+  });
+  if (labelMatch) return labelMatch.code;
+
+  // 6. Resolução semântica para casos complexos de produtos/textos
+  const semantic = resolveBuFromText(clean);
+  return semantic.code;
+}
+
+export function normalizeBuCodes(input?: string | string[] | null): string[] {
+  if (!input) return [];
+  const list = Array.isArray(input) ? input : input.split(",");
+  const codes = new Set<string>();
+  for (const item of list) {
+    const norm = normalizeBuCode(item);
+    if (norm) codes.add(norm);
+  }
+  return Array.from(codes);
+}
+

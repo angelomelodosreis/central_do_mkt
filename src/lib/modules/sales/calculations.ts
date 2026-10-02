@@ -10,7 +10,7 @@ import type {
   SaleTransaction,
   SalesAnalyticsResult,
 } from "./types";
-import { BU_CATALOG } from "./bu-catalog";
+import { BU_CATALOG, normalizeBuCode, normalizeBuCodes } from "./bu-catalog";
 
 
 /**
@@ -24,20 +24,28 @@ import { BU_CATALOG } from "./bu-catalog";
 export function calculateSalesAnalytics(
   transactions: SaleTransaction[],
   options: {
-    targetBuCode?: string;
+    targetBuCode?: string | string[];
+    targetBuCodes?: string[];
     startDate?: string;
     endDate?: string;
     dataSourceType?: "google_sheets_live" | "google_sheets_gviz" | "sample_fallback";
     sheetUrl?: string;
   } = {},
 ): SalesAnalyticsResult {
-  // 1. Filtragem por BU e período se especificado
+  // 1. Filtragem por BU e período se especificado com normalização automática
   let filtered = transactions;
-  if (options.targetBuCode && options.targetBuCode !== "ALL") {
-    filtered = filtered.filter(
-      (t) =>
-        t.businessUnitCode.toUpperCase() === options.targetBuCode?.toUpperCase(),
-    );
+  const targetCodes = normalizeBuCodes(
+    options.targetBuCodes ?? options.targetBuCode,
+  );
+  if (targetCodes.length > 0) {
+    const targetSet = new Set(targetCodes.map((c) => c.toUpperCase()));
+    filtered = filtered.filter((t) => {
+      const normalizedTxCode = normalizeBuCode(t.businessUnitCode);
+      return (
+        (normalizedTxCode && targetSet.has(normalizedTxCode)) ||
+        targetSet.has((t.businessUnitCode || "").toUpperCase())
+      );
+    });
   }
 
   if (options.startDate) {
@@ -343,18 +351,26 @@ export function calculateComparativeAnalysis(
   options: {
     currentMonthKey?: string;
     previousMonthKey?: string;
-    targetBuCode?: string;
+    targetBuCode?: string | string[];
+    targetBuCodes?: string[];
   } = {},
 ): ComparativeAnalysisResult {
   let filtered = transactions.filter(
     (t) => t.status === "approved" || t.status === "pending",
   );
 
-  if (options.targetBuCode && options.targetBuCode !== "ALL") {
-    filtered = filtered.filter(
-      (t) =>
-        t.businessUnitCode.toUpperCase() === options.targetBuCode?.toUpperCase(),
-    );
+  const targetCodes = normalizeBuCodes(
+    options.targetBuCodes ?? options.targetBuCode,
+  );
+  if (targetCodes.length > 0) {
+    const targetSet = new Set(targetCodes.map((c) => c.toUpperCase()));
+    filtered = filtered.filter((t) => {
+      const normalizedTxCode = normalizeBuCode(t.businessUnitCode);
+      return (
+        (normalizedTxCode && targetSet.has(normalizedTxCode)) ||
+        targetSet.has((t.businessUnitCode || "").toUpperCase())
+      );
+    });
   }
 
   const availableMonths = getAvailableMonths(filtered);
@@ -572,9 +588,10 @@ export function calculateComparativeAnalysis(
   }
 
   let buComparisonList = Array.from(buMap.values());
-  if (options.targetBuCode && options.targetBuCode !== "ALL") {
-    buComparisonList = buComparisonList.filter(
-      (b) => b.code.toUpperCase() === options.targetBuCode?.toUpperCase(),
+  if (targetCodes.length > 0) {
+    const targetSet = new Set(targetCodes.map((c) => c.toUpperCase()));
+    buComparisonList = buComparisonList.filter((b) =>
+      targetSet.has(b.code.toUpperCase()),
     );
   }
 

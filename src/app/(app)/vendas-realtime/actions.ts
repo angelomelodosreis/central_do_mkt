@@ -8,7 +8,8 @@ import {
 import type { SalesAnalyticsResult } from "@/lib/modules/sales/types";
 
 export async function refreshSalesDataAction(options?: {
-  targetBuCode?: string;
+  targetBuCode?: string | string[];
+  targetBuCodes?: string[];
   startDate?: string;
   endDate?: string;
 }): Promise<SalesAnalyticsResult> {
@@ -20,7 +21,8 @@ export async function refreshSalesDataAction(options?: {
 export async function getComparativeSalesAction(options?: {
   currentMonthKey?: string;
   previousMonthKey?: string;
-  targetBuCode?: string;
+  targetBuCode?: string | string[];
+  targetBuCodes?: string[];
 }) {
   return getLiveComparativeAnalytics(options);
 }
