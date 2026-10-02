@@ -3,6 +3,8 @@ import { calculateSalesAnalytics } from "./calculations";
 
 export const DEFAULT_SHEET_ID = "1pCErQiwZ6CnMDqBm34lyFjzDhnomTlSHltgnF1IJRdw";
 export const DEFAULT_GID = "1830309116";
+export const DEFAULT_LIVE_CSV_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRHbUHQxiRh3LiC8tKGpAPkhBRfcxkKucIYCXFuxmCRP9oX9LCxXTeQOhPt0eqAvF4kXNXvQATwvFJ/pub?output=csv";
 
 /**
  * 23 BUs oficiais da MedCof para mapeamento correto de vendas.
@@ -34,29 +36,61 @@ const BU_CATALOG: Array<{ code: string; label: string; slug: string }> = [
 ];
 
 function resolveBuFromText(text: string): { code: string; label: string } {
-  const clean = (text || "").toUpperCase().replace(/[^A-Z0-9_]/g, "_");
-  const found = BU_CATALOG.find(
-    (b) =>
-      clean.includes(b.code) ||
-      clean.includes(b.slug.toUpperCase()) ||
-      clean.includes(b.label.toUpperCase().replace(/\s+/g, "_")),
-  );
-  if (found) return { code: found.code, label: found.label };
+  const prod = (text || "").toUpperCase();
+  if (prod.includes("CLÍNICA") || prod.includes("CLINICA")) return { code: "MEDCOF_CLINICA_MEDICA", label: "Clínica Médica" };
+  if (prod.includes("CIRURGIA")) return { code: "MEDCOF_CIRURGIA", label: "Cirurgia Geral" };
+  if (prod.includes("R+ GO") || prod.includes("GINECO") || prod.includes("OBSTETR")) return { code: "MEDCOF_GINECOLOGIA_E_OBSTETRICIA", label: "Ginecologia e Obstetrícia" };
+  if (prod.includes("CARDIO")) return { code: "MEDCOF_CARDIOLOGIA", label: "Cardiologia" };
+  if (prod.includes("PEDIAT")) return { code: "MEDCOF_PEDIATRIA", label: "Pediatria" };
+  if (prod.includes("DERMATO")) return { code: "MEDCOF_DERMATOLOGIA", label: "Dermatologia" };
+  if (prod.includes("ANESTESIO")) return { code: "MEDCOF_ANESTESIOLOGIA", label: "Anestesiologia" };
+  if (prod.includes("REVALIDA")) return { code: "MEDCOF_REVALIDA", label: "Revalida" };
+  if (prod.includes("ENDOCRINO")) return { code: "MEDCOF_ENDOCRINOLOGIA", label: "Endocrinologia" };
+  if (prod.includes("OFTALMO")) return { code: "MEDCOF_OFTALMOLOGIA", label: "Oftalmologia" };
+  if (prod.includes("ORTOPE")) return { code: "MEDCOF_ORTOPEDIA", label: "Ortopedia" };
+  if (prod.includes("OTORRINO")) return { code: "MEDCOF_OTORRINOLARINGOLOGIA", label: "Otorrinolaringologia" };
+  if (prod.includes("RADIO")) return { code: "MEDCOF_RADIOLOGIA", label: "Radiologia" };
+  if (prod.includes("UROLOG")) return { code: "MEDCOF_UROLOGIA", label: "Urologia" };
+  if (prod.includes("USA") || prod.includes("USMLE")) return { code: "MEDCOF_USA", label: "MedCof USA" };
+  if (prod.includes("CONCURSO") || prod.includes("CONCURSUS")) return { code: "MEDCOF_CONCURSUS", label: "Concursus" };
+  if (prod.includes("ENAMED")) return { code: "MEDCOF_ENAMED", label: "Enamed" };
+  if (prod.includes("LIFEHACKS") || prod.includes("PRONTO SOCORRO") || prod.includes("PS")) return { code: "MEDCOF_LIFEHACKS", label: "Lifehacks / PS" };
+  if (prod.includes("INTERNATO")) return { code: "MEDCOF_INTERNATO", label: "Internato" };
+  if (prod.includes("EMERGÊNCIA") || prod.includes("EMERGENCIA")) return { code: "MEDCOF_MEDICINA_DE_EMERGENCIA", label: "Medicina de Emergência" };
+  if (prod.includes("INTENSIVA") || prod.includes("CTI") || prod.includes("UTI")) return { code: "MEDCOF_MEDICINA_INTENSIVA", label: "Medicina Intensiva" };
 
-  // Fallback para Cardiologia ou Cirurgia
   return { code: "MEDCOF_RESIDENCIA", label: "Residência Médica" };
 }
 
 function parseCurrency(val: string | number): number {
   if (typeof val === "number") return val;
   if (!val) return 0;
-  // Converte "R$ 3.450,00" ou "3450.00"
+  // Converte "6921,66", "10497", "R$ 11.350,20"
   const clean = String(val)
-    .replace(/[R$\s]/g, "")
+    .replace(/[R$\s"]/g, "")
     .replace(/\./g, "")
     .replace(",", ".");
   const num = parseFloat(clean);
   return isNaN(num) ? 0 : num;
+}
+
+function parseBrazilianDate(rawDate: string): { iso: string; timestamp: number } {
+  if (!rawDate) {
+    const d = new Date();
+    return { iso: d.toISOString(), timestamp: d.getTime() };
+  }
+  // Se for "DD/MM/AAAA"
+  const brMatch = rawDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (brMatch) {
+    const dia = parseInt(brMatch[1], 10);
+    const mes = parseInt(brMatch[2], 10) - 1;
+    const ano = parseInt(brMatch[3], 10);
+    const d = new Date(ano, mes, dia, 12, 0, 0);
+    return { iso: d.toISOString(), timestamp: d.getTime() };
+  }
+  const d = new Date(rawDate);
+  const valid = isNaN(d.getTime()) ? new Date() : d;
+  return { iso: valid.toISOString(), timestamp: valid.getTime() };
 }
 
 /**
@@ -75,6 +109,7 @@ export async function fetchGoogleSheetsSalesData(
   const urls = [
     customCsvUrl,
     envUrl,
+    DEFAULT_LIVE_CSV_URL,
     `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`,
     `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`,
     `https://docs.google.com/spreadsheets/d/${sheetId}/pub?gid=${gid}&single=true&output=csv`,
@@ -99,9 +134,7 @@ export async function fetchGoogleSheetsSalesData(
             return {
               success: true,
               transactions: parsed,
-              sourceType: url.includes("gviz")
-                ? "google_sheets_gviz"
-                : "google_sheets_live",
+              sourceType: "google_sheets_live",
             };
           }
         }
@@ -132,13 +165,17 @@ function parseCsvSalesData(csvContent: string): SaleTransaction[] {
   // Parse do cabeçalho
   const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
 
-  // Procura índices das colunas
-  const dateIdx = headers.findIndex((h) => h.includes("data") || h.includes("date") || h.includes("criado"));
-  const amountIdx = headers.findIndex((h) => h.includes("valor") || h.includes("preço") || h.includes("amount") || h.includes("faturamento") || h.includes("total"));
+  // Procura índices das colunas reais da planilha MedCof:
+  // id_venda,dt_venda,plano,produto,nome_aluno,email_aluno,telefone_aluno,valor_pago
+  const idIdx = headers.findIndex((h) => h.includes("id_venda") || h.includes("id"));
+  const dateIdx = headers.findIndex((h) => h.includes("dt_venda") || h.includes("data") || h.includes("date"));
   const productIdx = headers.findIndex((h) => h.includes("produto") || h.includes("product") || h.includes("curso"));
-  const buIdx = headers.findIndex((h) => h.includes("bu") || h.includes("business unit") || h.includes("especialidade"));
-  const methodIdx = headers.findIndex((h) => h.includes("forma") || h.includes("pagamento") || h.includes("metodo") || h.includes("payment"));
-  const statusIdx = headers.findIndex((h) => h.includes("status") || h.includes("situacao") || h.includes("estado"));
+  const planoIdx = headers.findIndex((h) => h.includes("plano"));
+  const studentIdx = headers.findIndex((h) => h.includes("nome_aluno") || h.includes("aluno") || h.includes("cliente"));
+  const emailIdx = headers.findIndex((h) => h.includes("email"));
+  const amountIdx = headers.findIndex((h) => h.includes("valor_pago") || h.includes("valor") || h.includes("preço") || h.includes("total"));
+  const methodIdx = headers.findIndex((h) => h.includes("forma") || h.includes("pagamento") || h.includes("metodo"));
+  const statusIdx = headers.findIndex((h) => h.includes("status") || h.includes("situacao"));
 
   const transactions: SaleTransaction[] = [];
 
@@ -146,20 +183,24 @@ function parseCsvSalesData(csvContent: string): SaleTransaction[] {
     const cols = parseCsvLine(lines[i]);
     if (cols.length < 2) continue;
 
-    const rawDate = dateIdx >= 0 ? cols[dateIdx] : new Date().toISOString();
+    const rawId = idIdx >= 0 && cols[idIdx] ? cols[idIdx] : `sale_${i}`;
+    const rawDate = dateIdx >= 0 ? cols[dateIdx] : "";
+    const rawProduct = productIdx >= 0 && cols[productIdx] ? cols[productIdx] : planoIdx >= 0 ? cols[planoIdx] : "Extensivo MedCof";
+    const rawPlano = planoIdx >= 0 ? cols[planoIdx] : "";
+    const rawBuyer = studentIdx >= 0 ? cols[studentIdx] : undefined;
+    const rawEmail = emailIdx >= 0 ? cols[emailIdx] : undefined;
     const rawAmount = amountIdx >= 0 ? cols[amountIdx] : "1000";
-    const rawProduct = productIdx >= 0 ? cols[productIdx] : "Curso Extensivo MedCof";
-    const rawBu = buIdx >= 0 ? cols[buIdx] : rawProduct;
-    const rawMethod = methodIdx >= 0 ? cols[methodIdx].toLowerCase() : "pix";
+    const rawMethod = methodIdx >= 0 ? cols[methodIdx].toLowerCase() : "credit_card";
     const rawStatus = statusIdx >= 0 ? cols[statusIdx].toLowerCase() : "approved";
 
-    const buInfo = resolveBuFromText(rawBu);
+    const buInfo = resolveBuFromText(rawProduct + " " + rawPlano);
     const amount = parseCurrency(rawAmount);
     if (amount <= 0) continue;
 
-    let paymentMethod: SaleTransaction["paymentMethod"] = "other";
+    const { iso, timestamp } = parseBrazilianDate(rawDate);
+
+    let paymentMethod: SaleTransaction["paymentMethod"] = "credit_card";
     if (rawMethod.includes("pix")) paymentMethod = "pix";
-    else if (rawMethod.includes("cart") || rawMethod.includes("cred")) paymentMethod = "credit_card";
     else if (rawMethod.includes("bol")) paymentMethod = "boleto";
 
     let status: SaleTransaction["status"] = "approved";
@@ -167,26 +208,26 @@ function parseCsvSalesData(csvContent: string): SaleTransaction[] {
     else if (rawStatus.includes("canc") || rawStatus.includes("recus")) status = "cancelled";
     else if (rawStatus.includes("estorn") || rawStatus.includes("reemb")) status = "refunded";
 
-    const dateObj = new Date(rawDate);
-    const validDate = isNaN(dateObj.getTime()) ? new Date() : dateObj;
-
     transactions.push({
-      id: `sale_${i}_${validDate.getTime()}`,
-      date: validDate.toISOString(),
-      timestamp: validDate.getTime(),
-      product: rawProduct || "Extensivo MedCof 2026",
+      id: rawId,
+      date: iso,
+      timestamp,
+      product: rawProduct,
       businessUnitCode: buInfo.code,
       businessUnitLabel: buInfo.label,
       amount,
       quantity: 1,
       paymentMethod,
       status,
-      utmSource: "google_ads",
+      buyerName: rawBuyer,
+      buyerEmail: rawEmail,
+      utmSource: "google_sheets_live",
     });
   }
 
   return transactions;
 }
+
 
 function parseCsvLine(line: string): string[] {
   const result: string[] = [];
