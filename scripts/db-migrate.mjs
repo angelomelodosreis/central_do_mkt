@@ -15,6 +15,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { config as loadEnv } from "dotenv";
 import { seedPlanningAllBus } from "./seed-planning-all-bus.mjs";
+import { seedPlanningReviewFeed } from "./seed-planning-review-feed.mjs";
 
 loadEnv({ path: ".env.local", quiet: true });
 
@@ -37,9 +38,11 @@ try {
   console.log(`Migrations aplicadas em ${url}`);
   try {
     await seedPlanningAllBus(client);
+    await seedPlanningReviewFeed(client);
   } catch (seedErr) {
-    console.warn("Aviso: falha ao semear ciclos de planejamento:", seedErr.message);
+    console.warn("Aviso: falha ao semear dados:", seedErr.message);
   }
+
 } catch (error) {
   console.error("Falha ao aplicar as migrations:", error.message);
   process.exit(1);

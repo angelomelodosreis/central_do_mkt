@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, EmptyState, PageHeader } from "@/components/ui/card";
 import { REVIEW_STATUS_DOTS, REVIEW_STATUS_LABELS } from "@/lib/db/schema";
 import { listReviews, loadPendingActions } from "@/lib/modules/review/queries";
+import { listReviewFeedItems } from "@/lib/modules/review/feed-queries";
+import { listBusinessUnits } from "@/lib/modules/bases/queries";
+import { ReviewFeedView } from "../../revisoes/review-feed-view";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
@@ -32,10 +35,13 @@ export default async function AcompanhamentoPage({
 
   const base = `/planejamento/${unit.slug}/acompanhamento`;
 
-  const [reunioes, pendentes] = await Promise.all([
+  const [reunioes, pendentes, feedItems, allUnits] = await Promise.all([
     listReviews(unit.id),
     loadPendingActions(unit.id, ""),
+    listReviewFeedItems({ businessUnitId: unit.id }),
+    listBusinessUnits({ includeInactive: false }),
   ]);
+
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -53,20 +59,29 @@ export default async function AcompanhamentoPage({
         title="Acompanhamento"
         description="O roteiro da reunião da BU. Abra na hora da conversa: os números e as pendências já chegam prontos."
         action={
-          canEdit ? (
-            <form action={openTodayReview}>
-              <input type="hidden" name="businessUnitId" value={unit.id} />
-              <Button type="submit" variant="primary">
-                {!deHoje
-                  ? "Iniciar reunião"
-                  : deHoje.closedAt
-                    ? "Ver a reunião de hoje"
-                    : "Continuar a reunião de hoje"}
-              </Button>
-            </form>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/planejamento/revisoes?bu=${unit.slug}`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-800 shadow-2xs hover:bg-purple-100 transition"
+            >
+              <span>💬 Feed Slack ({unit.label})</span>
+            </Link>
+            {canEdit ? (
+              <form action={openTodayReview}>
+                <input type="hidden" name="businessUnitId" value={unit.id} />
+                <Button type="submit" variant="primary">
+                  {!deHoje
+                    ? "Iniciar reunião"
+                    : deHoje.closedAt
+                      ? "Ver a reunião de hoje"
+                      : "Continuar a reunião de hoje"}
+                </Button>
+              </form>
+            ) : null}
+          </div>
         }
       />
+
 
       <div className="space-y-4">
         {pendentes.length > 0 ? (
@@ -159,6 +174,35 @@ export default async function AcompanhamentoPage({
           </Card>
         )}
       </div>
+
+      {/* Feed e Tabela de Acompanhamento desta BU (Slack Canvas) */}
+      <section className="mt-10 pt-8 border-t border-slate-200 space-y-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-slate-900">
+              Revisão de Planejamento & Follow-Up — {unit.label}
+            </h2>
+            <p className="text-xs text-slate-500">
+              Observações, pendências e thread de alinhamento com analistas e coordenação.
+            </p>
+          </div>
+          <Link
+            href="/planejamento/revisoes"
+            className="text-xs font-semibold text-purple-700 hover:text-purple-800 transition inline-flex items-center gap-1"
+          >
+            <span>Ver feed geral com todas as BUs</span>
+            <span>→</span>
+          </Link>
+        </div>
+
+        <ReviewFeedView
+          initialItems={feedItems}
+          businessUnits={allUnits.map((u) => ({ id: u.id, slug: u.slug, label: u.label }))}
+          currentCoordinator="Ingrid Silva"
+          preselectedBuSlug={unit.slug}
+        />
+      </section>
     </>
   );
 }
+

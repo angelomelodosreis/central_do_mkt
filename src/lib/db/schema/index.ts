@@ -13,3 +13,4 @@ export * from "./results.schema";
 export * from "./review.schema";
 export * from "./tasks.schema";
 export * from "./files.schema";
+export * from "./planning-review-feed.schema";

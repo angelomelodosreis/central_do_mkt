@@ -151,6 +151,17 @@ export default async function StrategyIndexPage({
       <PageHeader
         title="Planejamento e Business Units"
         description="O ano de cada Business Unit: calendário, personas, produtos, metas e catálogo oficial."
+        action={
+          <Link
+            href="/planejamento/revisoes"
+            className="inline-flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-bold text-purple-800 shadow-2xs hover:bg-purple-100 transition"
+          >
+            <span>💬 Feed de Revisões por BU</span>
+            <span className="rounded-full bg-purple-200/80 px-1.5 py-0.2 text-[10px] font-bold text-purple-900">
+              Slack
+            </span>
+          </Link>
+        }
       />
 
       {erro === "fora-do-escopo" ? (
@@ -165,7 +176,7 @@ export default async function StrategyIndexPage({
 
       <PlanningMethodologyGuide />
 
-      {/* Abas: Meu Planejamento vs Lista Oficial de BUs */}
+      {/* Abas: Meu Planejamento vs Lista Oficial de BUs vs Feed de Revisões */}
       <div className="mb-6 border-b border-slate-200">
         <div className="flex gap-6">
           <Link
@@ -209,6 +220,16 @@ export default async function StrategyIndexPage({
               )}
             >
               {allUnits.length}
+            </span>
+          </Link>
+
+          <Link
+            href="/planejamento/revisoes"
+            className="flex items-center gap-2 border-b-2 border-transparent pb-3 text-sm font-semibold text-purple-700 hover:text-purple-900 transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full bg-purple-600 animate-pulse" />
+              Feed de Revisões & Follow-Up
             </span>
           </Link>
         </div>
