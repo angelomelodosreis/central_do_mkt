@@ -28,6 +28,7 @@ import {
 } from "@/lib/modules/org/scope";
 import { listBusinessUnits } from "@/lib/modules/bases/queries";
 import { BuDirectory, type BuDirectoryItem } from "./bu-directory";
+import { PlanningMethodologyGuide } from "./methodology-guide";
 
 export const metadata: Metadata = { title: "Planejamento e Business Units" };
 export const dynamic = "force-dynamic";
@@ -161,6 +162,8 @@ export default async function StrategyIndexPage({
           você precisa trabalhar nela.
         </div>
       ) : null}
+
+      <PlanningMethodologyGuide />
 
       {/* Abas: Meu Planejamento vs Lista Oficial de BUs */}
       <div className="mb-6 border-b border-slate-200">

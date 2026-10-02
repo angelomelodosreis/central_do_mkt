@@ -977,3 +977,75 @@ function parseAmount(raw: string): number | null {
   const value = Number(normalized);
   return Number.isFinite(value) ? value : null;
 }
+
+/* ────────────────────────── Metas 2.0 (Planilha Oficial) ────────────────────────── */
+
+import {
+  saveKpiGoal,
+  deleteKpiGoal,
+  seedDefaultKpiGoalsIfEmpty,
+} from "@/lib/modules/strategy/kpi-goals";
+
+export async function saveKpiGoalAction(
+  _previousState: StrategyFormState,
+  formData: FormData,
+): Promise<StrategyFormState> {
+  const businessUnitId = field(formData, "businessUnitId");
+  const cycleId = field(formData, "cycleId");
+  const goalId = field(formData, "goalId") || undefined;
+  const title = field(formData, "title");
+
+  if (!businessUnitId || !cycleId) {
+    return { status: "error", message: "BU ou ciclo não identificados." };
+  }
+  if (!title) {
+    return { status: "error", message: "Informe a descrição da meta." };
+  }
+
+  const gate = await requireStrategyEditor(businessUnitId);
+  if ("erro" in gate) return { status: "error", message: gate.erro };
+
+  await saveKpiGoal({
+    id: goalId,
+    businessUnitId,
+    cycleId,
+    title,
+    diagnosisBaseline: field(formData, "diagnosisBaseline") || null,
+    primaryKpiName: field(formData, "primaryKpiName") || null,
+    primaryKpiTarget: field(formData, "primaryKpiTarget") || null,
+    secondaryKpiName: field(formData, "secondaryKpiName") || null,
+    secondaryKpiTarget: field(formData, "secondaryKpiTarget") || null,
+    sortOrder: Number(field(formData, "sortOrder")) || 0,
+    userId: gate.currentUser.id,
+  });
+
+  revalidateStrategy(gate.unit.slug);
+  return { status: "success", message: "Meta 2.0 salva com sucesso." };
+}
+
+export async function deleteKpiGoalAction(formData: FormData): Promise<void> {
+  const goalId = field(formData, "goalId");
+  const businessUnitId = field(formData, "businessUnitId");
+  if (!goalId || !businessUnitId) return;
+
+  const gate = await requireStrategyEditor(businessUnitId);
+  if ("erro" in gate) return;
+
+  await deleteKpiGoal(goalId);
+  revalidateStrategy(gate.unit.slug);
+}
+
+export async function seedDefaultKpiGoalsAction(
+  formData: FormData,
+): Promise<void> {
+  const businessUnitId = field(formData, "businessUnitId");
+  const cycleId = field(formData, "cycleId");
+  if (!businessUnitId || !cycleId) return;
+
+  const gate = await requireStrategyEditor(businessUnitId);
+  if ("erro" in gate) return;
+
+  await seedDefaultKpiGoalsIfEmpty(businessUnitId, cycleId, gate.currentUser.id);
+  revalidateStrategy(gate.unit.slug);
+}
+

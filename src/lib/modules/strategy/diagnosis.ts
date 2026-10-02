@@ -32,6 +32,11 @@ export type Round = {
   referenceDate: Date;
   isOpen: boolean;
   summary: string | null;
+  businessMarketDiagnosis: string | null;
+  clientBrandDiagnosis: string | null;
+  portfolioOfferDiagnosis: string | null;
+  funnelConversionDiagnosis: string | null;
+  contextCapacityDiagnosis: string | null;
   mainChallenge: string | null;
   mainOpportunity: string | null;
   cycleObjective: string | null;
@@ -41,11 +46,16 @@ export type Round = {
 
 export async function listRounds(cycleId: string): Promise<Round[]> {
   const db = await getDb();
-  const rows = await db
+  let rows = await db
     .select()
     .from(strategyRound)
     .where(eq(strategyRound.cycleId, cycleId))
     .orderBy(desc(strategyRound.sequence));
+
+  if (rows.length === 0) {
+    const auto = await ensureDefaultRound(cycleId);
+    return [auto];
+  }
 
   return rows.map((row) => ({
     id: row.id,
@@ -53,6 +63,11 @@ export async function listRounds(cycleId: string): Promise<Round[]> {
     referenceDate: row.referenceDate,
     isOpen: row.isOpen,
     summary: row.summary,
+    businessMarketDiagnosis: row.businessMarketDiagnosis ?? null,
+    clientBrandDiagnosis: row.clientBrandDiagnosis ?? null,
+    portfolioOfferDiagnosis: row.portfolioOfferDiagnosis ?? null,
+    funnelConversionDiagnosis: row.funnelConversionDiagnosis ?? null,
+    contextCapacityDiagnosis: row.contextCapacityDiagnosis ?? null,
     mainChallenge: row.mainChallenge ?? null,
     mainOpportunity: row.mainOpportunity ?? null,
     cycleObjective: row.cycleObjective ?? null,
@@ -60,6 +75,67 @@ export async function listRounds(cycleId: string): Promise<Round[]> {
     updatedAt: row.updatedAt,
   }));
 }
+
+/** Garante que o ciclo tenha pelo menos uma rodada de diagnóstico aberta. */
+export async function ensureDefaultRound(cycleId: string): Promise<Round> {
+  const db = await getDb();
+  const existing = await db
+    .select()
+    .from(strategyRound)
+    .where(eq(strategyRound.cycleId, cycleId))
+    .orderBy(desc(strategyRound.sequence))
+    .limit(1);
+
+  if (existing.length > 0) {
+    const row = existing[0];
+    return {
+      id: row.id,
+      sequence: row.sequence,
+      referenceDate: row.referenceDate,
+      isOpen: row.isOpen,
+      summary: row.summary,
+      businessMarketDiagnosis: row.businessMarketDiagnosis ?? null,
+      clientBrandDiagnosis: row.clientBrandDiagnosis ?? null,
+      portfolioOfferDiagnosis: row.portfolioOfferDiagnosis ?? null,
+      funnelConversionDiagnosis: row.funnelConversionDiagnosis ?? null,
+      contextCapacityDiagnosis: row.contextCapacityDiagnosis ?? null,
+      mainChallenge: row.mainChallenge ?? null,
+      mainOpportunity: row.mainOpportunity ?? null,
+      cycleObjective: row.cycleObjective ?? null,
+      cyclePeriod: row.cyclePeriod ?? null,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  const now = new Date();
+  const id = `rnd_${cycleId}_1`;
+  const defaultRoundData = {
+    id,
+    cycleId,
+    sequence: 1,
+    referenceDate: now,
+    isOpen: true,
+    summary: "1ª Rodada de Diagnóstico Semestral (Leitura dos 5 Pilares)",
+    businessMarketDiagnosis: null,
+    clientBrandDiagnosis: null,
+    portfolioOfferDiagnosis: null,
+    funnelConversionDiagnosis: null,
+    contextCapacityDiagnosis: null,
+    mainChallenge: null,
+    mainOpportunity: null,
+    cycleObjective: null,
+    cyclePeriod: "Jan - Jun/2027",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  try {
+    await db.insert(strategyRound).values(defaultRoundData).onConflictDoNothing();
+  } catch {}
+
+  return defaultRoundData;
+}
+
 
 /**
  * A rodada que a tela abre por padrão.

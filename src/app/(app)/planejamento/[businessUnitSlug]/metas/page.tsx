@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { GoalSection } from "./goal-section";
+import { KpiGoalsTable } from "./kpi-goals-table";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/card";
 import {
@@ -19,6 +20,7 @@ import {
   scopeIsPast,
   scopeRange,
 } from "@/lib/modules/strategy/goals";
+import { listKpiGoals } from "@/lib/modules/strategy/kpi-goals";
 import {
   listFindingsOfCycle,
   listGoalRevisions,
@@ -69,6 +71,7 @@ export default async function GoalsPage({
   }
 
   const goals = await loadCycleGoals(cycle.id);
+  const kpiGoals = await listKpiGoals(unit.id, cycle.id);
   const achados = await listFindingsOfCycle(cycle.id);
 
   // As revisões de cada meta existente, para o histórico na leitura.
@@ -105,6 +108,27 @@ export default async function GoalsPage({
         // então repetir a BU aqui soaria como erro de texto.
         description={`O compromisso de ${cycle.name}. Quanto dele já foi feito aparece na visão geral; a conversa sobre ele, no Acompanhamento.`}
       />
+
+      {/* Metas 2.0 - Desdobramento do Diagnóstico em KPIs Primários e Secundários */}
+      <section className="mb-10">
+        <KpiGoalsTable
+          businessUnitId={unit.id}
+          cycleId={cycle.id}
+          goals={kpiGoals}
+          canEdit={canEdit}
+        />
+      </section>
+
+      <div className="mb-4 mt-8 flex items-center justify-between border-t border-slate-200 pt-6">
+        <div>
+          <h2 className="font-display text-base font-semibold text-slate-900">
+            Detalhamento e Alocação por Semestre (H1 / H2)
+          </h2>
+          <p className="text-xs text-slate-500">
+            Distribuição semestral das metas numéricas e de escopo para acompanhamento de ritmo.
+          </p>
+        </div>
+      </div>
 
       {divergencias.length > 0 ? (
         <Card className="mb-6 border-amber-300 bg-amber-50/50">

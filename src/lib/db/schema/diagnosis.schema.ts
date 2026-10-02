@@ -158,6 +158,12 @@ export const strategyRound = sqliteTable(
     isOpen: integer("is_open", { mode: "boolean" }).notNull().default(true),
     /** A leitura geral da rodada, escrita depois dos achados. */
     summary: text("summary"),
+    /** Parte 1: Diagnóstico da BU nos 5 Pilares (Coluna E da Planilha Diagnóstico 2.0) */
+    businessMarketDiagnosis: text("business_market_diagnosis"),
+    clientBrandDiagnosis: text("client_brand_diagnosis"),
+    portfolioOfferDiagnosis: text("portfolio_offer_diagnosis"),
+    funnelConversionDiagnosis: text("funnel_conversion_diagnosis"),
+    contextCapacityDiagnosis: text("context_capacity_diagnosis"),
     /** Parte 2: Qual é o principal desafio da BU hoje? */
     mainChallenge: text("main_challenge"),
     /** Parte 2: Qual é a principal oportunidade de crescimento? */

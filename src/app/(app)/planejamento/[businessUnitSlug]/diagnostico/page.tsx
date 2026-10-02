@@ -328,16 +328,27 @@ export default async function DiagnosisPage({
       {/* ── As cinco lentes ── */}
       <Card>
         <CardBody className="px-0 py-0">
-          {DIAGNOSIS_LENSES.map((lens) => (
-            <LensBlock
-              key={lens}
-              lens={lens}
-              evidence={evidence[lens]}
-              findings={porLente[lens]}
-              roundId={round && round.isOpen ? round.id : null}
-              canEdit={canEdit}
-            />
-          ))}
+          {DIAGNOSIS_LENSES.map((lens) => {
+            let pillarDiagnosis: string | null = null;
+            if (round) {
+              if (lens === "negocio_mercado") pillarDiagnosis = round.businessMarketDiagnosis;
+              else if (lens === "cliente_marca") pillarDiagnosis = round.clientBrandDiagnosis;
+              else if (lens === "portfolio_oferta") pillarDiagnosis = round.portfolioOfferDiagnosis;
+              else if (lens === "funil_conversao") pillarDiagnosis = round.funnelConversionDiagnosis;
+              else if (lens === "contexto_capacidade") pillarDiagnosis = round.contextCapacityDiagnosis;
+            }
+            return (
+              <LensBlock
+                key={lens}
+                lens={lens}
+                evidence={evidence[lens]}
+                findings={porLente[lens]}
+                roundId={round && round.isOpen ? round.id : null}
+                canEdit={canEdit}
+                pillarDiagnosis={pillarDiagnosis}
+              />
+            );
+          })}
         </CardBody>
       </Card>
 

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 
-import { deleteFinding, saveFinding } from "./actions";
+import { deleteFinding, saveFinding, savePillarDiagnosisAction } from "./actions";
 import {
   INITIAL_STRATEGY_STATE,
   type StrategyFormState,
@@ -32,18 +32,82 @@ const TOM: Record<FindingKind, "brand" | "danger" | "neutral"> = {
   open_bet: "neutral",
 };
 
+function PillarDiagnosisBox({
+  roundId,
+  lens,
+  initialText,
+  canEdit,
+}: {
+  roundId: string;
+  lens: DiagnosisLens;
+  initialText?: string | null;
+  canEdit: boolean;
+}) {
+  const [state, formAction, isPending] = useActionState(
+    savePillarDiagnosisAction,
+    INITIAL_STRATEGY_STATE,
+  );
+  const [text, setText] = useState(initialText ?? "");
+
+  return (
+    <form action={formAction} className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm space-y-2">
+      <input type="hidden" name="roundId" value={roundId} />
+      <input type="hidden" name="lens" value={lens} />
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-brand-500" />
+          Diagnóstico da BU neste Pilar (Coluna E · Síntese Executiva)
+        </label>
+        {state.status === "success" && (
+          <span className="text-xs font-medium text-emerald-600">Salvo com sucesso ✓</span>
+        )}
+        {state.status === "error" && (
+          <span className="text-xs font-medium text-rose-600">{state.message}</span>
+        )}
+      </div>
+      <Textarea
+        name="diagnosisText"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        placeholder={
+          canEdit
+            ? `Registre a síntese da BU para este pilar (responda se estamos crescendo, onde perdemos volume ou eficiência)...`
+            : "Nenhum diagnóstico registrado para este pilar."
+        }
+        disabled={!canEdit}
+        className="text-sm bg-slate-50/50 focus:bg-white resize-y"
+      />
+      {canEdit && (
+        <div className="flex justify-end pt-1">
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isPending}
+            className="text-xs font-medium"
+          >
+            {isPending ? "Salvando…" : "Salvar diagnóstico do pilar"}
+          </Button>
+        </div>
+      )}
+    </form>
+  );
+}
+
 export function LensBlock({
   lens,
   evidence,
   findings,
   roundId,
   canEdit,
+  pillarDiagnosis,
 }: {
   lens: DiagnosisLens;
   evidence: EvidenceItem[];
   findings: Finding[];
   roundId: string | null;
   canEdit: boolean;
+  pillarDiagnosis?: string | null;
 }) {
   const [adding, setAdding] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
@@ -93,6 +157,16 @@ export function LensBlock({
             )}
           </div>
         )}
+
+        {/* Diagnóstico da BU neste Pilar (Coluna E da Planilha Oficial) */}
+        {roundId ? (
+          <PillarDiagnosisBox
+            roundId={roundId}
+            lens={lens}
+            initialText={pillarDiagnosis}
+            canEdit={canEdit}
+          />
+        ) : null}
 
         {/* O que a plataforma já sabe. Leitura, não digitação. */}
         {evidence.length > 0 ? (

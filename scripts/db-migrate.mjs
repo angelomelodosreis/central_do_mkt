@@ -14,6 +14,7 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { config as loadEnv } from "dotenv";
+import { seedPlanningAllBus } from "./seed-planning-all-bus.mjs";
 
 loadEnv({ path: ".env.local", quiet: true });
 
@@ -34,6 +35,11 @@ const client = createClient(isLocalFile ? { url } : { url, authToken });
 try {
   await migrate(drizzle(client), { migrationsFolder: "./drizzle/migrations" });
   console.log(`Migrations aplicadas em ${url}`);
+  try {
+    await seedPlanningAllBus(client);
+  } catch (seedErr) {
+    console.warn("Aviso: falha ao semear ciclos de planejamento:", seedErr.message);
+  }
 } catch (error) {
   console.error("Falha ao aplicar as migrations:", error.message);
   process.exit(1);

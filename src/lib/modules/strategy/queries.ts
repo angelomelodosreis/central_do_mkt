@@ -33,17 +33,74 @@ export async function listStrategyBusinessUnits(): Promise<
     .orderBy(asc(businessUnit.sortOrder), asc(businessUnit.label));
 }
 
-/** Ciclos de uma BU, do mais recente para o mais antigo. */
+/** Ciclos de uma BU, do mais recente para o mais antigo. Auto-inicializa se a BU estiver vazia. */
 export async function listCycles(
   businessUnitId: string,
 ): Promise<StrategyCycle[]> {
   const db = await getDb();
-  return db
+  let cycles = await db
     .select()
     .from(strategyCycle)
     .where(eq(strategyCycle.businessUnitId, businessUnitId))
     .orderBy(desc(strategyCycle.startsAt));
+
+  if (cycles.length === 0) {
+    const autoCycle = await ensureDefaultCycle(businessUnitId);
+    return [autoCycle];
+  }
+
+  return cycles;
 }
+
+/** Garante que a BU possua pelo menos um ciclo ativo (Ciclo 2026/2027). */
+export async function ensureDefaultCycle(
+  businessUnitId: string,
+): Promise<StrategyCycle> {
+  const db = await getDb();
+  const existing = await db
+    .select()
+    .from(strategyCycle)
+    .where(eq(strategyCycle.businessUnitId, businessUnitId))
+    .orderBy(desc(strategyCycle.startsAt))
+    .limit(1);
+
+  if (existing.length > 0) return existing[0];
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const id = `cycle_${businessUnitId}_${currentYear}`;
+  const startsAt = new Date(currentYear, 0, 1, 0, 0, 0);
+  const endsAt = new Date(currentYear + 1, 11, 31, 23, 59, 59);
+
+  const cycleData = {
+    id,
+    businessUnitId,
+    name: `Ciclo ${currentYear} / ${currentYear + 1}`,
+    slug: `${currentYear}-${currentYear + 1}`,
+    startsAt,
+    endsAt,
+    isCurrent: true,
+    sortOrder: 10,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  try {
+    await db.insert(strategyCycle).values(cycleData).onConflictDoNothing();
+  } catch {
+    // Tratamento para eventual concorrência
+  }
+
+  const created = await db
+    .select()
+    .from(strategyCycle)
+    .where(eq(strategyCycle.businessUnitId, businessUnitId))
+    .orderBy(desc(strategyCycle.startsAt))
+    .limit(1);
+
+  return created[0] ?? cycleData;
+}
+
 
 /**
  * O ciclo que deve abrir por padrão: o marcado como atual, senão o que contém

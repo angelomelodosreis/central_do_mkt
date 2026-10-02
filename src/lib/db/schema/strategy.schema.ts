@@ -407,3 +407,37 @@ export const strategyGoalTarget = sqliteTable(
 
 export type StrategyGoal = typeof strategyGoal.$inferSelect;
 export type StrategyGoalTarget = typeof strategyGoalTarget.$inferSelect;
+
+/**
+ * Metas 2.0 por Business Unit & Ciclo (Metodologia da Planilha Oficial).
+ * Permite cadastrar múltiplas metas com embasamento no diagnóstico e KPIs primário e secundário.
+ */
+export const strategyKpiGoal = sqliteTable(
+  "strategy_kpi_goal",
+  {
+    id: text("id").primaryKey(),
+    businessUnitId: text("business_unit_id")
+      .notNull()
+      .references(() => businessUnit.id, { onDelete: "cascade" }),
+    cycleId: text("cycle_id")
+      .notNull()
+      .references(() => strategyCycle.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    diagnosisBaseline: text("diagnosis_baseline"),
+    primaryKpiName: text("primary_kpi_name"),
+    primaryKpiTarget: text("primary_kpi_target"),
+    secondaryKpiName: text("secondary_kpi_name"),
+    secondaryKpiTarget: text("secondary_kpi_target"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdBy: text("created_by"),
+    updatedBy: text("updated_by"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("strategy_kpi_goal_bu_idx").on(table.businessUnitId),
+    index("strategy_kpi_goal_cycle_idx").on(table.cycleId),
+  ],
+);
+
+export type StrategyKpiGoal = typeof strategyKpiGoal.$inferSelect;

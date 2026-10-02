@@ -204,7 +204,7 @@ export async function openRound(
   return { status: "success", message: `${sequence}ª rodada aberta.` };
 }
 
-/** Grava a leitura geral da rodada, síntese (desafio e oportunidade) e objetivo do ciclo. */
+/** Grava a leitura geral da rodada, síntese (desafio e oportunidade), objetivo do ciclo e pilares. */
 export async function saveRoundSummary(
   _previousState: StrategyFormState,
   formData: FormData,
@@ -214,14 +214,63 @@ export async function saveRoundSummary(
   if ("erro" in gate) return { status: "error", message: gate.erro };
 
   const db = await getDb();
+  const updatePayload: Record<string, any> = {
+    summary: field(formData, "summary") || null,
+    mainChallenge: field(formData, "mainChallenge") || null,
+    mainOpportunity: field(formData, "mainOpportunity") || null,
+    cycleObjective: field(formData, "cycleObjective") || null,
+    cyclePeriod: field(formData, "cyclePeriod") || null,
+    updatedBy: gate.currentUser.id,
+    updatedAt: new Date(),
+  };
+
+  const bm = field(formData, "businessMarketDiagnosis");
+  if (bm !== "") updatePayload.businessMarketDiagnosis = bm;
+  const cb = field(formData, "clientBrandDiagnosis");
+  if (cb !== "") updatePayload.clientBrandDiagnosis = cb;
+  const po = field(formData, "portfolioOfferDiagnosis");
+  if (po !== "") updatePayload.portfolioOfferDiagnosis = po;
+  const fc = field(formData, "funnelConversionDiagnosis");
+  if (fc !== "") updatePayload.funnelConversionDiagnosis = fc;
+  const cc = field(formData, "contextCapacityDiagnosis");
+  if (cc !== "") updatePayload.contextCapacityDiagnosis = cc;
+
+  await db
+    .update(strategyRound)
+    .set(updatePayload)
+    .where(eq(strategyRound.id, roundId));
+
+  revalidateStrategy(gate.unit.slug);
+  return {
+    status: "success",
+    message: "Diagnóstico da BU salvo com sucesso.",
+  };
+}
+
+/** Grava o Diagnóstico da BU em um dos 5 pilares individualmente. */
+export async function savePillarDiagnosisAction(
+  _previousState: StrategyFormState,
+  formData: FormData,
+): Promise<StrategyFormState> {
+  const roundId = field(formData, "roundId");
+  const gate = await gateByRound(roundId);
+  if ("erro" in gate) return { status: "error", message: gate.erro };
+
+  const lens = field(formData, "lens");
+  const text = field(formData, "diagnosisText");
+
+  const db = await getDb();
+  const updateData: Record<string, string | null> = {};
+  if (lens === "negocio_mercado") updateData.businessMarketDiagnosis = text || null;
+  else if (lens === "cliente_marca") updateData.clientBrandDiagnosis = text || null;
+  else if (lens === "portfolio_oferta") updateData.portfolioOfferDiagnosis = text || null;
+  else if (lens === "funil_conversao") updateData.funnelConversionDiagnosis = text || null;
+  else if (lens === "contexto_capacidade") updateData.contextCapacityDiagnosis = text || null;
+
   await db
     .update(strategyRound)
     .set({
-      summary: field(formData, "summary") || null,
-      mainChallenge: field(formData, "mainChallenge") || null,
-      mainOpportunity: field(formData, "mainOpportunity") || null,
-      cycleObjective: field(formData, "cycleObjective") || null,
-      cyclePeriod: field(formData, "cyclePeriod") || null,
+      ...updateData,
       updatedBy: gate.currentUser.id,
       updatedAt: new Date(),
     })
@@ -230,9 +279,10 @@ export async function saveRoundSummary(
   revalidateStrategy(gate.unit.slug);
   return {
     status: "success",
-    message: "Diagnóstico (síntese e objetivo) salvo com sucesso.",
+    message: "Diagnóstico da BU atualizado com sucesso.",
   };
 }
+
 
 /** Fecha ou reabre a rodada. */
 export async function toggleRound(formData: FormData): Promise<void> {
