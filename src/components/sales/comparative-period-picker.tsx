@@ -321,7 +321,7 @@ export function ComparativePeriodPicker({
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-hidden"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -333,7 +333,7 @@ export function ComparativePeriodPicker({
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-hidden"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                       required
                     />
                   </div>
@@ -364,7 +364,7 @@ export function ComparativePeriodPicker({
                           | "custom",
                       )
                     }
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-hidden"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="previous_month_same_days">
                       Mesmo intervalo no Mês Anterior ({formatDateBR(computedCompare.start)} a {formatDateBR(computedCompare.end)})
@@ -388,7 +388,7 @@ export function ComparativePeriodPicker({
                           type="date"
                           value={compareStartDate}
                           onChange={(e) => setCompareStartDate(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-hidden"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                           required
                         />
                       </div>
@@ -400,7 +400,7 @@ export function ComparativePeriodPicker({
                           type="date"
                           value={compareEndDate}
                           onChange={(e) => setCompareEndDate(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-hidden"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                           required
                         />
                       </div>
@@ -420,7 +420,7 @@ export function ComparativePeriodPicker({
                 <select
                   value={selectedCurrentMonth}
                   onChange={(e) => setSelectedCurrentMonth(e.target.value)}
-                  className="rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-900 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                  className="rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
                   {availableMonths.map((m) => (
                     <option key={m.key} value={m.key}>
@@ -438,7 +438,7 @@ export function ComparativePeriodPicker({
                 <select
                   value={selectedPrevMonth}
                   onChange={(e) => setSelectedPrevMonth(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
                   {availableMonths.map((m) => (
                     <option key={m.key} value={m.key}>
@@ -479,27 +479,27 @@ export function ComparativePeriodPicker({
         )}
 
         {/* BARRA DE AÇÃO COM O BOTÃO "BUSCAR" (Destacado e com resumo) */}
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between border-t border-blue-100 pt-3">
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <span className="font-semibold text-slate-700">Consulta a ser realizada:</span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100/70 px-2 py-0.5 font-bold text-blue-900 text-[11px]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-blue-100 pt-3">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-600 min-w-0">
+            <span className="font-semibold text-slate-700 shrink-0">Consulta a ser realizada:</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100/70 px-2 py-0.5 font-bold text-blue-900 text-[11px] truncate max-w-full">
               {mode === "custom_range"
                 ? `${formatDateBR(startDate)} a ${formatDateBR(endDate)}`
                 : availableMonths.find((m) => m.key === selectedCurrentMonth)?.label || selectedCurrentMonth}
             </span>
-            <span className="text-slate-400">vs</span>
-            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 text-[11px]">
+            <span className="text-slate-400 font-bold shrink-0">vs</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 font-semibold text-slate-700 text-[11px] truncate max-w-full">
               {mode === "custom_range"
                 ? `${formatDateBR(computedCompare.start)} a ${formatDateBR(computedCompare.end)}`
                 : availableMonths.find((m) => m.key === selectedPrevMonth)?.label || selectedPrevMonth}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="submit"
               disabled={isPending}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-98 disabled:opacity-50 cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-98 disabled:opacity-50 cursor-pointer"
             >
               <Search className="size-3.5" />
               <span>{isPending ? "Buscando dados..." : "Buscar e Comparar"}</span>

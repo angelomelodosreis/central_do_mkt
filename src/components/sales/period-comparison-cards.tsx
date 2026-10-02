@@ -101,19 +101,21 @@ export function PeriodComparisonCards({
             <div className="text-2xl font-bold tracking-tight text-slate-900">
               {formatCurrency(currentPeriod.revenue)}
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-              <span>{currentPeriod.label}:</span>
-              <span className="font-medium text-slate-700">
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
+              <span className="truncate max-w-[130px]" title={currentPeriod.label}>{currentPeriod.label}:</span>
+              <span className="font-semibold text-slate-700 shrink-0">
                 {formatCurrency(currentPeriod.revenue)}
               </span>
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
-              <span>{previousPeriod.label}:</span>
-              <span>{formatCurrency(previousPeriod.revenue)}</span>
-              <span className="text-[11px] font-semibold text-slate-600">
-                ({deltas.revenueDelta >= 0 ? "+" : ""}
-                {formatCurrency(deltas.revenueDelta)})
-              </span>
+            <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
+              <span className="truncate max-w-[110px]" title={previousPeriod.label}>{previousPeriod.label}:</span>
+              <div className="flex items-center gap-1 shrink-0">
+                <span>{formatCurrency(previousPeriod.revenue)}</span>
+                <span className="text-[10px] font-semibold text-slate-600">
+                  ({deltas.revenueDelta >= 0 ? "+" : ""}
+                  {formatCurrency(deltas.revenueDelta)})
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -145,19 +147,21 @@ export function PeriodComparisonCards({
               {currentPeriod.sales.toLocaleString("pt-BR")}{" "}
               <span className="text-sm font-normal text-slate-500">vendas</span>
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-              <span>{currentPeriod.label}:</span>
-              <span className="font-medium text-slate-700">
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
+              <span className="truncate max-w-[130px]" title={currentPeriod.label}>{currentPeriod.label}:</span>
+              <span className="font-semibold text-slate-700 shrink-0">
                 {currentPeriod.sales} vendas
               </span>
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
-              <span>{previousPeriod.label}:</span>
-              <span>{previousPeriod.sales} vendas</span>
-              <span className="text-[11px] font-semibold text-slate-600">
-                ({deltas.salesDelta >= 0 ? "+" : ""}
-                {deltas.salesDelta})
-              </span>
+            <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
+              <span className="truncate max-w-[110px]" title={previousPeriod.label}>{previousPeriod.label}:</span>
+              <div className="flex items-center gap-1 shrink-0">
+                <span>{previousPeriod.sales} vendas</span>
+                <span className="text-[10px] font-semibold text-slate-600">
+                  ({deltas.salesDelta >= 0 ? "+" : ""}
+                  {deltas.salesDelta})
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -188,19 +192,21 @@ export function PeriodComparisonCards({
             <div className="text-2xl font-bold tracking-tight text-slate-900">
               {formatCurrency(currentPeriod.avgTicket)}
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-              <span>{currentPeriod.label}:</span>
-              <span className="font-medium text-slate-700">
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
+              <span className="truncate max-w-[130px]" title={currentPeriod.label}>{currentPeriod.label}:</span>
+              <span className="font-semibold text-slate-700 shrink-0">
                 {formatCurrency(currentPeriod.avgTicket)}
               </span>
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
-              <span>{previousPeriod.label}:</span>
-              <span>{formatCurrency(previousPeriod.avgTicket)}</span>
-              <span className="text-[11px] font-semibold text-slate-600">
-                ({deltas.ticketDelta >= 0 ? "+" : ""}
-                {formatCurrency(deltas.ticketDelta)})
-              </span>
+            <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
+              <span className="truncate max-w-[110px]" title={previousPeriod.label}>{previousPeriod.label}:</span>
+              <div className="flex items-center gap-1 shrink-0">
+                <span>{formatCurrency(previousPeriod.avgTicket)}</span>
+                <span className="text-[10px] font-semibold text-slate-600">
+                  ({deltas.ticketDelta >= 0 ? "+" : ""}
+                  {formatCurrency(deltas.ticketDelta)})
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -225,9 +231,9 @@ export function PeriodComparisonCards({
               )}
               <span className="text-xs font-normal text-slate-500">/dia</span>
             </div>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
               <span>Volume médio:</span>
-              <span className="font-medium text-slate-700">
+              <span className="font-semibold text-slate-700 shrink-0">
                 {(currentPeriod.daysCount > 0
                   ? currentPeriod.sales / currentPeriod.daysCount
                   : 0
@@ -235,9 +241,9 @@ export function PeriodComparisonCards({
                 vendas/dia
               </span>
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+            <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
               <span>Anterior:</span>
-              <span>
+              <span className="shrink-0">
                 {formatCurrency(
                   previousPeriod.daysCount > 0
                     ? previousPeriod.revenue / previousPeriod.daysCount

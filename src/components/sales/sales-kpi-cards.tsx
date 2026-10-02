@@ -18,7 +18,7 @@ export function SalesKpiCards({
   const isVelocityPositive = summary.accelerationPercentage >= 0;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
       {/* 1. Faturamento Total */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs transition hover:border-brand-300 hover:shadow-xs">
         <div className="flex items-center justify-between">

@@ -112,7 +112,7 @@ export function OverviewChart({
             </h3>
           </div>
           <p className="mt-0.5 text-xs text-slate-400">
-            Série histórica real conectada ao Google Sheets (8.600 vendas)
+            Série histórica real conectada ao Google Sheets (23 BUs consolidadas)
           </p>
         </div>
 

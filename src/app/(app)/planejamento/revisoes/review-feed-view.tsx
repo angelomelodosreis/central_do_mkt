@@ -415,7 +415,7 @@ export function ReviewFeedView({
             <select
               value={selectedBu}
               onChange={(e) => setSelectedBu(e.target.value)}
-              className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-slate-800 shadow-xs focus:border-brand-500 focus:outline-hidden focus:ring-1 focus:ring-brand-500"
+              className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-slate-800 shadow-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="all">Todas as Business Units ({businessUnits.length})</option>
               {businessUnits.map((bu) => (
@@ -432,7 +432,7 @@ export function ReviewFeedView({
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-slate-800 shadow-xs focus:border-brand-500 focus:outline-hidden focus:ring-1 focus:ring-brand-500"
+              className="appearance-none rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-slate-800 shadow-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="all">Todos os Status</option>
               <option value="novo">Novo</option>
@@ -452,7 +452,7 @@ export function ReviewFeedView({
               placeholder="Buscar observações, pautas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder-slate-400 shadow-xs focus:border-brand-500 focus:outline-hidden focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder-slate-400 shadow-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             {searchTerm && (
               <button
@@ -630,7 +630,7 @@ export function ReviewFeedView({
                             )
                           }
                           className={cn(
-                            "rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-2xs transition cursor-pointer focus:outline-hidden",
+                            "rounded-lg border px-2.5 py-1 text-xs font-semibold shadow-2xs transition cursor-pointer focus:outline-none focus:ring-1",
                             statusStyle.bg,
                             statusStyle.text,
                             statusStyle.border,
@@ -929,7 +929,7 @@ export function ReviewFeedView({
                   placeholder="Responder... (Ex: criativos aprovados, copy ajustada com social media)"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-3 pr-12 text-xs text-slate-800 placeholder-slate-400 shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-purple-500"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-3 pr-12 text-xs text-slate-800 placeholder-slate-400 shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -989,7 +989,7 @@ export function ReviewFeedView({
                   <select
                     value={newItemBuId}
                     onChange={(e) => setNewItemBuId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   >
                     {businessUnits.map((bu) => (
@@ -1010,7 +1010,7 @@ export function ReviewFeedView({
                     placeholder="Ex: Mariana Vasconcelos, João Fontes"
                     value={newItemAssignee}
                     onChange={(e) => setNewItemAssignee(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -1026,7 +1026,7 @@ export function ReviewFeedView({
                     type="date"
                     value={newItemMeetingDate}
                     onChange={(e) => setNewItemMeetingDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -1040,7 +1040,7 @@ export function ReviewFeedView({
                     type="date"
                     value={newItemFollowUpDate}
                     onChange={(e) => setNewItemFollowUpDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     required
                   />
                 </div>
@@ -1055,7 +1055,7 @@ export function ReviewFeedView({
                     onChange={(e) =>
                       setNewItemStatus(e.target.value as PlanningReviewStatus)
                     }
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   >
                     <option value="novo">Novo</option>
                     <option value="em_andamento">Em andamento</option>
@@ -1075,7 +1075,7 @@ export function ReviewFeedView({
                   placeholder={`• Revisar precificação e oferta do Extensivo\n• Alinhar calendário com Social Media\n• Subir novos criativos de conversão`}
                   value={newItemDetails}
                   onChange={(e) => setNewItemDetails(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   required
                 />
               </div>
@@ -1090,7 +1090,7 @@ export function ReviewFeedView({
                   placeholder="Ex: Black November, Tráfego Pago, Provas Práticas"
                   value={newItemTag}
                   onChange={(e) => setNewItemTag(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 

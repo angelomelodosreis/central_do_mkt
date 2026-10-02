@@ -24,10 +24,12 @@ function formatCurrency(val: number): string {
 export function ProjectionsBanner({
   projections,
   totalHistoricalRevenue,
+  totalHistoricalSales,
   approvalRate = 98.1,
 }: {
   projections: SalesProjections;
   totalHistoricalRevenue: number;
+  totalHistoricalSales?: number;
   approvalRate?: number;
 }) {
   const isPositiveMtd = projections.mtdGrowthRevenuePercent >= 0;
@@ -145,7 +147,14 @@ export function ProjectionsBanner({
               {formatCurrency(projections.currentAvgTicket)}
             </p>
             <p className="mt-0.5 text-xs text-purple-800/80">
-              Consolidado histórico: <strong>{formatCurrency(totalHistoricalRevenue / 8596)}</strong>
+              Consolidado histórico:{" "}
+              <strong>
+                {formatCurrency(
+                  totalHistoricalSales && totalHistoricalSales > 0
+                    ? totalHistoricalRevenue / totalHistoricalSales
+                    : projections.currentAvgTicket,
+                )}
+              </strong>
             </p>
           </div>
 

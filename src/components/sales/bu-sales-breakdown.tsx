@@ -38,7 +38,7 @@ export function BuSalesBreakdown({ data }: { data: BuSalesStat[] }) {
           <BarChart
             layout="vertical"
             data={topBus}
-            margin={{ top: 5, right: 20, left: 40, bottom: 5 }}
+            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
             <XAxis
@@ -56,7 +56,7 @@ export function BuSalesBreakdown({ data }: { data: BuSalesStat[] }) {
               fontSize={11}
               tickLine={false}
               axisLine={false}
-              width={100}
+              width={140}
             />
             <Tooltip
               content={({ active, payload }) => {

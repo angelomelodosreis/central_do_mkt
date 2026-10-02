@@ -125,15 +125,15 @@ export function BuGrowthMatrix({
 
       {/* Tabela de BUs */}
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-xs min-w-[640px]">
           <thead>
             <tr className="border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-              <th className="py-2.5 pr-4">Business Unit</th>
-              <th className="py-2.5 px-3 text-right">{currentLabel}</th>
-              <th className="py-2.5 px-3 text-right">{previousLabel}</th>
-              <th className="py-2.5 px-3 text-right">Variação R$</th>
-              <th className="py-2.5 px-3 text-right">Crescimento %</th>
-              <th className="py-2.5 pl-3 text-right">Ticket Médio</th>
+              <th className="py-2.5 pr-4 whitespace-nowrap">Business Unit</th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">{currentLabel}</th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">{previousLabel}</th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">Variação R$</th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">Crescimento %</th>
+              <th className="py-2.5 pl-3 text-right whitespace-nowrap">Ticket Médio</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -172,7 +172,7 @@ export function BuGrowthMatrix({
                     </td>
 
                     {/* Receita Atual & Vendas */}
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
                       <div className="font-bold text-slate-900">
                         {formatCurrency(bu.currentRevenue)}
                       </div>
@@ -182,7 +182,7 @@ export function BuGrowthMatrix({
                     </td>
 
                     {/* Receita Anterior & Vendas */}
-                    <td className="py-3 px-3 text-right text-slate-600">
+                    <td className="py-3 px-3 text-right text-slate-600 whitespace-nowrap">
                       <div>{formatCurrency(bu.previousRevenue)}</div>
                       <div className="text-[10px] text-slate-400">
                         {bu.previousSales} vendas
@@ -190,7 +190,7 @@ export function BuGrowthMatrix({
                     </td>
 
                     {/* Variação Monetária */}
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
                       <span
                         className={`font-semibold ${
                           isPositive ? "text-emerald-600" : "text-rose-600"
@@ -202,7 +202,7 @@ export function BuGrowthMatrix({
                     </td>
 
                     {/* Variação Percentual */}
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
                           isPositive
@@ -223,7 +223,7 @@ export function BuGrowthMatrix({
                     </td>
 
                     {/* Ticket Médio */}
-                    <td className="py-3 pl-3 text-right">
+                    <td className="py-3 pl-3 text-right whitespace-nowrap">
                       <div className="font-medium text-slate-800">
                         {formatCurrency(bu.currentAvgTicket)}
                       </div>

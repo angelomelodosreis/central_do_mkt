@@ -202,6 +202,7 @@ export default async function DashboardPage({
           <ProjectionsBanner
             projections={dashboardSales.projections}
             totalHistoricalRevenue={dashboardSales.liveSales.summary.totalRevenue}
+            totalHistoricalSales={dashboardSales.liveSales.summary.totalSales}
             approvalRate={dashboardSales.liveSales.summary.approvalRate}
           />
 

@@ -59,7 +59,7 @@ export function DayByDayPacingChart({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-slate-900">
-              Pacing Comparativo Dia a Dia (1 a 31)
+              Pacing Comparativo Dia a Dia {series.length > 0 ? `(Dia 1 a ${series.length})` : ""}
             </h3>
             <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 uppercase">
               Sobreposição Dual
@@ -185,7 +185,7 @@ export function DayByDayPacingChart({
 
                 return (
                   <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg text-xs">
-                    <p className="font-bold text-slate-800">Dia {label} do Mês</p>
+                    <p className="font-bold text-slate-800">Dia {label} do Período</p>
                     <div className="mt-2 space-y-1.5">
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5 text-blue-600 font-semibold">
