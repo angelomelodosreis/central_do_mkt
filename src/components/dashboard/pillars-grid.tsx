@@ -3,37 +3,51 @@
 import Link from "next/link";
 import { TrendingUp, Rocket, CheckSquare, ArrowUpRight } from "lucide-react";
 
+function formatCompact(val: number): string {
+  if (val >= 1_000_000) {
+    return `R$ ${(val / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}M`;
+  }
+  if (val >= 1_000) {
+    return `R$ ${(val / 1_000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}k`;
+  }
+  return `R$ ${val.toLocaleString("pt-BR")}`;
+}
+
 export function PillarsGrid({
   openTasksCount = 0,
   delayedTasksCount = 0,
-  busCount = 0,
+  busCount = 23,
+  totalRevenue = 89500000,
+  monthProjected = 1400000,
 }: {
   openTasksCount?: number;
   delayedTasksCount?: number;
   busCount?: number;
+  totalRevenue?: number;
+  monthProjected?: number;
 }) {
   const pillars = [
     {
       id: "capture",
       title: "Captação & Vendas",
-      subtitle: "Leads, CAC e conversão",
-      progress: 68,
-      metricText: "12 / 18 metas ativas",
-      daysLeft: "32 dias restantes",
+      subtitle: "Tempo Real & Projeção MoM",
+      progress: 78,
+      metricText: `${formatCompact(monthProjected)} projetados no mês`,
+      daysLeft: `${formatCompact(totalRevenue)} ciclo`,
       href: "/panorama",
       icon: TrendingUp,
-      tone: "brand",
+      gradient: "from-emerald-500 to-teal-600",
     },
     {
       id: "portfolio",
       title: "Portfólio & Lançamentos",
-      subtitle: `${busCount} BUs em operação`,
-      progress: 84,
-      metricText: "24 campanhas no ar",
-      daysLeft: "Em andamento",
+      subtitle: `${busCount} Business Units estruturadas`,
+      progress: 88,
+      metricText: "Diagnóstico 2.0 & Metas 2.0",
+      daysLeft: "Ciclo ativo",
       href: "/planejamento",
       icon: Rocket,
-      tone: "purple",
+      gradient: "from-brand-500 to-rose-600",
     },
     {
       id: "tasks",
@@ -41,13 +55,13 @@ export function PillarsGrid({
       subtitle:
         delayedTasksCount > 0
           ? `${delayedTasksCount} tarefas atrasadas`
-          : "Fila em dia",
-      progress: delayedTasksCount > 0 ? 55 : 92,
-      metricText: `${openTasksCount} na sua fila`,
+          : "Fila de trabalho em dia",
+      progress: delayedTasksCount > 0 ? 60 : 94,
+      metricText: `${openTasksCount} na sua fila direta`,
       daysLeft: delayedTasksCount > 0 ? "Atenção necessária" : "No prazo",
       href: "/tarefas",
       icon: CheckSquare,
-      tone: "emerald",
+      gradient: "from-blue-500 to-indigo-600",
     },
   ];
 
@@ -61,9 +75,9 @@ export function PillarsGrid({
             href={item.href}
             className="group relative flex flex-col justify-between rounded-[2rem] border border-slate-200/80 bg-white p-6 pt-8 shadow-[0_12px_30px_-8px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-1 hover:border-brand-300 hover:shadow-[0_20px_40px_-12px_rgba(226,38,60,0.12)]"
           >
-            {/* Ícone em Cápsula Flutuante Elevada (estilo Claymorphism / Imagem de referência) */}
+            {/* Ícone em Cápsula Flutuante Elevada */}
             <div className="absolute -top-5 left-6 flex size-12 items-center justify-center rounded-2xl bg-white shadow-[0_8px_20px_-4px_rgba(15,23,42,0.12)] ring-1 ring-slate-100 transition-transform group-hover:scale-110">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-xs">
+              <span className={`flex size-9 items-center justify-center rounded-xl bg-gradient-to-br ${item.gradient} text-white shadow-xs`}>
                 <IconComponent className="size-4" />
               </span>
             </div>
@@ -87,7 +101,7 @@ export function PillarsGrid({
             <div className="my-4 space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[11px] font-medium text-slate-500">
-                  Progresso
+                  Atingimento
                 </span>
                 <span className="font-bold tabular-nums text-slate-900">
                   {item.progress}%
@@ -103,7 +117,7 @@ export function PillarsGrid({
 
             {/* Rodapé com métrica e badge */}
             <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
-              <span className="font-medium text-slate-600">
+              <span className="font-medium text-slate-700">
                 {item.metricText}
               </span>
               <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600 group-hover:bg-brand-50 group-hover:text-brand-700 transition-colors">

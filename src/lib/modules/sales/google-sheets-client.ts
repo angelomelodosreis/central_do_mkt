@@ -1,8 +1,12 @@
 import type { ComparativeAnalysisResult, SaleTransaction, SalesAnalyticsResult } from "./types";
 import {
   calculateComparativeAnalysis,
+  calculateProjections,
   calculateSalesAnalytics,
   getAvailableMonths,
+  getMonthlyAggregations,
+  type MonthlyAggregatePoint,
+  type SalesProjections,
 } from "./calculations";
 
 
@@ -408,5 +412,20 @@ export async function getAllLiveTransactions(): Promise<SaleTransaction[]> {
   const { transactions } = await fetchGoogleSheetsSalesData();
   return transactions;
 }
+
+export async function getLiveDashboardData(): Promise<{
+  liveSales: SalesAnalyticsResult;
+  projections: SalesProjections;
+  monthlyHistory: MonthlyAggregatePoint[];
+}> {
+  const { transactions, sourceType } = await fetchGoogleSheetsSalesData();
+  const liveSales = calculateSalesAnalytics(transactions, {
+    dataSourceType: sourceType,
+  });
+  const projections = calculateProjections(transactions);
+  const monthlyHistory = getMonthlyAggregations(transactions);
+  return { liveSales, projections, monthlyHistory };
+}
+
 
 

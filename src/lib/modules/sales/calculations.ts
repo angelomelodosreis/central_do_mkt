@@ -337,6 +337,229 @@ export function getAvailableMonths(transactions: SaleTransaction[]): Array<{
     }));
 }
 
+export interface MonthlyAggregatePoint {
+  monthKey: string;
+  month: string;
+  shortMonth: string;
+  revenue: number;
+  sales: number;
+  avgTicket: number;
+  displayRevenue: string;
+}
+
+export interface SalesProjections {
+  monthKey: string;
+  monthLabel: string;
+  daysElapsed: number;
+  daysRemaining: number;
+  totalDaysInMonth: number;
+  monthProgressPercent: number;
+  currentRevenue: number;
+  currentSales: number;
+  currentAvgTicket: number;
+  recentDailyRevenue: number;
+  recentDailySales: number;
+  projectedMonthEndRevenue: number;
+  projectedMonthEndSales: number;
+  projectedRunRateMultiplier: number;
+  mtdGrowthRevenuePercent: number;
+  mtdGrowthSalesPercent: number;
+  previousPeriodSameDaysRevenue: number;
+  previousPeriodSameDaysSales: number;
+  totalAnnualProjectedRevenue: number;
+  velocityDaily: number;
+  accelerationPercent: number;
+}
+
+export function getMonthlyAggregations(
+  transactions: SaleTransaction[],
+): MonthlyAggregatePoint[] {
+  const monthsMap = new Map<string, { revenue: number; sales: number }>();
+  for (const t of transactions) {
+    if (t.status !== "approved" && t.status !== "pending") continue;
+    const mKey = t.date.slice(0, 7); // "YYYY-MM"
+    const cur = monthsMap.get(mKey) ?? { revenue: 0, sales: 0 };
+    cur.revenue += t.amount;
+    cur.sales += t.quantity;
+    monthsMap.set(mKey, cur);
+  }
+
+  const sortedKeys = Array.from(monthsMap.keys()).sort();
+  const shortNames = [
+    "Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez",
+  ];
+
+  return sortedKeys.map((key) => {
+    const [y, m] = key.split("-").map(Number);
+    const shortMonth = shortNames[m - 1] ?? key;
+    const item = monthsMap.get(key)!;
+    return {
+      monthKey: key,
+      month: `${shortMonth}/${String(y).slice(2)}`,
+      shortMonth,
+      revenue: Math.round(item.revenue * 100) / 100,
+      sales: item.sales,
+      avgTicket:
+        item.sales > 0
+          ? Math.round((item.revenue / item.sales) * 100) / 100
+          : 0,
+      displayRevenue: new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+        maximumFractionDigits: 0,
+      }).format(item.revenue),
+    };
+  });
+}
+
+export function calculateProjections(
+  transactions: SaleTransaction[],
+  targetMonthKey?: string,
+): SalesProjections {
+  const availableMonths = getAvailableMonths(transactions);
+  const currentKey =
+    targetMonthKey ||
+    (availableMonths.length > 0 ? availableMonths[0].key : "2026-10");
+
+  const [currY, currM] = currentKey.split("-").map(Number);
+  const totalDaysInMonth = new Date(currY, currM, 0).getDate();
+
+  // Transações do mês atual
+  const currentTxs = transactions.filter(
+    (t) =>
+      (t.status === "approved" || t.status === "pending") &&
+      t.date.startsWith(currentKey),
+  );
+
+  let currentRevenue = 0;
+  let currentSales = 0;
+  const daySet = new Set<number>();
+
+  for (const t of currentTxs) {
+    currentRevenue += t.amount;
+    currentSales += t.quantity;
+    const day = parseInt(t.date.slice(8, 10), 10);
+    if (!isNaN(day)) daySet.add(day);
+  }
+
+  const daysElapsed =
+    daySet.size > 0
+      ? Math.min(Math.max(...Array.from(daySet)), totalDaysInMonth)
+      : 1;
+  const daysRemaining = Math.max(0, totalDaysInMonth - daysElapsed);
+  const monthProgressPercent = Math.min(
+    100,
+    Math.round((daysElapsed / totalDaysInMonth) * 1000) / 10,
+  );
+  const currentAvgTicket =
+    currentSales > 0 ? currentRevenue / currentSales : 0;
+
+  // Encontra mês anterior para cálculo homólogo MTD
+  let prevMonthKey: string;
+  const idx = availableMonths.findIndex((m) => m.key === currentKey);
+  if (idx >= 0 && idx + 1 < availableMonths.length) {
+    prevMonthKey = availableMonths[idx + 1].key;
+  } else {
+    const prevM = currM === 1 ? 12 : currM - 1;
+    const prevY = currM === 1 ? currY - 1 : currY;
+    prevMonthKey = `${prevY}-${String(prevM).padStart(2, "0")}`;
+  }
+
+  const prevTxs = transactions.filter(
+    (t) =>
+      (t.status === "approved" || t.status === "pending") &&
+      t.date.startsWith(prevMonthKey),
+  );
+
+  let previousPeriodSameDaysRevenue = 0;
+  let previousPeriodSameDaysSales = 0;
+
+  for (const t of prevTxs) {
+    const day = parseInt(t.date.slice(8, 10), 10);
+    if (!isNaN(day) && day <= daysElapsed) {
+      previousPeriodSameDaysRevenue += t.amount;
+      previousPeriodSameDaysSales += t.quantity;
+    }
+  }
+
+  const mtdGrowthRevenuePercent =
+    previousPeriodSameDaysRevenue > 0
+      ? ((currentRevenue - previousPeriodSameDaysRevenue) /
+          previousPeriodSameDaysRevenue) *
+        100
+      : 0;
+
+  const mtdGrowthSalesPercent =
+    previousPeriodSameDaysSales > 0
+      ? ((currentSales - previousPeriodSameDaysSales) /
+          previousPeriodSameDaysSales) *
+        100
+      : 0;
+
+  // Velocidade recente: média diária do mês atual
+  const recentDailyRevenue =
+    daysElapsed > 0 ? currentRevenue / daysElapsed : 0;
+  const recentDailySales =
+    daysElapsed > 0 ? currentSales / daysElapsed : 0;
+
+  // Projeção Run-Rate: Fechamento do mês
+  const projectedMonthEndRevenue = Math.round(
+    currentRevenue + recentDailyRevenue * daysRemaining,
+  );
+  const projectedMonthEndSales = Math.round(
+    currentSales + recentDailySales * daysRemaining,
+  );
+  const projectedRunRateMultiplier =
+    daysElapsed > 0 ? totalDaysInMonth / daysElapsed : 1;
+
+  // Faturamento total histórico e projeção anual
+  const totalHistoricalRevenue = transactions.reduce(
+    (acc, t) => acc + (t.status === "approved" ? t.amount : 0),
+    0,
+  );
+  const totalAnnualProjectedRevenue = Math.round(
+    totalHistoricalRevenue + recentDailyRevenue * daysRemaining,
+  );
+
+  return {
+    monthKey: currentKey,
+    monthLabel: formatMonthYearLabel(currentKey),
+    daysElapsed,
+    daysRemaining,
+    totalDaysInMonth,
+    monthProgressPercent,
+    currentRevenue: Math.round(currentRevenue * 100) / 100,
+    currentSales,
+    currentAvgTicket: Math.round(currentAvgTicket * 100) / 100,
+    recentDailyRevenue: Math.round(recentDailyRevenue * 100) / 100,
+    recentDailySales: Math.round(recentDailySales * 10) / 10,
+    projectedMonthEndRevenue,
+    projectedMonthEndSales,
+    projectedRunRateMultiplier:
+      Math.round(projectedRunRateMultiplier * 10) / 10,
+    mtdGrowthRevenuePercent:
+      Math.round(mtdGrowthRevenuePercent * 10) / 10,
+    mtdGrowthSalesPercent: Math.round(mtdGrowthSalesPercent * 10) / 10,
+    previousPeriodSameDaysRevenue:
+      Math.round(previousPeriodSameDaysRevenue * 100) / 100,
+    previousPeriodSameDaysSales,
+    totalAnnualProjectedRevenue,
+    velocityDaily: Math.round(recentDailySales * 10) / 10,
+    accelerationPercent: mtdGrowthRevenuePercent,
+  };
+}
+
 /**
  * Análise comparativa completa de períodos (MoM, YoY ou Meses Customizados):
  * - Curva de Pacing Dia a Dia (dia 1 ao dia 31)
