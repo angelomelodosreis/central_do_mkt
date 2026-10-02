@@ -64,6 +64,31 @@ const nextConfig: NextConfig = {
         destination: "/admin/bases/business-units",
         permanent: false,
       },
+      {
+        source: "/usuarios",
+        destination: "/admin/usuarios",
+        permanent: false,
+      },
+      {
+        source: "/estrategia",
+        destination: "/planejamento",
+        permanent: false,
+      },
+      {
+        source: "/estrategia/:path*",
+        destination: "/planejamento/:path*",
+        permanent: false,
+      },
+      {
+        source: "/bus",
+        destination: "/admin/bases/business-units",
+        permanent: false,
+      },
+      {
+        source: "/lista-de-bus",
+        destination: "/admin/bases/business-units",
+        permanent: false,
+      },
     ];
   },
 };
