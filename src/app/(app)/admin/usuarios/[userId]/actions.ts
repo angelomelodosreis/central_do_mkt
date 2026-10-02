@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
-import { requireAdmin } from "@/lib/auth/session";
+import { requireAdmin, requireUserManagementAccess } from "@/lib/auth/session";
 import { resetarSegundoFator } from "@/lib/auth/two-factor";
 import { getDb } from "@/lib/db/client";
 import {
@@ -84,7 +84,7 @@ function chaveDoEscopo(scopeType: string, scopeId: string | null): string {
  * conta, não atributos dela, e cada uma tem a própria confirmação.
  */
 export async function saveUserFile(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
 
   const userId = field(formData, "userId");
   if (!userId) return;
@@ -502,7 +502,7 @@ export async function deleteUser(formData: FormData): Promise<void> {
  * redefinido volta pelo Google e cadastra o aplicativo de novo.
  */
 export async function resetTwoFactor(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requireUserManagementAccess();
 
   const userId = field(formData, "userId");
   if (!userId) return;

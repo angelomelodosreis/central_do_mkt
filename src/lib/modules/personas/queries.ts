@@ -144,6 +144,25 @@ export async function getPersonaBySlug(
   personaSlug: string,
 ): Promise<PersonaDetail | undefined> {
   const db = await getDb();
+  const clean = businessUnitSlug.trim().toLowerCase();
+  const under = clean.replace(/-/g, "_");
+  const dash = clean.replace(/_/g, "-");
+
+  const aliases: Record<string, string> = {
+    "residencia-medica": "residencia",
+    residencia_medica: "residencia",
+    "cirurgia-geral": "cirurgia",
+    cirurgia_geral: "cirurgia",
+    lifehacks: "ps",
+    "medcof-pronto-socorro": "ps",
+    medcof_lifehacks: "ps",
+    "pronto-socorro": "ps",
+    otorrino: "otorrinolaringologia",
+    concurso: "concursus",
+    concursos: "concursus",
+  };
+
+  const target = aliases[clean] || aliases[dash] || aliases[under] || clean;
 
   const row = await db
     .select({
@@ -155,7 +174,14 @@ export async function getPersonaBySlug(
     .innerJoin(businessUnit, eq(persona.businessUnitId, businessUnit.id))
     .where(
       and(
-        eq(businessUnit.slug, businessUnitSlug),
+        or(
+          eq(businessUnit.slug, clean),
+          eq(businessUnit.slug, under),
+          eq(businessUnit.slug, dash),
+          eq(businessUnit.slug, target),
+          eq(businessUnit.id, `bu_${under}`),
+          eq(businessUnit.id, `bu_${target}`),
+        ),
         eq(persona.slug, personaSlug),
       ),
     )

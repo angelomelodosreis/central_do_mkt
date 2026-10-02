@@ -370,7 +370,7 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
           </div>
 
           <Link
-            href="/segundo-fator/configurar"
+            href="/verificacao/cadastrar"
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:text-slate-900"
           >
             <Shield className="size-3.5" />

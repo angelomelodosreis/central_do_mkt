@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { requirePermission, type CurrentUser } from "@/lib/auth/session";
@@ -48,17 +48,8 @@ export type BusinessUnitAccess = {
 
 /**
  * Carrega a BU pelo slug e resolve o que a pessoa pode fazer nela.
- *
- * Duas checagens independentes, nesta ordem:
- *
- * 1. ALCANCE — sem vínculo (e sem papel de coordenação), a BU responde como se
- *    não existisse. O redirect é para a lista, e não uma mensagem de "sem
- *    permissão": revelar que existe uma BU chamada X para quem não pode vê-la
- *    já é informação.
- * 2. EDIÇÃO — o papel decide. Vínculo abre a porta, papel diz se pode mexer.
- *
- * A checagem vive no servidor e é repetida em toda gravação: esconder o botão
- * de editar é conveniência visual, não segurança.
+ * Aceita variações de slug (com traço, com underline, aliases e códigos oficiais)
+ * para evitar qualquer 404 em links antigos ou digitados.
  */
 export async function requireStrategyBusinessUnit(
   slug: string,
@@ -66,6 +57,26 @@ export async function requireStrategyBusinessUnit(
   const currentUser = await requirePermission("strategy", "view");
 
   const db = await getDb();
+  const clean = slug.trim().toLowerCase();
+  const under = clean.replace(/-/g, "_");
+  const dash = clean.replace(/_/g, "-");
+
+  const aliases: Record<string, string> = {
+    "residencia-medica": "residencia",
+    residencia_medica: "residencia",
+    "cirurgia-geral": "cirurgia",
+    cirurgia_geral: "cirurgia",
+    lifehacks: "ps",
+    "medcof-pronto-socorro": "ps",
+    medcof_lifehacks: "ps",
+    "pronto-socorro": "ps",
+    otorrino: "otorrinolaringologia",
+    concurso: "concursus",
+    concursos: "concursus",
+  };
+
+  const target = aliases[clean] || aliases[dash] || aliases[under] || clean;
+
   const unit = await db
     .select({
       id: businessUnit.id,
@@ -75,7 +86,19 @@ export async function requireStrategyBusinessUnit(
       isActive: businessUnit.isActive,
     })
     .from(businessUnit)
-    .where(eq(businessUnit.slug, slug))
+    .where(
+      or(
+        eq(businessUnit.slug, clean),
+        eq(businessUnit.slug, under),
+        eq(businessUnit.slug, dash),
+        eq(businessUnit.slug, target),
+        eq(businessUnit.id, clean),
+        eq(businessUnit.id, `bu_${under}`),
+        eq(businessUnit.id, `bu_${target}`),
+        eq(businessUnit.code, `MEDCOF_${under.toUpperCase()}`),
+        eq(businessUnit.code, `MEDCOF_${target.toUpperCase()}`),
+      ),
+    )
     .get();
 
   if (!unit) redirect("/planejamento");
