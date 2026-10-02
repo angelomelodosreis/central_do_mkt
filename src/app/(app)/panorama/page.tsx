@@ -14,6 +14,7 @@ import {
 import {
   getLiveSalesAnalytics,
   getLiveComparativeAnalytics,
+  getAllLiveTransactions,
 } from "@/lib/modules/sales/google-sheets-client";
 import { sortByName } from "@/lib/utils/text";
 
@@ -53,12 +54,14 @@ export default async function PanoramaPage() {
   );
   const ate = new Date(agora.getTime() + DIAS_DE_AGENDA * 86_400_000);
 
-  const [semanais, agenda, liveSales, compData] = await Promise.all([
+  const [semanais, agenda, liveSales, compData, allTransactions] = await Promise.all([
     listWeeklyResultsOfPeriod(ids, desde, agora),
     listAgenda(ids, agora, ate),
     getLiveSalesAnalytics(),
     getLiveComparativeAnalytics(),
+    getAllLiveTransactions(),
   ]);
+
 
   const isMaster = isFullAccessMaster({
     email: currentUser.email,
@@ -90,7 +93,7 @@ export default async function PanoramaPage() {
   }
 
   // Enriquece as semanas com as 8.600 vendas reais sincronizadas do Google Sheets
-  for (const t of compData.allTransactions) {
+  for (const t of allTransactions) {
     if (t.timestamp < desde.getTime() || t.timestamp > agora.getTime()) continue;
     const buId = buCodeToIdMap.get(t.businessUnitCode) || ativas[0]?.id;
     if (!buId) continue;

@@ -37,6 +37,43 @@ export function PeriodComparisonCards({
 
   return (
     <div className="space-y-4">
+      {deltas.mtdComparison && deltas.mtdComparison.daysElapsed < currentPeriod.daysCount && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-2.5 text-xs text-blue-900 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="inline-block size-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="font-semibold">
+              Mês em curso ({deltas.mtdComparison.daysElapsed} de {currentPeriod.daysCount} dias decorridos):
+            </span>
+            <span className="text-blue-700">
+              Pacing homólogo até o Dia {String(deltas.mtdComparison.daysElapsed).padStart(2, "0")}:
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 font-medium">
+            <span>
+              Receita MTD:{" "}
+              <strong className={deltas.mtdComparison.revenueGrowthPercent >= 0 ? "text-emerald-700" : "text-rose-700"}>
+                {deltas.mtdComparison.revenueGrowthPercent >= 0 ? "+" : ""}
+                {deltas.mtdComparison.revenueGrowthPercent.toFixed(1)}%
+              </strong>{" "}
+              <span className="text-[11px] text-blue-600">
+                ({formatCurrency(deltas.mtdComparison.currentRevenue)} vs {formatCurrency(deltas.mtdComparison.previousPeriodSameDaysRevenue)})
+              </span>
+            </span>
+            <span className="hidden sm:inline text-blue-300">•</span>
+            <span>
+              Volume MTD:{" "}
+              <strong className={deltas.mtdComparison.salesGrowthPercent >= 0 ? "text-emerald-700" : "text-rose-700"}>
+                {deltas.mtdComparison.salesGrowthPercent >= 0 ? "+" : ""}
+                {deltas.mtdComparison.salesGrowthPercent.toFixed(1)}%
+              </strong>{" "}
+              <span className="text-[11px] text-blue-600">
+                ({deltas.mtdComparison.currentSales} vs {deltas.mtdComparison.previousPeriodSameDaysSales} vendas)
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. Receita Total Comparada */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">

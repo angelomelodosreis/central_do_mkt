@@ -151,10 +151,21 @@ export type ComparativeAnalysisResult = {
     /** Decomposição de Receita: quanto veio de Volume e quanto veio de Preço */
     volumeEffectRevenue: number;
     priceEffectRevenue: number;
+    /** Comparativo MTD (Month to Date) até o mesmo dia decorrido */
+    mtdComparison?: {
+      daysElapsed: number;
+      currentRevenue: number;
+      currentSales: number;
+      previousPeriodSameDaysRevenue: number;
+      previousPeriodSameDaysSales: number;
+      revenueGrowthPercent: number;
+      salesGrowthPercent: number;
+    };
   };
   dayByDaySeries: DayByDayPoint[];
   buComparison: BuComparisonStat[];
   dayOfWeekStats: DayOfWeekStat[];
   priceTiers: PriceTierStat[];
 };
+
 

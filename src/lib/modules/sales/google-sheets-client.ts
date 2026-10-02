@@ -11,61 +11,11 @@ export const DEFAULT_GID = "1830309116";
 export const DEFAULT_LIVE_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRHbUHQxiRh3LiC8tKGpAPkhBRfcxkKucIYCXFuxmCRP9oX9LCxXTeQOhPt0eqAvF4kXNXvQATwvFJ/pub?output=csv";
 
-/**
- * 23 BUs oficiais da MedCof para mapeamento correto de vendas.
- */
-const BU_CATALOG: Array<{ code: string; label: string; slug: string }> = [
-  { code: "MEDCOF_ANESTESIOLOGIA", label: "Anestesiologia", slug: "anestesiologia" },
-  { code: "MEDCOF_CARDIOLOGIA", label: "Cardiologia", slug: "cardiologia" },
-  { code: "MEDCOF_CIRURGIA", label: "Cirurgia Geral", slug: "cirurgia" },
-  { code: "MEDCOF_CLINICA_MEDICA", label: "Clínica Médica", slug: "clinica-medica" },
-  { code: "MEDCOF_CONCURSUS", label: "Concursus", slug: "concursus" },
-  { code: "MEDCOF_DERMATOLOGIA", label: "Dermatologia", slug: "dermatologia" },
-  { code: "MEDCOF_ENAMED", label: "Enamed", slug: "enamed" },
-  { code: "MEDCOF_ENDOCRINOLOGIA", label: "Endocrinologia", slug: "endocrinologia" },
-  { code: "MEDCOF_ENDOCRINOLOGIA_PEDIATRICA", label: "Endocrinologia Pediátrica", slug: "endocrinologia-pediatrica" },
-  { code: "MEDCOF_GINECOLOGIA_E_OBSTETRICIA", label: "Ginecologia e Obstetrícia", slug: "ginecologia-e-obstetricia" },
-  { code: "MEDCOF_INTERNATO", label: "Internato", slug: "internato" },
-  { code: "MEDCOF_LIFEHACKS", label: "Lifehacks / PS", slug: "lifehacks" },
-  { code: "MEDCOF_MEDICINA_DE_EMERGENCIA", label: "Medicina de Emergência", slug: "medicina-de-emergencia" },
-  { code: "MEDCOF_MEDICINA_INTENSIVA", label: "Medicina Intensiva", slug: "medicina-intensiva" },
-  { code: "MEDCOF_OFTALMOLOGIA", label: "Oftalmologia", slug: "oftalmologia" },
-  { code: "MEDCOF_ORTOPEDIA", label: "Ortopedia", slug: "ortopedia" },
-  { code: "MEDCOF_OTORRINOLARINGOLOGIA", label: "Otorrinolaringologia", slug: "otorrinolaringologia" },
-  { code: "MEDCOF_PEDIATRIA", label: "Pediatria", slug: "pediatria" },
-  { code: "MEDCOF_RADIOLOGIA", label: "Radiologia", slug: "radiologia" },
-  { code: "MEDCOF_RESIDENCIA", label: "Residência Médica", slug: "residencia" },
-  { code: "MEDCOF_REVALIDA", label: "Revalida", slug: "revalida" },
-  { code: "MEDCOF_UROLOGIA", label: "Urologia", slug: "uro" },
-  { code: "MEDCOF_USA", label: "MedCof USA", slug: "usa" },
-];
+import { BU_CATALOG, resolveBuFromText } from "./bu-catalog";
+export { BU_CATALOG, resolveBuFromText } from "./bu-catalog";
+export type { MedcofBuDef } from "./bu-catalog";
 
-function resolveBuFromText(text: string): { code: string; label: string } {
-  const prod = (text || "").toUpperCase();
-  if (prod.includes("CLÍNICA") || prod.includes("CLINICA")) return { code: "MEDCOF_CLINICA_MEDICA", label: "Clínica Médica" };
-  if (prod.includes("CIRURGIA")) return { code: "MEDCOF_CIRURGIA", label: "Cirurgia Geral" };
-  if (prod.includes("R+ GO") || prod.includes("GINECO") || prod.includes("OBSTETR")) return { code: "MEDCOF_GINECOLOGIA_E_OBSTETRICIA", label: "Ginecologia e Obstetrícia" };
-  if (prod.includes("CARDIO")) return { code: "MEDCOF_CARDIOLOGIA", label: "Cardiologia" };
-  if (prod.includes("PEDIAT")) return { code: "MEDCOF_PEDIATRIA", label: "Pediatria" };
-  if (prod.includes("DERMATO")) return { code: "MEDCOF_DERMATOLOGIA", label: "Dermatologia" };
-  if (prod.includes("ANESTESIO")) return { code: "MEDCOF_ANESTESIOLOGIA", label: "Anestesiologia" };
-  if (prod.includes("REVALIDA")) return { code: "MEDCOF_REVALIDA", label: "Revalida" };
-  if (prod.includes("ENDOCRINO")) return { code: "MEDCOF_ENDOCRINOLOGIA", label: "Endocrinologia" };
-  if (prod.includes("OFTALMO")) return { code: "MEDCOF_OFTALMOLOGIA", label: "Oftalmologia" };
-  if (prod.includes("ORTOPE")) return { code: "MEDCOF_ORTOPEDIA", label: "Ortopedia" };
-  if (prod.includes("OTORRINO")) return { code: "MEDCOF_OTORRINOLARINGOLOGIA", label: "Otorrinolaringologia" };
-  if (prod.includes("RADIO")) return { code: "MEDCOF_RADIOLOGIA", label: "Radiologia" };
-  if (prod.includes("UROLOG")) return { code: "MEDCOF_UROLOGIA", label: "Urologia" };
-  if (prod.includes("USA") || prod.includes("USMLE")) return { code: "MEDCOF_USA", label: "MedCof USA" };
-  if (prod.includes("CONCURSO") || prod.includes("CONCURSUS")) return { code: "MEDCOF_CONCURSUS", label: "Concursus" };
-  if (prod.includes("ENAMED")) return { code: "MEDCOF_ENAMED", label: "Enamed" };
-  if (prod.includes("LIFEHACKS") || prod.includes("PRONTO SOCORRO") || prod.includes("PS")) return { code: "MEDCOF_LIFEHACKS", label: "Lifehacks / PS" };
-  if (prod.includes("INTERNATO")) return { code: "MEDCOF_INTERNATO", label: "Internato" };
-  if (prod.includes("EMERGÊNCIA") || prod.includes("EMERGENCIA")) return { code: "MEDCOF_MEDICINA_DE_EMERGENCIA", label: "Medicina de Emergência" };
-  if (prod.includes("INTENSIVA") || prod.includes("CTI") || prod.includes("UTI")) return { code: "MEDCOF_MEDICINA_INTENSIVA", label: "Medicina Intensiva" };
 
-  return { code: "MEDCOF_RESIDENCIA", label: "Residência Médica" };
-}
 
 function parseCurrency(val: string | number): number {
   if (typeof val === "number") return val;
@@ -98,6 +48,19 @@ function parseBrazilianDate(rawDate: string): { iso: string; timestamp: number }
   return { iso: valid.toISOString(), timestamp: valid.getTime() };
 }
 
+type FetchSalesResult = {
+  success: boolean;
+  transactions: SaleTransaction[];
+  sourceType: "google_sheets_live" | "google_sheets_gviz" | "sample_fallback";
+};
+
+let memoryCachedSales: {
+  timestamp: number;
+  data: FetchSalesResult;
+} | null = null;
+
+const CACHE_TTL_MS = 30_000; // 30 segundos de cache em memória de processo
+
 /**
  * Faz a busca da planilha Google Sheets em Real-Time via CSV export ou GViz.
  */
@@ -105,11 +68,17 @@ export async function fetchGoogleSheetsSalesData(
   sheetId = DEFAULT_SHEET_ID,
   gid = DEFAULT_GID,
   customCsvUrl?: string,
-): Promise<{
-  success: boolean;
-  transactions: SaleTransaction[];
-  sourceType: "google_sheets_live" | "google_sheets_gviz" | "sample_fallback";
-}> {
+): Promise<FetchSalesResult> {
+  const now = Date.now();
+  if (
+    memoryCachedSales &&
+    now - memoryCachedSales.timestamp < CACHE_TTL_MS &&
+    memoryCachedSales.data.success &&
+    !customCsvUrl
+  ) {
+    return memoryCachedSales.data;
+  }
+
   const envUrl = process.env.GOOGLE_SHEETS_SALES_CSV_URL;
   const urls = [
     customCsvUrl,
@@ -123,8 +92,9 @@ export async function fetchGoogleSheetsSalesData(
 
   for (const url of urls) {
     try {
+      // cache: "no-store" evita estourar o limite de 2MB do Next.js Data Cache
       const response = await fetch(url, {
-        next: { revalidate: 30 }, // Cache revalidado a cada 30 segundos
+        cache: "no-store",
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
         },
@@ -136,11 +106,13 @@ export async function fetchGoogleSheetsSalesData(
         if (text && !text.includes("<!DOCTYPE html") && text.includes(",")) {
           const parsed = parseCsvSalesData(text);
           if (parsed.length > 0) {
-            return {
+            const result: FetchSalesResult = {
               success: true,
               transactions: parsed,
               sourceType: "google_sheets_live",
             };
+            memoryCachedSales = { timestamp: now, data: result };
+            return result;
           }
         }
       }
@@ -340,9 +312,6 @@ export async function getLiveSalesAnalytics(options: {
   });
 }
 
-/**
- * Retorna a análise comparativa entre períodos (MoM, YoY ou Meses Customizados)
- */
 export async function getLiveComparativeAnalytics(options: {
   currentMonthKey?: string;
   previousMonthKey?: string;
@@ -350,11 +319,16 @@ export async function getLiveComparativeAnalytics(options: {
 } = {}): Promise<{
   comparative: ComparativeAnalysisResult;
   availableMonths: Array<{ key: string; label: string; count: number }>;
-  allTransactions: SaleTransaction[];
 }> {
   const { transactions } = await fetchGoogleSheetsSalesData();
   const availableMonths = getAvailableMonths(transactions);
   const comparative = calculateComparativeAnalysis(transactions, options);
-  return { comparative, availableMonths, allTransactions: transactions };
+  return { comparative, availableMonths };
 }
+
+export async function getAllLiveTransactions(): Promise<SaleTransaction[]> {
+  const { transactions } = await fetchGoogleSheetsSalesData();
+  return transactions;
+}
+
 

@@ -10,6 +10,7 @@ import type {
   SaleTransaction,
   SalesAnalyticsResult,
 } from "./types";
+import { BU_CATALOG } from "./bu-catalog";
 
 
 /**
@@ -364,11 +365,14 @@ export function calculateComparativeAnalysis(
     (availableMonths.length > 0 ? availableMonths[0].key : "2026-10");
 
   let previousKey = options.previousMonthKey;
-  if (!previousKey) {
+  if (!previousKey || previousKey === currentKey) {
     // Procura o mês imediatamente anterior na lista ou decrementa 1 mês
     const currentIndex = availableMonths.findIndex((m) => m.key === currentKey);
     if (currentIndex >= 0 && currentIndex + 1 < availableMonths.length) {
       previousKey = availableMonths[currentIndex + 1].key;
+    } else if (availableMonths.length > 1) {
+      const alt = availableMonths.find((m) => m.key !== currentKey);
+      previousKey = alt ? alt.key : currentKey;
     } else {
       const [y, m] = currentKey.split("-").map(Number);
       const prevM = m === 1 ? 12 : m - 1;
@@ -482,7 +486,39 @@ export function calculateComparativeAnalysis(
     });
   }
 
-  // 5. Comparativo por Business Unit
+  // MTD (Month to Date) pacing comparativo até o dia decorrido
+  const currentDaysWithSales = Array.from(currentDaysMap.keys());
+  const currentMonthDaysWithData =
+    currentDaysWithSales.length > 0 ? Math.max(...currentDaysWithSales) : 1;
+
+  let prevMtdRevenue = 0;
+  let prevMtdSales = 0;
+  for (let d = 1; d <= currentMonthDaysWithData; d++) {
+    const p = prevDaysMap.get(d);
+    if (p) {
+      prevMtdRevenue += p.revenue;
+      prevMtdSales += p.sales;
+    }
+  }
+
+  const mtdRevenueDelta = currentRevenue - prevMtdRevenue;
+  const mtdRevenueGrowthPercent =
+    prevMtdRevenue > 0 ? (mtdRevenueDelta / prevMtdRevenue) * 100 : 0;
+  const mtdSalesDelta = currentSales - prevMtdSales;
+  const mtdSalesGrowthPercent =
+    prevMtdSales > 0 ? (mtdSalesDelta / prevMtdSales) * 100 : 0;
+
+  const mtdComparison = {
+    daysElapsed: currentMonthDaysWithData,
+    currentRevenue: Math.round(currentRevenue * 100) / 100,
+    currentSales,
+    previousPeriodSameDaysRevenue: Math.round(prevMtdRevenue * 100) / 100,
+    previousPeriodSameDaysSales: prevMtdSales,
+    revenueGrowthPercent: Math.round(mtdRevenueGrowthPercent * 10) / 10,
+    salesGrowthPercent: Math.round(mtdSalesGrowthPercent * 10) / 10,
+  };
+
+  // 5. Comparativo por Business Unit (23 BUs Oficiais MedCof)
   const buMap = new Map<
     string,
     {
@@ -494,6 +530,18 @@ export function calculateComparativeAnalysis(
       prevSales: number;
     }
   >();
+
+  // Pré-popula com todas as 23 BUs oficiais para integridade executiva
+  for (const bu of BU_CATALOG) {
+    buMap.set(bu.code, {
+      code: bu.code,
+      label: bu.label,
+      currRev: 0,
+      currSales: 0,
+      prevRev: 0,
+      prevSales: 0,
+    });
+  }
 
   for (const t of currentTxs) {
     const existing = buMap.get(t.businessUnitCode) ?? {
@@ -523,7 +571,14 @@ export function calculateComparativeAnalysis(
     buMap.set(t.businessUnitCode, existing);
   }
 
-  const buComparison: BuComparisonStat[] = Array.from(buMap.values())
+  let buComparisonList = Array.from(buMap.values());
+  if (options.targetBuCode && options.targetBuCode !== "ALL") {
+    buComparisonList = buComparisonList.filter(
+      (b) => b.code.toUpperCase() === options.targetBuCode?.toUpperCase(),
+    );
+  }
+
+  const buComparison: BuComparisonStat[] = buComparisonList
     .map((bu) => {
       const revDelta = bu.currRev - bu.prevRev;
       const revGrowth =
@@ -549,7 +604,7 @@ export function calculateComparativeAnalysis(
           bu.prevSales > 0 ? Math.round((bu.prevRev / bu.prevSales) * 100) / 100 : 0,
       };
     })
-    .sort((a, b) => b.currentRevenue - a.currentRevenue);
+    .sort((a, b) => b.currentRevenue - a.currentRevenue || a.buLabel.localeCompare(b.buLabel));
 
   // 6. Sazonalidade por Dia da Semana (baseado no período atual ou total se período atual tiver poucos dias)
   const sourceForDayOfWeek =
@@ -655,6 +710,7 @@ export function calculateComparativeAnalysis(
       ticketGrowthPercent: Math.round(ticketGrowthPercent * 10) / 10,
       volumeEffectRevenue: Math.round(volumeEffectRevenue * 100) / 100,
       priceEffectRevenue: Math.round(priceEffectRevenue * 100) / 100,
+      mtdComparison,
     },
     dayByDaySeries,
     buComparison,
