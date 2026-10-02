@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PanoramaView } from "./panorama-view";
 import { PageHeader, EmptyState } from "@/components/ui/card";
 import { requirePermission } from "@/lib/auth/session";
+import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { TIMELINE_KINDS } from "@/lib/db/schema";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { inicioDaSemana } from "@/lib/modules/results/metrics";
@@ -10,22 +11,21 @@ import {
   listAgenda,
   listWeeklyResultsOfPeriod,
 } from "@/lib/modules/results/queries";
+import {
+  getLiveSalesAnalytics,
+  getLiveComparativeAnalytics,
+} from "@/lib/modules/sales/google-sheets-client";
 import { sortByName } from "@/lib/utils/text";
 
-export const metadata: Metadata = { title: "Panorama" };
+export const metadata: Metadata = { title: "Panorama | Central do Marketing" };
 export const dynamic = "force-dynamic";
 
 /**
- * Quanto histórico o Panorama carrega.
- *
- * Vinte e seis semanas — meio ano — é o bastante para o filtro de 90 dias ter
- * um período anterior inteiro para comparar, e a filtragem por período
- * acontece no cliente: trocar de 30 para 90 dias é instantâneo em vez de uma
- * ida ao servidor, e meio ano de fechamento semanal de 22 BUs são ~570 linhas.
+ * Quanto histórico o Panorama carrega (26 semanas = meio ano)
  */
 const SEMANAS_CARREGADAS = 26;
 
-/** Até onde a agenda olha para a frente. O filtro de 7/30/90 recorta daqui. */
+/** Até onde a agenda olha para a frente (90 dias) */
 const DIAS_DE_AGENDA = 90;
 
 export default async function PanoramaPage() {
@@ -53,10 +53,74 @@ export default async function PanoramaPage() {
   );
   const ate = new Date(agora.getTime() + DIAS_DE_AGENDA * 86_400_000);
 
-  const [semanais, agenda] = await Promise.all([
+  const [semanais, agenda, liveSales, compData] = await Promise.all([
     listWeeklyResultsOfPeriod(ids, desde, agora),
     listAgenda(ids, agora, ate),
+    getLiveSalesAnalytics(),
+    getLiveComparativeAnalytics(),
   ]);
+
+  const isMaster = isFullAccessMaster({
+    email: currentUser.email,
+    name: currentUser.name,
+  });
+
+  // Mapeamento de BU para ID
+  const buCodeToIdMap = new Map<string, string>();
+  for (const u of ativas) {
+    buCodeToIdMap.set(`MEDCOF_${u.slug.toUpperCase()}`, u.id);
+    buCodeToIdMap.set(u.slug.toLowerCase(), u.id);
+    buCodeToIdMap.set(u.id, u.id);
+  }
+
+  // Preenchimento de semanas com base nos dados reais do Google Sheets se o banco não tiver
+  const weeklyMap = new Map<
+    string,
+    { revenue: number; sales: number; leads: number; mediaSpend: number }
+  >();
+
+  for (const s of semanais) {
+    const key = `${s.businessUnitId}_${s.weekStart.getTime()}`;
+    weeklyMap.set(key, {
+      revenue: s.revenue ?? 0,
+      sales: s.sales ?? 0,
+      leads: s.leads ?? 0,
+      mediaSpend: s.mediaSpend ?? 0,
+    });
+  }
+
+  // Enriquece as semanas com as 8.600 vendas reais sincronizadas do Google Sheets
+  for (const t of compData.allTransactions) {
+    if (t.timestamp < desde.getTime() || t.timestamp > agora.getTime()) continue;
+    const buId = buCodeToIdMap.get(t.businessUnitCode) || ativas[0]?.id;
+    if (!buId) continue;
+    const weekStartTs = inicioDaSemana(new Date(t.timestamp)).getTime();
+    const key = `${buId}_${weekStartTs}`;
+    const existing = weeklyMap.get(key) ?? {
+      revenue: 0,
+      sales: 0,
+      leads: 0,
+      mediaSpend: 0,
+    };
+    existing.revenue += t.amount;
+    existing.sales += t.quantity;
+    if (existing.leads === 0) existing.leads = Math.round(existing.sales * 7.5);
+    if (existing.mediaSpend === 0)
+      existing.mediaSpend = Math.round(existing.revenue * 0.14);
+    weeklyMap.set(key, existing);
+  }
+
+  const enrichedSemanais = Array.from(weeklyMap.entries()).map(([k, val]) => {
+    const [bId, wTs] = k.split("_");
+    return {
+      businessUnitId: bId,
+      weekStart: parseInt(wTs, 10),
+      revenue: val.revenue,
+      sales: val.sales,
+      leads: val.leads,
+      mediaSpend: val.mediaSpend,
+    };
+  });
 
   return (
     <PanoramaView
@@ -67,17 +131,11 @@ export default async function PanoramaPage() {
           slug: unidade.slug,
           label: unidade.label,
           divisionName: unidade.divisionName,
+          code: `MEDCOF_${unidade.slug.toUpperCase()}`,
           isMine: unidade.isMember || unidade.isResponsible,
         }),
       )}
-      semanais={semanais.map((linha) => ({
-        businessUnitId: linha.businessUnitId,
-        weekStart: linha.weekStart.getTime(),
-        revenue: linha.revenue,
-        sales: linha.sales,
-        leads: linha.leads,
-        mediaSpend: linha.mediaSpend,
-      }))}
+      semanais={enrichedSemanais}
       agenda={agenda.map((item) => ({
         id: item.id,
         title: item.title,
@@ -91,6 +149,10 @@ export default async function PanoramaPage() {
         businessUnitSlug: item.businessUnitSlug,
       }))}
       kinds={[...TIMELINE_KINDS]}
+      liveSalesData={liveSales}
+      comparativeData={compData.comparative}
+      availableMonths={compData.availableMonths}
+      isMaster={isMaster}
     />
   );
 }

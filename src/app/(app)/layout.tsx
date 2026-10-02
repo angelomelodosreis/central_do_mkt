@@ -41,10 +41,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       icon: "dashboard",
     },
     {
-      href: "/vendas-realtime",
-      label: "Vendas Real-Time",
-      description: "Google Sheets ao vivo",
-      icon: "sales",
+      href: "/panorama",
+      label: "Panorama",
+      description: "Cockpit Executivo & Vendas",
+      icon: "panorama",
     },
   ];
 
@@ -78,16 +78,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     });
   }
 
-  // Panorama vem depois de Planejamento porque é o que se lê DEPOIS de o
-  // planejamento existir: ele consolida o que cada BU lançou.
-  if (can(currentUser, "panorama")) {
-    items.push({
-      href: "/panorama",
-      label: "Panorama",
-      description: "Números e agenda das BUs",
-      icon: "panorama",
-    });
-  }
 
   if (can(currentUser, "tasks")) {
     items.push({
@@ -108,6 +98,14 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     description: "Times, cargos e squads",
     icon: "org",
   });
+
+  items.push({
+    href: "/styleguide",
+    label: "Design System",
+    description: "Style Guide & Padrões",
+    icon: "docs",
+  });
+
 
   // Parâmetros deixou de existir como menu: tinha uma única área, e ela
   // pertence ao Gerador de Nomes — quem cria um modelo é quem acabou de

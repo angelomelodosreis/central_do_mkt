@@ -40,12 +40,20 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     icon: Layers,
   },
   {
-    id: "nav_vendas_realtime",
-    title: "Vendas em Tempo Real",
-    subtitle: "Google Sheets ao vivo, derivadas e ticket médio",
+    id: "nav_panorama",
+    title: "Panorama Executivo & Vendas",
+    subtitle: "Vendas real-time Google Sheets, pacing MoM e fechamento",
     category: "Navegação",
-    href: "/vendas-realtime",
+    href: "/panorama",
     icon: TrendingUp,
+  },
+  {
+    id: "nav_styleguide",
+    title: "Design System & Style Guide",
+    subtitle: "Tokens visuais, componentes e padrões MedCof",
+    category: "Navegação",
+    href: "/styleguide",
+    icon: FileText,
   },
   {
     id: "nav_gerador",
@@ -72,14 +80,6 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     icon: Calendar,
   },
   {
-    id: "nav_panorama",
-    title: "Panorama Geral",
-    subtitle: "Comparativo de números e agendas de todas as BUs",
-    category: "Navegação",
-    href: "/panorama",
-    icon: Layers,
-  },
-  {
     id: "nav_tarefas",
     title: "Fila de Tarefas",
     subtitle: "Tarefas individuais e do time",
@@ -87,6 +87,7 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     href: "/tarefas",
     icon: CheckSquare,
   },
+
   {
     id: "nav_organograma",
     title: "Organograma & Pessoas",

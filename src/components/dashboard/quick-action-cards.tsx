@@ -14,9 +14,9 @@ export function QuickActionCards({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      {/* Card 0: Vendas em Tempo Real (Google Sheets) */}
+      {/* Card 0: Panorama Executivo & Vendas em Tempo Real (Google Sheets) */}
       <Link
-        href="/vendas-realtime"
+        href="/panorama"
         className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-emerald-200 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 p-5 text-white shadow-[0_12px_30px_-10px_rgba(16,185,129,0.2)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_rgba(16,185,129,0.3)]"
       >
         <div className="flex items-center gap-3.5 min-w-0">
@@ -29,10 +29,10 @@ export function QuickActionCards({
           </span>
           <div className="min-w-0">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
-              Real-Time Google Sheets
+              Panorama Executivo
             </span>
             <p className="truncate font-display text-base font-semibold text-white">
-              Vendas & Derivadas
+              Vendas Real-Time & Pacing
             </p>
           </div>
         </div>
@@ -40,6 +40,7 @@ export function QuickActionCards({
           <ArrowRight className="size-4" />
         </span>
       </Link>
+
 
       {/* Card 1: Planejamento Estratégico (estilo Daily Jogging da imagem) */}
       <Link
