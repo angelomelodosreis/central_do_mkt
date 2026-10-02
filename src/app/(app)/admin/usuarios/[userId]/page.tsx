@@ -84,7 +84,12 @@ export default async function UserDetailPage({ params }: { params: Params }) {
     listOrgUnits(),
     listActiveJobTitles(),
     db
-      .select({ id: businessUnit.id, label: businessUnit.label })
+      .select({
+        id: businessUnit.id,
+        label: businessUnit.label,
+        code: businessUnit.code,
+        slug: businessUnit.slug,
+      })
       .from(businessUnit)
       .where(eq(businessUnit.isActive, true)),
     db

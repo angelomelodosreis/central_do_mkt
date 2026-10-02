@@ -26,6 +26,7 @@ import {
 } from "@/lib/db/schema";
 import {
   canSeeBusinessUnit,
+  isFullAccessMaster,
   resolveScope,
   seesEverything,
   type EffectiveScope,
@@ -129,7 +130,12 @@ export const getCurrentUser = cache(
     const [positions, permissions, scope, segundoFator] = await Promise.all([
       loadPositions([row.id]),
       getPermissionsForRole(row.role),
-      resolveScope({ id: row.id, isSuperAdmin: row.isSuperAdmin }),
+      resolveScope({
+        id: row.id,
+        isSuperAdmin: row.isSuperAdmin,
+        email: row.email,
+        name: row.name,
+      }),
       lerEstadoDoSegundoFator(row.id, session.session.id),
     ]);
 
@@ -211,7 +217,11 @@ export async function requirePermission(
  * o caminho normal, editável sem deploy.
  */
 export function isPlatformAdmin(currentUser: CurrentUser): boolean {
-  return currentUser.isSuperAdmin || can(currentUser, "admin", "edit");
+  return (
+    currentUser.scope.isMasterFullAccess ||
+    currentUser.isSuperAdmin ||
+    can(currentUser, "admin", "edit")
+  );
 }
 
 /** Verifica se o usuário tem privilégio para gerenciar usuários e acessos (Admin ou Líder) */
@@ -283,3 +293,4 @@ export function can(
 
 export type { ModulePermission, PermissionMap, PermissionAction };
 export type { Position, EffectiveScope, EstadoDoSegundoFator };
+export { isFullAccessMaster };

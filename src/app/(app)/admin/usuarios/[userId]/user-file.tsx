@@ -23,6 +23,8 @@ import {
   type UserStatus,
 } from "@/lib/db/schema";
 import type { ResolvedGrant } from "@/lib/modules/access/explain";
+import { isFullAccessMaster } from "@/lib/modules/access/scope";
+import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
 
 export type OrgUnitOption = {
@@ -129,7 +131,12 @@ export function UserFile({
   jobTitles: Array<{ id: string; name: string; teamIds: string[] }>;
   orgUnits: OrgUnitOption[];
   divisions: Array<{ id: string; name: string }>;
-  businessUnits: Array<{ id: string; label: string }>;
+  businessUnits: Array<{
+    id: string;
+    label: string;
+    code?: string | null;
+    slug?: string;
+  }>;
   squads: Array<{ id: string; label: string }>;
   isSelf: boolean;
 }) {
@@ -176,6 +183,19 @@ export function UserFile({
         ? atual[campo].filter((item) => item !== valor)
         : [...atual[campo], valor],
     }));
+  }
+
+  function alternarBUs(buIds: string[], marcar: boolean) {
+    setRascunho((atual) => {
+      const chaves = buIds.map((id) => `business_unit:${id}`);
+      let novosEscopos = atual.escopos;
+      if (marcar) {
+        novosEscopos = Array.from(new Set([...novosEscopos, ...chaves]));
+      } else {
+        novosEscopos = novosEscopos.filter((e) => !chaves.includes(e));
+      }
+      return { ...atual, escopos: novosEscopos };
+    });
   }
 
   const nomeDoTime = new Map(orgUnits.map((unidade) => [unidade.id, unidade]));
@@ -385,6 +405,19 @@ export function UserFile({
                 }))}
               />
             }
+          />
+        </Row>
+
+        <Row
+          label="Acesso às Business Units (BUs)"
+          hint="Distribuição de acesso por BU. Apenas Angelo e Bacochina possuem acesso total a todas as 23 BUs; os demais usuários só acessam as BUs selecionadas aqui."
+        >
+          <BuPermissionsPicker
+            person={person}
+            businessUnits={businessUnits}
+            escolhidos={rascunho.escopos}
+            aoAlternar={(chave) => alternar("escopos", chave)}
+            aoAlternarVarios={alternarBUs}
           />
         </Row>
 
@@ -833,6 +866,213 @@ function Rodape({
           </Button>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function BuPermissionsPicker({
+  person,
+  businessUnits,
+  escolhidos,
+  aoAlternar,
+  aoAlternarVarios,
+}: {
+  person: UserFileData;
+  businessUnits: Array<{
+    id: string;
+    label: string;
+    code?: string | null;
+    slug?: string;
+  }>;
+  escolhidos: string[];
+  aoAlternar: (chave: string) => void;
+  aoAlternarVarios: (buIds: string[], marcar: boolean) => void;
+}) {
+  const [busca, setBusca] = useState("");
+  const ehMaster = isFullAccessMaster({
+    email: person.email,
+    name: person.name,
+  });
+
+  const busSelecionadas = businessUnits.filter((bu) =>
+    escolhidos.includes(`business_unit:${bu.id}`),
+  );
+
+  const busFiltradas = useMemo(() => {
+    if (!busca.trim()) return businessUnits;
+    const term = busca.toLowerCase().trim();
+    return businessUnits.filter(
+      (bu) =>
+        bu.label.toLowerCase().includes(term) ||
+        (bu.code && bu.code.toLowerCase().includes(term)) ||
+        (bu.slug && bu.slug.toLowerCase().includes(term)),
+    );
+  }, [businessUnits, busca]);
+
+  const solicitadasPendentes = useMemo(() => {
+    if (!person.requestedBUs || person.requestedBUs.length === 0) return [];
+    return person.requestedBUs.filter(
+      (req) => !escolhidos.includes(`business_unit:${req.businessUnitId}`),
+    );
+  }, [person.requestedBUs, escolhidos]);
+
+  if (ehMaster) {
+    return (
+      <div className="rounded-2xl border-2 border-brand-500/20 bg-gradient-to-br from-brand-50/70 via-indigo-50/30 to-sky-50/40 p-5 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 font-bold text-white shadow-xs">
+            ★
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-base font-bold text-brand-900">
+                Acesso Total (Master)
+              </span>
+              <span className="rounded-full bg-brand-600 px-2.5 py-0.5 text-xs font-semibold text-white">
+                Todas as 23 BUs
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-brand-700">
+              Angelo e Bacochina possuem acesso total irrestrito a todas as 23
+              Business Units oficiais da MedCof e a todos os módulos do sistema.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-brand-200/60 pt-3">
+          {businessUnits.map((bu) => (
+            <span
+              key={bu.id}
+              className="inline-flex items-center gap-1 rounded-md border border-brand-200/80 bg-white/90 px-2 py-1 text-xs font-medium text-brand-800"
+            >
+              ✓ {bu.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+      {/* Barra de controle e contagem */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-900">
+            {busSelecionadas.length} de {businessUnits.length} BUs autorizadas
+          </span>
+          {busSelecionadas.length === 0 ? (
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+              Nenhuma BU vinculada
+            </span>
+          ) : (
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+              Acesso distribuído
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-xs">
+          <button
+            type="button"
+            onClick={() =>
+              aoAlternarVarios(
+                businessUnits.map((b) => b.id),
+                true,
+              )
+            }
+            className="font-medium text-brand-600 hover:text-brand-800 hover:underline"
+          >
+            Marcar todas
+          </button>
+          <span className="text-slate-300">·</span>
+          <button
+            type="button"
+            onClick={() =>
+              aoAlternarVarios(
+                businessUnits.map((b) => b.id),
+                false,
+              )
+            }
+            className="font-medium text-slate-500 hover:text-slate-700 hover:underline"
+          >
+            Desmarcar todas
+          </button>
+        </div>
+      </div>
+
+      {/* Atalho para aprovar solicitações de BUs pendentes */}
+      {solicitadasPendentes.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-200 bg-brand-50/80 px-3.5 py-2.5 text-xs text-brand-900">
+          <div>
+            <span className="font-semibold">BUs solicitadas no onboarding:</span>{" "}
+            {solicitadasPendentes.map((r) => r.label).join(", ")}
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              aoAlternarVarios(
+                solicitadasPendentes.map((r) => r.businessUnitId),
+                true,
+              )
+            }
+            className="rounded-lg bg-brand-600 px-3 py-1 font-semibold text-white shadow-2xs transition hover:bg-brand-700"
+          >
+            Aprovar BUs solicitadas ({solicitadasPendentes.length})
+          </button>
+        </div>
+      )}
+
+      {/* Campo de busca rápida */}
+      <input
+        type="text"
+        placeholder="Buscar BU por nome ou código (ex: MEDCOF_CARDIOLOGIA)..."
+        value={busca}
+        onChange={(e) => setBusca(e.target.value)}
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 shadow-2xs focus:border-brand-500 focus:outline-none"
+      />
+
+      {/* Grid de checkboxes com as BUs */}
+      <div className="grid max-h-[360px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2 md:grid-cols-3">
+        {busFiltradas.map((bu) => {
+          const marcada = escolhidos.includes(`business_unit:${bu.id}`);
+          const solicitada = person.requestedBUs?.some(
+            (r) => r.businessUnitId === bu.id,
+          );
+
+          return (
+            <label
+              key={bu.id}
+              className={cn(
+                "flex cursor-pointer select-none items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-colors",
+                marcada
+                  ? "border-brand-500 bg-brand-50/70 font-medium text-brand-950 shadow-2xs"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50/70",
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={marcada}
+                onChange={() => aoAlternar(`business_unit:${bu.id}`)}
+                className="mt-0.5 size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="truncate">{bu.label}</span>
+                  {solicitada && (
+                    <span className="rounded bg-brand-100 px-1 py-0.2 text-[9px] font-semibold text-brand-700">
+                      Solicitada
+                    </span>
+                  )}
+                </div>
+                {bu.code && (
+                  <span className="mt-0.5 block truncate font-mono text-[10px] text-slate-400">
+                    {bu.code}
+                  </span>
+                )}
+              </div>
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }

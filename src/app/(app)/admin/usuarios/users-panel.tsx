@@ -18,6 +18,7 @@ import {
 } from "@/lib/db/schema";
 import { cn } from "@/lib/utils/cn";
 import { matchesSearch, plural } from "@/lib/utils/text";
+import { isFullAccessMaster } from "@/lib/modules/access/scope";
 
 type PersonRow = {
   id: string;
@@ -195,7 +196,14 @@ export function UsersPanel({
                         <span className="font-medium text-slate-900">
                           {person.name}
                         </span>
-                        {person.isSuperAdmin ? (
+                        {isFullAccessMaster({
+                          email: person.email,
+                          name: person.name,
+                        }) ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-2xs">
+                            ★ Acesso Total (Master)
+                          </span>
+                        ) : person.isSuperAdmin ? (
                           <Badge tone="brand">Administra a plataforma</Badge>
                         ) : null}
                         {person.status === "active" ? null : (
@@ -242,13 +250,24 @@ export function UsersPanel({
 
 /** Uma linha dizendo o alcance — escopo primeiro, participação depois. */
 function resumoDeAlcance(person: PersonRow): string {
+  if (isFullAccessMaster({ email: person.email, name: person.name })) {
+    return "Acesso Total Master · Todas as 23 BUs oficiais";
+  }
+
   const partes: string[] = [];
 
-  if (person.scopes.some((scope) => scope.type === "organization")) {
-    partes.push("escopo: organização inteira");
-  } else if (person.scopes.length > 0) {
+  const buScopes = person.scopes.filter((s) => s.type === "business_unit");
+  const otherScopes = person.scopes.filter((s) => s.type !== "business_unit" && s.type !== "organization");
+
+  if (buScopes.length > 0) {
     partes.push(
-      `escopo: ${person.scopes.map((scope) => scope.name).join(", ")}`,
+      `${buScopes.length} ${plural(buScopes.length, "BU autorizada", "BUs autorizadas")} (${buScopes.map((s) => s.name).join(", ")})`,
+    );
+  }
+
+  if (otherScopes.length > 0) {
+    partes.push(
+      `escopo: ${otherScopes.map((scope) => scope.name).join(", ")}`,
     );
   }
 
@@ -256,5 +275,5 @@ function resumoDeAlcance(person: PersonRow): string {
     partes.push(`${plural(person.squads.length, "squad")}`);
   }
 
-  return partes.length > 0 ? partes.join(" · ") : "sem escopo";
+  return partes.length > 0 ? partes.join(" · ") : "sem BUs atribuídas";
 }

@@ -8,8 +8,29 @@ import {
   squad,
   squadMember,
   teamMember,
+  user,
   type ScopeType,
 } from "@/lib/db/schema";
+
+/**
+ * Regra oficial de Acesso Total:
+ * Apenas Angelo e Bacochina possuem acesso total irrestrito (todas as BUs e áreas).
+ * Qualquer outro usuário opera com acessos distribuídos e restritos por BU.
+ */
+export function isFullAccessMaster(userInfo: {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+}): boolean {
+  const email = (userInfo.email ?? "").toLowerCase().trim();
+  const name = (userInfo.name ?? "").toLowerCase().trim();
+  return (
+    email.includes("angelo") ||
+    name.includes("angelo") ||
+    email.includes("bacochina") ||
+    name.includes("bacochina")
+  );
+}
 
 /**
  * O alcance efetivo de uma pessoa, já resolvido.
@@ -25,6 +46,8 @@ import {
  * outro por três — e é exatamente esse caso que o cargo sozinho não representa.
  */
 export type EffectiveScope = {
+  /** Apenas Angelo e Bacochina têm acesso total irrestrito a todas as BUs e módulos. */
+  isMasterFullAccess: boolean;
   /** Administra a plataforma: permissões, domínios, bases oficiais, auditoria. */
   isSuperAdmin: boolean;
   /**
@@ -71,8 +94,22 @@ const VAZIO = (): Set<string> => new Set<string>();
 export async function resolveScope(userInfo: {
   id: string;
   isSuperAdmin: boolean;
+  email?: string | null;
+  name?: string | null;
 }): Promise<EffectiveScope> {
   const db = await getDb();
+
+  let isMaster = isFullAccessMaster(userInfo);
+  if (!isMaster && userInfo.id) {
+    const row = await db
+      .select({ email: user.email, name: user.name })
+      .from(user)
+      .where(eq(user.id, userInfo.id))
+      .get();
+    if (row && isFullAccessMaster(row)) {
+      isMaster = true;
+    }
+  }
 
   const [grants, times, squads, arvore] = await Promise.all([
     db
@@ -98,8 +135,9 @@ export async function resolveScope(userInfo: {
   ]);
 
   const escopo: EffectiveScope = {
-    isSuperAdmin: userInfo.isSuperAdmin,
-    isOrganizationWide: false,
+    isMasterFullAccess: isMaster,
+    isSuperAdmin: isMaster || userInfo.isSuperAdmin,
+    isOrganizationWide: isMaster,
     orgUnitIds: VAZIO(),
     divisionIds: VAZIO(),
     businessUnitIds: VAZIO(),
@@ -128,7 +166,9 @@ export async function resolveScope(userInfo: {
   for (const grant of grants) {
     const tipo = grant.scopeType as ScopeType;
     if (tipo === "organization") {
-      escopo.isOrganizationWide = true;
+      if (isMaster) {
+        escopo.isOrganizationWide = true;
+      }
       continue;
     }
     if (!grant.scopeId) continue;
@@ -192,6 +232,7 @@ function ancestrais(tree: OrgTree, nodeId: string): string[] {
 /** Escopo vazio, para quando não há usuário. Falha fechada. */
 export function emptyScope(): EffectiveScope {
   return {
+    isMasterFullAccess: false,
     isSuperAdmin: false,
     isOrganizationWide: false,
     orgUnitIds: VAZIO(),
@@ -208,9 +249,12 @@ export function emptyScope(): EffectiveScope {
 // Perguntas que as telas fazem ao escopo
 // ---------------------------------------------------------------------------
 
-/** Enxerga o negócio inteiro, sem precisar de vínculo com cada BU. */
+/**
+ * Enxerga o negócio inteiro, sem precisar de vínculo com cada BU.
+ * APENAS Angelo e Bacochina possuem acesso total irrestrito a todas as BUs.
+ */
 export function seesEverything(scope: EffectiveScope): boolean {
-  return scope.isSuperAdmin || scope.isOrganizationWide;
+  return scope.isMasterFullAccess === true;
 }
 
 /** Pode ABRIR uma BU: por alcance total, por responsabilidade ou por squad. */
