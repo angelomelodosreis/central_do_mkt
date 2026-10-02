@@ -75,3 +75,86 @@ export type SalesAnalyticsResult = {
     totalRows: number;
   };
 };
+
+export type DayByDayPoint = {
+  day: number; // 1 a 31
+  dayLabel: string; // "Dia 01", "Dia 02"
+  currentRevenue: number;
+  previousRevenue: number;
+  currentCumulativeRevenue: number;
+  previousCumulativeRevenue: number;
+  currentSales: number;
+  previousSales: number;
+  currentCumulativeSales: number;
+  previousCumulativeSales: number;
+  currentAvgTicket: number;
+  previousAvgTicket: number;
+};
+
+export type BuComparisonStat = {
+  buCode: string;
+  buLabel: string;
+  currentRevenue: number;
+  previousRevenue: number;
+  revenueDelta: number;
+  revenueGrowthPercent: number;
+  currentSales: number;
+  previousSales: number;
+  salesDelta: number;
+  salesGrowthPercent: number;
+  currentAvgTicket: number;
+  previousAvgTicket: number;
+};
+
+export type DayOfWeekStat = {
+  dayIndex: number; // 0 = Domingo, 1 = Segunda, etc.
+  dayName: string; // "Segunda-feira"
+  revenue: number;
+  sales: number;
+  avgTicket: number;
+  percentageOfTotal: number;
+};
+
+export type PriceTierStat = {
+  tierId: string;
+  label: string; // "Até R$ 3k", "R$ 3k a R$ 7k", etc.
+  salesCount: number;
+  revenue: number;
+  percentageOfSales: number;
+  percentageOfRevenue: number;
+};
+
+export type ComparativeAnalysisResult = {
+  currentPeriod: {
+    key: string; // "2026-10"
+    label: string; // "Outubro/2026"
+    revenue: number;
+    sales: number;
+    avgTicket: number;
+    daysCount: number;
+  };
+  previousPeriod: {
+    key: string; // "2026-09"
+    label: string; // "Setembro/2026"
+    revenue: number;
+    sales: number;
+    avgTicket: number;
+    daysCount: number;
+  };
+  deltas: {
+    revenueDelta: number;
+    revenueGrowthPercent: number;
+    salesDelta: number;
+    salesGrowthPercent: number;
+    ticketDelta: number;
+    ticketGrowthPercent: number;
+    /** Decomposição de Receita: quanto veio de Volume e quanto veio de Preço */
+    volumeEffectRevenue: number;
+    priceEffectRevenue: number;
+  };
+  dayByDaySeries: DayByDayPoint[];
+  buComparison: BuComparisonStat[];
+  dayOfWeekStats: DayOfWeekStat[];
+  priceTiers: PriceTierStat[];
+};
+

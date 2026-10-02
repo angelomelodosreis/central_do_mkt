@@ -1,7 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getLiveSalesAnalytics } from "@/lib/modules/sales/google-sheets-client";
+import {
+  getLiveSalesAnalytics,
+  getLiveComparativeAnalytics,
+} from "@/lib/modules/sales/google-sheets-client";
 import type { SalesAnalyticsResult } from "@/lib/modules/sales/types";
 
 export async function refreshSalesDataAction(options?: {
@@ -13,3 +16,12 @@ export async function refreshSalesDataAction(options?: {
   revalidatePath("/painel");
   return getLiveSalesAnalytics(options);
 }
+
+export async function getComparativeSalesAction(options?: {
+  currentMonthKey?: string;
+  previousMonthKey?: string;
+  targetBuCode?: string;
+}) {
+  return getLiveComparativeAnalytics(options);
+}
+

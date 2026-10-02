@@ -1,5 +1,10 @@
-import type { SaleTransaction, SalesAnalyticsResult } from "./types";
-import { calculateSalesAnalytics } from "./calculations";
+import type { ComparativeAnalysisResult, SaleTransaction, SalesAnalyticsResult } from "./types";
+import {
+  calculateComparativeAnalysis,
+  calculateSalesAnalytics,
+  getAvailableMonths,
+} from "./calculations";
+
 
 export const DEFAULT_SHEET_ID = "1pCErQiwZ6CnMDqBm34lyFjzDhnomTlSHltgnF1IJRdw";
 export const DEFAULT_GID = "1830309116";
@@ -334,3 +339,22 @@ export async function getLiveSalesAnalytics(options: {
     dataSourceType: sourceType,
   });
 }
+
+/**
+ * Retorna a análise comparativa entre períodos (MoM, YoY ou Meses Customizados)
+ */
+export async function getLiveComparativeAnalytics(options: {
+  currentMonthKey?: string;
+  previousMonthKey?: string;
+  targetBuCode?: string;
+} = {}): Promise<{
+  comparative: ComparativeAnalysisResult;
+  availableMonths: Array<{ key: string; label: string; count: number }>;
+  allTransactions: SaleTransaction[];
+}> {
+  const { transactions } = await fetchGoogleSheetsSalesData();
+  const availableMonths = getAvailableMonths(transactions);
+  const comparative = calculateComparativeAnalysis(transactions, options);
+  return { comparative, availableMonths, allTransactions: transactions };
+}
+

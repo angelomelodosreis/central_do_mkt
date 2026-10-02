@@ -1,10 +1,16 @@
 import type {
+  BuComparisonStat,
   BuSalesStat,
+  ComparativeAnalysisResult,
   DailySalesPoint,
+  DayOfWeekStat,
+  DayByDayPoint,
   PaymentMethodStat,
+  PriceTierStat,
   SaleTransaction,
   SalesAnalyticsResult,
 } from "./types";
+
 
 /**
  * Motor de cálculos analíticos para Marketing & Vendas:
@@ -267,3 +273,393 @@ export function calculateSalesAnalytics(
     },
   };
 }
+
+const MONTH_NAMES_PT = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+const DAY_NAMES_PT = [
+  "Domingo",
+  "Segunda-feira",
+  "Terça-feira",
+  "Quarta-feira",
+  "Quinta-feira",
+  "Sexta-feira",
+  "Sábado",
+];
+
+export function formatMonthYearLabel(monthKey: string): string {
+  const parts = monthKey.split("-");
+  if (parts.length < 2) return monthKey;
+  const year = parts[0];
+  const monthNum = parseInt(parts[1], 10);
+  const name = MONTH_NAMES_PT[monthNum - 1] ?? parts[1];
+  return `${name}/${year}`;
+}
+
+export function getAvailableMonths(transactions: SaleTransaction[]): Array<{
+  key: string; // "2026-10"
+  label: string; // "Outubro/2026"
+  count: number;
+}> {
+  const counts = new Map<string, number>();
+  for (const t of transactions) {
+    const key = t.date.slice(0, 7); // "YYYY-MM"
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .sort((a, b) => b[0].localeCompare(a[0])) // decrescente
+    .map(([key, count]) => ({
+      key,
+      label: formatMonthYearLabel(key),
+      count,
+    }));
+}
+
+/**
+ * Análise comparativa completa de períodos (MoM, YoY ou Meses Customizados):
+ * - Curva de Pacing Dia a Dia (dia 1 ao dia 31)
+ * - Deltas de Faturamento, Vendas e Ticket Médio
+ * - Decomposição de Crescimento: Efeito Volume vs Efeito Preço
+ * - Matriz de Crescimento de Business Units
+ * - Sazonalidade por Dia da Semana
+ * - Faixas de Preço / Ticket
+ */
+export function calculateComparativeAnalysis(
+  transactions: SaleTransaction[],
+  options: {
+    currentMonthKey?: string;
+    previousMonthKey?: string;
+    targetBuCode?: string;
+  } = {},
+): ComparativeAnalysisResult {
+  let filtered = transactions.filter(
+    (t) => t.status === "approved" || t.status === "pending",
+  );
+
+  if (options.targetBuCode && options.targetBuCode !== "ALL") {
+    filtered = filtered.filter(
+      (t) =>
+        t.businessUnitCode.toUpperCase() === options.targetBuCode?.toUpperCase(),
+    );
+  }
+
+  const availableMonths = getAvailableMonths(filtered);
+
+  // Defaults inteligentes: se não passados, usa os 2 meses mais recentes
+  const currentKey =
+    options.currentMonthKey ||
+    (availableMonths.length > 0 ? availableMonths[0].key : "2026-10");
+
+  let previousKey = options.previousMonthKey;
+  if (!previousKey) {
+    // Procura o mês imediatamente anterior na lista ou decrementa 1 mês
+    const currentIndex = availableMonths.findIndex((m) => m.key === currentKey);
+    if (currentIndex >= 0 && currentIndex + 1 < availableMonths.length) {
+      previousKey = availableMonths[currentIndex + 1].key;
+    } else {
+      const [y, m] = currentKey.split("-").map(Number);
+      const prevM = m === 1 ? 12 : m - 1;
+      const prevY = m === 1 ? y - 1 : y;
+      previousKey = `${prevY}-${String(prevM).padStart(2, "0")}`;
+    }
+  }
+
+  const currentTxs = filtered.filter((t) => t.date.startsWith(currentKey));
+  const previousTxs = filtered.filter((t) => t.date.startsWith(previousKey!));
+
+  // 1. Totais do Período Atual
+  let currentRevenue = 0;
+  let currentSales = 0;
+  for (const t of currentTxs) {
+    currentRevenue += t.amount;
+    currentSales += t.quantity;
+  }
+  const currentAvgTicket =
+    currentSales > 0 ? currentRevenue / currentSales : 0;
+
+  // 2. Totais do Período Anterior
+  let previousRevenue = 0;
+  let previousSales = 0;
+  for (const t of previousTxs) {
+    previousRevenue += t.amount;
+    previousSales += t.quantity;
+  }
+  const previousAvgTicket =
+    previousSales > 0 ? previousRevenue / previousSales : 0;
+
+  // 3. Deltas & Decomposição
+  const revenueDelta = currentRevenue - previousRevenue;
+  const revenueGrowthPercent =
+    previousRevenue > 0 ? (revenueDelta / previousRevenue) * 100 : 0;
+
+  const salesDelta = currentSales - previousSales;
+  const salesGrowthPercent =
+    previousSales > 0 ? (salesDelta / previousSales) * 100 : 0;
+
+  const ticketDelta = currentAvgTicket - previousAvgTicket;
+  const ticketGrowthPercent =
+    previousAvgTicket > 0 ? (ticketDelta / previousAvgTicket) * 100 : 0;
+
+  // Decomposição: Variação de Volume vs Variação de Preço
+  // Delta R = (Q_atual - Q_prev) * Ticket_prev + (Ticket_atual - Ticket_prev) * Q_atual
+  const volumeEffectRevenue =
+    (currentSales - previousSales) * previousAvgTicket;
+  const priceEffectRevenue =
+    (currentAvgTicket - previousAvgTicket) * currentSales;
+
+  // 4. Pacing Dia a Dia (1..31)
+  const currentDaysMap = new Map<number, { revenue: number; sales: number }>();
+  for (const t of currentTxs) {
+    const day = parseInt(t.date.slice(8, 10), 10);
+    if (!isNaN(day)) {
+      const cur = currentDaysMap.get(day) ?? { revenue: 0, sales: 0 };
+      cur.revenue += t.amount;
+      cur.sales += t.quantity;
+      currentDaysMap.set(day, cur);
+    }
+  }
+
+  const prevDaysMap = new Map<number, { revenue: number; sales: number }>();
+  for (const t of previousTxs) {
+    const day = parseInt(t.date.slice(8, 10), 10);
+    if (!isNaN(day)) {
+      const cur = prevDaysMap.get(day) ?? { revenue: 0, sales: 0 };
+      cur.revenue += t.amount;
+      cur.sales += t.quantity;
+      prevDaysMap.set(day, cur);
+    }
+  }
+
+  const [currY, currM] = currentKey.split("-").map(Number);
+  const [prevY, prevM] = previousKey!.split("-").map(Number);
+  const daysInCurrentMonth = new Date(currY, currM, 0).getDate();
+  const daysInPrevMonth = new Date(prevY, prevM, 0).getDate();
+  const maxDays = Math.max(daysInCurrentMonth, daysInPrevMonth, 31);
+
+  const dayByDaySeries: DayByDayPoint[] = [];
+  let cumCurRev = 0;
+  let cumCurSales = 0;
+  let cumPrevRev = 0;
+  let cumPrevSales = 0;
+
+  for (let d = 1; d <= maxDays; d++) {
+    const curData = currentDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+    const prevData = prevDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+
+    cumCurRev += curData.revenue;
+    cumCurSales += curData.sales;
+    cumPrevRev += prevData.revenue;
+    cumPrevSales += prevData.sales;
+
+    dayByDaySeries.push({
+      day: d,
+      dayLabel: `Dia ${String(d).padStart(2, "0")}`,
+      currentRevenue: Math.round(curData.revenue * 100) / 100,
+      previousRevenue: Math.round(prevData.revenue * 100) / 100,
+      currentCumulativeRevenue: Math.round(cumCurRev * 100) / 100,
+      previousCumulativeRevenue: Math.round(cumPrevRev * 100) / 100,
+      currentSales: curData.sales,
+      previousSales: prevData.sales,
+      currentCumulativeSales: cumCurSales,
+      previousCumulativeSales: cumPrevSales,
+      currentAvgTicket:
+        curData.sales > 0 ? Math.round((curData.revenue / curData.sales) * 100) / 100 : 0,
+      previousAvgTicket:
+        prevData.sales > 0 ? Math.round((prevData.revenue / prevData.sales) * 100) / 100 : 0,
+    });
+  }
+
+  // 5. Comparativo por Business Unit
+  const buMap = new Map<
+    string,
+    {
+      code: string;
+      label: string;
+      currRev: number;
+      currSales: number;
+      prevRev: number;
+      prevSales: number;
+    }
+  >();
+
+  for (const t of currentTxs) {
+    const existing = buMap.get(t.businessUnitCode) ?? {
+      code: t.businessUnitCode,
+      label: t.businessUnitLabel,
+      currRev: 0,
+      currSales: 0,
+      prevRev: 0,
+      prevSales: 0,
+    };
+    existing.currRev += t.amount;
+    existing.currSales += t.quantity;
+    buMap.set(t.businessUnitCode, existing);
+  }
+
+  for (const t of previousTxs) {
+    const existing = buMap.get(t.businessUnitCode) ?? {
+      code: t.businessUnitCode,
+      label: t.businessUnitLabel,
+      currRev: 0,
+      currSales: 0,
+      prevRev: 0,
+      prevSales: 0,
+    };
+    existing.prevRev += t.amount;
+    existing.prevSales += t.quantity;
+    buMap.set(t.businessUnitCode, existing);
+  }
+
+  const buComparison: BuComparisonStat[] = Array.from(buMap.values())
+    .map((bu) => {
+      const revDelta = bu.currRev - bu.prevRev;
+      const revGrowth =
+        bu.prevRev > 0 ? (revDelta / bu.prevRev) * 100 : bu.currRev > 0 ? 100 : 0;
+      const sDelta = bu.currSales - bu.prevSales;
+      const sGrowth =
+        bu.prevSales > 0 ? (sDelta / bu.prevSales) * 100 : bu.currSales > 0 ? 100 : 0;
+
+      return {
+        buCode: bu.code,
+        buLabel: bu.label,
+        currentRevenue: Math.round(bu.currRev * 100) / 100,
+        previousRevenue: Math.round(bu.prevRev * 100) / 100,
+        revenueDelta: Math.round(revDelta * 100) / 100,
+        revenueGrowthPercent: Math.round(revGrowth * 10) / 10,
+        currentSales: bu.currSales,
+        previousSales: bu.prevSales,
+        salesDelta: sDelta,
+        salesGrowthPercent: Math.round(sGrowth * 10) / 10,
+        currentAvgTicket:
+          bu.currSales > 0 ? Math.round((bu.currRev / bu.currSales) * 100) / 100 : 0,
+        previousAvgTicket:
+          bu.prevSales > 0 ? Math.round((bu.prevRev / bu.prevSales) * 100) / 100 : 0,
+      };
+    })
+    .sort((a, b) => b.currentRevenue - a.currentRevenue);
+
+  // 6. Sazonalidade por Dia da Semana (baseado no período atual ou total se período atual tiver poucos dias)
+  const sourceForDayOfWeek =
+    currentTxs.length >= 30 ? currentTxs : filtered;
+
+  const dowMap = new Map<number, { revenue: number; sales: number }>();
+  for (let i = 0; i <= 6; i++) {
+    dowMap.set(i, { revenue: 0, sales: 0 });
+  }
+
+  let totalDowRev = 0;
+  for (const t of sourceForDayOfWeek) {
+    const dow = new Date(t.date).getDay();
+    const cur = dowMap.get(dow) ?? { revenue: 0, sales: 0 };
+    cur.revenue += t.amount;
+    cur.sales += t.quantity;
+    dowMap.set(dow, cur);
+    totalDowRev += t.amount;
+  }
+
+  // Ordenar de Segunda (1) até Domingo (0)
+  const dowOrder = [1, 2, 3, 4, 5, 6, 0];
+  const dayOfWeekStats: DayOfWeekStat[] = dowOrder.map((dayIdx) => {
+    const d = dowMap.get(dayIdx) ?? { revenue: 0, sales: 0 };
+    return {
+      dayIndex: dayIdx,
+      dayName: DAY_NAMES_PT[dayIdx],
+      revenue: Math.round(d.revenue * 100) / 100,
+      sales: d.sales,
+      avgTicket: d.sales > 0 ? Math.round((d.revenue / d.sales) * 100) / 100 : 0,
+      percentageOfTotal:
+        totalDowRev > 0 ? Math.round((d.revenue / totalDowRev) * 1000) / 10 : 0,
+    };
+  });
+
+  // 7. Distribuição por Faixas de Preço (Price Tiers)
+  const sourceForTiers = currentTxs.length > 0 ? currentTxs : filtered;
+  const tiers = [
+    { id: "tier_sub_3k", label: "Até R$ 3.000", min: 0, max: 3000 },
+    { id: "tier_3k_7k", label: "R$ 3.000 a R$ 7.000", min: 3000, max: 7000 },
+    { id: "tier_7k_12k", label: "R$ 7.000 a R$ 12.000", min: 7000, max: 12000 },
+    { id: "tier_above_12k", label: "Acima de R$ 12.000", min: 12000, max: Infinity },
+  ];
+
+  const tierCounts = new Map<string, { count: number; rev: number }>();
+  for (const tier of tiers) {
+    tierCounts.set(tier.id, { count: 0, rev: 0 });
+  }
+
+  let totalTierSales = 0;
+  let totalTierRev = 0;
+
+  for (const t of sourceForTiers) {
+    for (const tier of tiers) {
+      if (t.amount >= tier.min && t.amount < tier.max) {
+        const cur = tierCounts.get(tier.id)!;
+        cur.count += t.quantity;
+        cur.rev += t.amount;
+        totalTierSales += t.quantity;
+        totalTierRev += t.amount;
+        break;
+      }
+    }
+  }
+
+  const priceTiers: PriceTierStat[] = tiers.map((tier) => {
+    const data = tierCounts.get(tier.id)!;
+    return {
+      tierId: tier.id,
+      label: tier.label,
+      salesCount: data.count,
+      revenue: Math.round(data.rev * 100) / 100,
+      percentageOfSales:
+        totalTierSales > 0 ? Math.round((data.count / totalTierSales) * 1000) / 10 : 0,
+      percentageOfRevenue:
+        totalTierRev > 0 ? Math.round((data.rev / totalTierRev) * 1000) / 10 : 0,
+    };
+  });
+
+  return {
+    currentPeriod: {
+      key: currentKey,
+      label: formatMonthYearLabel(currentKey),
+      revenue: Math.round(currentRevenue * 100) / 100,
+      sales: currentSales,
+      avgTicket: Math.round(currentAvgTicket * 100) / 100,
+      daysCount: daysInCurrentMonth,
+    },
+    previousPeriod: {
+      key: previousKey!,
+      label: formatMonthYearLabel(previousKey!),
+      revenue: Math.round(previousRevenue * 100) / 100,
+      sales: previousSales,
+      avgTicket: Math.round(previousAvgTicket * 100) / 100,
+      daysCount: daysInPrevMonth,
+    },
+    deltas: {
+      revenueDelta: Math.round(revenueDelta * 100) / 100,
+      revenueGrowthPercent: Math.round(revenueGrowthPercent * 10) / 10,
+      salesDelta,
+      salesGrowthPercent: Math.round(salesGrowthPercent * 10) / 10,
+      ticketDelta: Math.round(ticketDelta * 100) / 100,
+      ticketGrowthPercent: Math.round(ticketGrowthPercent * 10) / 10,
+      volumeEffectRevenue: Math.round(volumeEffectRevenue * 100) / 100,
+      priceEffectRevenue: Math.round(priceEffectRevenue * 100) / 100,
+    },
+    dayByDaySeries,
+    buComparison,
+    dayOfWeekStats,
+    priceTiers,
+  };
+}
+

@@ -4,7 +4,10 @@ import { PageHeader } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth/session";
 import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
-import { getLiveSalesAnalytics } from "@/lib/modules/sales/google-sheets-client";
+import {
+  getLiveSalesAnalytics,
+  getLiveComparativeAnalytics,
+} from "@/lib/modules/sales/google-sheets-client";
 import { SalesRealtimeView } from "./sales-realtime-view";
 
 export const metadata: Metadata = {
@@ -15,10 +18,12 @@ export const dynamic = "force-dynamic";
 export default async function SalesRealtimePage() {
   const currentUser = await requireUser();
 
-  const [accessibleBus, initialData] = await Promise.all([
+  const [accessibleBus, initialData, initialCompData] = await Promise.all([
     listAccessibleBusinessUnits(currentUser),
     getLiveSalesAnalytics(),
+    getLiveComparativeAnalytics(),
   ]);
+
 
   const isMaster = isFullAccessMaster({
     email: currentUser.email,
@@ -34,6 +39,8 @@ export default async function SalesRealtimePage() {
 
       <SalesRealtimeView
         initialData={initialData}
+        initialComparative={initialCompData.comparative}
+        availableMonths={initialCompData.availableMonths}
         userAccessibleBus={accessibleBus.map((b) => ({
           id: b.id,
           label: b.label,
@@ -45,3 +52,4 @@ export default async function SalesRealtimePage() {
     </div>
   );
 }
+

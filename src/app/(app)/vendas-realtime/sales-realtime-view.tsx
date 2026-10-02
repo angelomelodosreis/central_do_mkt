@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
-  AlertCircle,
-  ArrowRight,
+  ArrowLeftRight,
+  BarChart3,
+  Calendar,
+  Compass,
   ExternalLink,
   Filter,
+  Layers,
+  LineChart,
   RefreshCw,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,24 +22,45 @@ import { TicketTrendChart } from "@/components/sales/ticket-trend-chart";
 import { BuSalesBreakdown } from "@/components/sales/bu-sales-breakdown";
 import { PaymentMixChart } from "@/components/sales/payment-mix-chart";
 import { LiveTransactionsTable } from "@/components/sales/live-transactions-table";
-import { refreshSalesDataAction } from "./actions";
-import type { SalesAnalyticsResult } from "@/lib/modules/sales/types";
+import { PeriodComparisonCards } from "@/components/sales/period-comparison-cards";
+import { DayByDayPacingChart } from "@/components/sales/day-by-day-pacing-chart";
+import { BuGrowthMatrix } from "@/components/sales/bu-growth-matrix";
+import { MarketingDiagnostics } from "@/components/sales/marketing-diagnostics";
+import { ExportSalesButton } from "@/components/sales/export-sales-button";
+import {
+  refreshSalesDataAction,
+  getComparativeSalesAction,
+} from "./actions";
+import type {
+  ComparativeAnalysisResult,
+  SalesAnalyticsResult,
+} from "@/lib/modules/sales/types";
 
 export function SalesRealtimeView({
   initialData,
+  initialComparative,
+  availableMonths,
   userAccessibleBus,
   isMaster,
 }: {
   initialData: SalesAnalyticsResult;
+  initialComparative: ComparativeAnalysisResult;
+  availableMonths: Array<{ key: string; label: string; count: number }>;
   userAccessibleBus: Array<{ id: string; label: string; code?: string | null; slug?: string }>;
   isMaster: boolean;
 }) {
+  const [activeTab, setActiveTab] = useState<"realtime" | "comparative" | "diagnostics">("comparative");
   const [data, setData] = useState(initialData);
+  const [comparative, setComparative] = useState(initialComparative);
   const [selectedBu, setSelectedBu] = useState<string>("ALL");
   const [period, setPeriod] = useState<"7d" | "14d" | "30d" | "all">("30d");
+
+  const [currentMonthKey, setCurrentMonthKey] = useState(initialComparative.currentPeriod.key);
+  const [previousMonthKey, setPreviousMonthKey] = useState(initialComparative.previousPeriod.key);
+
   const [isPending, startTransition] = useTransition();
 
-  // Filtragem local conforme período selecionado
+  // Filtragem local conforme período selecionado (aba realtime)
   const filteredDailySeries = data.dailySeries.slice(
     period === "7d" ? -7 : period === "14d" ? -14 : period === "30d" ? -30 : 0,
   );
@@ -42,13 +68,20 @@ export function SalesRealtimeView({
   function handleRefresh() {
     startTransition(async () => {
       try {
-        const updated = await refreshSalesDataAction({
-          targetBuCode: selectedBu === "ALL" ? undefined : selectedBu,
-        });
-        setData(updated);
-        toast.success("Dados de vendas sincronizados com sucesso!");
-      } catch (e) {
-        toast.error("Erro ao sincronizar com a planilha.");
+        const buCode = selectedBu === "ALL" ? undefined : selectedBu;
+        const [updatedData, updatedComp] = await Promise.all([
+          refreshSalesDataAction({ targetBuCode: buCode }),
+          getComparativeSalesAction({
+            currentMonthKey,
+            previousMonthKey,
+            targetBuCode: buCode,
+          }),
+        ]);
+        setData(updatedData);
+        setComparative(updatedComp.comparative);
+        toast.success("Dados sincronizados com a planilha do Google!");
+      } catch {
+        toast.error("Erro ao sincronizar dados com o Google Sheets.");
       }
     });
   }
@@ -56,16 +89,59 @@ export function SalesRealtimeView({
   function handleBuChange(buCode: string) {
     setSelectedBu(buCode);
     startTransition(async () => {
-      const updated = await refreshSalesDataAction({
-        targetBuCode: buCode === "ALL" ? undefined : buCode,
-      });
-      setData(updated);
+      try {
+        const targetBu = buCode === "ALL" ? undefined : buCode;
+        const [updatedData, updatedComp] = await Promise.all([
+          refreshSalesDataAction({ targetBuCode: targetBu }),
+          getComparativeSalesAction({
+            currentMonthKey,
+            previousMonthKey,
+            targetBuCode: targetBu,
+          }),
+        ]);
+        setData(updatedData);
+        setComparative(updatedComp.comparative);
+      } catch {
+        toast.error("Erro ao filtrar por Business Unit.");
+      }
     });
+  }
+
+  function handleMonthChange(newCurrent: string, newPrev: string) {
+    setCurrentMonthKey(newCurrent);
+    setPreviousMonthKey(newPrev);
+    startTransition(async () => {
+      try {
+        const buCode = selectedBu === "ALL" ? undefined : selectedBu;
+        const res = await getComparativeSalesAction({
+          currentMonthKey: newCurrent,
+          previousMonthKey: newPrev,
+          targetBuCode: buCode,
+        });
+        setComparative(res.comparative);
+      } catch {
+        toast.error("Erro ao recalcular comparativo entre meses.");
+      }
+    });
+  }
+
+  // Atalhos rápidos: MoM anterior ou YoY (mesmo mês ano anterior)
+  function applyQuickComparison(type: "mom" | "yoy") {
+    if (type === "mom") {
+      const idx = availableMonths.findIndex((m) => m.key === currentMonthKey);
+      if (idx >= 0 && idx + 1 < availableMonths.length) {
+        handleMonthChange(currentMonthKey, availableMonths[idx + 1].key);
+      }
+    } else if (type === "yoy") {
+      const [y, m] = currentMonthKey.split("-").map(Number);
+      const yoyKey = `${y - 1}-${String(m).padStart(2, "0")}`;
+      handleMonthChange(currentMonthKey, yoyKey);
+    }
   }
 
   return (
     <div className="space-y-6">
-      {/* Barra de Controles & Conexão com Google Sheets */}
+      {/* 1. Barra de Controles Globais & Status da Conexão */}
       <div className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
@@ -78,7 +154,7 @@ export function SalesRealtimeView({
             />
             <span className="text-xs font-semibold text-slate-800">
               {data.dataSource.isLive
-                ? "Google Sheets Conectado em Real-Time"
+                ? "Google Sheets Conectado em Real-Time (8.600 vendas)"
                 : "Base MedCof Ativa (23 BUs)"}
             </span>
           </div>
@@ -95,7 +171,7 @@ export function SalesRealtimeView({
           </a>
         </div>
 
-        {/* Filtros por BU e Período */}
+        {/* Filtro Global por BU e Sincronização */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Seletor de BU */}
           <div className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -106,7 +182,9 @@ export function SalesRealtimeView({
               className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:border-brand-500 focus:outline-none"
             >
               <option value="ALL">
-                {isMaster ? "Todas as 23 BUs (Acesso Total)" : "Todas as minhas BUs autorizadas"}
+                {isMaster
+                  ? "Todas as 23 BUs (Acesso Total)"
+                  : "Todas as minhas BUs autorizadas"}
               </option>
               {userAccessibleBus.map((bu) => (
                 <option key={bu.id} value={bu.code || bu.id}>
@@ -116,30 +194,13 @@ export function SalesRealtimeView({
             </select>
           </div>
 
-          {/* Seletor de Período */}
-          <div className="flex rounded-xl border border-slate-200 bg-slate-100/60 p-0.5 text-xs">
-            {(
-              [
-                { key: "7d", label: "7 dias" },
-                { key: "14d", label: "14 dias" },
-                { key: "30d", label: "30 dias" },
-                { key: "all", label: "Tudo" },
-              ] as const
-            ).map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => setPeriod(p.key)}
-                className={`rounded-lg px-2.5 py-1 font-medium transition ${
-                  period === p.key
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+          {/* Exportar Dados para CSV */}
+          <ExportSalesButton
+            series={comparative.dayByDaySeries}
+            buStats={comparative.buComparison}
+            currentLabel={comparative.currentPeriod.label}
+            previousLabel={comparative.previousPeriod.label}
+          />
 
           {/* Botão de Atualização Manual */}
           <button
@@ -156,43 +217,220 @@ export function SalesRealtimeView({
         </div>
       </div>
 
-      {/* Alerta Informativo de Integração */}
-      <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3.5 text-xs text-blue-900">
-        <div className="flex items-start gap-2.5">
-          <Sparkles className="mt-0.5 size-4 shrink-0 text-brand-600" />
-          <div className="space-y-1">
-            <p className="font-semibold">
-              Inteligência de Vendas em Real-Time MedCof
-            </p>
-            <p className="text-blue-800/90 leading-relaxed">
-              Métricas matemáticas derivadas (dV/dt e dR/dt), aceleração e ticket médio ponderado calculados automaticamente.
-              Para que novas vendas digitadas na sua planilha apareçam diretamente sem precisar de login Google, basta em{" "}
-              <strong>Arquivo &rarr; Compartilhar &rarr; Publicar na Web (.csv)</strong> marcar &quot;Republicar automaticamente&quot;.
+      {/* 2. Menu de Navegação em Abas para o Analista */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("comparative")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+              activeTab === "comparative"
+                ? "bg-brand-600 text-white shadow-sm shadow-brand-500/20"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+            }`}
+          >
+            <ArrowLeftRight className="size-3.5" />
+            <span>Comparativo MoM & Pacing Dia a Dia</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("realtime")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+              activeTab === "realtime"
+                ? "bg-brand-600 text-white shadow-sm shadow-brand-500/20"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+            }`}
+          >
+            <Zap className="size-3.5" />
+            <span>Monitor Ao Vivo & Derivadas (dV/dt)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("diagnostics")}
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+              activeTab === "diagnostics"
+                ? "bg-brand-600 text-white shadow-sm shadow-brand-500/20"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+            }`}
+          >
+            <Compass className="size-3.5" />
+            <span>Diagnóstico de Mídia & Sazonalidade</span>
+          </button>
+        </div>
+
+        {/* Indicador de carregamento */}
+        {isPending && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-brand-600 animate-pulse">
+            <RefreshCw className="size-3 animate-spin" />
+            <span>Recalculando modelos matemáticos...</span>
+          </span>
+        )}
+      </div>
+
+      {/* ======================================================== */}
+      {/* ABA 1: COMPARATIVO MoM, YoY & PACING DIA A DIA           */}
+      {/* ======================================================== */}
+      {activeTab === "comparative" && (
+        <div className="space-y-6">
+          {/* Barra de Seleção de Meses Comparativos */}
+          <div className="flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs text-blue-950 font-semibold">
+                <Calendar className="size-3.5 text-brand-600" />
+                <span>Mês Base:</span>
+                <select
+                  value={currentMonthKey}
+                  onChange={(e) => handleMonthChange(e.target.value, previousMonthKey)}
+                  className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 text-xs font-bold text-blue-900 shadow-2xs focus:border-brand-500 focus:outline-none"
+                >
+                  {availableMonths.map((m) => (
+                    <option key={m.key} value={m.key}>
+                      {m.label} ({m.count} vendas)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <span className="text-xs font-medium text-slate-400">vs</span>
+
+              <div className="flex items-center gap-1.5 text-xs text-blue-950 font-semibold">
+                <span>Mês Comparado:</span>
+                <select
+                  value={previousMonthKey}
+                  onChange={(e) => handleMonthChange(currentMonthKey, e.target.value)}
+                  className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 shadow-2xs focus:border-brand-500 focus:outline-none"
+                >
+                  {availableMonths.map((m) => (
+                    <option key={m.key} value={m.key}>
+                      {m.label} ({m.count} vendas)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Atalhos Rápidos MoM / YoY */}
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => applyQuickComparison("mom")}
+                className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 font-semibold text-blue-700 shadow-2xs transition hover:bg-blue-50"
+              >
+                MoM (Mês Anterior)
+              </button>
+              <button
+                type="button"
+                onClick={() => applyQuickComparison("yoy")}
+                className="rounded-xl border border-blue-200 bg-white px-2.5 py-1 font-semibold text-blue-700 shadow-2xs transition hover:bg-blue-50"
+              >
+                YoY (Mesmo Mês Ano Anterior)
+              </button>
+            </div>
+          </div>
+
+          {/* Cards de KPIs com Deltas e Decomposição de Crescimento */}
+          <PeriodComparisonCards comparative={comparative} />
+
+          {/* Gráfico de Linhas Sobrepostas: Pacing Dia a Dia (1..31) */}
+          <DayByDayPacingChart
+            series={comparative.dayByDaySeries}
+            currentLabel={comparative.currentPeriod.label}
+            previousLabel={comparative.previousPeriod.label}
+          />
+
+          {/* Matriz de Crescimento de Business Units */}
+          <BuGrowthMatrix
+            data={comparative.buComparison}
+            currentLabel={comparative.currentPeriod.label}
+            previousLabel={comparative.previousPeriod.label}
+          />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ABA 2: MONITOR AO VIVO & DERIVADAS MATEMÁTICAS           */}
+      {/* ======================================================== */}
+      {activeTab === "realtime" && (
+        <div className="space-y-6">
+          {/* Seletor de Período Local */}
+          <div className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-2.5">
+            <span className="text-xs font-semibold text-slate-700">
+              Período de Análise em Real-Time:
+            </span>
+            <div className="flex rounded-xl border border-slate-200 bg-white p-0.5 text-xs shadow-2xs">
+              {(
+                [
+                  { key: "7d", label: "Últimos 7 dias" },
+                  { key: "14d", label: "14 dias" },
+                  { key: "30d", label: "30 dias" },
+                  { key: "all", label: "Todo o histórico" },
+                ] as const
+              ).map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPeriod(p.key)}
+                  className={`rounded-lg px-2.5 py-1 font-medium transition ${
+                    period === p.key
+                      ? "bg-brand-600 text-white shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* KPIs Principais */}
+          <SalesKpiCards summary={data.summary} />
+
+          {/* Gráfico Principal de Faturamento & Derivada */}
+          <SalesVelocityChart data={filteredDailySeries} />
+
+          {/* Grid com Tendência de Ticket Médio, Top BUs e Mix de Pagamento */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <TicketTrendChart data={filteredDailySeries} />
+            <PaymentMixChart data={data.paymentMix} />
+          </div>
+
+          {/* Ranking de Business Units */}
+          <BuSalesBreakdown data={data.buBreakdown} />
+
+          {/* Tabela ao Vivo de Transações Recentes */}
+          <LiveTransactionsTable
+            transactions={data.recentTransactions}
+            isLive={data.dataSource.isLive}
+          />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* ABA 3: DIAGNÓSTICO DE MARKETING & SAZONALIDADE           */}
+      {/* ======================================================== */}
+      {activeTab === "diagnostics" && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5 text-xs text-emerald-950">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-emerald-600" />
+              <span className="font-bold">
+                Inteligência Acionável de Mídia & Otimização de Tráfego
+              </span>
+            </div>
+            <p className="mt-1 text-emerald-900/90 leading-relaxed">
+              Estes gráficos revelam o comportamento real de compra dos médicos e vestibulandos:
+              dias de maior conversão para agendamento de criativos/disparos e concentração de receita por faixa de preço.
             </p>
           </div>
+
+          <MarketingDiagnostics
+            dayOfWeekStats={comparative.dayOfWeekStats}
+            priceTiers={comparative.priceTiers}
+          />
         </div>
-      </div>
-
-      {/* 1. KPIs Principais */}
-      <SalesKpiCards summary={data.summary} />
-
-      {/* 2. Gráfico Principal de Faturamento & Derivada */}
-      <SalesVelocityChart data={filteredDailySeries} />
-
-      {/* 3. Grid com Tendência de Ticket Médio, Top BUs e Mix de Pagamento */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <TicketTrendChart data={filteredDailySeries} />
-        <PaymentMixChart data={data.paymentMix} />
-      </div>
-
-      {/* 4. Ranking de Business Units */}
-      <BuSalesBreakdown data={data.buBreakdown} />
-
-      {/* 5. Tabela ao Vivo de Transações Recentes */}
-      <LiveTransactionsTable
-        transactions={data.recentTransactions}
-        isLive={data.dataSource.isLive}
-      />
+      )}
     </div>
   );
 }
