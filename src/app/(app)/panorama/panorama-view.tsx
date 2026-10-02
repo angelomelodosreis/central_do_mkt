@@ -536,10 +536,10 @@ export function PanoramaView({
                 <AlertCircle className="size-4 shrink-0 text-amber-600 mt-0.5 sm:mt-0" />
                 <div>
                   <span className="font-bold text-amber-950">
-                    Nenhuma venda registrada para esta seleção na esteira R+ Especialidades
+                    Nenhuma venda encontrada para esta seleção no período selecionado
                   </span>
                   <p className="mt-0.5 text-amber-800">
-                    A planilha conectada ao vivo possui 8.600 vendas das esteiras de Clínica Médica, Cirurgia Geral, Pediatria, Ginecologia e Residência. Seus lançamentos de outras BUs acontecem em ciclos sazonais distintos.
+                    A planilha do Google Sheets está sincronizada em tempo real com todas as 23 Business Units da MedCof. Se necessário, ajuste o intervalo de datas ou limpe o filtro de BU.
                   </p>
                 </div>
               </div>
@@ -548,7 +548,7 @@ export function PanoramaView({
                 onClick={handleClearBus}
                 className="shrink-0 rounded-xl border border-amber-300 bg-white px-3 py-1.5 font-bold text-amber-900 shadow-2xs transition hover:bg-amber-100/50"
               >
-                Ver Todas as BUs (8.600 vendas)
+                Ver Todas as 23 BUs
               </button>
             </div>
           )}

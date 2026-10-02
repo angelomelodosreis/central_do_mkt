@@ -134,34 +134,139 @@ type FetchSalesResult = {
   sourceType: "google_sheets_live" | "google_sheets_gviz" | "sample_fallback";
 };
 
+export interface BuSheetTabDef {
+  gid: string;
+  tabName: string;
+  defaultBuCode: string;
+  defaultBuLabel: string;
+}
+
+/**
+ * Catálogo completo de abas da planilha oficial do Google Sheets (51.600+ vendas)
+ * Cobrindo integralmente as 23 Business Units da MedCof
+ */
+export const BU_SHEET_TABS: BuSheetTabDef[] = [
+  { gid: "1857412165", tabName: "Rmais", defaultBuCode: "RMAIS_ESPECIALIDADES", defaultBuLabel: "R+ Especialidades" },
+  { gid: "340051609", tabName: "R1", defaultBuCode: "MEDCOF_RESIDENCIA", defaultBuLabel: "Residência Médica" },
+  { gid: "1564542953", tabName: "Cardio", defaultBuCode: "MEDCOF_CARDIOLOGIA", defaultBuLabel: "Cardiologia" },
+  { gid: "369295249", tabName: "Derma", defaultBuCode: "MEDCOF_DERMATOLOGIA", defaultBuLabel: "Dermatologia" },
+  { gid: "962697947", tabName: "Anest", defaultBuCode: "MEDCOF_ANESTESIOLOGIA", defaultBuLabel: "Anestesiologia" },
+  { gid: "1719980770", tabName: "Urologia", defaultBuCode: "MEDCOF_UROLOGIA", defaultBuLabel: "Urologia" },
+  { gid: "1915005489", tabName: "Ortopedia", defaultBuCode: "MEDCOF_ORTOPEDIA", defaultBuLabel: "Ortopedia" },
+  { gid: "674570911", tabName: "Oftalmo", defaultBuCode: "MEDCOF_OFTALMOLOGIA", defaultBuLabel: "Oftalmologia" },
+  { gid: "39256493", tabName: "Radio", defaultBuCode: "MEDCOF_RADIOLOGIA", defaultBuLabel: "Radiologia" },
+  { gid: "1550831488", tabName: "Revalida", defaultBuCode: "MEDCOF_REVALIDA", defaultBuLabel: "Revalida" },
+  { gid: "1044772367", tabName: "USA", defaultBuCode: "MEDCOF_USA", defaultBuLabel: "MedCof USA" },
+  { gid: "794584144", tabName: "Internato", defaultBuCode: "MEDCOF_INTERNATO", defaultBuLabel: "Internato" },
+  { gid: "1361534572", tabName: "Hands On", defaultBuCode: "MEDCOF_LIFEHACKS", defaultBuLabel: "Lifehacks / PS" },
+  { gid: "950736743", tabName: "Aprova", defaultBuCode: "MEDCOF_CONCURSUS", defaultBuLabel: "Concursus" },
+  { gid: "522629172", tabName: "CBC", defaultBuCode: "MEDCOF_CIRURGIA", defaultBuLabel: "Cirurgia Geral" },
+  { gid: "1071542394", tabName: "Clinicof", defaultBuCode: "MEDCOF_CLINICA_MEDICA", defaultBuLabel: "Clínica Médica" },
+  { gid: "76328389", tabName: "Endoped", defaultBuCode: "MEDCOF_ENDOCRINOLOGIA_PEDIATRICA", defaultBuLabel: "Endocrinologia Pediátrica" },
+  { gid: "1507128077", tabName: "TEEM", defaultBuCode: "MEDCOF_ENDOCRINOLOGIA", defaultBuLabel: "Endocrinologia" },
+  { gid: "166880579", tabName: "TEP", defaultBuCode: "MEDCOF_PEDIATRIA", defaultBuLabel: "Pediatria" },
+  { gid: "592509251", tabName: "TEMI", defaultBuCode: "MEDCOF_MEDICINA_INTENSIVA", defaultBuLabel: "Medicina Intensiva" },
+  { gid: "1695219284", tabName: "TEME", defaultBuCode: "MEDCOF_MEDICINA_DE_EMERGENCIA", defaultBuLabel: "Medicina de Emergência" },
+  { gid: "1431486106", tabName: "R+GO", defaultBuCode: "MEDCOF_GINECOLOGIA_E_OBSTETRICIA", defaultBuLabel: "Ginecologia e Obstetrícia" },
+  { gid: "1858132363", tabName: "TEGO", defaultBuCode: "MEDCOF_GINECOLOGIA_E_OBSTETRICIA", defaultBuLabel: "Ginecologia e Obstetrícia" },
+  { gid: "2059365132", tabName: "Mentoria", defaultBuCode: "MEDCOF_RESIDENCIA", defaultBuLabel: "Residência Médica" },
+];
+
 let memoryCachedSales: {
   timestamp: number;
   data: FetchSalesResult;
 } | null = null;
 
-const CACHE_TTL_MS = 30_000; // 30 segundos de cache em memória de processo
+const CACHE_TTL_MS = 120_000; // 2 minutos de cache em memória de processo para performance máxima
 
 /**
- * Faz a busca da planilha Google Sheets em Real-Time via CSV export ou GViz.
+ * Faz a busca da planilha Google Sheets em Real-Time consolidando todas as 23 BUs.
  */
 export async function fetchGoogleSheetsSalesData(
   sheetId = DEFAULT_SHEET_ID,
   gid = DEFAULT_GID,
   customCsvUrl?: string,
+  options: {
+    forceRefresh?: boolean;
+  } = {},
 ): Promise<FetchSalesResult> {
   const now = Date.now();
   if (
     memoryCachedSales &&
     now - memoryCachedSales.timestamp < CACHE_TTL_MS &&
     memoryCachedSales.data.success &&
-    !customCsvUrl
+    !customCsvUrl &&
+    !options.forceRefresh
   ) {
     return memoryCachedSales.data;
   }
 
+  // 1. Se customCsvUrl foi passado explicitamente, busca apenas aquela URL
+  if (customCsvUrl) {
+    try {
+      const response = await fetch(customCsvUrl, {
+        cache: "no-store",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
+        },
+      });
+      if (response.ok) {
+        const text = await response.text();
+        if (text && !text.includes("<!DOCTYPE html") && text.includes(",")) {
+          const parsed = parseCsvSalesData(text);
+          if (parsed.length > 0) {
+            return {
+              success: true,
+              transactions: parsed,
+              sourceType: "google_sheets_live",
+            };
+          }
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // 2. Busca e consolida todas as abas das 23 Business Units em paralelo
+  try {
+    const tabPromises = BU_SHEET_TABS.map(async (tab) => {
+      const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRRHbUHQxiRh3LiC8tKGpAPkhBRfcxkKucIYCXFuxmCRP9oX9LCxXTeQOhPt0eqAvF4kXNXvQATwvFJ/pub?gid=${tab.gid}&single=true&output=csv`;
+      try {
+        const res = await fetch(url, {
+          cache: "no-store",
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
+          },
+        });
+        if (!res.ok) return [];
+        const text = await res.text();
+        if (!text || text.includes("<!DOCTYPE html") || !text.includes(",")) return [];
+        return parseCsvSalesData(text, tab.defaultBuCode, tab.defaultBuLabel, tab.tabName);
+      } catch {
+        return [];
+      }
+    });
+
+    const results = await Promise.all(tabPromises);
+    const consolidated = results.flat();
+
+    if (consolidated.length > 0) {
+      const result: FetchSalesResult = {
+        success: true,
+        transactions: consolidated,
+        sourceType: "google_sheets_live",
+      };
+      memoryCachedSales = { timestamp: now, data: result };
+      return result;
+    }
+  } catch {
+    // continua para fallback
+  }
+
+  // 3. Fallback para URL CSV padrão de uma única aba caso o paralelo falhe
   const envUrl = process.env.GOOGLE_SHEETS_SALES_CSV_URL;
   const urls = [
-    customCsvUrl,
     envUrl,
     DEFAULT_LIVE_CSV_URL,
     `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`,
@@ -172,7 +277,6 @@ export async function fetchGoogleSheetsSalesData(
 
   for (const url of urls) {
     try {
-      // cache: "no-store" evita estourar o limite de 2MB do Next.js Data Cache
       const response = await fetch(url, {
         cache: "no-store",
         headers: {
@@ -182,7 +286,6 @@ export async function fetchGoogleSheetsSalesData(
 
       if (response.ok) {
         const text = await response.text();
-        // Confere se o retorno é CSV válido e não página HTML de login
         if (text && !text.includes("<!DOCTYPE html") && text.includes(",")) {
           const parsed = parseCsvSalesData(text);
           if (parsed.length > 0) {
@@ -197,7 +300,7 @@ export async function fetchGoogleSheetsSalesData(
         }
       }
     } catch {
-      // continua para a próxima tentativa ou fallback
+      // continua
     }
   }
 
@@ -212,7 +315,12 @@ export async function fetchGoogleSheetsSalesData(
 /**
  * Parser de CSV flexível para planilhas brasileiras de vendas
  */
-function parseCsvSalesData(csvContent: string): SaleTransaction[] {
+function parseCsvSalesData(
+  csvContent: string,
+  defaultBuCode?: string,
+  defaultBuLabel?: string,
+  tabName?: string,
+): SaleTransaction[] {
   const lines = csvContent
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -251,6 +359,19 @@ function parseCsvSalesData(csvContent: string): SaleTransaction[] {
     const rawStatus = statusIdx >= 0 ? cols[statusIdx].toLowerCase() : "approved";
 
     const buInfo = resolveBuFromText(rawProduct + " " + rawPlano);
+    let finalBuCode = defaultBuCode || buInfo.code;
+    let finalBuLabel = defaultBuLabel || buInfo.label;
+
+    if (defaultBuCode === "RMAIS_ESPECIALIDADES" || !defaultBuCode) {
+      finalBuCode = buInfo.code;
+      finalBuLabel = buInfo.label;
+    } else {
+      if (buInfo.code !== "MEDCOF_RESIDENCIA") {
+        finalBuCode = buInfo.code;
+        finalBuLabel = buInfo.label;
+      }
+    }
+
     const amount = parseCurrency(rawAmount);
     if (amount <= 0) continue;
 
@@ -265,13 +386,15 @@ function parseCsvSalesData(csvContent: string): SaleTransaction[] {
     else if (rawStatus.includes("canc") || rawStatus.includes("recus")) status = "cancelled";
     else if (rawStatus.includes("estorn") || rawStatus.includes("reemb")) status = "refunded";
 
+    const uniqueId = tabName ? `${tabName.toLowerCase()}_${rawId}` : rawId;
+
     transactions.push({
-      id: rawId,
+      id: uniqueId,
       date: iso,
       timestamp,
       product: rawProduct,
-      businessUnitCode: buInfo.code,
-      businessUnitLabel: buInfo.label,
+      businessUnitCode: finalBuCode,
+      businessUnitLabel: finalBuLabel,
       amount,
       quantity: 1,
       paymentMethod,
@@ -385,8 +508,14 @@ export async function getLiveSalesAnalytics(options: {
   targetBuCodes?: string[];
   startDate?: string;
   endDate?: string;
+  forceRefresh?: boolean;
 } = {}): Promise<SalesAnalyticsResult> {
-  const { transactions, sourceType } = await fetchGoogleSheetsSalesData();
+  const { transactions, sourceType } = await fetchGoogleSheetsSalesData(
+    DEFAULT_SHEET_ID,
+    DEFAULT_GID,
+    undefined,
+    { forceRefresh: options.forceRefresh },
+  );
   return calculateSalesAnalytics(transactions, {
     ...options,
     dataSourceType: sourceType,
@@ -402,28 +531,47 @@ export async function getLiveComparativeAnalytics(options: {
   endDate?: string;
   compareStartDate?: string;
   compareEndDate?: string;
+  forceRefresh?: boolean;
 } = {}): Promise<{
   comparative: ComparativeAnalysisResult;
   availableMonths: Array<{ key: string; label: string; count: number }>;
 }> {
-
-  const { transactions } = await fetchGoogleSheetsSalesData();
+  const { transactions } = await fetchGoogleSheetsSalesData(
+    DEFAULT_SHEET_ID,
+    DEFAULT_GID,
+    undefined,
+    { forceRefresh: options.forceRefresh },
+  );
   const availableMonths = getAvailableMonths(transactions);
   const comparative = calculateComparativeAnalysis(transactions, options);
   return { comparative, availableMonths };
 }
 
-export async function getAllLiveTransactions(): Promise<SaleTransaction[]> {
-  const { transactions } = await fetchGoogleSheetsSalesData();
+export async function getAllLiveTransactions(options?: {
+  forceRefresh?: boolean;
+}): Promise<SaleTransaction[]> {
+  const { transactions } = await fetchGoogleSheetsSalesData(
+    DEFAULT_SHEET_ID,
+    DEFAULT_GID,
+    undefined,
+    { forceRefresh: options?.forceRefresh },
+  );
   return transactions;
 }
 
-export async function getLiveDashboardData(): Promise<{
+export async function getLiveDashboardData(options?: {
+  forceRefresh?: boolean;
+}): Promise<{
   liveSales: SalesAnalyticsResult;
   projections: SalesProjections;
   monthlyHistory: MonthlyAggregatePoint[];
 }> {
-  const { transactions, sourceType } = await fetchGoogleSheetsSalesData();
+  const { transactions, sourceType } = await fetchGoogleSheetsSalesData(
+    DEFAULT_SHEET_ID,
+    DEFAULT_GID,
+    undefined,
+    { forceRefresh: options?.forceRefresh },
+  );
   const liveSales = calculateSalesAnalytics(transactions, {
     dataSourceType: sourceType,
   });

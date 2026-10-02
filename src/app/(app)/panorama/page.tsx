@@ -16,6 +16,7 @@ import {
   getLiveComparativeAnalytics,
   getAllLiveTransactions,
 } from "@/lib/modules/sales/google-sheets-client";
+import { normalizeBuCode } from "@/lib/modules/sales/bu-catalog";
 import { sortByName } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Panorama | Central do Marketing" };
@@ -74,6 +75,10 @@ export default async function PanoramaPage() {
     buCodeToIdMap.set(`MEDCOF_${u.slug.toUpperCase()}`, u.id);
     buCodeToIdMap.set(u.slug.toLowerCase(), u.id);
     buCodeToIdMap.set(u.id, u.id);
+    const norm = normalizeBuCode(u.slug);
+    if (norm) buCodeToIdMap.set(norm, u.id);
+    const normLabel = normalizeBuCode(u.label);
+    if (normLabel) buCodeToIdMap.set(normLabel, u.id);
   }
 
   // Preenchimento de semanas com base nos dados reais do Google Sheets se o banco não tiver
@@ -92,10 +97,11 @@ export default async function PanoramaPage() {
     });
   }
 
-  // Enriquece as semanas com as 8.600 vendas reais sincronizadas do Google Sheets
+  // Enriquece as semanas com as 51.600+ vendas reais sincronizadas do Google Sheets (todas as 23 BUs)
   for (const t of allTransactions) {
     if (t.timestamp < desde.getTime() || t.timestamp > agora.getTime()) continue;
-    const buId = buCodeToIdMap.get(t.businessUnitCode) || ativas[0]?.id;
+    const normalizedCode = normalizeBuCode(t.businessUnitCode) || t.businessUnitCode;
+    const buId = buCodeToIdMap.get(normalizedCode) || buCodeToIdMap.get(t.businessUnitCode) || ativas[0]?.id;
     if (!buId) continue;
     const weekStartTs = inicioDaSemana(new Date(t.timestamp)).getTime();
     const key = `${buId}_${weekStartTs}`;

@@ -15,7 +15,8 @@ export async function refreshSalesDataAction(options?: {
 }): Promise<SalesAnalyticsResult> {
   revalidatePath("/vendas-realtime");
   revalidatePath("/painel");
-  return getLiveSalesAnalytics(options);
+  revalidatePath("/panorama");
+  return getLiveSalesAnalytics({ ...options, forceRefresh: true });
 }
 
 export async function getComparativeSalesAction(options?: {
