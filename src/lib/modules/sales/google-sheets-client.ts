@@ -65,15 +65,21 @@ function parseCurrency(val: string | number): number {
 export async function fetchGoogleSheetsSalesData(
   sheetId = DEFAULT_SHEET_ID,
   gid = DEFAULT_GID,
+  customCsvUrl?: string,
 ): Promise<{
   success: boolean;
   transactions: SaleTransaction[];
   sourceType: "google_sheets_live" | "google_sheets_gviz" | "sample_fallback";
 }> {
+  const envUrl = process.env.GOOGLE_SHEETS_SALES_CSV_URL;
   const urls = [
+    customCsvUrl,
+    envUrl,
     `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`,
     `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`,
-  ];
+    `https://docs.google.com/spreadsheets/d/${sheetId}/pub?gid=${gid}&single=true&output=csv`,
+    `https://docs.google.com/spreadsheets/d/${sheetId}/pub?output=csv`,
+  ].filter((u): u is string => Boolean(u && u.trim()));
 
   for (const url of urls) {
     try {
