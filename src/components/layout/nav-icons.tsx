@@ -9,10 +9,12 @@ import {
   CheckSquare,
   Network,
   Shield,
+  TrendingUp,
 } from "lucide-react";
 
 export const NAV_ICON_KEYS = [
   "dashboard",
+  "sales",
   "generator",
   "docs",
   "personas",
@@ -27,6 +29,7 @@ export type NavIconKey = (typeof NAV_ICON_KEYS)[number];
 
 const ICONS: Record<NavIconKey, typeof LayoutDashboard> = {
   dashboard: LayoutDashboard,
+  sales: TrendingUp,
   generator: Wand2,
   docs: BookOpen,
   personas: UserCheck,

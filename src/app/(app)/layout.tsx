@@ -40,6 +40,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       description: "Visão geral",
       icon: "dashboard",
     },
+    {
+      href: "/vendas-realtime",
+      label: "Vendas Real-Time",
+      description: "Google Sheets ao vivo",
+      icon: "sales",
+    },
   ];
 
   if (can(currentUser, "name_generator")) {

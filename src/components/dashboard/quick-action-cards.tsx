@@ -14,6 +14,33 @@ export function QuickActionCards({
 }) {
   return (
     <div className="flex flex-col gap-4">
+      {/* Card 0: Vendas em Tempo Real (Google Sheets) */}
+      <Link
+        href="/vendas-realtime"
+        className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-emerald-200 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 p-5 text-white shadow-[0_12px_30px_-10px_rgba(16,185,129,0.2)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_rgba(16,185,129,0.3)]"
+      >
+        <div className="flex items-center gap-3.5 min-w-0">
+          <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 shadow-inner backdrop-blur-md ring-1 ring-emerald-500/30 group-hover:scale-105 transition-transform">
+            <span className="absolute -top-1 -right-1 flex size-3">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
+            </span>
+            <Compass className="size-6 text-emerald-400" />
+          </span>
+          <div className="min-w-0">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
+              Real-Time Google Sheets
+            </span>
+            <p className="truncate font-display text-base font-semibold text-white">
+              Vendas & Derivadas
+            </p>
+          </div>
+        </div>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white group-hover:bg-emerald-500 group-hover:translate-x-0.5 transition-all">
+          <ArrowRight className="size-4" />
+        </span>
+      </Link>
+
       {/* Card 1: Planejamento Estratégico (estilo Daily Jogging da imagem) */}
       <Link
         href={

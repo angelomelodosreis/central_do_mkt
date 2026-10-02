@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Users,
   User,
+  TrendingUp,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
@@ -37,6 +38,14 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     category: "Navegação",
     href: "/painel",
     icon: Layers,
+  },
+  {
+    id: "nav_vendas_realtime",
+    title: "Vendas em Tempo Real",
+    subtitle: "Google Sheets ao vivo, derivadas e ticket médio",
+    category: "Navegação",
+    href: "/vendas-realtime",
+    icon: TrendingUp,
   },
   {
     id: "nav_gerador",
