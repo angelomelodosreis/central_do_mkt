@@ -31,6 +31,20 @@ export function BuGrowthMatrix({
 }) {
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "gainers" | "decliners">("all");
+  type SortField = "name" | "current" | "previous" | "delta" | "growth" | "ticket";
+  type SortDirection = "asc" | "desc";
+
+  const [sortField, setSortField] = useState<SortField>("current");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  function handleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection(field === "name" ? "asc" : "desc");
+    }
+  }
 
   const filtered = data
     .filter((bu) => {
@@ -46,6 +60,31 @@ export function BuGrowthMatrix({
       if (filterMode === "decliners") return bu.revenueGrowthPercent < 0;
       return true;
     });
+
+  const sortedList = [...filtered].sort((a, b) => {
+    let diff = 0;
+    switch (sortField) {
+      case "name":
+        diff = a.buLabel.localeCompare(b.buLabel);
+        break;
+      case "current":
+        diff = a.currentRevenue - b.currentRevenue;
+        break;
+      case "previous":
+        diff = a.previousRevenue - b.previousRevenue;
+        break;
+      case "delta":
+        diff = a.revenueDelta - b.revenueDelta;
+        break;
+      case "growth":
+        diff = a.revenueGrowthPercent - b.revenueGrowthPercent;
+        break;
+      case "ticket":
+        diff = a.currentAvgTicket - b.currentAvgTicket;
+        break;
+    }
+    return sortDirection === "asc" ? diff : -diff;
+  });
 
   // Identificar maior receita para normalização de barra
   const maxRevenue = Math.max(...data.map((b) => b.currentRevenue), 1);
@@ -127,24 +166,84 @@ export function BuGrowthMatrix({
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-xs min-w-[640px]">
           <thead>
-            <tr className="border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-              <th className="py-2.5 pr-4 whitespace-nowrap">Business Unit</th>
-              <th className="py-2.5 px-3 text-right whitespace-nowrap">{currentLabel}</th>
-              <th className="py-2.5 px-3 text-right whitespace-nowrap">{previousLabel}</th>
-              <th className="py-2.5 px-3 text-right whitespace-nowrap">Variação R$</th>
-              <th className="py-2.5 px-3 text-right whitespace-nowrap">Crescimento %</th>
-              <th className="py-2.5 pl-3 text-right whitespace-nowrap">Ticket Médio</th>
+            <tr className="border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider select-none">
+              <th className="py-2.5 pr-4 whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => handleSort("name")}
+                  className="flex items-center gap-1 hover:text-slate-900 transition"
+                  title="Ordenar por Nome"
+                >
+                  <span>Business Unit</span>
+                  <span className="text-[10px] text-brand-600">{sortField === "name" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
+                </button>
+              </th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => handleSort("current")}
+                  className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
+                  title={`Ordenar por ${currentLabel}`}
+                >
+                  <span>{currentLabel}</span>
+                  <span className="text-[10px] text-brand-600">{sortField === "current" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
+                </button>
+              </th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => handleSort("previous")}
+                  className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
+                  title={`Ordenar por ${previousLabel}`}
+                >
+                  <span>{previousLabel}</span>
+                  <span className="text-[10px] text-brand-600">{sortField === "previous" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
+                </button>
+              </th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => handleSort("delta")}
+                  className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
+                  title="Ordenar por Variação Monetária"
+                >
+                  <span>Variação R$</span>
+                  <span className="text-[10px] text-brand-600">{sortField === "delta" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
+                </button>
+              </th>
+              <th className="py-2.5 px-3 text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => handleSort("growth")}
+                  className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
+                  title="Ordenar por Crescimento %"
+                >
+                  <span>Crescimento %</span>
+                  <span className="text-[10px] text-brand-600">{sortField === "growth" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
+                </button>
+              </th>
+              <th className="py-2.5 pl-3 text-right whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => handleSort("ticket")}
+                  className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
+                  title="Ordenar por Ticket Médio"
+                >
+                  <span>Ticket Médio</span>
+                  <span className="text-[10px] text-brand-600">{sortField === "ticket" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filtered.length === 0 ? (
+            {sortedList.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-slate-400">
                   Nenhuma Business Unit encontrada para os filtros aplicados.
                 </td>
               </tr>
             ) : (
-              filtered.map((bu) => {
+              sortedList.map((bu) => {
                 const isPositive = bu.revenueDelta >= 0;
                 const progressPercent = Math.min(
                   100,

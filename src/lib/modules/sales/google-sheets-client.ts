@@ -177,7 +177,9 @@ let memoryCachedSales: {
   data: FetchSalesResult;
 } | null = null;
 
-const CACHE_TTL_MS = 120_000; // 2 minutos de cache em memória de processo para performance máxima
+let inFlightFetch: Promise<FetchSalesResult> | null = null;
+
+const CACHE_TTL_MS = 600_000; // 10 minutos de cache em memória para velocidade instantânea (0ms)
 
 /**
  * Faz a busca da planilha Google Sheets em Real-Time consolidando todas as 23 BUs.
@@ -201,11 +203,43 @@ export async function fetchGoogleSheetsSalesData(
     return memoryCachedSales.data;
   }
 
+  // Deduplica chamadas paralelas em andamento
+  if (!customCsvUrl && !options.forceRefresh && inFlightFetch) {
+    return inFlightFetch;
+  }
+
+  const p = (async () => {
+    return executeFetchGoogleSheetsSalesData(sheetId, gid, customCsvUrl, options);
+  })();
+
+  if (!customCsvUrl && !options.forceRefresh) {
+    inFlightFetch = p;
+  }
+
+  try {
+    return await p;
+  } finally {
+    if (!customCsvUrl && !options.forceRefresh) {
+      inFlightFetch = null;
+    }
+  }
+}
+
+async function executeFetchGoogleSheetsSalesData(
+  sheetId = DEFAULT_SHEET_ID,
+  gid = DEFAULT_GID,
+  customCsvUrl?: string,
+  options: {
+    forceRefresh?: boolean;
+  } = {},
+): Promise<FetchSalesResult> {
+  const now = Date.now();
+
   // 1. Se customCsvUrl foi passado explicitamente, busca apenas aquela URL
   if (customCsvUrl) {
     try {
       const response = await fetch(customCsvUrl, {
-        cache: "no-store",
+        next: options.forceRefresh ? { revalidate: 0 } : { revalidate: 600 },
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
         },
@@ -234,7 +268,7 @@ export async function fetchGoogleSheetsSalesData(
       const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRRHbUHQxiRh3LiC8tKGpAPkhBRfcxkKucIYCXFuxmCRP9oX9LCxXTeQOhPt0eqAvF4kXNXvQATwvFJ/pub?gid=${tab.gid}&single=true&output=csv`;
       try {
         const res = await fetch(url, {
-          cache: "no-store",
+          next: options.forceRefresh ? { revalidate: 0 } : { revalidate: 600 },
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
           },
@@ -522,6 +556,24 @@ export async function getLiveSalesAnalytics(options: {
   });
 }
 
+let memoryCachedDashboard: {
+  timestamp: number;
+  data: {
+    liveSales: SalesAnalyticsResult;
+    projections: SalesProjections;
+    monthlyHistory: MonthlyAggregatePoint[];
+  };
+} | null = null;
+
+let memoryCachedComparative: {
+  timestamp: number;
+  key: string;
+  data: {
+    comparative: ComparativeAnalysisResult;
+    availableMonths: Array<{ key: string; label: string; count: number }>;
+  };
+} | null = null;
+
 export async function getLiveComparativeAnalytics(options: {
   currentMonthKey?: string;
   previousMonthKey?: string;
@@ -536,6 +588,26 @@ export async function getLiveComparativeAnalytics(options: {
   comparative: ComparativeAnalysisResult;
   availableMonths: Array<{ key: string; label: string; count: number }>;
 }> {
+  const cacheKey = JSON.stringify({
+    c: options.currentMonthKey,
+    p: options.previousMonthKey,
+    b: options.targetBuCode || options.targetBuCodes,
+    s: options.startDate,
+    e: options.endDate,
+    cs: options.compareStartDate,
+    ce: options.compareEndDate,
+  });
+
+  const now = Date.now();
+  if (
+    !options.forceRefresh &&
+    memoryCachedComparative &&
+    memoryCachedComparative.key === cacheKey &&
+    now - memoryCachedComparative.timestamp < CACHE_TTL_MS
+  ) {
+    return memoryCachedComparative.data;
+  }
+
   const { transactions } = await fetchGoogleSheetsSalesData(
     DEFAULT_SHEET_ID,
     DEFAULT_GID,
@@ -544,7 +616,9 @@ export async function getLiveComparativeAnalytics(options: {
   );
   const availableMonths = getAvailableMonths(transactions);
   const comparative = calculateComparativeAnalysis(transactions, options);
-  return { comparative, availableMonths };
+  const result = { comparative, availableMonths };
+  memoryCachedComparative = { timestamp: now, key: cacheKey, data: result };
+  return result;
 }
 
 export async function getAllLiveTransactions(options?: {
@@ -566,6 +640,15 @@ export async function getLiveDashboardData(options?: {
   projections: SalesProjections;
   monthlyHistory: MonthlyAggregatePoint[];
 }> {
+  const now = Date.now();
+  if (
+    !options?.forceRefresh &&
+    memoryCachedDashboard &&
+    now - memoryCachedDashboard.timestamp < CACHE_TTL_MS
+  ) {
+    return memoryCachedDashboard.data;
+  }
+
   const { transactions, sourceType } = await fetchGoogleSheetsSalesData(
     DEFAULT_SHEET_ID,
     DEFAULT_GID,
@@ -577,7 +660,9 @@ export async function getLiveDashboardData(options?: {
   });
   const projections = calculateProjections(transactions);
   const monthlyHistory = getMonthlyAggregations(transactions);
-  return { liveSales, projections, monthlyHistory };
+  const result = { liveSales, projections, monthlyHistory };
+  memoryCachedDashboard = { timestamp: now, data: result };
+  return result;
 }
 
 

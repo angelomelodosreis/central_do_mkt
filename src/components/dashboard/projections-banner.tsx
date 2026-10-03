@@ -43,11 +43,11 @@ export function ProjectionsBanner({
             <Zap className="size-5" />
           </span>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-display text-base font-bold text-slate-900 sm:text-lg">
                 Radar de Projeções & Forecast ({projections.monthLabel})
               </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-600/20">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Run-Rate Ativo
               </span>
@@ -72,11 +72,11 @@ export function ProjectionsBanner({
         {/* 1. Fechamento Projetado do Mês (Run-Rate) */}
         <div className="flex flex-col justify-between rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/50 to-white p-4 shadow-2xs">
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-800">
                 Fechamento Projetado
               </span>
-              <span className="rounded-md bg-blue-100/70 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+              <span className="shrink-0 rounded-md bg-blue-100/80 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                 Run-Rate
               </span>
             </div>
@@ -92,7 +92,7 @@ export function ProjectionsBanner({
           <div className="mt-4 pt-3 border-t border-blue-100/60">
             <div className="flex items-center justify-between text-[11px] font-medium text-blue-900/80 mb-1">
               <span>Dia {projections.daysElapsed} de {projections.totalDaysInMonth}</span>
-              <span>{projections.monthProgressPercent}% do mês</span>
+              <span className="font-semibold text-blue-700">· {projections.monthProgressPercent}% do mês</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-blue-100">
               <div
@@ -106,11 +106,11 @@ export function ProjectionsBanner({
         {/* 2. Velocidade de Vendas (dV/dt) & Pacing */}
         <div className="flex flex-col justify-between rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/40 to-white p-4 shadow-2xs">
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
                 Velocidade (dV/dt)
               </span>
-              <span className="rounded-md bg-emerald-100/70 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+              <span className="shrink-0 rounded-md bg-emerald-100/80 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                 {projections.velocityDaily} vendas/dia
               </span>
             </div>
@@ -123,9 +123,9 @@ export function ProjectionsBanner({
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-emerald-100/60 flex items-center justify-between text-xs text-emerald-900">
+          <div className="mt-4 pt-3 border-t border-emerald-100/60 flex items-center justify-between gap-2 text-xs text-emerald-900">
             <span className="text-[11px] text-emerald-700">Volume Homólogo MTD:</span>
-            <strong className="text-emerald-700 font-bold">
+            <strong className="text-emerald-700 font-bold shrink-0">
               {projections.mtdGrowthSalesPercent >= 0 ? "+" : ""}
               {projections.mtdGrowthSalesPercent.toFixed(1)}%
             </strong>
@@ -135,11 +135,11 @@ export function ProjectionsBanner({
         {/* 3. Ticket Médio & Qualidade de Margem */}
         <div className="flex flex-col justify-between rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50/40 to-white p-4 shadow-2xs">
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-800">
                 Ticket Médio
               </span>
-              <span className="rounded-md bg-purple-100/70 px-1.5 py-0.5 text-[10px] font-bold text-purple-800">
+              <span className="shrink-0 rounded-md bg-purple-100/80 px-2 py-0.5 text-[10px] font-bold text-purple-800">
                 Esteira R+
               </span>
             </div>
@@ -158,20 +158,20 @@ export function ProjectionsBanner({
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-purple-100/60 flex items-center justify-between text-xs text-purple-900">
+          <div className="mt-4 pt-3 border-t border-purple-100/60 flex items-center justify-between gap-2 text-xs text-purple-900">
             <span className="text-[11px] text-purple-700">Taxa de Aprovação:</span>
-            <strong className="text-purple-700 font-bold">{approvalRate}%</strong>
+            <strong className="text-purple-700 font-bold shrink-0">{approvalRate}%</strong>
           </div>
         </div>
 
         {/* 4. Receita Total Acumulada do Ciclo */}
         <div className="flex flex-col justify-between rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50/40 to-white p-4 shadow-2xs">
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">
                 Faturamento Total
               </span>
-              <span className="rounded-md bg-rose-100/70 px-1.5 py-0.5 text-[10px] font-bold text-rose-800">
+              <span className="shrink-0 rounded-md bg-rose-100/80 px-2 py-0.5 text-[10px] font-bold text-rose-800">
                 Acumulado
               </span>
             </div>
@@ -183,9 +183,9 @@ export function ProjectionsBanner({
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-rose-100/60 flex items-center justify-between text-xs text-slate-700">
+          <div className="mt-4 pt-3 border-t border-rose-100/60 flex items-center justify-between gap-2 text-xs text-slate-700">
             <span className="text-[11px] text-slate-500">Pacing MoM Receita:</span>
-            <strong className={isPositiveMtd ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
+            <strong className={`shrink-0 font-bold ${isPositiveMtd ? "text-emerald-600" : "text-amber-600"}`}>
               {isPositiveMtd ? "+" : ""}{projections.mtdGrowthRevenuePercent.toFixed(1)}%
             </strong>
           </div>
