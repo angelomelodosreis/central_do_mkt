@@ -48,11 +48,11 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     icon: TrendingUp,
   },
   {
-    id: "nav_styleguide",
-    title: "Design System & Style Guide",
-    subtitle: "Tokens visuais, componentes e padrões MedCof",
+    id: "nav_revisoes",
+    title: "Feed de Revisões & Acompanhamento",
+    subtitle: "Acompanhamento estilo Slack Canvas por BU, pautas e prazos",
     category: "Navegação",
-    href: "/styleguide",
+    href: "/planejamento/revisoes",
     icon: FileText,
   },
   {

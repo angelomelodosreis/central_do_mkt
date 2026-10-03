@@ -100,13 +100,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     icon: "org",
   });
 
-  items.push({
-    href: "/styleguide",
-    label: "Design System",
-    description: "Style Guide & Padrões",
-    icon: "docs",
-  });
-
 
   // Parâmetros deixou de existir como menu: tinha uma única área, e ela
   // pertence ao Gerador de Nomes — quem cria um modelo é quem acabou de
