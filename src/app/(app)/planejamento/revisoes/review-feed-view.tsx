@@ -17,7 +17,6 @@ import {
   Send,
   X,
   ChevronRight,
-  Sparkles,
   ExternalLink,
   Trash2,
   Tag,

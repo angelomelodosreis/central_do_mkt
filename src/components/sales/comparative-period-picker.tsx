@@ -6,7 +6,6 @@ import {
   Search,
   ArrowRight,
   RotateCcw,
-  Sparkles,
   ChevronDown,
   Clock,
   SlidersHorizontal,
@@ -137,47 +136,97 @@ export function ComparativePeriodPicker({
 
   const computedCompare = getComputedCompareDates();
 
-  // Aplica presets rápidos
-  const applyPreset = (preset: "today" | "yesterday" | "last7" | "last14" | "last30" | "current_month_mtd" | "last_month_full") => {
+  // Aplica presets rápidos com disparo imediato
+  const applyPreset = (
+    preset:
+      | "today"
+      | "yesterday"
+      | "last7"
+      | "last14"
+      | "last30"
+      | "current_month_mtd"
+      | "last_month_full",
+  ) => {
     setMode("custom_range");
-    const refDate = new Date("2026-10-02T12:00:00Z"); // Data de referência da base
+    const refDate = new Date("2026-10-02T12:00:00Z");
     const toIso = (d: Date) => d.toISOString().slice(0, 10);
+
+    let sDate = "2026-10-01";
+    let eDate = "2026-10-02";
+    let cType: "previous_month_same_days" | "preceding_period" = "previous_month_same_days";
 
     if (preset === "today") {
       const d = toIso(refDate);
-      setStartDate(d);
-      setEndDate(d);
-      setCompareType("previous_month_same_days");
+      sDate = d;
+      eDate = d;
+      cType = "previous_month_same_days";
     } else if (preset === "yesterday") {
       const y = new Date(refDate.getTime() - 86400000);
       const d = toIso(y);
-      setStartDate(d);
-      setEndDate(d);
-      setCompareType("previous_month_same_days");
+      sDate = d;
+      eDate = d;
+      cType = "previous_month_same_days";
     } else if (preset === "last7") {
       const s = new Date(refDate.getTime() - 6 * 86400000);
-      setStartDate(toIso(s));
-      setEndDate(toIso(refDate));
-      setCompareType("preceding_period");
+      sDate = toIso(s);
+      eDate = toIso(refDate);
+      cType = "preceding_period";
     } else if (preset === "last14") {
       const s = new Date(refDate.getTime() - 13 * 86400000);
-      setStartDate(toIso(s));
-      setEndDate(toIso(refDate));
-      setCompareType("preceding_period");
+      sDate = toIso(s);
+      eDate = toIso(refDate);
+      cType = "preceding_period";
     } else if (preset === "last30") {
       const s = new Date(refDate.getTime() - 29 * 86400000);
-      setStartDate(toIso(s));
-      setEndDate(toIso(refDate));
-      setCompareType("preceding_period");
+      sDate = toIso(s);
+      eDate = toIso(refDate);
+      cType = "preceding_period";
     } else if (preset === "current_month_mtd") {
-      setStartDate("2026-10-01");
-      setEndDate("2026-10-02");
-      setCompareType("previous_month_same_days");
+      sDate = "2026-10-01";
+      eDate = "2026-10-02";
+      cType = "previous_month_same_days";
     } else if (preset === "last_month_full") {
-      setStartDate("2026-09-01");
-      setEndDate("2026-09-30");
-      setCompareType("previous_month_same_days");
+      sDate = "2026-09-01";
+      eDate = "2026-09-30";
+      cType = "previous_month_same_days";
     }
+
+    setStartDate(sDate);
+    setEndDate(eDate);
+    setCompareType(cType);
+
+    // Computa datas de comparação e dispara imediatamente
+    const [sY, sM, sD] = sDate.split("-").map(Number);
+    const [eY, eM, eD] = eDate.split("-").map(Number);
+
+    let compStart = "";
+    let compEnd = "";
+    if (cType === "previous_month_same_days") {
+      const prevM = sM === 1 ? 12 : sM - 1;
+      const prevY = sM === 1 ? sY - 1 : sY;
+      const prevEndM = eM === 1 ? 12 : eM - 1;
+      const prevEndY = eM === 1 ? eY - 1 : eY;
+      const prevMaxDaysStart = new Date(prevY, prevM, 0).getDate();
+      const prevMaxDaysEnd = new Date(prevEndY, prevEndM, 0).getDate();
+      compStart = `${prevY}-${String(prevM).padStart(2, "0")}-${String(Math.min(sD, prevMaxDaysStart)).padStart(2, "0")}`;
+      compEnd = `${prevEndY}-${String(prevEndM).padStart(2, "0")}-${String(Math.min(eD, prevMaxDaysEnd)).padStart(2, "0")}`;
+    } else {
+      const startMs = new Date(`${sDate}T00:00:00`).getTime();
+      const endMs = new Date(`${eDate}T00:00:00`).getTime();
+      const durationMs = endMs - startMs;
+      const prevEndMs = startMs - 86400000;
+      const prevStartMs = prevEndMs - durationMs;
+      compStart = new Date(prevStartMs).toISOString().slice(0, 10);
+      compEnd = new Date(prevEndMs).toISOString().slice(0, 10);
+    }
+
+    onApply({
+      mode: "custom_range",
+      startDate: sDate,
+      endDate: eDate,
+      compareStartDate: compStart,
+      compareEndDate: compEnd,
+    });
   };
 
   // Disparo ao clicar no botão "Buscar"
@@ -256,43 +305,69 @@ export function ComparativePeriodPicker({
         {mode === "custom_range" ? (
           /* MODO 1: SELEÇÃO POR DATA EXATA (DIA / MÊS / ANO ATÉ DIA / MÊS / ANO) */
           <div className="space-y-3.5">
-            {/* Chips de Atalhos Rápidos */}
+            {/* Chips de Atalhos Rápidos com feedback visual ativo */}
             <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-              <span className="text-[11px] font-semibold text-slate-500 mr-1">
-                Atalhos:
+              <span className="text-[11px] font-bold text-blue-950 mr-1 flex items-center gap-1">
+                <Clock className="size-3 text-blue-600" />
+                <span>Atalhos de 1 Clique:</span>
               </span>
               <button
                 type="button"
                 onClick={() => applyPreset("current_month_mtd")}
-                className="rounded-lg border border-blue-200 bg-white px-2 py-0.5 text-[11px] font-medium text-blue-800 hover:bg-blue-50 transition"
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
+                  startDate === "2026-10-01" && endDate === "2026-10-02"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-blue-900 border-blue-200 hover:bg-blue-50",
+                )}
               >
-                Outubro/2026 MTD (01 a 02/10)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset("last_month_full")}
-                className="rounded-lg border border-blue-200 bg-white px-2 py-0.5 text-[11px] font-medium text-blue-800 hover:bg-blue-50 transition"
-              >
-                Setembro/2026 Completo
+                ⚡ Outubro/2026 MTD (01 a 02/10)
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset("last7")}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition"
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
+                  startDate === "2026-09-26" && endDate === "2026-10-02"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                )}
               >
                 Últimos 7 dias
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset("last14")}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition"
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
+                  startDate === "2026-09-19" && endDate === "2026-10-02"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                )}
               >
                 Últimos 14 dias
               </button>
               <button
                 type="button"
+                onClick={() => applyPreset("last_month_full")}
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
+                  startDate === "2026-09-01" && endDate === "2026-09-30"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-blue-900 border-blue-200 hover:bg-blue-50",
+                )}
+              >
+                Setembro/2026 Completo
+              </button>
+              <button
+                type="button"
                 onClick={() => applyPreset("last30")}
-                className="rounded-lg border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition"
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
+                  startDate === "2026-09-03" && endDate === "2026-10-02"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                )}
               >
                 Últimos 30 dias
               </button>

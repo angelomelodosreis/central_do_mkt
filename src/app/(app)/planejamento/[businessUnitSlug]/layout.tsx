@@ -2,8 +2,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { BusinessUnitTabs, type WorkspaceTab } from "./business-unit-tabs";
+import { BuSwitcher } from "./bu-switcher";
 import { Badge } from "@/components/ui/badge";
 import { can } from "@/lib/auth/session";
+import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import { getWorkspaceCounts } from "@/lib/modules/strategy/workspace";
 
@@ -33,11 +35,20 @@ export default async function BusinessUnitLayout({
   const { unit, currentUser, isMember, seesAll } =
     await requireStrategyBusinessUnit(businessUnitSlug);
 
-  const counts = await getWorkspaceCounts(unit.id, currentUser);
+  const [counts, accessibleUnits] = await Promise.all([
+    getWorkspaceCounts(unit.id, currentUser),
+    listAccessibleBusinessUnits(currentUser),
+  ]);
   const base = `/planejamento/${unit.slug}`;
 
+  // Ordem lógica do trabalho MedCof: Diagnóstico -> Metas -> Resultados -> Acompanhamento -> Rituais -> Ativos
   const tabs: WorkspaceTab[] = [
     { href: base, label: "Visão geral" },
+    { href: `${base}/diagnostico`, label: "Diagnóstico 2.0" },
+    { href: `${base}/metas`, label: "Metas 2.0" },
+    { href: `${base}/resultados`, label: "Resultados" },
+    { href: `${base}/acompanhamento`, label: "Acompanhamento" },
+    { href: `${base}/revisao-trimestral`, label: "Revisão Trimestral" },
     {
       href: `${base}/calendario`,
       label: "Calendário",
@@ -58,20 +69,6 @@ export default async function BusinessUnitLayout({
     label: "Esteira de produtos",
     count: counts.produtos,
   });
-  // Diagnóstico vem antes de Metas de propósito: a ordem das abas é a ordem do
-  // trabalho — diagnostica, depois se compromete.
-  tabs.push({ href: `${base}/diagnostico`, label: "Diagnóstico" });
-  tabs.push({
-    href: `${base}/revisao-trimestral`,
-    label: "Revisão Trimestral",
-  });
-  tabs.push({ href: `${base}/metas`, label: "Metas" });
-  // Resultados fecha o ciclo do trabalho: diagnostica, se compromete, executa e
-  // presta conta. É a única aba onde se digita número realizado.
-  tabs.push({ href: `${base}/resultados`, label: "Resultados" });
-  // Acompanhamento fecha o ciclo: é onde o número vira conversa, a conversa
-  // vira decisão e a decisão vira tarefa de alguém.
-  tabs.push({ href: `${base}/acompanhamento`, label: "Acompanhamento" });
 
   if (can(currentUser, "documentation")) {
     tabs.push({
@@ -84,13 +81,22 @@ export default async function BusinessUnitLayout({
   return (
     <>
       <div className="mb-4">
-        <Link
-          href="/planejamento"
-          className="text-xs text-slate-500 transition-colors hover:text-brand-700"
-        >
-          ← Todas as Business Units
-        </Link>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Link
+            href="/planejamento"
+            className="text-xs text-slate-500 transition-colors hover:text-brand-700 font-medium"
+          >
+            ← Todas as Business Units
+          </Link>
+          <BuSwitcher
+            currentSlug={unit.slug}
+            units={accessibleUnits.map((u) => ({
+              slug: u.slug,
+              label: u.label,
+            }))}
+          />
+        </div>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900">
             {unit.label}
           </h1>

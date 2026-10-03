@@ -15,7 +15,7 @@ import {
   CircleDollarSign,
   Compass,
   PieChart as PieIcon,
-  Sparkles,
+  Zap,
 } from "lucide-react";
 import type {
   DayOfWeekStat,
@@ -64,7 +64,7 @@ export function MarketingDiagnostics({
         {/* Insight em destaque */}
         {bestDay && (
           <div className="mt-3 flex items-start gap-2 rounded-xl bg-blue-50/70 p-3 text-xs text-blue-950 border border-blue-100/60">
-            <Sparkles className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
+            <Zap className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
             <p className="leading-relaxed">
               <strong>Pico de Conversão:</strong> O melhor dia em receita é{" "}
               <strong>{bestDay.dayName}</strong> ({formatCurrency(bestDay.revenue)} -{" "}

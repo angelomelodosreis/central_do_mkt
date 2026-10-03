@@ -20,7 +20,6 @@ import {
   Plus,
   Trash2,
   Edit2,
-  Sparkles,
   Link as LinkIcon,
   Target,
   BarChart3,
@@ -72,7 +71,7 @@ export function KpiGoalsTable({
                 <input type="hidden" name="businessUnitId" value={businessUnitId} />
                 <input type="hidden" name="cycleId" value={cycleId} />
                 <Button type="submit" variant="secondary" size="sm">
-                  <Sparkles className="size-3.5 text-brand-600 mr-1.5" />
+                  <Target className="size-3.5 text-brand-600 mr-1.5" />
                   Carregar Metas Recomendadas
                 </Button>
               </form>

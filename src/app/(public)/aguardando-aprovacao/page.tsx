@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Clock, ShieldCheck, Sparkles, Building2 } from "lucide-react";
+import { Clock, ShieldCheck, Building2 } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { SignOutButton } from "@/components/layout/sign-out-button";

@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { DollarSign, ShoppingBag, Sparkles, TrendingUp } from "lucide-react";
+import { DollarSign, ShoppingBag, TrendingUp, Activity } from "lucide-react";
 
 export type MonthlyPoint = {
   monthKey: string;
@@ -105,7 +105,7 @@ export function OverviewChart({
         <div>
           <div className="flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-lg bg-brand-500/20 text-brand-300 ring-1 ring-brand-500/30">
-              <Sparkles className="size-3.5 text-brand-300" />
+              <Activity className="size-3.5 text-brand-300" />
             </span>
             <h3 className="font-display text-lg font-semibold tracking-tight text-white sm:text-xl">
               Tração Consolidada · Vendas & Projeções

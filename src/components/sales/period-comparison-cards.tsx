@@ -4,6 +4,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   DollarSign,
+  HelpCircle,
+  Info,
   Layers,
   Scale,
   ShoppingBag,
@@ -22,6 +24,40 @@ function formatCurrency(val: number): string {
 function formatPercent(val: number): string {
   const prefix = val > 0 ? "+" : "";
   return `${prefix}${val.toFixed(1)}%`;
+}
+
+function MetricHelpTooltip({
+  title,
+  explanation,
+  formula,
+}: {
+  title: string;
+  explanation: string;
+  formula?: string;
+}) {
+  return (
+    <span className="group relative inline-flex items-center">
+      <span
+        tabIndex={0}
+        role="button"
+        title={`${title}: ${explanation}`}
+        aria-label={`Entenda: ${title}`}
+        className="inline-flex size-4 items-center justify-center rounded-full text-slate-400 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors cursor-help"
+      >
+        <HelpCircle className="size-3.5" />
+      </span>
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden w-64 -translate-x-1/2 flex-col rounded-xl border border-slate-700 bg-slate-900/95 p-3 text-left text-xs text-white shadow-xl backdrop-blur-md group-hover:flex group-focus-within:flex">
+        <span className="font-bold text-white">{title}</span>
+        <span className="mt-1 text-slate-300 leading-relaxed">{explanation}</span>
+        {formula && (
+          <span className="mt-2 rounded bg-slate-800 px-2 py-1 font-mono text-[10px] text-amber-300">
+            {formula}
+          </span>
+        )}
+        <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+      </span>
+    </span>
+  );
 }
 
 export function PeriodComparisonCards({
@@ -78,9 +114,16 @@ export function PeriodComparisonCards({
         {/* 1. Receita Total Comparada */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Receita MoM
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Receita MoM
+              </span>
+              <MetricHelpTooltip
+                title="Receita MoM (Month-over-Month)"
+                explanation="Variação absoluta e percentual da receita financeira entre o período atual e o período anterior de comparação."
+                formula="((Receita Atual - Receita Anterior) ÷ Receita Anterior) × 100"
+              />
+            </div>
             <div
               className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
                 isPositiveRev
@@ -123,9 +166,15 @@ export function PeriodComparisonCards({
         {/* 2. Volume de Vendas Comparado */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Volume de Alunos / Vendas
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Volume de Alunos
+              </span>
+              <MetricHelpTooltip
+                title="Volume de Alunos / Matrículas"
+                explanation="Quantidade total de alunos inscritos ou produtos vendidos no período selecionado."
+              />
+            </div>
             <div
               className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
                 isPositiveSales
@@ -169,9 +218,16 @@ export function PeriodComparisonCards({
         {/* 3. Ticket Médio Ponderado */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Ticket Médio
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Ticket Médio
+              </span>
+              <MetricHelpTooltip
+                title="Ticket Médio Ponderado"
+                explanation="Faturamento total dividido pelo total de matrículas no período analisado."
+                formula="Receita do Período ÷ Total de Vendas"
+              />
+            </div>
             <div
               className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
                 isPositiveTicket
@@ -214,9 +270,15 @@ export function PeriodComparisonCards({
         {/* 4. Ritmo Médio Diário (dV/dt do mês) */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Ritmo Diário Médio
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Ritmo Diário Médio
+              </span>
+              <MetricHelpTooltip
+                title="Ritmo Diário Médio (Pacing)"
+                explanation="Receita e volume médios por dia no período, permitindo comparar meses ou recortes de durações diferentes com precisão."
+              />
+            </div>
             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
               Pacing
             </span>
@@ -264,6 +326,11 @@ export function PeriodComparisonCards({
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
               Decomposição Matemática de Crescimento (Volume vs Preço/Mix)
             </h4>
+            <MetricHelpTooltip
+              title="Decomposição Volume vs Preço/Mix"
+              explanation="Metodologia estatística que divide o delta financeiro total em dois fatores: quanto variou por vender mais/menos unidades (Volume) e quanto variou pela mudança de preço médio/mix (Preço). A soma de ambos resulta exatamente no delta de faturamento."
+              formula="ΔReceita = Efeito Volume + Efeito Preço"
+            />
           </div>
           <span className="text-[11px] text-slate-500">
             Explica a origem da variação de faturamento de{" "}
@@ -294,7 +361,7 @@ export function PeriodComparisonCards({
             <p className="mt-1 text-[11px] text-slate-500 leading-snug">
               Variação decorrente de ter vendido {Math.abs(deltas.salesDelta)}{" "}
               alunos {deltas.salesDelta >= 0 ? "a mais" : "a menos"} ao ticket
-              anterior.
+              anterior ({formatCurrency(previousPeriod.avgTicket)}).
             </p>
           </div>
 
@@ -316,8 +383,8 @@ export function PeriodComparisonCards({
               </span>
             </div>
             <p className="mt-1 text-[11px] text-slate-500 leading-snug">
-              Variação decorrente do aumento/redução do ticket médio médio em{" "}
-              {formatCurrency(deltas.ticketDelta)} por aluno vendido.
+              Variação decorrente do aumento/redução do ticket médio em{" "}
+              {formatCurrency(deltas.ticketDelta)} por aluno sobre o volume atual ({currentPeriod.sales} vendas).
             </p>
           </div>
         </div>

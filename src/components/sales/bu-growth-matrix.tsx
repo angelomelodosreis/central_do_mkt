@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import {
+  AlertCircle,
   ArrowDownRight,
   ArrowUpRight,
+  Award,
   Building2,
+  Download,
+  Flame,
   Search,
-  Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -18,6 +21,44 @@ function formatCurrency(val: number): string {
     currency: "BRL",
     maximumFractionDigits: 0,
   }).format(val);
+}
+
+function exportBuMatrixToCsv(buData: BuComparisonStat[], curLabel: string, prevLabel: string) {
+  const headers = [
+    "Business Unit",
+    "Código",
+    `Receita (${curLabel})`,
+    `Vendas (${curLabel})`,
+    `Receita (${prevLabel})`,
+    `Vendas (${prevLabel})`,
+    "Variação R$",
+    "Crescimento %",
+    "Ticket Médio Atual",
+    "Ticket Médio Anterior",
+  ];
+
+  const rows = buData.map((b) => [
+    `"${b.buLabel.replace(/"/g, '""')}"`,
+    `"${b.buCode}"`,
+    b.currentRevenue.toFixed(2).replace(".", ","),
+    b.currentSales,
+    b.previousRevenue.toFixed(2).replace(".", ","),
+    b.previousSales,
+    b.revenueDelta.toFixed(2).replace(".", ","),
+    b.revenueGrowthPercent.toFixed(1).replace(".", ","),
+    b.currentAvgTicket.toFixed(2).replace(".", ","),
+    b.previousAvgTicket.toFixed(2).replace(".", ","),
+  ]);
+
+  const csvContent = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\r\n");
+  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `medcof_matriz_bus_${curLabel.replace(/[\/\s]/g, "_")}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 export function BuGrowthMatrix({
@@ -89,8 +130,17 @@ export function BuGrowthMatrix({
   // Identificar maior receita para normalização de barra
   const maxRevenue = Math.max(...data.map((b) => b.currentRevenue), 1);
 
+  // Top destaques analíticos
+  const topRevenueBu = [...data].sort((a, b) => b.currentRevenue - a.currentRevenue)[0];
+  const topGainerBu = [...data]
+    .filter((b) => b.currentRevenue > 0)
+    .sort((a, b) => b.revenueGrowthPercent - a.revenueGrowthPercent)[0];
+  const topDeclinerBu = [...data]
+    .filter((b) => b.revenueDelta < 0)
+    .sort((a, b) => a.revenueDelta - b.revenueDelta)[0];
+
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4">
       {/* Top Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -107,7 +157,7 @@ export function BuGrowthMatrix({
           </p>
         </div>
 
-        {/* Controles de Filtro e Busca */}
+        {/* Controles de Filtro, Busca e Exportação */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Busca */}
           <div className="relative">
@@ -159,6 +209,65 @@ export function BuGrowthMatrix({
               <span>Em Queda</span>
             </button>
           </div>
+
+          {/* Botão Exportar CSV */}
+          <button
+            type="button"
+            onClick={() => exportBuMatrixToCsv(data, currentLabel, previousLabel)}
+            title="Exportar dados das 23 BUs para CSV (Excel)"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-brand-600 transition"
+          >
+            <Download className="size-3.5 text-slate-500" />
+            <span>Exportar CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3 Cartões de Síntese Rápida dos Destaques */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Top 1 Receita */}
+        <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 shadow-2xs">
+          <div className="flex items-center justify-between text-blue-900">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Top Faturamento</span>
+            <Award className="size-3.5 text-blue-600" />
+          </div>
+          <p className="mt-1 font-bold text-sm text-slate-900 truncate">
+            {topRevenueBu ? topRevenueBu.buLabel : "—"}
+          </p>
+          <p className="text-xs font-semibold text-blue-700">
+            {topRevenueBu ? formatCurrency(topRevenueBu.currentRevenue) : "—"}
+            <span className="text-[10px] text-slate-500 font-normal"> ({topRevenueBu?.currentSales ?? 0} vendas)</span>
+          </p>
+        </div>
+
+        {/* Maior Aceleração MoM */}
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 shadow-2xs">
+          <div className="flex items-center justify-between text-emerald-900">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Maior Aceleração MoM</span>
+            <TrendingUp className="size-3.5 text-emerald-600" />
+          </div>
+          <p className="mt-1 font-bold text-sm text-slate-900 truncate">
+            {topGainerBu ? topGainerBu.buLabel : "—"}
+          </p>
+          <p className="text-xs font-semibold text-emerald-700">
+            {topGainerBu ? `${topGainerBu.revenueGrowthPercent >= 0 ? "+" : ""}${topGainerBu.revenueGrowthPercent.toFixed(1)}%` : "—"}
+            <span className="text-[10px] text-slate-500 font-normal"> ({topGainerBu ? formatCurrency(topGainerBu.currentRevenue) : "—"})</span>
+          </p>
+        </div>
+
+        {/* Atenção / Maior Desaceleração */}
+        <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3 shadow-2xs">
+          <div className="flex items-center justify-between text-rose-900">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Atenção / Desaceleração</span>
+            <AlertCircle className="size-3.5 text-rose-600" />
+          </div>
+          <p className="mt-1 font-bold text-sm text-slate-900 truncate">
+            {topDeclinerBu ? topDeclinerBu.buLabel : "Nenhuma BU em queda"}
+          </p>
+          <p className="text-xs font-semibold text-rose-700">
+            {topDeclinerBu ? formatCurrency(topDeclinerBu.revenueDelta) : "—"}
+            <span className="text-[10px] text-slate-500 font-normal"> ({topDeclinerBu ? `${topDeclinerBu.revenueGrowthPercent.toFixed(1)}%` : ""})</span>
+          </p>
         </div>
       </div>
 

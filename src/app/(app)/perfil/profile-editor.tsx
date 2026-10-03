@@ -15,7 +15,6 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   User,
   Users,
 } from "lucide-react";

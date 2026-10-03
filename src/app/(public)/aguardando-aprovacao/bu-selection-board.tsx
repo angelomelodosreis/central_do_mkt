@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Check, CheckCircle2, Search, Sparkles } from "lucide-react";
+import { Check, CheckCircle2, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -255,7 +255,7 @@ export function BuSelectionBoard({
           disabled={isPending || selectedIds.length === 0}
           className="gap-2 bg-brand-600 font-medium text-white shadow-xs hover:bg-brand-700"
         >
-          <Sparkles className="size-4" />
+          <CheckCircle2 className="size-4" />
           {isPending
             ? "Gravando solicitação..."
             : initialRequestedIds.length > 0

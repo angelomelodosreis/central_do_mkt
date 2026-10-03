@@ -11,7 +11,6 @@ import {
   Layers,
   LineChart,
   RefreshCw,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -398,7 +397,7 @@ export function SalesRealtimeView({
         <div className="space-y-6">
           <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5 text-xs text-emerald-950">
             <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-emerald-600" />
+              <Compass className="size-4 text-emerald-600" />
               <span className="font-bold">
                 Inteligência Acionável de Mídia & Otimização de Tráfego
               </span>

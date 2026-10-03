@@ -11,7 +11,7 @@ import {
   HelpCircle,
   ChevronRight,
   ChevronDown,
-  Sparkles,
+  Layers,
   Search,
   ExternalLink,
   Plus,
@@ -405,7 +405,7 @@ export function GovernanceMatrix({ data }: { data: GovernanceMatrixData }) {
                                           title="Acesso herdado em cascata da Divisão ou Organização."
                                           className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700"
                                         >
-                                          <Sparkles className="size-3" />
+                                          <Layers className="size-3" />
                                           Cascata
                                         </span>
                                       ) : isLead ? (

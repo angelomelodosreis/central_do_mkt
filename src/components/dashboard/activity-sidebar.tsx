@@ -199,26 +199,47 @@ export function ActivitySidebar({
         </div>
 
         <ul className="mt-3 space-y-2 text-xs">
-          <li className="flex items-start gap-2.5 rounded-xl bg-white/90 p-2.5 shadow-2xs border border-brand-100/50">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
-            <div className="leading-snug">
-              <strong className="text-slate-900 font-semibold">6 Meses:</strong>{" "}
-              <span className="text-slate-700">Diagnóstico 2.0 & Metas 2.0</span>
-            </div>
+          <li>
+            <Link
+              href="/planejamento"
+              className="group flex items-start gap-2.5 rounded-xl bg-white/90 p-2.5 shadow-2xs border border-brand-100/50 hover:border-brand-300 hover:bg-brand-50/50 transition"
+              title="Abrir Diagnóstico e Metas 2.0 das Business Units"
+            >
+              <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
+              <div className="leading-snug min-w-0 flex-1">
+                <strong className="text-slate-900 font-semibold group-hover:text-brand-900">6 Meses:</strong>{" "}
+                <span className="text-slate-700">Diagnóstico 2.0 & Metas 2.0</span>
+              </div>
+              <ChevronRight className="size-3.5 text-slate-400 group-hover:text-brand-600 group-hover:translate-x-0.5 transition-transform shrink-0 mt-0.5" />
+            </Link>
           </li>
-          <li className="flex items-start gap-2.5 rounded-xl bg-white/90 p-2.5 shadow-2xs border border-brand-100/50">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
-            <div className="leading-snug">
-              <strong className="text-slate-900 font-semibold">3 Meses:</strong>{" "}
-              <span className="text-slate-700">Revisão Trimestral (7 perguntas)</span>
-            </div>
+          <li>
+            <Link
+              href="/planejamento/revisoes"
+              className="group flex items-start gap-2.5 rounded-xl bg-white/90 p-2.5 shadow-2xs border border-brand-100/50 hover:border-brand-300 hover:bg-brand-50/50 transition"
+              title="Abrir Revisões e Pautas Trimestrais"
+            >
+              <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
+              <div className="leading-snug min-w-0 flex-1">
+                <strong className="text-slate-900 font-semibold group-hover:text-brand-900">3 Meses:</strong>{" "}
+                <span className="text-slate-700">Revisão Trimestral (7 perguntas)</span>
+              </div>
+              <ChevronRight className="size-3.5 text-slate-400 group-hover:text-brand-600 group-hover:translate-x-0.5 transition-transform shrink-0 mt-0.5" />
+            </Link>
           </li>
-          <li className="flex items-start gap-2.5 rounded-xl bg-white/90 p-2.5 shadow-2xs border border-brand-100/50">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
-            <div className="leading-snug">
-              <strong className="text-slate-900 font-semibold">Semanal:</strong>{" "}
-              <span className="text-slate-700">Weekly & Acompanhamento ao vivo</span>
-            </div>
+          <li>
+            <Link
+              href="/planejamento/revisoes"
+              className="group flex items-start gap-2.5 rounded-xl bg-white/90 p-2.5 shadow-2xs border border-brand-100/50 hover:border-brand-300 hover:bg-brand-50/50 transition"
+              title="Abrir Feed de Acompanhamento Semanal Slack Canvas"
+            >
+              <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-brand-600" />
+              <div className="leading-snug min-w-0 flex-1">
+                <strong className="text-slate-900 font-semibold group-hover:text-brand-900">Semanal:</strong>{" "}
+                <span className="text-slate-700">Weekly & Acompanhamento ao vivo</span>
+              </div>
+              <ChevronRight className="size-3.5 text-slate-400 group-hover:text-brand-600 group-hover:translate-x-0.5 transition-transform shrink-0 mt-0.5" />
+            </Link>
           </li>
         </ul>
       </div>
