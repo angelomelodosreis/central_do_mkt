@@ -18,8 +18,8 @@ export const DEFAULT_GID = "1830309116";
 export const DEFAULT_LIVE_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRHbUHQxiRh3LiC8tKGpAPkhBRfcxkKucIYCXFuxmCRP9oX9LCxXTeQOhPt0eqAvF4kXNXvQATwvFJ/pub?output=csv";
 
-import { BU_CATALOG, resolveBuFromText } from "./bu-catalog";
-export { BU_CATALOG, resolveBuFromText } from "./bu-catalog";
+import { BU_CATALOG, resolveBuFromText, normalizeBuCode, normalizeBuCodes } from "./bu-catalog";
+export { BU_CATALOG, resolveBuFromText, normalizeBuCode, normalizeBuCodes } from "./bu-catalog";
 export type { MedcofBuDef } from "./bu-catalog";
 
 
@@ -644,14 +644,17 @@ export async function getLiveSalesAnalytics(options: {
   });
 }
 
-let memoryCachedDashboard: {
-  timestamp: number;
-  data: {
-    liveSales: SalesAnalyticsResult;
-    projections: SalesProjections;
-    monthlyHistory: MonthlyAggregatePoint[];
-  };
-} | null = null;
+let memoryCachedDashboard = new Map<
+  string,
+  {
+    timestamp: number;
+    data: {
+      liveSales: SalesAnalyticsResult;
+      projections: SalesProjections;
+      monthlyHistory: MonthlyAggregatePoint[];
+    };
+  }
+>();
 
 let memoryCachedComparative: {
   timestamp: number;
@@ -744,26 +747,45 @@ const getCachedDashboardData = unstable_cache(
 );
 
 export async function getLiveDashboardData(options?: {
+  targetBuCode?: string | string[];
+  targetBuCodes?: string[];
   forceRefresh?: boolean;
 }): Promise<{
   liveSales: SalesAnalyticsResult;
   projections: SalesProjections;
   monthlyHistory: MonthlyAggregatePoint[];
 }> {
+  const rawCodes =
+    options?.targetBuCodes ??
+    (options?.targetBuCode
+      ? Array.isArray(options.targetBuCode)
+        ? options.targetBuCode
+        : [options.targetBuCode]
+      : undefined);
+  const isExplicitFilter = rawCodes !== undefined;
+  const normCodes = normalizeBuCodes(rawCodes);
+  const cacheKey = isExplicitFilter
+    ? normCodes.length > 0
+      ? normCodes.slice().sort().join(",")
+      : "__NONE__"
+    : "all";
+
   const now = Date.now();
+  const cachedEntry = memoryCachedDashboard.get(cacheKey);
   if (
     !options?.forceRefresh &&
-    memoryCachedDashboard &&
-    now - memoryCachedDashboard.timestamp < CACHE_TTL_MS
+    cachedEntry &&
+    now - cachedEntry.timestamp < CACHE_TTL_MS
   ) {
-    return memoryCachedDashboard.data;
+    return cachedEntry.data;
   }
 
-  if (!options?.forceRefresh) {
+  // Se for consulta padrão de todas as BUs sem forceRefresh, tenta o cache unificado do Next
+  if (!options?.forceRefresh && !isExplicitFilter) {
     try {
       const cached = await getCachedDashboardData();
       if (cached) {
-        memoryCachedDashboard = { timestamp: now, data: cached };
+        memoryCachedDashboard.set(cacheKey, { timestamp: now, data: cached });
         return cached;
       }
     } catch {
@@ -777,13 +799,31 @@ export async function getLiveDashboardData(options?: {
     undefined,
     { forceRefresh: options?.forceRefresh },
   );
-  const liveSales = calculateSalesAnalytics(transactions, {
+
+  let filteredTransactions = transactions;
+  if (isExplicitFilter) {
+    if (normCodes.length === 0) {
+      filteredTransactions = [];
+    } else {
+      const targetSet = new Set(normCodes.map((c) => c.toUpperCase()));
+      filteredTransactions = transactions.filter((t) => {
+        const normalizedTxCode = normalizeBuCode(t.businessUnitCode);
+        return (
+          (normalizedTxCode && targetSet.has(normalizedTxCode)) ||
+          targetSet.has((t.businessUnitCode || "").toUpperCase())
+        );
+      });
+    }
+  }
+
+  const liveSales = calculateSalesAnalytics(filteredTransactions, {
+    ...options,
     dataSourceType: sourceType,
   });
-  const projections = calculateProjections(transactions);
-  const monthlyHistory = getMonthlyAggregations(transactions);
+  const projections = calculateProjections(filteredTransactions);
+  const monthlyHistory = getMonthlyAggregations(filteredTransactions);
   const result = { liveSales, projections, monthlyHistory };
-  memoryCachedDashboard = { timestamp: now, data: result };
+  memoryCachedDashboard.set(cacheKey, { timestamp: now, data: result });
   return result;
 }
 

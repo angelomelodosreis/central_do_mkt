@@ -64,7 +64,14 @@ export function resolveBuFromText(text: string): { code: string; label: string }
 export function normalizeBuCode(input?: string | null): string | null {
   if (!input) return null;
   const clean = input.trim();
-  if (!clean || clean.toUpperCase() === "ALL") return null;
+  if (
+    !clean ||
+    clean.toUpperCase() === "ALL" ||
+    clean.toUpperCase() === "NONE" ||
+    clean === "__NONE__"
+  ) {
+    return null;
+  }
 
   // 1. Se já for código canônico MEDCOF_*
   const upper = clean.toUpperCase();

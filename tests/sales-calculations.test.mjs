@@ -6,7 +6,11 @@ import {
   getAvailableMonths,
   formatMonthYearLabel,
 } from "../src/lib/modules/sales/calculations.ts";
-import { BU_CATALOG } from "../src/lib/modules/sales/bu-catalog.ts";
+import {
+  BU_CATALOG,
+  normalizeBuCode,
+  normalizeBuCodes,
+} from "../src/lib/modules/sales/bu-catalog.ts";
 
 describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
   const mockTransactions = [
@@ -237,5 +241,25 @@ describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
     assert.ok(codes.has("MEDCOF_USA"));
     assert.ok(codes.has("MEDCOF_INTERNATO"));
     assert.ok(codes.has("MEDCOF_CONCURSUS"));
+  });
+
+  test("Normalização e filtragem por escopo de BUs do usuário", () => {
+    // Normalização unitária
+    assert.equal(normalizeBuCode("clinica_medica"), "MEDCOF_CLINICA_MEDICA");
+    assert.equal(normalizeBuCode("bu_cardiologia"), "MEDCOF_CARDIOLOGIA");
+    assert.equal(normalizeBuCode("all"), null);
+    assert.equal(normalizeBuCode("none"), null);
+    assert.equal(normalizeBuCode("__NONE__"), null);
+
+    // Normalização múltipla de lista
+    const normalizedList = normalizeBuCodes(["clinica-medica", "cardiologia", "bu_dermatologia"]);
+    assert.deepEqual(normalizedList.sort(), [
+      "MEDCOF_CARDIOLOGIA",
+      "MEDCOF_CLINICA_MEDICA",
+      "MEDCOF_DERMATOLOGIA",
+    ]);
+
+    // Lista com "__NONE__" retorna vazio para escopo sem BUs
+    assert.deepEqual(normalizeBuCodes(["__NONE__"]), []);
   });
 });

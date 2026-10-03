@@ -16,9 +16,10 @@ import { can, canManageUsers, requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import { MODULE_LABELS, user } from "@/lib/db/schema";
 import { describePositions } from "@/lib/modules/org/people";
-import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
+import { listAccessibleBusinessUnits, seesAllBusinessUnits } from "@/lib/modules/org/scope";
 import { listMyTasks, relationFor } from "@/lib/modules/tasks/queries";
 import { getLiveDashboardData } from "@/lib/modules/sales/google-sheets-client";
+import { DashboardBuFilter } from "@/components/sales/dashboard-bu-filter";
 import { formatCurrency, formatCompactCurrency } from "@/lib/utils/format";
 import { plural } from "@/lib/utils/text";
 
@@ -78,9 +79,13 @@ function OverviewChartSkeleton() {
   );
 }
 
-async function AsyncForecastBadge() {
+async function AsyncForecastBadge({
+  targetBuCodes,
+}: {
+  targetBuCodes?: string[];
+}) {
   try {
-    const dashboardSales = await getLiveDashboardData();
+    const dashboardSales = await getLiveDashboardData({ targetBuCodes });
     const projectedFormatted = formatCompactCurrency(
       dashboardSales.projections.projectedMonthEndRevenue,
     );
@@ -111,8 +116,12 @@ async function AsyncForecastBadge() {
   }
 }
 
-async function AsyncProjectionsSection() {
-  const dashboardSales = await getLiveDashboardData();
+async function AsyncProjectionsSection({
+  targetBuCodes,
+}: {
+  targetBuCodes?: string[];
+}) {
+  const dashboardSales = await getLiveDashboardData({ targetBuCodes });
   return (
     <ProjectionsBanner
       projections={dashboardSales.projections}
@@ -123,8 +132,12 @@ async function AsyncProjectionsSection() {
   );
 }
 
-async function AsyncOverviewChartSection() {
-  const dashboardSales = await getLiveDashboardData();
+async function AsyncOverviewChartSection({
+  targetBuCodes,
+}: {
+  targetBuCodes?: string[];
+}) {
+  const dashboardSales = await getLiveDashboardData({ targetBuCodes });
   const totalRevenueFormatted = formatCompactCurrency(
     dashboardSales.liveSales.summary.totalRevenue,
   );
@@ -149,10 +162,10 @@ async function AsyncOverviewChartSection() {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string; modulo?: string }>;
+  searchParams: Promise<{ erro?: string; modulo?: string; bu?: string }>;
 }) {
   const currentUser = await requireUser();
-  const { erro, modulo } = await searchParams;
+  const { erro, modulo, bu } = await searchParams;
 
   const db = await getDb();
 
@@ -188,15 +201,44 @@ export default async function DashboardPage({
     (item) => item.dueDate && item.dueDate.getTime() < Date.now(),
   ).length;
 
+  const isMaster = seesAllBusinessUnits(currentUser);
+
+  // Determina o escopo de BUs para as métricas financeiras de vendas
+  let effectiveBuCodes: string[] | undefined = undefined;
+  let activeBuParam: string | null = null;
+
+  if (bu && bu !== "all") {
+    // Se o usuário selecionou uma BU específica no filtro
+    const matched = minhasBus.find((u) => u.id === bu || u.slug === bu);
+    if (isMaster || matched) {
+      effectiveBuCodes = [matched?.slug || matched?.id || bu];
+      activeBuParam = matched?.id || matched?.slug || bu;
+    } else {
+      // Tentativa de acessar BU fora do escopo: recua para suas BUs autorizadas
+      effectiveBuCodes = minhasBus.length > 0 ? minhasBus.map((u) => u.slug || u.id) : ["__NONE__"];
+    }
+  } else if (!isMaster) {
+    // Usuário não-master sem filtro explícito: limita por padrão apenas às suas BUs atribuídas
+    effectiveBuCodes = minhasBus.length > 0 ? minhasBus.map((u) => u.slug || u.id) : ["__NONE__"];
+  } else {
+    // Master visualiza todas as 23 BUs consolidadas por padrão
+    effectiveBuCodes = undefined;
+  }
+
   const bus = minhasBus.filter((unit) => unit.isMember);
   const buParaMostrar = bus.length > 0 ? bus : minhasBus;
-  const primaryBuSlug = buParaMostrar[0]?.slug ?? null;
+  const selectedUnit = activeBuParam
+    ? minhasBus.find((u) => u.id === activeBuParam || u.slug === activeBuParam)
+    : null;
+  const primaryBuSlug = selectedUnit?.slug ?? buParaMostrar[0]?.slug ?? null;
 
   const firstName = currentUser.name.split(" ")[0] || currentUser.name;
   const deniedModuleLabel =
     modulo && modulo in MODULE_LABELS
       ? MODULE_LABELS[modulo as keyof typeof MODULE_LABELS]
       : null;
+
+  const scopeKey = activeBuParam || (isMaster ? "all" : "scope");
 
   return (
     <div className="space-y-6">
@@ -230,6 +272,7 @@ export default async function DashboardPage({
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Badge de Projeção Rápida com Streaming */}
           <Suspense
+            key={`badge_${scopeKey}`}
             fallback={
               <Link
                 href="/panorama"
@@ -241,7 +284,7 @@ export default async function DashboardPage({
               </Link>
             }
           >
-            <AsyncForecastBadge />
+            <AsyncForecastBadge targetBuCodes={effectiveBuCodes} />
           </Suspense>
 
           {pendingUsers > 0 && (
@@ -286,18 +329,25 @@ export default async function DashboardPage({
         </div>
       )}
 
+      {/* Seletor e Filtro de Business Units para escopo de Métricas */}
+      <DashboardBuFilter
+        accessibleUnits={minhasBus}
+        activeBuCode={activeBuParam}
+        isMaster={isMaster}
+      />
+
       {/* Grid Principal do Dashboard: Área Central + Sidebar Direita */}
       <div className="grid gap-6 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_340px]">
         {/* Coluna Esquerda: Projeções + Overview Chart Full Width + Cockpits + Tarefas */}
         <div className="space-y-6 min-w-0">
           {/* Linha 1: Radar de Projeções e Forecast do Mês via Suspense Streaming */}
-          <Suspense fallback={<ProjectionsBannerSkeleton />}>
-            <AsyncProjectionsSection />
+          <Suspense key={`proj_${scopeKey}`} fallback={<ProjectionsBannerSkeleton />}>
+            <AsyncProjectionsSection targetBuCodes={effectiveBuCodes} />
           </Suspense>
 
           {/* Linha 2: Tração Consolidada · Vendas & Projeções via Suspense Streaming */}
-          <Suspense fallback={<OverviewChartSkeleton />}>
-            <AsyncOverviewChartSection />
+          <Suspense key={`chart_${scopeKey}`} fallback={<OverviewChartSkeleton />}>
+            <AsyncOverviewChartSection targetBuCodes={effectiveBuCodes} />
           </Suspense>
 
           {/* Linha 3: Os 4 Cockpits Estratégicos da Central do Marketing (renderização imediata) */}
@@ -306,7 +356,13 @@ export default async function DashboardPage({
             delayedCount={atrasadas}
             primaryBuSlug={primaryBuSlug}
             salesCount={51600}
-            busCount={minhasBus.length || 23}
+            busCount={
+              activeBuParam
+                ? 1
+                : isMaster
+                  ? 23
+                  : minhasBus.length || 1
+            }
           />
 
           {/* Linha 4: Minhas Tarefas Recentes em Card Nativo */}
