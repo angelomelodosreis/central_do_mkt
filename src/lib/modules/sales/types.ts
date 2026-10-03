@@ -79,16 +79,19 @@ export type SalesAnalyticsResult = {
 export type DayByDayPoint = {
   day: number; // 1 a 31
   dayLabel: string; // "Dia 01", "Dia 02"
-  currentRevenue: number;
-  previousRevenue: number;
-  currentCumulativeRevenue: number;
-  previousCumulativeRevenue: number;
-  currentSales: number;
-  previousSales: number;
-  currentCumulativeSales: number;
-  previousCumulativeSales: number;
-  currentAvgTicket: number;
-  previousAvgTicket: number;
+  currentRevenue: number | null; // null para dias futuros do período em aberto
+  previousRevenue: number | null;
+  currentCumulativeRevenue: number | null; // null para dias futuros do período em aberto
+  previousCumulativeRevenue: number | null;
+  currentSales: number | null;
+  previousSales: number | null;
+  currentCumulativeSales: number | null;
+  previousCumulativeSales: number | null;
+  currentAvgTicket: number | null;
+  previousAvgTicket: number | null;
+  isCurrentFuture?: boolean; // indica se o dia ainda não decorreu no mês atual
+  projectedRevenue?: number | null; // projeção run-rate diária
+  projectedCumulativeRevenue?: number | null; // projeção acumulada do mês
 };
 
 export type BuComparisonStat = {
@@ -104,6 +107,13 @@ export type BuComparisonStat = {
   salesGrowthPercent: number;
   currentAvgTicket: number;
   previousAvgTicket: number;
+  // Comparativo Homólogo MTD (mesmos dias decorridos)
+  previousSameDaysRevenue?: number;
+  previousSameDaysSales?: number;
+  homologousRevenueDelta?: number;
+  homologousRevenueGrowthPercent?: number;
+  homologousSalesDelta?: number;
+  homologousSalesGrowthPercent?: number;
 };
 
 export type DayOfWeekStat = {
@@ -132,6 +142,8 @@ export type ComparativeAnalysisResult = {
     sales: number;
     avgTicket: number;
     daysCount: number;
+    daysElapsed: number;
+    isCurrentPeriodInProgress: boolean;
   };
   previousPeriod: {
     key: string; // "2026-09"
@@ -140,6 +152,8 @@ export type ComparativeAnalysisResult = {
     sales: number;
     avgTicket: number;
     daysCount: number;
+    sameDaysRevenue?: number;
+    sameDaysSales?: number;
   };
   deltas: {
     revenueDelta: number;
@@ -156,9 +170,25 @@ export type ComparativeAnalysisResult = {
       daysElapsed: number;
       currentRevenue: number;
       currentSales: number;
+      currentAvgTicket: number;
       previousPeriodSameDaysRevenue: number;
       previousPeriodSameDaysSales: number;
+      previousPeriodSameDaysAvgTicket: number;
+      revenueDelta: number;
       revenueGrowthPercent: number;
+      salesDelta: number;
+      salesGrowthPercent: number;
+      ticketDelta: number;
+      ticketGrowthPercent: number;
+    };
+    /** Comparativo Projetado Run-Rate (Fechamento do Mês Atual vs Total do Anterior) */
+    projectedComparison?: {
+      projectedRevenue: number;
+      projectedSales: number;
+      projectedAvgTicket: number;
+      revenueDelta: number;
+      revenueGrowthPercent: number;
+      salesDelta: number;
       salesGrowthPercent: number;
     };
   };

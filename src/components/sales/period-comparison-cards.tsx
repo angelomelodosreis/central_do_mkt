@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -66,62 +67,196 @@ export function PeriodComparisonCards({
   comparative: ComparativeAnalysisResult;
 }) {
   const { currentPeriod, previousPeriod, deltas } = comparative;
+  const isInProgress = Boolean(currentPeriod.isCurrentPeriodInProgress);
+  const mtd = deltas.mtdComparison;
+  const proj = deltas.projectedComparison;
 
-  const isPositiveRev = deltas.revenueGrowthPercent >= 0;
-  const isPositiveSales = deltas.salesGrowthPercent >= 0;
-  const isPositiveTicket = deltas.ticketGrowthPercent >= 0;
+  // Modo padrão: homólogo se o mês estiver em aberto (evita distorções de comparar 3 dias com 30 dias)
+  const [mode, setMode] = useState<"homologous" | "projection" | "closed">(
+    isInProgress && mtd ? "homologous" : "closed",
+  );
+
+  // Valores ativos conforme o modo selecionado
+  const activeRev =
+    mode === "homologous" && mtd
+      ? mtd.currentRevenue
+      : mode === "projection" && proj
+        ? proj.projectedRevenue
+        : currentPeriod.revenue;
+
+  const activePrevRev =
+    mode === "homologous" && mtd
+      ? mtd.previousPeriodSameDaysRevenue
+      : previousPeriod.revenue;
+
+  const activeRevDelta =
+    mode === "homologous" && mtd
+      ? mtd.revenueDelta
+      : mode === "projection" && proj
+        ? proj.revenueDelta
+        : deltas.revenueDelta;
+
+  const activeRevGrowth =
+    mode === "homologous" && mtd
+      ? mtd.revenueGrowthPercent
+      : mode === "projection" && proj
+        ? proj.revenueGrowthPercent
+        : deltas.revenueGrowthPercent;
+
+  const activeSales =
+    mode === "homologous" && mtd
+      ? mtd.currentSales
+      : mode === "projection" && proj
+        ? proj.projectedSales
+        : currentPeriod.sales;
+
+  const activePrevSales =
+    mode === "homologous" && mtd
+      ? mtd.previousPeriodSameDaysSales
+      : previousPeriod.sales;
+
+  const activeSalesDelta =
+    mode === "homologous" && mtd
+      ? mtd.salesDelta
+      : mode === "projection" && proj
+        ? proj.salesDelta
+        : deltas.salesDelta;
+
+  const activeSalesGrowth =
+    mode === "homologous" && mtd
+      ? mtd.salesGrowthPercent
+      : mode === "projection" && proj
+        ? proj.salesGrowthPercent
+        : deltas.salesGrowthPercent;
+
+  const activeTicket =
+    mode === "homologous" && mtd
+      ? mtd.currentAvgTicket
+      : mode === "projection" && proj
+        ? proj.projectedAvgTicket
+        : currentPeriod.avgTicket;
+
+  const activePrevTicket =
+    mode === "homologous" && mtd
+      ? mtd.previousPeriodSameDaysAvgTicket
+      : previousPeriod.avgTicket;
+
+  const activeTicketDelta =
+    mode === "homologous" && mtd
+      ? mtd.ticketDelta
+      : deltas.ticketDelta;
+
+  const activeTicketGrowth =
+    mode === "homologous" && mtd
+      ? mtd.ticketGrowthPercent
+      : deltas.ticketGrowthPercent;
+
+  const isPositiveRev = activeRevGrowth >= 0;
+  const isPositiveSales = activeSalesGrowth >= 0;
+  const isPositiveTicket = activeTicketGrowth >= 0;
+
+  // Dias efetivos para cálculo de velocidade diária
+  const effectiveCurrentDays = isInProgress && currentPeriod.daysElapsed > 0
+    ? currentPeriod.daysElapsed
+    : currentPeriod.daysCount > 0
+      ? currentPeriod.daysCount
+      : 1;
+
+  const dailyCurrentRev = currentPeriod.revenue / effectiveCurrentDays;
+  const dailyCurrentSales = currentPeriod.sales / effectiveCurrentDays;
+  const dailyPrevRev = previousPeriod.daysCount > 0 ? previousPeriod.revenue / previousPeriod.daysCount : 0;
+  const dailyPrevSales = previousPeriod.daysCount > 0 ? previousPeriod.sales / previousPeriod.daysCount : 0;
 
   return (
     <div className="space-y-4">
-      {deltas.mtdComparison && deltas.mtdComparison.daysElapsed < currentPeriod.daysCount && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-2.5 text-xs text-blue-900 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <span className="inline-block size-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="font-semibold">
-              Mês em curso ({deltas.mtdComparison.daysElapsed} de {currentPeriod.daysCount} dias decorridos):
-            </span>
-            <span className="text-blue-700">
-              Pacing homólogo até o Dia {String(deltas.mtdComparison.daysElapsed).padStart(2, "0")}:
-            </span>
+      {/* Barra de Seleção de Modo Comparativo (quando o mês estiver em aberto) */}
+      {isInProgress && mtd && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-50/90 via-white to-blue-50/70 p-3.5 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-2.5 rounded-full bg-blue-600 animate-pulse" />
+            <div>
+              <p className="text-xs font-bold text-slate-900">
+                Mês em Curso: Dia {String(currentPeriod.daysElapsed).padStart(2, "0")} de {currentPeriod.daysCount} decorridos
+              </p>
+              <p className="text-[11px] text-slate-500">
+                Escolha a metodologia para comparar períodos com durações diferentes sem distorções:
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 font-medium">
-            <span>
-              Receita MTD:{" "}
-              <strong className={deltas.mtdComparison.revenueGrowthPercent >= 0 ? "text-emerald-700" : "text-rose-700"}>
-                {deltas.mtdComparison.revenueGrowthPercent >= 0 ? "+" : ""}
-                {deltas.mtdComparison.revenueGrowthPercent.toFixed(1)}%
-              </strong>{" "}
-              <span className="text-[11px] text-blue-600">
-                ({formatCurrency(deltas.mtdComparison.currentRevenue)} vs {formatCurrency(deltas.mtdComparison.previousPeriodSameDaysRevenue)})
+
+          <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1 text-xs shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setMode("homologous")}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold transition ${
+                mode === "homologous"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`}
+            >
+              <span>Homólogo MTD (Dia 01 a {String(currentPeriod.daysElapsed).padStart(2, "0")})</span>
+              <span className={`rounded-full px-1.5 py-0.2 text-[9px] uppercase font-bold ${mode === "homologous" ? "bg-blue-700 text-white" : "bg-blue-100 text-blue-800"}`}>
+                Justo
               </span>
-            </span>
-            <span className="hidden sm:inline text-blue-300">•</span>
-            <span>
-              Volume MTD:{" "}
-              <strong className={deltas.mtdComparison.salesGrowthPercent >= 0 ? "text-emerald-700" : "text-rose-700"}>
-                {deltas.mtdComparison.salesGrowthPercent >= 0 ? "+" : ""}
-                {deltas.mtdComparison.salesGrowthPercent.toFixed(1)}%
-              </strong>{" "}
-              <span className="text-[11px] text-blue-600">
-                ({deltas.mtdComparison.currentSales} vs {deltas.mtdComparison.previousPeriodSameDaysSales} vendas)
-              </span>
-            </span>
+            </button>
+
+            {proj && (
+              <button
+                type="button"
+                onClick={() => setMode("projection")}
+                className={`rounded-lg px-2.5 py-1 font-medium transition ${
+                  mode === "projection"
+                    ? "bg-blue-600 text-white shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                Projeção Run-Rate
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setMode("closed")}
+              className={`rounded-lg px-2.5 py-1 font-medium transition ${
+                mode === "closed"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`}
+            >
+              Realizado Bruto
+            </button>
           </div>
         </div>
       )}
 
+      {/* Grid de 4 KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* 1. Receita Total Comparada */}
+        {/* 1. Receita */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Receita MoM
+                {mode === "homologous"
+                  ? `Receita MTD (D01 a D${String(currentPeriod.daysElapsed).padStart(2, "0")})`
+                  : mode === "projection"
+                    ? "Fechamento Projetado"
+                    : "Receita MoM"}
               </span>
               <MetricHelpTooltip
-                title="Receita MoM (Month-over-Month)"
-                explanation="Variação absoluta e percentual da receita financeira entre o período atual e o período anterior de comparação."
-                formula="((Receita Atual - Receita Anterior) ÷ Receita Anterior) × 100"
+                title={
+                  mode === "homologous"
+                    ? "Receita Homóloga MTD"
+                    : mode === "projection"
+                      ? "Fechamento Projetado (Run-Rate)"
+                      : "Receita MoM (Month-over-Month)"
+                }
+                explanation={
+                  mode === "homologous"
+                    ? `Compara o faturamento de ${currentPeriod.label} até o dia ${currentPeriod.daysElapsed} contra exatamente o mesmo intervalo de dias no mês anterior.`
+                    : mode === "projection"
+                      ? "Extrapolação estatística do mês baseada no ritmo diário atual multiplicado pelos 31 dias."
+                      : "Faturamento bruto acumulado de cada período."
+                }
               />
             </div>
             <div
@@ -136,42 +271,50 @@ export function PeriodComparisonCards({
               ) : (
                 <ArrowDownRight className="size-3.5" />
               )}
-              <span>{formatPercent(deltas.revenueGrowthPercent)}</span>
+              <span>{formatPercent(activeRevGrowth)}</span>
             </div>
           </div>
 
           <div className="mt-2">
             <div className="text-2xl font-bold tracking-tight text-slate-900">
-              {formatCurrency(currentPeriod.revenue)}
+              {formatCurrency(activeRev)}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
-              <span className="truncate max-w-[130px]" title={currentPeriod.label}>{currentPeriod.label}:</span>
+              <span className="truncate max-w-[130px]" title={currentPeriod.label}>
+                {mode === "projection" ? "Projeção Mês:" : `${currentPeriod.label}:`}
+              </span>
               <span className="font-semibold text-slate-700 shrink-0">
-                {formatCurrency(currentPeriod.revenue)}
+                {formatCurrency(activeRev)}
               </span>
             </div>
             <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
-              <span className="truncate max-w-[110px]" title={previousPeriod.label}>{previousPeriod.label}:</span>
+              <span className="truncate max-w-[110px]" title={previousPeriod.label}>
+                {mode === "homologous" ? `${previousPeriod.label} (mesmos dias):` : `${previousPeriod.label}:`}
+              </span>
               <div className="flex items-center gap-1 shrink-0">
-                <span>{formatCurrency(previousPeriod.revenue)}</span>
+                <span>{formatCurrency(activePrevRev)}</span>
                 <span className="text-[10px] font-semibold text-slate-600">
-                  ({deltas.revenueDelta >= 0 ? "+" : ""}
-                  {formatCurrency(deltas.revenueDelta)})
+                  ({activeRevDelta >= 0 ? "+" : ""}
+                  {formatCurrency(activeRevDelta)})
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 2. Volume de Vendas Comparado */}
+        {/* 2. Volume de Alunos */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Volume de Alunos
+                {mode === "homologous"
+                  ? `Volume MTD (D01 a D${String(currentPeriod.daysElapsed).padStart(2, "0")})`
+                  : mode === "projection"
+                    ? "Volume Projetado"
+                    : "Volume de Alunos"}
               </span>
               <MetricHelpTooltip
-                title="Volume de Alunos / Matrículas"
+                title="Volume de Alunos"
                 explanation="Quantidade total de alunos inscritos ou produtos vendidos no período selecionado."
               />
             </div>
@@ -187,35 +330,39 @@ export function PeriodComparisonCards({
               ) : (
                 <ArrowDownRight className="size-3.5" />
               )}
-              <span>{formatPercent(deltas.salesGrowthPercent)}</span>
+              <span>{formatPercent(activeSalesGrowth)}</span>
             </div>
           </div>
 
           <div className="mt-2">
             <div className="text-2xl font-bold tracking-tight text-slate-900">
-              {currentPeriod.sales.toLocaleString("pt-BR")}{" "}
+              {activeSales.toLocaleString("pt-BR")}{" "}
               <span className="text-sm font-normal text-slate-500">vendas</span>
             </div>
             <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
-              <span className="truncate max-w-[130px]" title={currentPeriod.label}>{currentPeriod.label}:</span>
+              <span className="truncate max-w-[130px]" title={currentPeriod.label}>
+                {mode === "projection" ? "Estimativa Mês:" : `${currentPeriod.label}:`}
+              </span>
               <span className="font-semibold text-slate-700 shrink-0">
-                {currentPeriod.sales} vendas
+                {activeSales} vendas
               </span>
             </div>
             <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
-              <span className="truncate max-w-[110px]" title={previousPeriod.label}>{previousPeriod.label}:</span>
+              <span className="truncate max-w-[110px]" title={previousPeriod.label}>
+                {mode === "homologous" ? `${previousPeriod.label} (mesmos dias):` : `${previousPeriod.label}:`}
+              </span>
               <div className="flex items-center gap-1 shrink-0">
-                <span>{previousPeriod.sales} vendas</span>
+                <span>{activePrevSales} vendas</span>
                 <span className="text-[10px] font-semibold text-slate-600">
-                  ({deltas.salesDelta >= 0 ? "+" : ""}
-                  {deltas.salesDelta})
+                  ({activeSalesDelta >= 0 ? "+" : ""}
+                  {activeSalesDelta})
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 3. Ticket Médio Ponderado */}
+        {/* 3. Ticket Médio */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -240,78 +387,70 @@ export function PeriodComparisonCards({
               ) : (
                 <ArrowDownRight className="size-3.5" />
               )}
-              <span>{formatPercent(deltas.ticketGrowthPercent)}</span>
+              <span>{formatPercent(activeTicketGrowth)}</span>
             </div>
           </div>
 
           <div className="mt-2">
             <div className="text-2xl font-bold tracking-tight text-slate-900">
-              {formatCurrency(currentPeriod.avgTicket)}
+              {formatCurrency(activeTicket)}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
-              <span className="truncate max-w-[130px]" title={currentPeriod.label}>{currentPeriod.label}:</span>
+              <span className="truncate max-w-[130px]" title={currentPeriod.label}>
+                {currentPeriod.label}:
+              </span>
               <span className="font-semibold text-slate-700 shrink-0">
-                {formatCurrency(currentPeriod.avgTicket)}
+                {formatCurrency(activeTicket)}
               </span>
             </div>
             <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
-              <span className="truncate max-w-[110px]" title={previousPeriod.label}>{previousPeriod.label}:</span>
+              <span className="truncate max-w-[110px]" title={previousPeriod.label}>
+                {previousPeriod.label}:
+              </span>
               <div className="flex items-center gap-1 shrink-0">
-                <span>{formatCurrency(previousPeriod.avgTicket)}</span>
+                <span>{formatCurrency(activePrevTicket)}</span>
                 <span className="text-[10px] font-semibold text-slate-600">
-                  ({deltas.ticketDelta >= 0 ? "+" : ""}
-                  {formatCurrency(deltas.ticketDelta)})
+                  ({activeTicketDelta >= 0 ? "+" : ""}
+                  {formatCurrency(activeTicketDelta)})
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 4. Ritmo Médio Diário (dV/dt do mês) */}
+        {/* 4. Ritmo Diário Real (calculado pelos dias transcorridos) */}
         <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Ritmo Diário Médio
+                Ritmo Diário Real (dV/dt)
               </span>
               <MetricHelpTooltip
-                title="Ritmo Diário Médio (Pacing)"
-                explanation="Receita e volume médios por dia no período, permitindo comparar meses ou recortes de durações diferentes com precisão."
+                title="Ritmo Diário Real (Pacing)"
+                explanation={`Calculado dividindo o faturamento real pelos ${effectiveCurrentDays} dias decorridos do mês atual, refletindo com fidelidade a velocidade diária de conversão.`}
+                formula="Receita Atual ÷ Dias Decorridos"
               />
             </div>
             <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
-              Pacing
+              {isInProgress ? `Dia ${currentPeriod.daysElapsed}` : "Pacing"}
             </span>
           </div>
 
           <div className="mt-2">
             <div className="text-2xl font-bold tracking-tight text-slate-900">
-              {formatCurrency(
-                currentPeriod.daysCount > 0
-                  ? currentPeriod.revenue / currentPeriod.daysCount
-                  : 0,
-              )}
+              {formatCurrency(dailyCurrentRev)}
               <span className="text-xs font-normal text-slate-500">/dia</span>
             </div>
             <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-500">
               <span>Volume médio:</span>
               <span className="font-semibold text-slate-700 shrink-0">
-                {(currentPeriod.daysCount > 0
-                  ? currentPeriod.sales / currentPeriod.daysCount
-                  : 0
-                ).toFixed(1)}{" "}
-                vendas/dia
+                {dailyCurrentSales.toFixed(1)} vendas/dia
               </span>
             </div>
             <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-slate-400">
               <span>Anterior:</span>
               <span className="shrink-0">
-                {formatCurrency(
-                  previousPeriod.daysCount > 0
-                    ? previousPeriod.revenue / previousPeriod.daysCount
-                    : 0,
-                )}
-                /dia
+                {formatCurrency(dailyPrevRev)}/dia ({dailyPrevSales.toFixed(1)} vendas/dia)
               </span>
             </div>
           </div>
@@ -333,9 +472,9 @@ export function PeriodComparisonCards({
             />
           </div>
           <span className="text-[11px] text-slate-500">
-            Explica a origem da variação de faturamento de{" "}
+            Origem da variação de faturamento de{" "}
             <strong className="text-slate-800">
-              {formatCurrency(deltas.revenueDelta)}
+              {formatCurrency(activeRevDelta)}
             </strong>
           </span>
         </div>
@@ -349,19 +488,19 @@ export function PeriodComparisonCards({
               </span>
               <span
                 className={`font-bold ${
-                  deltas.volumeEffectRevenue >= 0
+                  (activeSalesDelta * activePrevTicket) >= 0
                     ? "text-emerald-600"
                     : "text-rose-600"
                 }`}
               >
-                {deltas.volumeEffectRevenue >= 0 ? "+" : ""}
-                {formatCurrency(deltas.volumeEffectRevenue)}
+                {(activeSalesDelta * activePrevTicket) >= 0 ? "+" : ""}
+                {formatCurrency(activeSalesDelta * activePrevTicket)}
               </span>
             </div>
             <p className="mt-1 text-[11px] text-slate-500 leading-snug">
-              Variação decorrente de ter vendido {Math.abs(deltas.salesDelta)}{" "}
-              alunos {deltas.salesDelta >= 0 ? "a mais" : "a menos"} ao ticket
-              anterior ({formatCurrency(previousPeriod.avgTicket)}).
+              Variação decorrente de ter vendido {Math.abs(activeSalesDelta)}{" "}
+              alunos {activeSalesDelta >= 0 ? "a mais" : "a menos"} ao ticket
+              anterior ({formatCurrency(activePrevTicket)}).
             </p>
           </div>
 
@@ -373,18 +512,18 @@ export function PeriodComparisonCards({
               </span>
               <span
                 className={`font-bold ${
-                  deltas.priceEffectRevenue >= 0
+                  (activeTicketDelta * activeSales) >= 0
                     ? "text-emerald-600"
                     : "text-rose-600"
                 }`}
               >
-                {deltas.priceEffectRevenue >= 0 ? "+" : ""}
-                {formatCurrency(deltas.priceEffectRevenue)}
+                {(activeTicketDelta * activeSales) >= 0 ? "+" : ""}
+                {formatCurrency(activeTicketDelta * activeSales)}
               </span>
             </div>
             <p className="mt-1 text-[11px] text-slate-500 leading-snug">
-              Variação decorrente do aumento/redução do ticket médio em{" "}
-              {formatCurrency(deltas.ticketDelta)} por aluno sobre o volume atual ({currentPeriod.sales} vendas).
+              Variação decorrente da mudança de ticket médio em{" "}
+              {formatCurrency(activeTicketDelta)} por aluno sobre o volume analisado ({activeSales} vendas).
             </p>
           </div>
         </div>

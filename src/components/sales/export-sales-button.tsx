@@ -20,7 +20,14 @@ export function ExportSalesButton({
     // 1. Tabela Dia a Dia
     csv += `Dia,${currentLabel} Receita,${currentLabel} Acumulado,${previousLabel} Receita,${previousLabel} Acumulado,${currentLabel} Vendas,${previousLabel} Vendas\r\n`;
     for (const row of series) {
-      csv += `${row.day},"${row.currentRevenue.toFixed(2).replace(".", ",")}","${row.currentCumulativeRevenue.toFixed(2).replace(".", ",")}","${row.previousRevenue.toFixed(2).replace(".", ",")}","${row.previousCumulativeRevenue.toFixed(2).replace(".", ",")}",${row.currentSales},${row.previousSales}\r\n`;
+      const curRev = row.currentRevenue !== null ? `"${row.currentRevenue.toFixed(2).replace(".", ",")}"` : `""`;
+      const curCum = row.currentCumulativeRevenue !== null ? `"${row.currentCumulativeRevenue.toFixed(2).replace(".", ",")}"` : `""`;
+      const prevRev = row.previousRevenue !== null ? `"${row.previousRevenue.toFixed(2).replace(".", ",")}"` : `""`;
+      const prevCum = row.previousCumulativeRevenue !== null ? `"${row.previousCumulativeRevenue.toFixed(2).replace(".", ",")}"` : `""`;
+      const curSales = row.currentSales !== null ? row.currentSales : "";
+      const prevSales = row.previousSales !== null ? row.previousSales : "";
+
+      csv += `${row.day},${curRev},${curCum},${prevRev},${prevCum},${curSales},${prevSales}\r\n`;
     }
 
     csv += `\r\n\r\nDesempenho por Business Unit\r\n`;

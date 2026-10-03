@@ -72,6 +72,15 @@ export function BuGrowthMatrix({
 }) {
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "gainers" | "decliners">("all");
+
+  // Detecta se existem dados homólogos MTD disponíveis (quando o período está em curso)
+  const hasHomologous = data.some(
+    (b) => b.previousSameDaysRevenue !== undefined && b.previousSameDaysRevenue > 0,
+  );
+  const [metricMode, setMetricMode] = useState<"homologous" | "total">(
+    hasHomologous ? "homologous" : "total",
+  );
+
   type SortField = "name" | "current" | "previous" | "delta" | "growth" | "ticket";
   type SortDirection = "asc" | "desc";
 
@@ -87,6 +96,19 @@ export function BuGrowthMatrix({
     }
   }
 
+  // Extrai os valores conforme o modo ativo (homólogo vs total bruto)
+  const getBuStats = (b: BuComparisonStat) => {
+    const isHom = metricMode === "homologous" && b.previousSameDaysRevenue !== undefined;
+    const prevRev = isHom ? b.previousSameDaysRevenue! : b.previousRevenue;
+    const deltaRev = isHom ? (b.homologousRevenueDelta ?? (b.currentRevenue - prevRev)) : b.revenueDelta;
+    const growthRev = isHom ? (b.homologousRevenueGrowthPercent ?? (prevRev > 0 ? (deltaRev / prevRev) * 100 : 0)) : b.revenueGrowthPercent;
+    const prevSales = isHom && b.previousSameDaysSales !== undefined ? b.previousSameDaysSales : b.previousSales;
+    const deltaSales = isHom && b.homologousSalesDelta !== undefined ? b.homologousSalesDelta : b.salesDelta;
+    const growthSales = isHom && b.homologousSalesGrowthPercent !== undefined ? b.homologousSalesGrowthPercent : b.salesGrowthPercent;
+
+    return { prevRev, deltaRev, growthRev, prevSales, deltaSales, growthSales };
+  };
+
   const filtered = data
     .filter((bu) => {
       if (!search.trim()) return true;
@@ -97,12 +119,15 @@ export function BuGrowthMatrix({
       );
     })
     .filter((bu) => {
-      if (filterMode === "gainers") return bu.revenueGrowthPercent > 0;
-      if (filterMode === "decliners") return bu.revenueGrowthPercent < 0;
+      const { growthRev } = getBuStats(bu);
+      if (filterMode === "gainers") return growthRev > 0;
+      if (filterMode === "decliners") return growthRev < 0;
       return true;
     });
 
   const sortedList = [...filtered].sort((a, b) => {
+    const statsA = getBuStats(a);
+    const statsB = getBuStats(b);
     let diff = 0;
     switch (sortField) {
       case "name":
@@ -112,13 +137,13 @@ export function BuGrowthMatrix({
         diff = a.currentRevenue - b.currentRevenue;
         break;
       case "previous":
-        diff = a.previousRevenue - b.previousRevenue;
+        diff = statsA.prevRev - statsB.prevRev;
         break;
       case "delta":
-        diff = a.revenueDelta - b.revenueDelta;
+        diff = statsA.deltaRev - statsB.deltaRev;
         break;
       case "growth":
-        diff = a.revenueGrowthPercent - b.revenueGrowthPercent;
+        diff = statsA.growthRev - statsB.growthRev;
         break;
       case "ticket":
         diff = a.currentAvgTicket - b.currentAvgTicket;
@@ -134,10 +159,10 @@ export function BuGrowthMatrix({
   const topRevenueBu = [...data].sort((a, b) => b.currentRevenue - a.currentRevenue)[0];
   const topGainerBu = [...data]
     .filter((b) => b.currentRevenue > 0)
-    .sort((a, b) => b.revenueGrowthPercent - a.revenueGrowthPercent)[0];
+    .sort((a, b) => getBuStats(b).growthRev - getBuStats(a).growthRev)[0];
   const topDeclinerBu = [...data]
-    .filter((b) => b.revenueDelta < 0)
-    .sort((a, b) => a.revenueDelta - b.revenueDelta)[0];
+    .filter((b) => getBuStats(b).deltaRev < 0)
+    .sort((a, b) => getBuStats(a).deltaRev - getBuStats(b).deltaRev)[0];
 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4">
@@ -210,6 +235,36 @@ export function BuGrowthMatrix({
             </button>
           </div>
 
+          {/* Alternador de Metodologia Homóloga (quando o período atual está em aberto) */}
+          {hasHomologous && (
+            <div className="flex rounded-xl border border-blue-200 bg-blue-50/70 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setMetricMode("homologous")}
+                className={`rounded-lg px-2.5 py-1 font-semibold transition ${
+                  metricMode === "homologous"
+                    ? "bg-white text-blue-900 shadow-2xs"
+                    : "text-blue-700 hover:text-blue-900"
+                }`}
+                title="Compara apenas os mesmos dias decorridos de cada mês (avaliação justa)"
+              >
+                Homólogo MTD
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetricMode("total")}
+                className={`rounded-lg px-2.5 py-1 font-medium transition ${
+                  metricMode === "total"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+                title="Compara o faturamento parcial de agora contra o mês anterior inteiro fechado"
+              >
+                Total Bruto
+              </button>
+            </div>
+          )}
+
           {/* Botão Exportar CSV */}
           <button
             type="button"
@@ -243,14 +298,16 @@ export function BuGrowthMatrix({
         {/* Maior Aceleração MoM */}
         <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 shadow-2xs">
           <div className="flex items-center justify-between text-emerald-900">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Maior Aceleração MoM</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">
+              {metricMode === "homologous" ? "Maior Ganho Homólogo MTD" : "Maior Aceleração MoM"}
+            </span>
             <TrendingUp className="size-3.5 text-emerald-600" />
           </div>
           <p className="mt-1 font-bold text-sm text-slate-900 truncate">
             {topGainerBu ? topGainerBu.buLabel : "—"}
           </p>
           <p className="text-xs font-semibold text-emerald-700">
-            {topGainerBu ? `${topGainerBu.revenueGrowthPercent >= 0 ? "+" : ""}${topGainerBu.revenueGrowthPercent.toFixed(1)}%` : "—"}
+            {topGainerBu ? `${getBuStats(topGainerBu).growthRev >= 0 ? "+" : ""}${getBuStats(topGainerBu).growthRev.toFixed(1)}%` : "—"}
             <span className="text-[10px] text-slate-500 font-normal"> ({topGainerBu ? formatCurrency(topGainerBu.currentRevenue) : "—"})</span>
           </p>
         </div>
@@ -258,15 +315,17 @@ export function BuGrowthMatrix({
         {/* Atenção / Maior Desaceleração */}
         <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3 shadow-2xs">
           <div className="flex items-center justify-between text-rose-900">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Atenção / Desaceleração</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">
+              {metricMode === "homologous" ? "Maior Recuo Homólogo MTD" : "Atenção / Desaceleração"}
+            </span>
             <AlertCircle className="size-3.5 text-rose-600" />
           </div>
           <p className="mt-1 font-bold text-sm text-slate-900 truncate">
             {topDeclinerBu ? topDeclinerBu.buLabel : "Nenhuma BU em queda"}
           </p>
           <p className="text-xs font-semibold text-rose-700">
-            {topDeclinerBu ? formatCurrency(topDeclinerBu.revenueDelta) : "—"}
-            <span className="text-[10px] text-slate-500 font-normal"> ({topDeclinerBu ? `${topDeclinerBu.revenueGrowthPercent.toFixed(1)}%` : ""})</span>
+            {topDeclinerBu ? formatCurrency(getBuStats(topDeclinerBu).deltaRev) : "—"}
+            <span className="text-[10px] text-slate-500 font-normal"> ({topDeclinerBu ? `${getBuStats(topDeclinerBu).growthRev.toFixed(1)}%` : ""})</span>
           </p>
         </div>
       </div>
@@ -305,7 +364,7 @@ export function BuGrowthMatrix({
                   className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
                   title={`Ordenar por ${previousLabel}`}
                 >
-                  <span>{previousLabel}</span>
+                  <span>{metricMode === "homologous" ? `${previousLabel} (mesmos dias)` : previousLabel}</span>
                   <span className="text-[10px] text-brand-600">{sortField === "previous" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
                 </button>
               </th>
@@ -353,7 +412,8 @@ export function BuGrowthMatrix({
               </tr>
             ) : (
               sortedList.map((bu) => {
-                const isPositive = bu.revenueDelta >= 0;
+                const { prevRev, deltaRev, growthRev, prevSales } = getBuStats(bu);
+                const isPositive = deltaRev >= 0;
                 const progressPercent = Math.min(
                   100,
                   Math.round((bu.currentRevenue / maxRevenue) * 100),
@@ -391,9 +451,9 @@ export function BuGrowthMatrix({
 
                     {/* Receita Anterior & Vendas */}
                     <td className="py-3 px-3 text-right text-slate-600 whitespace-nowrap">
-                      <div>{formatCurrency(bu.previousRevenue)}</div>
+                      <div>{formatCurrency(prevRev)}</div>
                       <div className="text-[10px] text-slate-400">
-                        {bu.previousSales} vendas
+                        {prevSales} vendas
                       </div>
                     </td>
 
@@ -405,7 +465,7 @@ export function BuGrowthMatrix({
                         }`}
                       >
                         {isPositive ? "+" : ""}
-                        {formatCurrency(bu.revenueDelta)}
+                        {formatCurrency(deltaRev)}
                       </span>
                     </td>
 
@@ -425,7 +485,7 @@ export function BuGrowthMatrix({
                         )}
                         <span>
                           {isPositive ? "+" : ""}
-                          {bu.revenueGrowthPercent.toFixed(1)}%
+                          {growthRev.toFixed(1)}%
                         </span>
                       </span>
                     </td>

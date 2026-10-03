@@ -32,6 +32,12 @@ export function DayByDayPacingChart({
 }) {
   const [metric, setMetric] = useState<"revenue" | "sales">("revenue");
   const [mode, setMode] = useState<"cumulative" | "daily">("cumulative");
+  const [showProjection, setShowProjection] = useState(true);
+
+  // Verifica se há dias futuros no período atual
+  const hasFutureDays = series.some((p) => p.isCurrentFuture || p.currentRevenue === null);
+  const elapsedDays = series.filter((p) => p.currentRevenue !== null && !p.isCurrentFuture);
+  const lastElapsedDay = elapsedDays.length > 0 ? elapsedDays[elapsedDays.length - 1].day : 0;
 
   // Determina a chave de dados
   const currentKey =
@@ -52,23 +58,37 @@ export function DayByDayPacingChart({
         ? "previousCumulativeSales"
         : "previousSales";
 
+  const projKey =
+    metric === "revenue"
+      ? mode === "cumulative"
+        ? "projectedCumulativeRevenue"
+        : "projectedRevenue"
+      : undefined;
+
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
       {/* Cabeçalho & Controles */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-bold text-slate-900">
               Pacing Comparativo Dia a Dia {series.length > 0 ? `(Dia 1 a ${series.length})` : ""}
             </h3>
-            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 uppercase">
-              Sobreposição Dual
-            </span>
+            {hasFutureDays ? (
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase ring-1 ring-blue-200/70">
+                Mês em Curso · Até Dia {String(lastElapsedDay).padStart(2, "0")}
+              </span>
+            ) : (
+              <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 uppercase">
+                Período Fechado
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500">
             Comparação da curva diária:{" "}
             <strong className="text-blue-600">{currentLabel}</strong> vs{" "}
             <strong className="text-slate-500">{previousLabel}</strong>
+            {hasFutureDays && " (dias futuros não são preenchidos com zero; a linha encerra em hoje)"}
           </p>
         </div>
 
@@ -125,18 +145,42 @@ export function DayByDayPacingChart({
               Por Dia
             </button>
           </div>
+
+          {/* Toggle de Projeção Run-Rate se houver dias futuros e métrica de receita */}
+          {hasFutureDays && metric === "revenue" && (
+            <button
+              type="button"
+              onClick={() => setShowProjection((prev) => !prev)}
+              className={`rounded-xl border px-2.5 py-1 text-xs font-medium transition ${
+                showProjection
+                  ? "border-blue-300 bg-blue-50 text-blue-800"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+              title="Exibir ou ocultar projeção estatística Run-Rate para os dias restantes do mês"
+            >
+              {showProjection ? "Projeção Ativa ✓" : "+ Ver Projeção"}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Legenda Visual */}
-      <div className="mt-4 flex items-center gap-5 text-xs">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
         <div className="flex items-center gap-2">
           <span className="h-0.5 w-5 bg-blue-600 rounded-full" />
-          <span className="font-semibold text-slate-800">{currentLabel} (Atual)</span>
+          <span className="font-semibold text-slate-800">
+            {currentLabel} {hasFutureDays ? `(Realizado até Dia ${String(lastElapsedDay).padStart(2, "0")})` : "(Atual)"}
+          </span>
         </div>
+        {hasFutureDays && showProjection && metric === "revenue" && (
+          <div className="flex items-center gap-2">
+            <span className="h-0.5 w-5 border-t-2 border-dotted border-blue-400" />
+            <span className="font-medium text-blue-600">Projeção Run-Rate (Dias restantes)</span>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <span className="h-0.5 w-5 bg-slate-400 border-t border-dashed border-slate-400" />
-          <span className="font-medium text-slate-500">{previousLabel} (Comparado)</span>
+          <span className="font-medium text-slate-500">{previousLabel} (Comparado completo)</span>
         </div>
       </div>
 
@@ -178,14 +222,31 @@ export function DayByDayPacingChart({
             <Tooltip
               content={({ active, payload, label }) => {
                 if (!active || !payload || !payload.length) return null;
-                const curVal = Number(payload.find((p) => p.dataKey === currentKey)?.value || 0);
-                const prevVal = Number(payload.find((p) => p.dataKey === prevKey)?.value || 0);
-                const diff = curVal - prevVal;
-                const isAhead = diff >= 0;
+
+                const curItem = payload.find((p) => p.dataKey === currentKey);
+                const prevItem = payload.find((p) => p.dataKey === prevKey);
+                const projItem = projKey ? payload.find((p) => p.dataKey === projKey) : null;
+
+                const curRaw = curItem?.value;
+                const isCurFuture = curRaw === null || curRaw === undefined;
+                const curVal = isCurFuture ? null : Number(curRaw);
+                const prevVal = prevItem?.value !== null && prevItem?.value !== undefined ? Number(prevItem.value) : null;
+                const projVal = projItem?.value !== null && projItem?.value !== undefined ? Number(projItem.value) : null;
+
+                const diff = curVal !== null && prevVal !== null ? curVal - prevVal : null;
+                const isAhead = diff !== null ? diff >= 0 : false;
 
                 return (
-                  <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg text-xs">
-                    <p className="font-bold text-slate-800">Dia {label} do Período</p>
+                  <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg text-xs min-w-[210px]">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                      <p className="font-bold text-slate-800">Dia {label} do Período</p>
+                      {isCurFuture && (
+                        <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                          Dia futuro (em aberto)
+                        </span>
+                      )}
+                    </div>
+
                     <div className="mt-2 space-y-1.5">
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5 text-blue-600 font-semibold">
@@ -193,9 +254,25 @@ export function DayByDayPacingChart({
                           {currentLabel}:
                         </span>
                         <span className="font-bold text-slate-900">
-                          {metric === "revenue" ? formatCurrency(curVal) : `${curVal} vendas`}
+                          {isCurFuture
+                            ? "Não decorrido"
+                            : metric === "revenue"
+                              ? formatCurrency(curVal!)
+                              : `${curVal} vendas`}
                         </span>
                       </div>
+
+                      {isCurFuture && projVal !== null && showProjection && metric === "revenue" && (
+                        <div className="flex items-center justify-between gap-4 text-blue-600/90">
+                          <span className="flex items-center gap-1.5 text-[11px] font-medium">
+                            <span className="size-1.5 rounded-full bg-blue-400" />
+                            Projeção Run-Rate:
+                          </span>
+                          <span className="font-semibold text-[11px]">
+                            {formatCurrency(projVal)}
+                          </span>
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5 text-slate-500 font-medium">
@@ -203,20 +280,30 @@ export function DayByDayPacingChart({
                           {previousLabel}:
                         </span>
                         <span className="font-medium text-slate-700">
-                          {metric === "revenue" ? formatCurrency(prevVal) : `${prevVal} vendas`}
+                          {prevVal !== null
+                            ? metric === "revenue"
+                              ? formatCurrency(prevVal)
+                              : `${prevVal} vendas`
+                            : "—"}
                         </span>
                       </div>
 
                       <div className="mt-1 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-4">
                         <span className="text-[11px] text-slate-500">Ritmo (Delta):</span>
-                        <span
-                          className={`font-bold text-[11px] ${
-                            isAhead ? "text-emerald-600" : "text-rose-600"
-                          }`}
-                        >
-                          {isAhead ? "▲ +" : "▼ "}
-                          {metric === "revenue" ? formatCurrency(diff) : `${diff} vendas`}
-                        </span>
+                        {diff !== null ? (
+                          <span
+                            className={`font-bold text-[11px] ${
+                              isAhead ? "text-emerald-600" : "text-rose-600"
+                            }`}
+                          >
+                            {isAhead ? "▲ +" : "▼ "}
+                            {metric === "revenue" ? formatCurrency(diff) : `${diff} vendas`}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-400">
+                            Aguardando realização
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -233,9 +320,24 @@ export function DayByDayPacingChart({
               strokeDasharray="4 4"
               dot={false}
               name={previousLabel}
+              connectNulls={false}
             />
 
-            {/* Linha e Área do Período Atual */}
+            {/* Projeção Run-Rate Tracejada para o Mês Atual */}
+            {hasFutureDays && showProjection && projKey && (
+              <Line
+                type="monotone"
+                dataKey={projKey}
+                stroke="#60a5fa"
+                strokeWidth={2}
+                strokeDasharray="3 3"
+                dot={false}
+                name="Projeção Run-Rate"
+                connectNulls={true}
+              />
+            )}
+
+            {/* Linha e Área do Período Atual (com connectNulls=false para encerrar em hoje) */}
             {mode === "cumulative" ? (
               <Area
                 type="monotone"
@@ -245,6 +347,7 @@ export function DayByDayPacingChart({
                 fill="url(#currentPacingGradient)"
                 dot={false}
                 name={currentLabel}
+                connectNulls={false}
               />
             ) : (
               <Line
@@ -254,6 +357,7 @@ export function DayByDayPacingChart({
                 strokeWidth={2.5}
                 dot={false}
                 name={currentLabel}
+                connectNulls={false}
               />
             )}
           </ComposedChart>

@@ -155,6 +155,29 @@ describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
     assert.equal(comp.deltas.revenueDelta, 6000);
     assert.equal(comp.deltas.salesDelta, 1);
     assert.equal(comp.deltas.revenueGrowthPercent, 75); // (6000 / 8000) * 100 = 75%
+
+    // Verificações do Mês em Aberto (dias futuros não são preenchidos com zero falso)
+    assert.equal(comp.currentPeriod.isCurrentPeriodInProgress, true);
+    assert.equal(comp.currentPeriod.daysElapsed, 2);
+
+    // Dia 1 e 2 têm faturamento real
+    const day1 = comp.dayByDaySeries.find((d) => d.day === 1);
+    const day2 = comp.dayByDaySeries.find((d) => d.day === 2);
+    const day3 = comp.dayByDaySeries.find((d) => d.day === 3);
+
+    assert.equal(day1?.currentRevenue, 10000);
+    assert.equal(day2?.currentRevenue, 4000);
+
+    // Dia 3 é futuro (após daysElapsed=2), portanto deve ser null, não 0
+    assert.equal(day3?.currentRevenue, null);
+    assert.equal(day3?.currentCumulativeRevenue, null);
+    assert.equal(day3?.isCurrentFuture, true);
+
+    // MTD e Projeção Run-Rate calculados
+    assert.ok(comp.deltas.mtdComparison);
+    assert.equal(comp.deltas.mtdComparison.daysElapsed, 2);
+    assert.ok(comp.deltas.projectedComparison);
+    assert.ok(comp.deltas.projectedComparison.projectedRevenue > 0);
   });
 
   test("Tratamento de lista vazia sem quebra de divisão por zero", () => {

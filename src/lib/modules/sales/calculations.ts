@@ -755,7 +755,7 @@ export function calculateComparativeAnalysis(
   const priceEffectRevenue =
     (currentAvgTicket - previousAvgTicket) * currentSales;
 
-  // 4. Pacing Dia a Dia
+  // 4. Pacing Dia a Dia & Identificação de Período em Aberto
   const dayByDaySeries: DayByDayPoint[] = [];
   const currentDaysMap = new Map<number, { revenue: number; sales: number }>();
   const prevDaysMap = new Map<number, { revenue: number; sales: number }>();
@@ -781,43 +781,6 @@ export function calculateComparativeAnalysis(
       cur.sales += t.quantity;
       prevDaysMap.set(dayIdx, cur);
     }
-
-    const maxDays = Math.max(currentDaysCount, previousDaysCount, 1);
-    let cumCurRev = 0;
-    let cumCurSales = 0;
-    let cumPrevRev = 0;
-    let cumPrevSales = 0;
-
-    for (let d = 1; d <= maxDays; d++) {
-      const curData = currentDaysMap.get(d) ?? { revenue: 0, sales: 0 };
-      const prevData = prevDaysMap.get(d) ?? { revenue: 0, sales: 0 };
-
-      cumCurRev += curData.revenue;
-      cumCurSales += curData.sales;
-      cumPrevRev += prevData.revenue;
-      cumPrevSales += prevData.sales;
-
-      const pointDateMs = sDateMs + (d - 1) * 86400000;
-      const pointD = new Date(pointDateMs);
-      const dayLabel = `${String(pointD.getDate()).padStart(2, "0")}/${String(pointD.getMonth() + 1).padStart(2, "0")}`;
-
-      dayByDaySeries.push({
-        day: d,
-        dayLabel: maxDays <= 31 ? dayLabel : `D${d}`,
-        currentRevenue: Math.round(curData.revenue * 100) / 100,
-        previousRevenue: Math.round(prevData.revenue * 100) / 100,
-        currentCumulativeRevenue: Math.round(cumCurRev * 100) / 100,
-        previousCumulativeRevenue: Math.round(cumPrevRev * 100) / 100,
-        currentSales: curData.sales,
-        previousSales: prevData.sales,
-        currentCumulativeSales: cumCurSales,
-        previousCumulativeSales: cumPrevSales,
-        currentAvgTicket:
-          curData.sales > 0 ? Math.round((curData.revenue / curData.sales) * 100) / 100 : 0,
-        previousAvgTicket:
-          prevData.sales > 0 ? Math.round((prevData.revenue / prevData.sales) * 100) / 100 : 0,
-      });
-    }
   } else {
     for (const t of currentTxs) {
       const day = parseInt(t.date.slice(8, 10), 10);
@@ -838,50 +801,112 @@ export function calculateComparativeAnalysis(
         prevDaysMap.set(day, cur);
       }
     }
+  }
 
-    const maxDays = Math.max(currentDaysCount, previousDaysCount, 31);
-    let cumCurRev = 0;
-    let cumCurSales = 0;
-    let cumPrevRev = 0;
-    let cumPrevSales = 0;
+  // Determina se o período atual está em aberto (mês em curso) e quantos dias decorreram
+  let daysElapsed = currentDaysCount;
+  let isCurrentPeriodInProgress = false;
 
-    for (let d = 1; d <= maxDays; d++) {
-      const curData = currentDaysMap.get(d) ?? { revenue: 0, sales: 0 };
-      const prevData = prevDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+  if (isCustomRange) {
+    const sDateMs = new Date(`${options.startDate}T00:00:00`).getTime();
+    const eDateMs = new Date(`${options.endDate}T00:00:00`).getTime();
+    const maxTxDateStr = filtered.length > 0
+      ? filtered.reduce((max, t) => (t.date > max ? t.date : max), "").slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+    const maxTxMs = new Date(`${maxTxDateStr}T00:00:00`).getTime();
 
-      cumCurRev += curData.revenue;
-      cumCurSales += curData.sales;
-      cumPrevRev += prevData.revenue;
-      cumPrevSales += prevData.sales;
+    if (eDateMs > maxTxMs) {
+      const elapsed = Math.max(1, Math.min(currentDaysCount, Math.round((maxTxMs - sDateMs) / 86400000) + 1));
+      daysElapsed = elapsed;
+      isCurrentPeriodInProgress = daysElapsed < currentDaysCount;
+    }
+  } else {
+    const currentDaysWithSales = Array.from(currentDaysMap.keys());
+    const maxDayWithSales = currentDaysWithSales.length > 0 ? Math.max(...currentDaysWithSales) : 0;
+    const isLatestMonth = availableMonths.length > 0 && availableMonths[0].key === currentKey;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const isCurrentCalendarMonth = todayStr.startsWith(currentKey);
 
-      dayByDaySeries.push({
-        day: d,
-        dayLabel: `Dia ${String(d).padStart(2, "0")}`,
-        currentRevenue: Math.round(curData.revenue * 100) / 100,
-        previousRevenue: Math.round(prevData.revenue * 100) / 100,
-        currentCumulativeRevenue: Math.round(cumCurRev * 100) / 100,
-        previousCumulativeRevenue: Math.round(cumPrevRev * 100) / 100,
-        currentSales: curData.sales,
-        previousSales: prevData.sales,
-        currentCumulativeSales: cumCurSales,
-        previousCumulativeSales: cumPrevSales,
-        currentAvgTicket:
-          curData.sales > 0 ? Math.round((curData.revenue / curData.sales) * 100) / 100 : 0,
-        previousAvgTicket:
-          prevData.sales > 0 ? Math.round((prevData.revenue / prevData.sales) * 100) / 100 : 0,
-      });
+    if ((isLatestMonth || isCurrentCalendarMonth) && maxDayWithSales < currentDaysCount) {
+      isCurrentPeriodInProgress = true;
+      daysElapsed = Math.max(1, maxDayWithSales);
+    } else {
+      daysElapsed = currentDaysCount;
+      isCurrentPeriodInProgress = false;
     }
   }
 
+  // Construção da série diária (com dias futuros como null para evitar zero falso)
+  const maxDays = isCustomRange
+    ? Math.max(currentDaysCount, previousDaysCount, 1)
+    : Math.max(currentDaysCount, previousDaysCount, 31);
 
-  // MTD (Month to Date) pacing comparativo até o dia decorrido
-  const currentDaysWithSales = Array.from(currentDaysMap.keys());
-  const currentMonthDaysWithData =
-    currentDaysWithSales.length > 0 ? Math.max(...currentDaysWithSales) : 1;
+  let cumCurRev = 0;
+  let cumCurSales = 0;
+  let cumPrevRev = 0;
+  let cumPrevSales = 0;
 
+  const dailyRunRateRev = daysElapsed > 0 && isCurrentPeriodInProgress ? currentRevenue / daysElapsed : 0;
+  const dailyRunRateSales = daysElapsed > 0 && isCurrentPeriodInProgress ? currentSales / daysElapsed : 0;
+
+  for (let d = 1; d <= maxDays; d++) {
+    const curData = currentDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+    const prevData = prevDaysMap.get(d) ?? { revenue: 0, sales: 0 };
+
+    const isFutureDay = isCurrentPeriodInProgress && d > daysElapsed;
+
+    if (!isFutureDay) {
+      cumCurRev += curData.revenue;
+      cumCurSales += curData.sales;
+    }
+
+    cumPrevRev += prevData.revenue;
+    cumPrevSales += prevData.sales;
+
+    let dayLabel = `Dia ${String(d).padStart(2, "0")}`;
+    if (isCustomRange) {
+      const sDateMs = new Date(`${options.startDate}T00:00:00`).getTime();
+      const pointDateMs = sDateMs + (d - 1) * 86400000;
+      const pointD = new Date(pointDateMs);
+      dayLabel = maxDays <= 31 ? `${String(pointD.getDate()).padStart(2, "0")}/${String(pointD.getMonth() + 1).padStart(2, "0")}` : `D${d}`;
+    }
+
+    const projectedCumRev = isFutureDay
+      ? Math.round((cumCurRev + dailyRunRateRev * (d - daysElapsed)) * 100) / 100
+      : Math.round(cumCurRev * 100) / 100;
+    const projectedDailyRev = isFutureDay
+      ? Math.round(dailyRunRateRev * 100) / 100
+      : Math.round(curData.revenue * 100) / 100;
+
+    dayByDaySeries.push({
+      day: d,
+      dayLabel,
+      currentRevenue: isFutureDay ? null : Math.round(curData.revenue * 100) / 100,
+      previousRevenue: Math.round(prevData.revenue * 100) / 100,
+      currentCumulativeRevenue: isFutureDay ? null : Math.round(cumCurRev * 100) / 100,
+      previousCumulativeRevenue: Math.round(cumPrevRev * 100) / 100,
+      currentSales: isFutureDay ? null : curData.sales,
+      previousSales: prevData.sales,
+      currentCumulativeSales: isFutureDay ? null : cumCurSales,
+      previousCumulativeSales: cumPrevSales,
+      currentAvgTicket:
+        isFutureDay
+          ? null
+          : curData.sales > 0
+            ? Math.round((curData.revenue / curData.sales) * 100) / 100
+            : 0,
+      previousAvgTicket:
+        prevData.sales > 0 ? Math.round((prevData.revenue / prevData.sales) * 100) / 100 : 0,
+      isCurrentFuture: isFutureDay,
+      projectedRevenue: projectedDailyRev,
+      projectedCumulativeRevenue: projectedCumRev,
+    });
+  }
+
+  // MTD (Month to Date) comparativo estritamente homólogo (dia 1 até o dia decorrido)
   let prevMtdRevenue = 0;
   let prevMtdSales = 0;
-  for (let d = 1; d <= currentMonthDaysWithData; d++) {
+  for (let d = 1; d <= daysElapsed; d++) {
     const p = prevDaysMap.get(d);
     if (p) {
       prevMtdRevenue += p.revenue;
@@ -896,14 +921,50 @@ export function calculateComparativeAnalysis(
   const mtdSalesGrowthPercent =
     prevMtdSales > 0 ? (mtdSalesDelta / prevMtdSales) * 100 : 0;
 
+  const currentAvgTicketMtd = currentSales > 0 ? currentRevenue / currentSales : 0;
+  const prevAvgTicketMtd = prevMtdSales > 0 ? prevMtdRevenue / prevMtdSales : 0;
+  const mtdTicketDelta = currentAvgTicketMtd - prevAvgTicketMtd;
+  const mtdTicketGrowthPercent =
+    prevAvgTicketMtd > 0 ? (mtdTicketDelta / prevAvgTicketMtd) * 100 : 0;
+
   const mtdComparison = {
-    daysElapsed: currentMonthDaysWithData,
+    daysElapsed,
     currentRevenue: Math.round(currentRevenue * 100) / 100,
     currentSales,
+    currentAvgTicket: Math.round(currentAvgTicketMtd * 100) / 100,
     previousPeriodSameDaysRevenue: Math.round(prevMtdRevenue * 100) / 100,
     previousPeriodSameDaysSales: prevMtdSales,
+    previousPeriodSameDaysAvgTicket: Math.round(prevAvgTicketMtd * 100) / 100,
+    revenueDelta: Math.round(mtdRevenueDelta * 100) / 100,
     revenueGrowthPercent: Math.round(mtdRevenueGrowthPercent * 10) / 10,
+    salesDelta: mtdSalesDelta,
     salesGrowthPercent: Math.round(mtdSalesGrowthPercent * 10) / 10,
+    ticketDelta: Math.round(mtdTicketDelta * 100) / 100,
+    ticketGrowthPercent: Math.round(mtdTicketGrowthPercent * 10) / 10,
+  };
+
+  // Comparativo Projetado Run-Rate (Fechamento do Mês Atual vs Total Anterior)
+  const daysRemaining = Math.max(0, currentDaysCount - daysElapsed);
+  const projectedRevenue = Math.round(currentRevenue + dailyRunRateRev * daysRemaining);
+  const projectedSales = Math.round(currentSales + dailyRunRateSales * daysRemaining);
+  const projectedAvgTicket =
+    projectedSales > 0 ? Math.round((projectedRevenue / projectedSales) * 100) / 100 : 0;
+
+  const projRevenueDelta = projectedRevenue - previousRevenue;
+  const projRevenueGrowthPercent =
+    previousRevenue > 0 ? (projRevenueDelta / previousRevenue) * 100 : 0;
+  const projSalesDelta = projectedSales - previousSales;
+  const projSalesGrowthPercent =
+    previousSales > 0 ? (projSalesDelta / previousSales) * 100 : 0;
+
+  const projectedComparison = {
+    projectedRevenue,
+    projectedSales,
+    projectedAvgTicket,
+    revenueDelta: Math.round(projRevenueDelta * 100) / 100,
+    revenueGrowthPercent: Math.round(projRevenueGrowthPercent * 10) / 10,
+    salesDelta: projSalesDelta,
+    salesGrowthPercent: Math.round(projSalesGrowthPercent * 10) / 10,
   };
 
   // 5. Comparativo por Business Unit (23 BUs Oficiais MedCof)
@@ -916,6 +977,8 @@ export function calculateComparativeAnalysis(
       currSales: number;
       prevRev: number;
       prevSales: number;
+      prevSameDaysRev: number;
+      prevSameDaysSales: number;
     }
   >();
 
@@ -928,6 +991,8 @@ export function calculateComparativeAnalysis(
       currSales: 0,
       prevRev: 0,
       prevSales: 0,
+      prevSameDaysRev: 0,
+      prevSameDaysSales: 0,
     });
   }
 
@@ -939,11 +1004,17 @@ export function calculateComparativeAnalysis(
       currSales: 0,
       prevRev: 0,
       prevSales: 0,
+      prevSameDaysRev: 0,
+      prevSameDaysSales: 0,
     };
     existing.currRev += t.amount;
     existing.currSales += t.quantity;
     buMap.set(t.businessUnitCode, existing);
   }
+
+  const prevStartMs = isCustomRange
+    ? new Date(`${options.compareStartDate || options.startDate}T00:00:00`).getTime()
+    : 0;
 
   for (const t of previousTxs) {
     const existing = buMap.get(t.businessUnitCode) ?? {
@@ -953,9 +1024,26 @@ export function calculateComparativeAnalysis(
       currSales: 0,
       prevRev: 0,
       prevSales: 0,
+      prevSameDaysRev: 0,
+      prevSameDaysSales: 0,
     };
     existing.prevRev += t.amount;
     existing.prevSales += t.quantity;
+
+    // Cálculo homólogo para BU: apenas transações que caem dentro de daysElapsed
+    let dayIdx = 1;
+    if (isCustomRange) {
+      const tMs = new Date(t.date.slice(0, 10) + "T00:00:00").getTime();
+      dayIdx = Math.max(1, Math.round((tMs - prevStartMs) / 86400000) + 1);
+    } else {
+      dayIdx = parseInt(t.date.slice(8, 10), 10);
+    }
+
+    if (!isNaN(dayIdx) && dayIdx <= daysElapsed) {
+      existing.prevSameDaysRev += t.amount;
+      existing.prevSameDaysSales += t.quantity;
+    }
+
     buMap.set(t.businessUnitCode, existing);
   }
 
@@ -976,6 +1064,22 @@ export function calculateComparativeAnalysis(
       const sGrowth =
         bu.prevSales > 0 ? (sDelta / bu.prevSales) * 100 : bu.currSales > 0 ? 100 : 0;
 
+      const homRevDelta = bu.currRev - bu.prevSameDaysRev;
+      const homRevGrowth =
+        bu.prevSameDaysRev > 0
+          ? (homRevDelta / bu.prevSameDaysRev) * 100
+          : bu.currRev > 0
+            ? 100
+            : 0;
+
+      const homSalesDelta = bu.currSales - bu.prevSameDaysSales;
+      const homSalesGrowth =
+        bu.prevSameDaysSales > 0
+          ? (homSalesDelta / bu.prevSameDaysSales) * 100
+          : bu.currSales > 0
+            ? 100
+            : 0;
+
       return {
         buCode: bu.code,
         buLabel: bu.label,
@@ -991,6 +1095,12 @@ export function calculateComparativeAnalysis(
           bu.currSales > 0 ? Math.round((bu.currRev / bu.currSales) * 100) / 100 : 0,
         previousAvgTicket:
           bu.prevSales > 0 ? Math.round((bu.prevRev / bu.prevSales) * 100) / 100 : 0,
+        previousSameDaysRevenue: Math.round(bu.prevSameDaysRev * 100) / 100,
+        previousSameDaysSales: bu.prevSameDaysSales,
+        homologousRevenueDelta: Math.round(homRevDelta * 100) / 100,
+        homologousRevenueGrowthPercent: Math.round(homRevGrowth * 10) / 10,
+        homologousSalesDelta: homSalesDelta,
+        homologousSalesGrowthPercent: Math.round(homSalesGrowth * 10) / 10,
       };
     })
     .sort((a, b) => b.currentRevenue - a.currentRevenue || a.buLabel.localeCompare(b.buLabel));
@@ -1081,6 +1191,8 @@ export function calculateComparativeAnalysis(
       sales: currentSales,
       avgTicket: Math.round(currentAvgTicket * 100) / 100,
       daysCount: currentDaysCount,
+      daysElapsed,
+      isCurrentPeriodInProgress,
     },
     previousPeriod: {
       key: previousKey!,
@@ -1089,6 +1201,8 @@ export function calculateComparativeAnalysis(
       sales: previousSales,
       avgTicket: Math.round(previousAvgTicket * 100) / 100,
       daysCount: previousDaysCount,
+      sameDaysRevenue: Math.round(prevMtdRevenue * 100) / 100,
+      sameDaysSales: prevMtdSales,
     },
 
     deltas: {
@@ -1101,6 +1215,7 @@ export function calculateComparativeAnalysis(
       volumeEffectRevenue: Math.round(volumeEffectRevenue * 100) / 100,
       priceEffectRevenue: Math.round(priceEffectRevenue * 100) / 100,
       mtdComparison,
+      projectedComparison,
     },
     dayByDaySeries,
     buComparison,
