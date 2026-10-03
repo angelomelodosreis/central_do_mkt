@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import type { ComparativeAnalysisResult, SaleTransaction, SalesAnalyticsResult } from "./types";
 import {
   calculateComparativeAnalysis,
@@ -181,6 +182,17 @@ let inFlightFetch: Promise<FetchSalesResult> | null = null;
 
 const CACHE_TTL_MS = 600_000; // 10 minutos de cache em memória para velocidade instantânea (0ms)
 
+const getCachedSalesData = unstable_cache(
+  async () => {
+    return executeFetchGoogleSheetsSalesData(DEFAULT_SHEET_ID, DEFAULT_GID, undefined, {});
+  },
+  ["google-sheets-sales-consolidated-v5"],
+  {
+    revalidate: 300,
+    tags: ["google-sheets-sales"],
+  },
+);
+
 /**
  * Faz a busca da planilha Google Sheets em Real-Time consolidando todas as 23 BUs.
  */
@@ -203,6 +215,19 @@ export async function fetchGoogleSheetsSalesData(
     return memoryCachedSales.data;
   }
 
+  // Next.js Data Cache para persistência entre lambdas e SWR
+  if (!customCsvUrl && !options.forceRefresh) {
+    try {
+      const cached = await getCachedSalesData();
+      if (cached && cached.success) {
+        memoryCachedSales = { timestamp: now, data: cached };
+        return cached;
+      }
+    } catch {
+      // continua para execução direta
+    }
+  }
+
   // Deduplica chamadas paralelas em andamento
   if (!customCsvUrl && !options.forceRefresh && inFlightFetch) {
     return inFlightFetch;
@@ -217,7 +242,11 @@ export async function fetchGoogleSheetsSalesData(
   }
 
   try {
-    return await p;
+    const result = await p;
+    if (result.success && !customCsvUrl && !options.forceRefresh) {
+      memoryCachedSales = { timestamp: now, data: result };
+    }
+    return result;
   } finally {
     if (!customCsvUrl && !options.forceRefresh) {
       inFlightFetch = null;
@@ -239,6 +268,7 @@ async function executeFetchGoogleSheetsSalesData(
   if (customCsvUrl) {
     try {
       const response = await fetch(customCsvUrl, {
+        signal: AbortSignal.timeout(4000),
         next: options.forceRefresh ? { revalidate: 0 } : { revalidate: 600 },
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
@@ -262,12 +292,13 @@ async function executeFetchGoogleSheetsSalesData(
     }
   }
 
-  // 2. Busca e consolida todas as abas das 23 Business Units em paralelo
+  // 2. Busca e consolida todas as abas das 23 Business Units em paralelo com timeout de 3s
   try {
     const tabPromises = BU_SHEET_TABS.map(async (tab) => {
       const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRRHbUHQxiRh3LiC8tKGpAPkhBRfcxkKucIYCXFuxmCRP9oX9LCxXTeQOhPt0eqAvF4kXNXvQATwvFJ/pub?gid=${tab.gid}&single=true&output=csv`;
       try {
         const res = await fetch(url, {
+          signal: AbortSignal.timeout(3000),
           next: options.forceRefresh ? { revalidate: 0 } : { revalidate: 600 },
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
@@ -633,6 +664,28 @@ export async function getAllLiveTransactions(options?: {
   return transactions;
 }
 
+const getCachedDashboardData = unstable_cache(
+  async () => {
+    const { transactions, sourceType } = await fetchGoogleSheetsSalesData(
+      DEFAULT_SHEET_ID,
+      DEFAULT_GID,
+      undefined,
+      {},
+    );
+    const liveSales = calculateSalesAnalytics(transactions, {
+      dataSourceType: sourceType,
+    });
+    const projections = calculateProjections(transactions);
+    const monthlyHistory = getMonthlyAggregations(transactions);
+    return { liveSales, projections, monthlyHistory };
+  },
+  ["live-dashboard-analytics-v5"],
+  {
+    revalidate: 300,
+    tags: ["sales-data", "dashboard-data"],
+  },
+);
+
 export async function getLiveDashboardData(options?: {
   forceRefresh?: boolean;
 }): Promise<{
@@ -647,6 +700,18 @@ export async function getLiveDashboardData(options?: {
     now - memoryCachedDashboard.timestamp < CACHE_TTL_MS
   ) {
     return memoryCachedDashboard.data;
+  }
+
+  if (!options?.forceRefresh) {
+    try {
+      const cached = await getCachedDashboardData();
+      if (cached) {
+        memoryCachedDashboard = { timestamp: now, data: cached };
+        return cached;
+      }
+    } catch {
+      // continua para execução direta
+    }
   }
 
   const { transactions, sourceType } = await fetchGoogleSheetsSalesData(

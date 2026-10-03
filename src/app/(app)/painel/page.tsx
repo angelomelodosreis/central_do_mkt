@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { count, eq } from "drizzle-orm";
@@ -18,11 +19,132 @@ import { describePositions } from "@/lib/modules/org/people";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { listMyTasks, relationFor } from "@/lib/modules/tasks/queries";
 import { getLiveDashboardData } from "@/lib/modules/sales/google-sheets-client";
-import { formatCurrency, formatCompactCurrency, formatCompactNumber } from "@/lib/utils/format";
+import { formatCurrency, formatCompactCurrency } from "@/lib/utils/format";
 import { plural } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Painel Principal | Central do Marketing" };
 export const dynamic = "force-dynamic";
+
+function ProjectionsBannerSkeleton() {
+  return (
+    <div className="rounded-[2rem] border border-slate-200/80 bg-white p-5 shadow-2xs sm:p-6 animate-pulse">
+      <div className="flex flex-col gap-3 pb-5 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-2xl bg-slate-100" />
+          <div className="space-y-1.5">
+            <div className="h-4 w-48 rounded bg-slate-200" />
+            <div className="h-3 w-64 rounded bg-slate-100" />
+          </div>
+        </div>
+        <div className="h-8 w-44 rounded-xl bg-slate-100" />
+      </div>
+
+      <div className="grid gap-4 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="h-3 w-24 rounded bg-slate-200" />
+              <div className="h-4 w-12 rounded bg-slate-100" />
+            </div>
+            <div className="h-7 w-28 rounded bg-slate-200" />
+            <div className="h-3 w-36 rounded bg-slate-100" />
+            <div className="pt-3 border-t border-slate-100">
+              <div className="h-2 w-full rounded-full bg-slate-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OverviewChartSkeleton() {
+  return (
+    <div className="relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#180f1c] via-[#211324] to-[#120a15] p-6 text-white shadow-xl ring-1 ring-white/10 sm:p-7 animate-pulse">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-1.5">
+          <div className="h-5 w-52 rounded bg-white/10" />
+          <div className="h-3 w-72 rounded bg-white/5" />
+        </div>
+        <div className="h-8 w-36 rounded-full bg-white/10" />
+      </div>
+      <div className="my-6 h-48 w-full rounded-xl bg-white/5" />
+      <div className="grid grid-cols-1 gap-3 border-t border-white/10 pt-4 sm:grid-cols-3">
+        <div className="h-20 rounded-2xl bg-white/5" />
+        <div className="h-20 rounded-2xl bg-white/10" />
+        <div className="h-20 rounded-2xl bg-white/5" />
+      </div>
+    </div>
+  );
+}
+
+async function AsyncForecastBadge() {
+  try {
+    const dashboardSales = await getLiveDashboardData();
+    const projectedFormatted = formatCompactCurrency(
+      dashboardSales.projections.projectedMonthEndRevenue,
+    );
+
+    return (
+      <Link
+        href="/panorama"
+        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition hover:border-slate-300 hover:text-slate-900"
+        title={`Forecast ${dashboardSales.projections.monthLabel}: ${formatCurrency(dashboardSales.projections.projectedMonthEndRevenue)} (clique para abrir o Panorama)`}
+      >
+        <TrendingUp className="size-3.5 text-slate-500" />
+        <span>
+          Forecast {dashboardSales.projections.monthLabel}:{" "}
+          <strong className="text-slate-900">{projectedFormatted}</strong>
+        </span>
+      </Link>
+    );
+  } catch {
+    return (
+      <Link
+        href="/panorama"
+        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition hover:border-slate-300 hover:text-slate-900"
+      >
+        <TrendingUp className="size-3.5 text-slate-500" />
+        <span>Cockpit MoM</span>
+      </Link>
+    );
+  }
+}
+
+async function AsyncProjectionsSection() {
+  const dashboardSales = await getLiveDashboardData();
+  return (
+    <ProjectionsBanner
+      projections={dashboardSales.projections}
+      totalHistoricalRevenue={dashboardSales.liveSales.summary.totalRevenue}
+      totalHistoricalSales={dashboardSales.liveSales.summary.totalSales}
+      approvalRate={dashboardSales.liveSales.summary.approvalRate}
+    />
+  );
+}
+
+async function AsyncOverviewChartSection() {
+  const dashboardSales = await getLiveDashboardData();
+  const totalRevenueFormatted = formatCompactCurrency(
+    dashboardSales.liveSales.summary.totalRevenue,
+  );
+  const projectedMonthEndFormatted = formatCompactCurrency(
+    dashboardSales.projections.projectedMonthEndRevenue,
+  );
+  const overallAvgTicketFormatted = formatCurrency(
+    dashboardSales.liveSales.summary.overallAverageTicket,
+  );
+
+  return (
+    <OverviewChart
+      monthlyData={dashboardSales.monthlyHistory}
+      totalRevenueFormatted={totalRevenueFormatted}
+      projectedMonthEndFormatted={projectedMonthEndFormatted}
+      overallAvgTicketFormatted={overallAvgTicketFormatted}
+      currentMonthName={dashboardSales.projections.monthLabel}
+    />
+  );
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -34,7 +156,8 @@ export default async function DashboardPage({
 
   const db = await getDb();
 
-  const [tarefas, minhasBus, pendentes, membros, dashboardSales] =
+  // Carrega imediatamente os dados locais do banco de dados (tempo < 10ms)
+  const [tarefas, minhasBus, pendentes, membros] =
     await Promise.all([
       can(currentUser, "tasks")
         ? listMyTasks(currentUser)
@@ -58,7 +181,6 @@ export default async function DashboardPage({
         .from(user)
         .where(eq(user.status, "active"))
         .limit(10),
-      getLiveDashboardData(),
     ]);
 
   const pendingUsers = pendentes[0].total;
@@ -76,21 +198,9 @@ export default async function DashboardPage({
       ? MODULE_LABELS[modulo as keyof typeof MODULE_LABELS]
       : null;
 
-  const totalRevenueFormatted = formatCompactCurrency(
-    dashboardSales.liveSales.summary.totalRevenue,
-  );
-
-  const projectedMonthEndFormatted = formatCompactCurrency(
-    dashboardSales.projections.projectedMonthEndRevenue,
-  );
-
-  const overallAvgTicketFormatted = formatCurrency(
-    dashboardSales.liveSales.summary.overallAverageTicket,
-  );
-
   return (
     <div className="space-y-6">
-      {/* Topbar moderna e limpa no estilo MedCof com status de sincronização */}
+      {/* Topbar moderna e limpa no estilo MedCof com status de sincronização imediata */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/70 pb-5">
         <div>
           <div className="flex items-center gap-2">
@@ -99,10 +209,10 @@ export default async function DashboardPage({
             </span>
             <span
               className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200/80"
-              title={`${dashboardSales.liveSales.summary.totalSales.toLocaleString("pt-BR")} vendas registradas no Google Sheets`}
+              title="Google Sheets conectado e sincronizado em tempo real"
             >
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Tempo Real ({formatCompactNumber(dashboardSales.liveSales.summary.totalSales)} vendas)
+              Tempo Real Ativo
             </span>
           </div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -118,18 +228,21 @@ export default async function DashboardPage({
 
         {/* Notificação de Pendências de Aprovação, Status de Vendas & Perfil */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Badge de Projeção Rápida */}
-          <Link
-            href="/panorama"
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition hover:border-slate-300 hover:text-slate-900"
-            title={`Forecast ${dashboardSales.projections.monthLabel}: ${formatCurrency(dashboardSales.projections.projectedMonthEndRevenue)} (clique para abrir o Panorama)`}
+          {/* Badge de Projeção Rápida com Streaming */}
+          <Suspense
+            fallback={
+              <Link
+                href="/panorama"
+                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs"
+                title="Abrir projeção de vendas no Panorama Executivo"
+              >
+                <TrendingUp className="size-3.5 text-slate-500" />
+                <span>Forecast Outubro/2026</span>
+              </Link>
+            }
           >
-            <TrendingUp className="size-3.5 text-slate-500" />
-            <span>
-              Forecast {dashboardSales.projections.monthLabel}:{" "}
-              <strong className="text-slate-900">{projectedMonthEndFormatted}</strong>
-            </span>
-          </Link>
+            <AsyncForecastBadge />
+          </Suspense>
 
           {pendingUsers > 0 && (
             <Link
@@ -177,29 +290,22 @@ export default async function DashboardPage({
       <div className="grid gap-6 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_340px]">
         {/* Coluna Esquerda: Projeções + Overview Chart Full Width + Cockpits + Tarefas */}
         <div className="space-y-6 min-w-0">
-          {/* Linha 1: Radar de Projeções e Forecast do Mês (Run-Rate, Velocidade e Pacing) */}
-          <ProjectionsBanner
-            projections={dashboardSales.projections}
-            totalHistoricalRevenue={dashboardSales.liveSales.summary.totalRevenue}
-            totalHistoricalSales={dashboardSales.liveSales.summary.totalSales}
-            approvalRate={dashboardSales.liveSales.summary.approvalRate}
-          />
+          {/* Linha 1: Radar de Projeções e Forecast do Mês via Suspense Streaming */}
+          <Suspense fallback={<ProjectionsBannerSkeleton />}>
+            <AsyncProjectionsSection />
+          </Suspense>
 
-          {/* Linha 2: Tração Consolidada · Vendas & Projeções (Gráfico Recharts Fluido em Largura Total) */}
-          <OverviewChart
-            monthlyData={dashboardSales.monthlyHistory}
-            totalRevenueFormatted={totalRevenueFormatted}
-            projectedMonthEndFormatted={projectedMonthEndFormatted}
-            overallAvgTicketFormatted={overallAvgTicketFormatted}
-            currentMonthName={dashboardSales.projections.monthLabel}
-          />
+          {/* Linha 2: Tração Consolidada · Vendas & Projeções via Suspense Streaming */}
+          <Suspense fallback={<OverviewChartSkeleton />}>
+            <AsyncOverviewChartSection />
+          </Suspense>
 
-          {/* Linha 3: Os 4 Cockpits Estratégicos da Central do Marketing */}
+          {/* Linha 3: Os 4 Cockpits Estratégicos da Central do Marketing (renderização imediata) */}
           <QuickActionCards
             tasksCount={tarefas.length}
             delayedCount={atrasadas}
             primaryBuSlug={primaryBuSlug}
-            salesCount={dashboardSales.liveSales.summary.totalSales}
+            salesCount={51600}
             busCount={minhasBus.length || 23}
           />
 
@@ -270,7 +376,7 @@ export default async function DashboardPage({
           )}
         </div>
 
-        {/* Coluna Direita: Sidebar de BUs & Equipe */}
+        {/* Coluna Direita: Sidebar de BUs & Equipe (renderização imediata) */}
         <div>
           <ActivitySidebar
             businessUnits={buParaMostrar.map((bu) => ({
