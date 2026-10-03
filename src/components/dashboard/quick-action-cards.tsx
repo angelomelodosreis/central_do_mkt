@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Compass, Flame, Layers } from "lucide-react";
+import { ArrowRight, Compass, Layers, MessageSquare, CheckSquare } from "lucide-react";
 
 export function QuickActionCards({
   tasksCount = 0,
   delayedCount = 0,
   primaryBuSlug,
-  salesCount = 8596,
+  salesCount = 51600,
   busCount = 23,
 }: {
   tasksCount?: number;
@@ -16,110 +16,111 @@ export function QuickActionCards({
   salesCount?: number;
   busCount?: number;
 }) {
+  const cards = [
+    {
+      title: "Cockpit de Vendas",
+      tag: "Tempo Real · MoM",
+      description: "Análise comparativa dia a dia, sazonalidade e BUs.",
+      metric: `${salesCount.toLocaleString("pt-BR")} vendas registradas`,
+      href: "/panorama",
+      icon: Compass,
+      badgeText: "Google Sheets",
+      badgeClass: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+      accentBg: "from-emerald-950 via-slate-900 to-slate-950",
+      iconColor: "text-emerald-400",
+      hoverBorder: "hover:border-emerald-400/50",
+    },
+    {
+      title: "Planejamento 2.0",
+      tag: "Estratégia & Metas",
+      description: "Diagnóstico semestral e metas 2.0 de todas as unidades.",
+      metric: `${busCount} Business Units estruturadas`,
+      href: primaryBuSlug ? `/planejamento/${primaryBuSlug}` : "/planejamento",
+      icon: Layers,
+      badgeText: "23 BUs MedCof",
+      badgeClass: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+      accentBg: "from-blue-950 via-slate-900 to-slate-950",
+      iconColor: "text-blue-400",
+      hoverBorder: "hover:border-blue-400/50",
+    },
+    {
+      title: "Feed de Revisões",
+      tag: "Slack Canvas Feed",
+      description: "Acompanhamento semanal por BU, pautas e prazos.",
+      metric: "Pautas & Planos de Ação",
+      href: "/planejamento/revisoes",
+      icon: MessageSquare,
+      badgeText: "Novo Feed",
+      badgeClass: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+      accentBg: "from-purple-950 via-slate-900 to-slate-950",
+      iconColor: "text-purple-400",
+      hoverBorder: "hover:border-purple-400/50",
+    },
+    {
+      title: "Execução & SLA",
+      tag: "Fila de Tarefas",
+      description: "Entregáveis de marketing, campanhas e criativos.",
+      metric: `${tasksCount} ${tasksCount === 1 ? "tarefa atribuída" : "tarefas atribuídas"}`,
+      href: "/tarefas",
+      icon: CheckSquare,
+      badgeText: delayedCount > 0 ? `${delayedCount} em atraso` : "Em dia",
+      badgeClass:
+        delayedCount > 0
+          ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
+          : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+      accentBg: "from-rose-950 via-slate-900 to-slate-950",
+      iconColor: "text-rose-400",
+      hoverBorder: "hover:border-rose-400/50",
+    },
+  ];
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* Card 0: Panorama Executivo & Vendas em Tempo Real (Google Sheets) */}
-      <Link
-        href="/panorama"
-        className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-emerald-200/60 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 p-5 text-white shadow-[0_12px_30px_-10px_rgba(16,185,129,0.2)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_rgba(16,185,129,0.3)]"
-      >
-        <div className="flex items-center gap-3.5 min-w-0">
-          <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 shadow-inner backdrop-blur-md ring-1 ring-emerald-500/30 group-hover:scale-105 transition-transform">
-            <span className="absolute -top-1 -right-1 flex size-3">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
-            </span>
-            <Compass className="size-6 text-emerald-400" />
-          </span>
-          <div className="min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
-              Panorama Executivo
-            </span>
-            <p className="truncate font-display text-base font-semibold text-white">
-              Vendas Real-Time & Pacing
-            </p>
-            <p className="text-[11px] text-emerald-300/80 truncate">
-              {salesCount.toLocaleString("pt-BR")} transações sincronizadas
-            </p>
-          </div>
-        </div>
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white group-hover:bg-emerald-500 group-hover:translate-x-0.5 transition-all">
-          <ArrowRight className="size-4" />
-        </span>
-      </Link>
-
-      {/* Card 1: Planejamento Estratégico */}
-      <Link
-        href={
-          primaryBuSlug ? `/planejamento/${primaryBuSlug}` : "/planejamento"
-        }
-        className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-slate-200/80 bg-gradient-to-r from-slate-900 to-[#1e1422] p-5 text-white shadow-[0_12px_30px_-10px_rgba(15,23,42,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-10px_rgba(15,23,42,0.25)]"
-      >
-        <div className="flex items-center gap-3.5 min-w-0">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 shadow-inner backdrop-blur-md ring-1 ring-white/15 group-hover:scale-105 transition-transform">
-            <Layers className="size-6 text-brand-300" />
-          </span>
-          <div className="min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-300">
-              Planejamento Estratégico
-            </span>
-            <p className="truncate font-display text-base font-semibold text-white">
-              {busCount} BUs em Operação
-            </p>
-            <p className="text-[11px] text-slate-400 truncate">
-              Diagnóstico 2.0 & Metas 2.0
-            </p>
-          </div>
-        </div>
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white group-hover:bg-brand-500 group-hover:translate-x-0.5 transition-all">
-          <ArrowRight className="size-4" />
-        </span>
-      </Link>
-
-      {/* Card 2: Minhas Tarefas com Fundo Vibrante MedCof */}
-      <Link
-        href="/tarefas"
-        className="group relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-500 via-brand-600 to-rose-700 p-6 text-white shadow-[0_16px_36px_-10px_rgba(226,38,60,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_45px_-10px_rgba(226,38,60,0.45)]"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl bg-white/20 shadow-xs backdrop-blur-md ring-1 ring-white/30 group-hover:scale-105 transition-transform">
-              <Flame className="size-5 text-white" />
-            </span>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => {
+        const IconComponent = card.icon;
+        return (
+          <Link
+            key={card.title}
+            href={card.href}
+            className={`group relative flex flex-col justify-between overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br ${card.accentBg} p-5 text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${card.hoverBorder}`}
+          >
             <div>
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-rose-100">
-                Fila de Trabalho
-              </span>
-              <p className="font-display text-base font-semibold text-white">
-                Minhas Tarefas
-              </p>
-            </div>
-          </div>
-          <span className="flex size-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm group-hover:bg-white group-hover:text-brand-600 transition-all">
-            <ArrowRight className="size-4" />
-          </span>
-        </div>
+              <div className="flex items-center justify-between">
+                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/10 shadow-inner backdrop-blur-md ring-1 ring-white/15 transition-transform group-hover:scale-105">
+                  <IconComponent className={`size-5 ${card.iconColor}`} />
+                </span>
+                <span
+                  className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${card.badgeClass}`}
+                >
+                  {card.badgeText}
+                </span>
+              </div>
 
-        <div className="mt-5 border-t border-white/20 pt-4">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-rose-100">
-            Total em Aberto
-          </p>
-          <div className="flex items-baseline justify-between">
-            <p className="font-display text-3xl font-bold tracking-tight text-white">
-              {tasksCount} {tasksCount === 1 ? "tarefa" : "tarefas"}
-            </p>
-            {delayedCount > 0 ? (
-              <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-semibold text-white">
-                {delayedCount} atrasada{delayedCount === 1 ? "" : "s"}
+              <div className="mt-4">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  {card.tag}
+                </span>
+                <h4 className="font-display text-base font-bold text-white transition-colors group-hover:text-brand-300">
+                  {card.title}
+                </h4>
+                <p className="mt-1 text-xs text-slate-300/80 leading-relaxed line-clamp-2">
+                  {card.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-3">
+              <span className="text-xs font-semibold text-slate-200">
+                {card.metric}
               </span>
-            ) : (
-              <span className="rounded-full bg-white/25 px-2.5 py-0.5 text-xs font-semibold text-white">
-                Em dia
+              <span className="flex size-7 items-center justify-center rounded-full bg-white/10 text-white transition-all group-hover:bg-white group-hover:text-slate-900 group-hover:translate-x-0.5">
+                <ArrowRight className="size-3.5" />
               </span>
-            )}
-          </div>
-        </div>
-      </Link>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
+

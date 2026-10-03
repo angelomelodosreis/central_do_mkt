@@ -10,7 +10,6 @@ import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui/card";
 import { OverviewChart } from "@/components/dashboard/overview-chart";
 import { QuickActionCards } from "@/components/dashboard/quick-action-cards";
 import { ProjectionsBanner } from "@/components/dashboard/projections-banner";
-import { PillarsGrid } from "@/components/dashboard/pillars-grid";
 import { ActivitySidebar } from "@/components/dashboard/activity-sidebar";
 import { can, canManageUsers, requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
@@ -178,27 +177,9 @@ export default async function DashboardPage({
 
       {/* Grid Principal do Dashboard: Área Central + Sidebar Direita */}
       <div className="grid gap-6 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_340px]">
-        {/* Coluna Esquerda: Overview Chart + Quick Cards + Projeções + Pillars + Tarefas */}
-        <div className="space-y-6">
-          {/* Linha Superior: Overview Chart (Gráfico Real com Recharts) + QuickActionCards */}
-          <div className="grid gap-5 md:grid-cols-[1fr_240px] xl:grid-cols-[1fr_260px]">
-            <OverviewChart
-              monthlyData={dashboardSales.monthlyHistory}
-              totalRevenueFormatted={totalRevenueFormatted}
-              projectedMonthEndFormatted={projectedMonthEndFormatted}
-              overallAvgTicketFormatted={overallAvgTicketFormatted}
-              currentMonthName={dashboardSales.projections.monthLabel}
-            />
-            <QuickActionCards
-              tasksCount={tarefas.length}
-              delayedCount={atrasadas}
-              primaryBuSlug={primaryBuSlug}
-              salesCount={dashboardSales.liveSales.summary.totalSales}
-              busCount={minhasBus.length || 23}
-            />
-          </div>
-
-          {/* Linha 2: Radar de Projeções e Forecast do Mês (Run-Rate, Velocidade e Pacing) */}
+        {/* Coluna Esquerda: Projeções + Overview Chart Full Width + Cockpits + Tarefas */}
+        <div className="space-y-6 min-w-0">
+          {/* Linha 1: Radar de Projeções e Forecast do Mês (Run-Rate, Velocidade e Pacing) */}
           <ProjectionsBanner
             projections={dashboardSales.projections}
             totalHistoricalRevenue={dashboardSales.liveSales.summary.totalRevenue}
@@ -206,13 +187,22 @@ export default async function DashboardPage({
             approvalRate={dashboardSales.liveSales.summary.approvalRate}
           />
 
-          {/* Linha 3: Grid de 3 Pilares com Métricas Vivas e Metas */}
-          <PillarsGrid
-            openTasksCount={tarefas.length}
-            delayedTasksCount={atrasadas}
+          {/* Linha 2: Tração Consolidada · Vendas & Projeções (Gráfico Recharts Fluido em Largura Total) */}
+          <OverviewChart
+            monthlyData={dashboardSales.monthlyHistory}
+            totalRevenueFormatted={totalRevenueFormatted}
+            projectedMonthEndFormatted={projectedMonthEndFormatted}
+            overallAvgTicketFormatted={overallAvgTicketFormatted}
+            currentMonthName={dashboardSales.projections.monthLabel}
+          />
+
+          {/* Linha 3: Os 4 Cockpits Estratégicos da Central do Marketing */}
+          <QuickActionCards
+            tasksCount={tarefas.length}
+            delayedCount={atrasadas}
+            primaryBuSlug={primaryBuSlug}
+            salesCount={dashboardSales.liveSales.summary.totalSales}
             busCount={minhasBus.length || 23}
-            totalRevenue={dashboardSales.liveSales.summary.totalRevenue}
-            monthProjected={dashboardSales.projections.projectedMonthEndRevenue}
           />
 
           {/* Linha 4: Minhas Tarefas Recentes em Card Nativo */}

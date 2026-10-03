@@ -213,7 +213,7 @@ export function OverviewChart({
       </div>
 
       {/* Seletor de meses em pílula na base do gráfico */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-1 border-t border-white/10 pt-3">
+      <div className="relative z-10 flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-3">
         {chartPoints.map((item) => {
           const isSelected = selectedPoint.monthKey === item.monthKey;
           return (
@@ -221,7 +221,7 @@ export function OverviewChart({
               key={item.monthKey}
               type="button"
               onClick={() => setSelectedMonthKey(item.monthKey)}
-              className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
                 isSelected
                   ? "bg-white text-slate-900 shadow-sm ring-2 ring-white/50"
                   : "text-slate-400 hover:text-white hover:bg-white/5"
@@ -234,8 +234,8 @@ export function OverviewChart({
       </div>
 
       {/* Estatísticas Inferiores em Destaque Dinâmico */}
-      <div className="relative z-10 mt-5 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 text-center sm:gap-4 sm:text-left">
-        <div className="rounded-2xl bg-white/5 p-3 backdrop-blur-sm sm:p-4">
+      <div className="relative z-10 mt-5 grid grid-cols-1 gap-3 border-t border-white/10 pt-4 text-center sm:grid-cols-3 sm:text-left">
+        <div className="rounded-2xl bg-white/5 p-3.5 backdrop-blur-sm sm:p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
             Faturamento Realizado
           </p>
