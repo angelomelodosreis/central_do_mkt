@@ -277,3 +277,54 @@ export function rotuloDaSemana(inicio: Date): string {
     ? `${inicio.getDate()}–${fim.getDate()} ${mes(fim)}`
     : `${inicio.getDate()} ${mes(inicio)}–${fim.getDate()} ${mes(fim)}`;
 }
+
+/**
+ * Retorna a string "YYYY-MM-DD" correspondente à segunda-feira da semana de uma data.
+ * Utiliza o fuso horário oficial de negócios (America/Sao_Paulo) de forma determinística,
+ * evitando divergências de fuso entre servidor Vercel (UTC) e cliente (UTC-3).
+ */
+export function getWeekStartIso(data: Date | string | number): string {
+  const d = typeof data === "object" ? data : new Date(data);
+  const ymd = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+  const [year, month, day] = ymd.split("-").map(Number);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  const dayOfWeek = utcDate.getUTCDay();
+  const recuo = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(utcDate.getTime() - recuo * DIA);
+  return monday.toISOString().slice(0, 10);
+}
+
+/**
+ * Retorna uma data no meio do dia (12:00:00 UTC) para a segunda-feira especificada.
+ * O horário de 12:00 UTC garante que em qualquer fuso do mundo (UTC-12 a UTC+12)
+ * a data continue caindo no mesmo dia civil exato, prevenindo deslizamentos de dia/mês.
+ */
+export function getWeekStartDate(isoWeek: string): Date {
+  const [year, month, day] = isoWeek.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+}
+
+/**
+ * Retorna N semanas consecutivas em formato ISO ("YYYY-MM-DD"), em ordem cronológica,
+ * terminando na semana informada (com deslocamento opcional para períodos anteriores).
+ */
+export function getWeeksRangeIso(
+  currentWeekIso: string,
+  count: number,
+  offsetCount = 0,
+): string[] {
+  const result: string[] = [];
+  const baseDate = getWeekStartDate(currentWeekIso);
+  for (let i = count - 1; i >= 0; i--) {
+    const shiftWeeks = i + offsetCount;
+    const d = new Date(baseDate.getTime() - shiftWeeks * 7 * DIA);
+    result.push(getWeekStartIso(d));
+  }
+  return result;
+}
+

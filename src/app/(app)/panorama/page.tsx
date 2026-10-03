@@ -5,8 +5,8 @@ import { PageHeader, EmptyState } from "@/components/ui/card";
 import { requirePermission } from "@/lib/auth/session";
 import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { TIMELINE_KINDS } from "@/lib/db/schema";
-import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
-import { inicioDaSemana } from "@/lib/modules/results/metrics";
+import { listAccessibleBusinessUnits, seesAllBusinessUnits } from "@/lib/modules/org/scope";
+import { getWeekStartIso, getWeekStartDate, inicioDaSemana } from "@/lib/modules/results/metrics";
 import {
   listAgenda,
   listWeeklyResultsOfPeriod,
@@ -55,19 +55,26 @@ export default async function PanoramaPage() {
   );
   const ate = new Date(agora.getTime() + DIAS_DE_AGENDA * 86_400_000);
 
+  const isMaster =
+    isFullAccessMaster({
+      email: currentUser.email,
+      name: currentUser.name,
+    }) || seesAllBusinessUnits(currentUser);
+
+  // Escopo estrito: usuários não-master carregam apenas as transações das suas BUs autorizadas
+  const targetCodesForFetch = isMaster
+    ? undefined
+    : (ativas
+        .map((u) => normalizeBuCode(u.slug) || normalizeBuCode(u.label) || u.slug)
+        .filter(Boolean) as string[]);
+
   const [semanais, agenda, liveSales, compData, allTransactions] = await Promise.all([
     listWeeklyResultsOfPeriod(ids, desde, agora),
     listAgenda(ids, agora, ate),
-    getLiveSalesAnalytics(),
-    getLiveComparativeAnalytics(),
+    getLiveSalesAnalytics({ targetBuCodes: targetCodesForFetch }),
+    getLiveComparativeAnalytics({ targetBuCodes: targetCodesForFetch }),
     getAllLiveTransactions(),
   ]);
-
-
-  const isMaster = isFullAccessMaster({
-    email: currentUser.email,
-    name: currentUser.name,
-  });
 
   // Mapeamento de BU para ID
   const buCodeToIdMap = new Map<string, string>();
@@ -88,7 +95,8 @@ export default async function PanoramaPage() {
   >();
 
   for (const s of semanais) {
-    const key = `${s.businessUnitId}_${s.weekStart.getTime()}`;
+    const weekIso = getWeekStartIso(s.weekStart);
+    const key = `${s.businessUnitId}_${weekIso}`;
     weeklyMap.set(key, {
       revenue: s.revenue ?? 0,
       sales: s.sales ?? 0,
@@ -97,14 +105,14 @@ export default async function PanoramaPage() {
     });
   }
 
-  // Enriquece as semanas com as 51.600+ vendas reais sincronizadas do Google Sheets (todas as 23 BUs)
+  // Enriquece as semanas com as vendas reais sincronizadas do Google Sheets estritamente das BUs no escopo
   for (const t of allTransactions) {
     if (t.timestamp < desde.getTime() || t.timestamp > agora.getTime()) continue;
     const normalizedCode = normalizeBuCode(t.businessUnitCode) || t.businessUnitCode;
-    const buId = buCodeToIdMap.get(normalizedCode) || buCodeToIdMap.get(t.businessUnitCode) || ativas[0]?.id;
-    if (!buId) continue;
-    const weekStartTs = inicioDaSemana(new Date(t.timestamp)).getTime();
-    const key = `${buId}_${weekStartTs}`;
+    const buId = buCodeToIdMap.get(normalizedCode) || buCodeToIdMap.get(t.businessUnitCode);
+    if (!buId) continue; // Garante que transações de outras BUs nunca sejam atribuídas indevidamente
+    const weekIso = getWeekStartIso(t.timestamp);
+    const key = `${buId}_${weekIso}`;
     const existing = weeklyMap.get(key) ?? {
       revenue: 0,
       sales: 0,
@@ -120,10 +128,12 @@ export default async function PanoramaPage() {
   }
 
   const enrichedSemanais = Array.from(weeklyMap.entries()).map(([k, val]) => {
-    const [bId, wTs] = k.split("_");
+    const [bId, weekIso] = k.split("_");
+    const weekStartDate = getWeekStartDate(weekIso);
     return {
       businessUnitId: bId,
-      weekStart: parseInt(wTs, 10),
+      weekIso,
+      weekStart: weekStartDate.getTime(),
       revenue: val.revenue,
       sales: val.sales,
       leads: val.leads,

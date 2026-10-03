@@ -63,6 +63,9 @@ import {
   SENTIDO,
   calcular,
   formatarIndicador,
+  getWeekStartDate,
+  getWeekStartIso,
+  getWeeksRangeIso,
   rotuloCurto,
   rotuloDaSemana,
   rotuloDoIndicador,
@@ -90,6 +93,7 @@ type Unidade = {
 
 type LinhaSemanal = BaseNumbers & {
   businessUnitId: string;
+  weekIso: string;
   weekStart: number;
 };
 
@@ -170,13 +174,19 @@ export function PanoramaView({
       ? busSelecionadas
       : unidades.map((unidade) => unidade.id);
 
+  // Lista padrão de códigos para o escopo do usuário atual (não-master fica restrito às suas BUs)
+  const defaultUserBuCodes = useMemo(
+    () => (isMaster ? undefined : unidades.map((u) => u.code || u.slug || u.id)),
+    [isMaster, unidades],
+  );
+
   // Atualização reativa de vendas ao alterar filtros de BU ou Meses
   function updateSalesData(
     bus: string[],
     currMonth = currentMonthKey,
     prevMonth = previousMonthKey,
   ) {
-    const codes = bus.length > 0 ? bus : undefined;
+    const codes = bus.length > 0 ? bus : defaultUserBuCodes;
     startTransition(async () => {
       try {
         const [updatedLive, updatedComp] = await Promise.all([
@@ -210,7 +220,7 @@ export function PanoramaView({
 
   // Sincronização geral
   function handleSync() {
-    const codes = busSelecionadas.length > 0 ? busSelecionadas : undefined;
+    const codes = busSelecionadas.length > 0 ? busSelecionadas : defaultUserBuCodes;
     startTransition(async () => {
       try {
         const [updatedLive, updatedComp] = await Promise.all([
@@ -236,7 +246,7 @@ export function PanoramaView({
   const [activeCompareEndDate, setActiveCompareEndDate] = useState<string | undefined>(undefined);
 
   function handleComparativeFilterChange(params: ComparativePeriodFilterParams) {
-    const codes = busSelecionadas.length > 0 ? busSelecionadas : undefined;
+    const codes = busSelecionadas.length > 0 ? busSelecionadas : defaultUserBuCodes;
     startTransition(async () => {
       try {
         if (params.mode === "custom_range") {
@@ -284,21 +294,31 @@ export function PanoramaView({
   }
 
 
-  // ── Fechamento Semanal ───────────────────────────────────────────────────
+  // ── Fechamento Semanal (Sincronizado e Imune a Desvios de Fuso) ───────────
   const semanasNaJanela = Number(janela);
-  const fim = inicioDaSemanaLocal(agora);
-  const inicioAtual = fim.getTime() - semanasNaJanela * SEMANA;
-  const inicioAnterior = inicioAtual - semanasNaJanela * SEMANA;
+  const currentWeekIso = useMemo(() => getWeekStartIso(agora), [agora]);
+
+  const semanasAtuaisIso = useMemo(
+    () => getWeeksRangeIso(currentWeekIso, semanasNaJanela, 0),
+    [currentWeekIso, semanasNaJanela],
+  );
+
+  const semanasAnterioresIso = useMemo(
+    () => getWeeksRangeIso(currentWeekIso, semanasNaJanela, semanasNaJanela),
+    [currentWeekIso, semanasNaJanela],
+  );
+
+  const setAtuais = useMemo(() => new Set(semanasAtuaisIso), [semanasAtuaisIso]);
+  const setAnteriores = useMemo(() => new Set(semanasAnterioresIso), [semanasAnterioresIso]);
 
   const noPeriodo = useMemo(
     () =>
       semanais.filter(
         (linha) =>
           idsVisiveis.includes(linha.businessUnitId) &&
-          linha.weekStart >= inicioAtual &&
-          linha.weekStart < fim.getTime(),
+          setAtuais.has(linha.weekIso),
       ),
-    [semanais, idsVisiveis, inicioAtual, fim],
+    [semanais, idsVisiveis, setAtuais],
   );
 
   const noAnterior = useMemo(
@@ -306,37 +326,37 @@ export function PanoramaView({
       semanais.filter(
         (linha) =>
           idsVisiveis.includes(linha.businessUnitId) &&
-          linha.weekStart >= inicioAnterior &&
-          linha.weekStart < inicioAtual,
+          setAnteriores.has(linha.weekIso),
       ),
-    [semanais, idsVisiveis, inicioAnterior, inicioAtual],
+    [semanais, idsVisiveis, setAnteriores],
   );
 
   const atual = calcular(somar(noPeriodo));
   const anterior = calcular(somar(noAnterior));
 
-  // Série semanal
+  // Série semanal com correspondência exata por semana ISO ("YYYY-MM-DD")
   const serie = useMemo(() => {
-    const porSemana = new Map<number, LinhaSemanal[]>();
+    const porSemana = new Map<string, LinhaSemanal[]>();
     for (const linha of noPeriodo) {
-      const lista = porSemana.get(linha.weekStart) ?? [];
+      const lista = porSemana.get(linha.weekIso) ?? [];
       lista.push(linha);
-      porSemana.set(linha.weekStart, lista);
+      porSemana.set(linha.weekIso, lista);
     }
 
-    const pontos = [];
-    for (let i = 0; i < semanasNaJanela; i += 1) {
-      const inicio = inicioAtual + i * SEMANA;
-      const doGrupo = porSemana.get(inicio) ?? [];
+    return semanasAtuaisIso.map((wIso) => {
+      const doGrupo = porSemana.get(wIso) ?? [];
       const valores = calcular(somar(doGrupo));
-      pontos.push({
-        label: rotuloDaSemana(new Date(inicio)),
+      const wDate = getWeekStartDate(wIso);
+      const rotulo = rotuloDaSemana(wDate);
+      const isCurrentWeek = wIso === currentWeekIso;
+      const rotuloFormatado = isCurrentWeek ? `${rotulo} (em curso)` : rotulo;
+      return {
+        label: rotulo,
         valor: valores[indicador],
-        titulo: `${rotuloDaSemana(new Date(inicio))}: ${formatarIndicador(indicador, valores[indicador])}`,
-      });
-    }
-    return pontos;
-  }, [noPeriodo, semanasNaJanela, inicioAtual, indicador]);
+        titulo: `${rotuloFormatado}: ${formatarIndicador(indicador, valores[indicador])}`,
+      };
+    });
+  }, [noPeriodo, semanasAtuaisIso, currentWeekIso, indicador]);
 
   // Ranking por BU no fechamento semanal
   const porBu = useMemo(() => {
@@ -401,6 +421,19 @@ export function PanoramaView({
             <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
               Tempo Real Ativo
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                isMaster
+                  ? "bg-purple-50 text-purple-700 border border-purple-200/60"
+                  : "bg-slate-100 text-slate-700 border border-slate-200/80"
+              }`}
+            >
+              {isMaster
+                ? "Acesso Total (23 BUs)"
+                : unidades.length === 1
+                  ? `Escopo: ${unidades[0].label}`
+                  : `Escopo: ${unidades.length} BUs atribuídas`}
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500 leading-relaxed max-w-2xl">
@@ -834,10 +867,3 @@ function Agenda({ itens, agora }: { itens: ItemDaAgenda[]; agora: Date }) {
   );
 }
 
-function inicioDaSemanaLocal(data: Date): Date {
-  const copia = new Date(data);
-  copia.setHours(0, 0, 0, 0);
-  const dia = copia.getDay();
-  copia.setDate(copia.getDate() - (dia === 0 ? 6 : dia - 1));
-  return copia;
-}
