@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   calculateSalesAnalytics,
   calculateComparativeAnalysis,
+  calculateProjections,
   getAvailableMonths,
   formatMonthYearLabel,
 } from "../src/lib/modules/sales/calculations.ts";
@@ -261,5 +262,55 @@ describe("Motor de Cálculos de Vendas e Marketing (Central do Mkt)", () => {
 
     // Lista com "__NONE__" retorna vazio para escopo sem BUs
     assert.deepEqual(normalizeBuCodes(["__NONE__"]), []);
+  });
+
+  test("Diferenciação clara entre YTD do ano corrente, Projeção Anual e Histórico Total", () => {
+    const multiYearMock = [
+      // 2025: R$ 50.000
+      {
+        id: "tx-old-1",
+        date: "2025-05-10T10:00:00Z",
+        timestamp: new Date("2025-05-10T10:00:00Z").getTime(),
+        amount: 50000,
+        quantity: 5,
+        businessUnitCode: "MEDCOF_RESIDENCIA",
+        status: "approved",
+      },
+      // 2026-09: R$ 30.000
+      {
+        id: "tx-2026-1",
+        date: "2026-09-15T10:00:00Z",
+        timestamp: new Date("2026-09-15T10:00:00Z").getTime(),
+        amount: 30000,
+        quantity: 3,
+        businessUnitCode: "MEDCOF_RESIDENCIA",
+        status: "approved",
+      },
+      // 2026-10-02: R$ 10.000
+      {
+        id: "tx-2026-2",
+        date: "2026-10-02T10:00:00Z",
+        timestamp: new Date("2026-10-02T10:00:00Z").getTime(),
+        amount: 10000,
+        quantity: 1,
+        businessUnitCode: "MEDCOF_RESIDENCIA",
+        status: "approved",
+      },
+    ];
+
+    const proj = calculateProjections(multiYearMock, "2026-10");
+
+    // Realizado de Outubro: apenas tx-2026-2 (R$ 10.000)
+    assert.equal(proj.currentRevenue, 10000);
+
+    // Realizado de 2026 (YTD): tx-2026-1 + tx-2026-2 (R$ 40.000)
+    assert.equal(proj.currentYearRevenue, 40000);
+
+    // Histórico Geral (All-time 2025 + 2026): R$ 90.000
+    assert.equal(proj.totalHistoricalRevenue, 90000);
+
+    // A projeção anual projeta apenas o ano corrente (2026), não soma os anos passados
+    assert.ok(proj.currentYearProjectedRevenue >= proj.currentYearRevenue);
+    assert.ok(proj.currentYearProjectedRevenue < proj.totalHistoricalRevenue);
   });
 });

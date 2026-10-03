@@ -58,12 +58,14 @@ export function OverviewChart({
   projectedMonthEndFormatted,
   overallAvgTicketFormatted,
   currentMonthName,
+  scopeLabel,
 }: {
   monthlyData?: MonthlyPoint[];
   totalRevenueFormatted?: string;
   projectedMonthEndFormatted?: string;
   overallAvgTicketFormatted?: string;
   currentMonthName?: string;
+  scopeLabel?: string;
 }) {
   const chartPoints = useMemo(() => {
     if (monthlyData && monthlyData.length > 0) {
@@ -114,7 +116,7 @@ export function OverviewChart({
             </h3>
           </div>
           <p className="mt-0.5 text-xs text-slate-400">
-            Série histórica real conectada ao Google Sheets (23 BUs consolidadas)
+            Série histórica real conectada ao Google Sheets ({scopeLabel || "23 BUs consolidadas"})
           </p>
         </div>
 

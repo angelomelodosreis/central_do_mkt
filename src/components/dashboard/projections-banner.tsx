@@ -227,39 +227,42 @@ export function ProjectionsBanner({
         </div>
 
         {/* 4. Receita Total Acumulada do Ciclo */}
+        {/* 4. Receita do Ano Corrente & Projeção Anual Real */}
         <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 min-w-0">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
-                  Total Acumulado
+                  Acumulado 2026
                 </span>
                 <MetricHelpTooltip
-                  title="Faturamento Total Acumulado"
-                  explanation="Soma auditada de todo o faturamento histórico de todas as 23 Business Units conectadas à planilha oficial MedCof."
+                  title="Faturamento do Ano Corrente (YTD) & Projeção"
+                  explanation="Receita realizada em 2026 até agora pelo escopo ativo e a projeção de fechamento do ano baseada no ritmo médio diário acumulado."
+                  formula="(Receita 2026 ÷ Dias Decorridos no Ano) × 365"
                 />
               </div>
               <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                Geral
+                2026
               </span>
             </div>
             <p
               className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums"
-              title={`Faturamento total auditado: ${formatCurrency(totalHistoricalRevenue)}`}
+              title={`Realizado em 2026: ${formatCurrency(projections.currentYearRevenue || totalHistoricalRevenue)} (Histórico Geral: ${formatCurrency(totalHistoricalRevenue)})`}
             >
-              {formatCompactCurrency(totalHistoricalRevenue)}
+              {formatCompactCurrency(projections.currentYearRevenue || totalHistoricalRevenue)}
             </p>
             <p className="mt-1 text-xs text-slate-500 truncate">
-              Projeção Anual: <strong className="text-slate-700 font-semibold">{formatCompactCurrency(projections.totalAnnualProjectedRevenue)}</strong>
+              Projeção 2026: <strong className="text-slate-700 font-semibold">{formatCompactCurrency(projections.currentYearProjectedRevenue || projections.totalAnnualProjectedRevenue)}</strong>
             </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs text-slate-600">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 whitespace-nowrap">Receita MoM:</span>
+              <span className="text-[11px] text-slate-500 whitespace-nowrap">Receita MTD:</span>
               <MetricHelpTooltip
-                title="Pacing MoM (Month-over-Month)"
-                explanation="Ritmo comparativo de receita do mês atual em relação ao mesmo intervalo do mês anterior."
+                title="Pacing MTD Homólogo"
+                explanation="Ritmo comparativo de receita do mês atual em relação a exatamente os mesmos dias do mês anterior (D01 a D03), eliminando distorções de dias faltantes."
+                formula="(Receita MTD Atual - Receita MTD Anterior) ÷ Receita MTD Anterior"
               />
             </div>
             <strong className="shrink-0 font-semibold text-slate-800">

@@ -384,6 +384,10 @@ export interface SalesProjections {
   previousPeriodSameDaysRevenue: number;
   previousPeriodSameDaysSales: number;
   totalAnnualProjectedRevenue: number;
+  currentYearRevenue: number;
+  currentYearProjectedRevenue: number;
+  currentYearSales: number;
+  totalHistoricalRevenue: number;
   velocityDaily: number;
   accelerationPercent: number;
 }
@@ -540,13 +544,42 @@ export function calculateProjections(
   const projectedRunRateMultiplier =
     daysElapsed > 0 ? totalDaysInMonth / daysElapsed : 1;
 
-  // Faturamento total histórico e projeção anual
-  const totalHistoricalRevenue = transactions.reduce(
-    (acc, t) => acc + (t.status === "approved" ? t.amount : 0),
-    0,
+  // Faturamento acumulado do ano corrente e projeção anual real (Run-Rate 2026)
+  const currentYearStr = String(currY);
+  const currentYearTxs = transactions.filter(
+    (t) =>
+      (t.status === "approved" || t.status === "pending") &&
+      t.date.startsWith(currentYearStr),
   );
-  const totalAnnualProjectedRevenue = Math.round(
-    totalHistoricalRevenue + recentDailyRevenue * daysRemaining,
+
+  let currentYearRevenue = 0;
+  let currentYearSales = 0;
+  for (const t of currentYearTxs) {
+    currentYearRevenue += t.amount;
+    currentYearSales += t.quantity;
+  }
+
+  // Dias decorridos no ano até o mês/dia atual
+  const startOfYearMs = new Date(currY, 0, 1).getTime();
+  const refDateMs = new Date(currY, currM - 1, daysElapsed).getTime();
+  const endOfYearMs = new Date(currY, 11, 31).getTime();
+  const daysElapsedInYear = Math.max(
+    1,
+    Math.round((refDateMs - startOfYearMs) / 86400000) + 1,
+  );
+  const totalDaysInYear = Math.round((endOfYearMs - startOfYearMs) / 86400000) + 1;
+  const daysRemainingInYear = Math.max(0, totalDaysInYear - daysElapsedInYear);
+
+  const avgDailyYearRevenue =
+    daysElapsedInYear > 0 ? currentYearRevenue / daysElapsedInYear : 0;
+  const currentYearProjectedRevenue = Math.round(
+    currentYearRevenue + avgDailyYearRevenue * daysRemainingInYear,
+  );
+
+  // Faturamento total histórico auditado (todos os anos)
+  const totalHistoricalRevenue = transactions.reduce(
+    (acc, t) => acc + (t.status === "approved" || t.status === "pending" ? t.amount : 0),
+    0,
   );
 
   return {
@@ -571,7 +604,11 @@ export function calculateProjections(
     previousPeriodSameDaysRevenue:
       Math.round(previousPeriodSameDaysRevenue * 100) / 100,
     previousPeriodSameDaysSales,
-    totalAnnualProjectedRevenue,
+    currentYearRevenue: Math.round(currentYearRevenue * 100) / 100,
+    currentYearProjectedRevenue,
+    currentYearSales,
+    totalHistoricalRevenue: Math.round(totalHistoricalRevenue * 100) / 100,
+    totalAnnualProjectedRevenue: currentYearProjectedRevenue,
     velocityDaily: Math.round(recentDailySales * 10) / 10,
     accelerationPercent: mtdGrowthRevenuePercent,
   };

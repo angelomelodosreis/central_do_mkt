@@ -134,8 +134,10 @@ async function AsyncProjectionsSection({
 
 async function AsyncOverviewChartSection({
   targetBuCodes,
+  scopeLabel,
 }: {
   targetBuCodes?: string[];
+  scopeLabel?: string;
 }) {
   const dashboardSales = await getLiveDashboardData({ targetBuCodes });
   const totalRevenueFormatted = formatCompactCurrency(
@@ -155,8 +157,46 @@ async function AsyncOverviewChartSection({
       projectedMonthEndFormatted={projectedMonthEndFormatted}
       overallAvgTicketFormatted={overallAvgTicketFormatted}
       currentMonthName={dashboardSales.projections.monthLabel}
+      scopeLabel={scopeLabel}
     />
   );
+}
+
+async function AsyncQuickActionCardsSection({
+  targetBuCodes,
+  tasksCount,
+  delayedCount,
+  primaryBuSlug,
+  busCount,
+}: {
+  targetBuCodes?: string[];
+  tasksCount: number;
+  delayedCount: number;
+  primaryBuSlug: string | null;
+  busCount: number;
+}) {
+  try {
+    const dashboardSales = await getLiveDashboardData({ targetBuCodes });
+    return (
+      <QuickActionCards
+        tasksCount={tasksCount}
+        delayedCount={delayedCount}
+        primaryBuSlug={primaryBuSlug}
+        salesCount={dashboardSales.liveSales.summary.totalSales}
+        busCount={busCount}
+      />
+    );
+  } catch {
+    return (
+      <QuickActionCards
+        tasksCount={tasksCount}
+        delayedCount={delayedCount}
+        primaryBuSlug={primaryBuSlug}
+        salesCount={51600}
+        busCount={busCount}
+      />
+    );
+  }
 }
 
 export default async function DashboardPage({
@@ -231,6 +271,18 @@ export default async function DashboardPage({
     ? minhasBus.find((u) => u.id === activeBuParam || u.slug === activeBuParam)
     : null;
   const primaryBuSlug = selectedUnit?.slug ?? buParaMostrar[0]?.slug ?? null;
+
+  const scopeLabel = selectedUnit
+    ? `Filtrado: ${selectedUnit.label}`
+    : isMaster
+      ? "23 BUs consolidadas"
+      : `${minhasBus.length} BUs do seu escopo`;
+
+  const busCount = activeBuParam
+    ? 1
+    : isMaster
+      ? 23
+      : minhasBus.length || 1;
 
   const firstName = currentUser.name.split(" ")[0] || currentUser.name;
   const deniedModuleLabel =
@@ -347,23 +399,30 @@ export default async function DashboardPage({
 
           {/* Linha 2: Tração Consolidada · Vendas & Projeções via Suspense Streaming */}
           <Suspense key={`chart_${scopeKey}`} fallback={<OverviewChartSkeleton />}>
-            <AsyncOverviewChartSection targetBuCodes={effectiveBuCodes} />
+            <AsyncOverviewChartSection targetBuCodes={effectiveBuCodes} scopeLabel={scopeLabel} />
           </Suspense>
 
-          {/* Linha 3: Os 4 Cockpits Estratégicos da Central do Marketing (renderização imediata) */}
-          <QuickActionCards
-            tasksCount={tarefas.length}
-            delayedCount={atrasadas}
-            primaryBuSlug={primaryBuSlug}
-            salesCount={51600}
-            busCount={
-              activeBuParam
-                ? 1
-                : isMaster
-                  ? 23
-                  : minhasBus.length || 1
+          {/* Linha 3: Os 4 Cockpits Estratégicos da Central do Marketing (renderização imediata e dinâmica por escopo) */}
+          <Suspense
+            key={`actions_${scopeKey}`}
+            fallback={
+              <QuickActionCards
+                tasksCount={tarefas.length}
+                delayedCount={atrasadas}
+                primaryBuSlug={primaryBuSlug}
+                salesCount={51600}
+                busCount={busCount}
+              />
             }
-          />
+          >
+            <AsyncQuickActionCardsSection
+              targetBuCodes={effectiveBuCodes}
+              tasksCount={tarefas.length}
+              delayedCount={atrasadas}
+              primaryBuSlug={primaryBuSlug}
+              busCount={busCount}
+            />
+          </Suspense>
 
           {/* Linha 4: Minhas Tarefas Recentes em Card Nativo */}
           {can(currentUser, "tasks") && (
