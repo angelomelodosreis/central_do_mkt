@@ -18,6 +18,7 @@ import { describePositions } from "@/lib/modules/org/people";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { listMyTasks, relationFor } from "@/lib/modules/tasks/queries";
 import { getLiveDashboardData } from "@/lib/modules/sales/google-sheets-client";
+import { formatCurrency, formatCompactCurrency, formatCompactNumber } from "@/lib/utils/format";
 import { plural } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Painel Principal | Central do Marketing" };
@@ -75,23 +76,17 @@ export default async function DashboardPage({
       ? MODULE_LABELS[modulo as keyof typeof MODULE_LABELS]
       : null;
 
-  const totalRevenueFormatted = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(dashboardSales.liveSales.summary.totalRevenue);
+  const totalRevenueFormatted = formatCompactCurrency(
+    dashboardSales.liveSales.summary.totalRevenue,
+  );
 
-  const projectedMonthEndFormatted = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(dashboardSales.projections.projectedMonthEndRevenue);
+  const projectedMonthEndFormatted = formatCompactCurrency(
+    dashboardSales.projections.projectedMonthEndRevenue,
+  );
 
-  const overallAvgTicketFormatted = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(dashboardSales.liveSales.summary.overallAverageTicket);
+  const overallAvgTicketFormatted = formatCurrency(
+    dashboardSales.liveSales.summary.overallAverageTicket,
+  );
 
   return (
     <div className="space-y-6">
@@ -102,9 +97,12 @@ export default async function DashboardPage({
             <span className="text-xs font-semibold uppercase tracking-wider text-brand-600">
               Central do Marketing · MedCof
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200/80"
+              title={`${dashboardSales.liveSales.summary.totalSales.toLocaleString("pt-BR")} vendas registradas no Google Sheets`}
+            >
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Tempo Real Ativo ({dashboardSales.liveSales.summary.totalSales.toLocaleString("pt-BR")} vendas)
+              Tempo Real ({formatCompactNumber(dashboardSales.liveSales.summary.totalSales)} vendas)
             </span>
           </div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -123,13 +121,13 @@ export default async function DashboardPage({
           {/* Badge de Projeção Rápida */}
           <Link
             href="/panorama"
-            className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-3 py-1.5 text-xs font-medium text-blue-900 shadow-2xs transition hover:bg-blue-100/70"
-            title="Abrir projeção de vendas no Panorama Executivo"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition hover:border-slate-300 hover:text-slate-900"
+            title={`Forecast ${dashboardSales.projections.monthLabel}: ${formatCurrency(dashboardSales.projections.projectedMonthEndRevenue)} (clique para abrir o Panorama)`}
           >
-            <TrendingUp className="size-3.5 text-blue-600" />
+            <TrendingUp className="size-3.5 text-slate-500" />
             <span>
               Forecast {dashboardSales.projections.monthLabel}:{" "}
-              <strong>{projectedMonthEndFormatted}</strong>
+              <strong className="text-slate-900">{projectedMonthEndFormatted}</strong>
             </span>
           </Link>
 

@@ -239,7 +239,10 @@ export function OverviewChart({
           <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
             Faturamento Realizado
           </p>
-          <p className="mt-1 font-display text-xl font-bold tracking-tight text-white sm:text-2xl">
+          <p
+            className="mt-1 font-display text-xl font-bold tracking-tight text-white sm:text-2xl tabular-nums truncate"
+            title={`Faturamento exato: ${formatCurrency(selectedPoint.revenue)}`}
+          >
             {formatCompactBRL(selectedPoint.revenue)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-400 truncate">
@@ -253,7 +256,7 @@ export function OverviewChart({
               ? "Projeção Mês (Run-Rate)"
               : "Volume de Vendas"}
           </p>
-          <p className="mt-1 font-display text-xl font-bold tracking-tight text-white sm:text-2xl">
+          <p className="mt-1 font-display text-xl font-bold tracking-tight text-white sm:text-2xl tabular-nums truncate">
             {projectedMonthEndFormatted || `${selectedPoint.sales} vendas`}
           </p>
           <p className="mt-0.5 text-[11px] text-brand-200">
@@ -265,7 +268,7 @@ export function OverviewChart({
           <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
             Ticket Médio
           </p>
-          <p className="mt-1 font-display text-xl font-bold tracking-tight text-slate-200 sm:text-2xl">
+          <p className="mt-1 font-display text-xl font-bold tracking-tight text-slate-200 sm:text-2xl tabular-nums truncate">
             {formatCurrency(selectedPoint.avgTicket)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-400">
