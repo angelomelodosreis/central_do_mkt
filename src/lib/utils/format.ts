@@ -48,7 +48,7 @@ export function formatCompactCurrency(val: number): string {
     });
     return `R$ ${formatted}M`;
   }
-  if (abs >= 100_000) {
+  if (abs >= 10_000) {
     const formatted = (val / 1_000).toLocaleString("pt-BR", {
       maximumFractionDigits: 0,
     });

@@ -90,14 +90,14 @@ export function ProjectionsBanner({
       </div>
 
       {/* Grid de 4 Cards de Forecast em Design System Limpo */}
-      <div className="grid gap-4 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 pt-5 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. Fechamento Projetado do Mês (Run-Rate) */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
-                  Fechamento Projetado
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
+                  Projetado Mês
                 </span>
                 <MetricHelpTooltip
                   title="Fechamento Projetado (Run-Rate)"
@@ -105,7 +105,7 @@ export function ProjectionsBanner({
                   formula="(Receita Atual ÷ Dias Decorridos) × Total Dias"
                 />
               </div>
-              <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                 Run-Rate
               </span>
             </div>
@@ -116,7 +116,7 @@ export function ProjectionsBanner({
               {formatCompactCurrency(projections.projectedMonthEndRevenue)}
             </p>
             <p className="mt-1 text-xs text-slate-500 truncate">
-              Realizado até agora: <strong className="text-slate-700 font-semibold">{formatCurrency(projections.currentRevenue)}</strong>
+              Realizado: <strong className="text-slate-700 font-semibold">{formatCurrency(projections.currentRevenue)}</strong>
             </p>
           </div>
 
@@ -124,7 +124,7 @@ export function ProjectionsBanner({
           <div className="mt-4 pt-3 border-t border-slate-100">
             <div className="flex items-center justify-between text-[11px] font-medium text-slate-600 mb-1.5">
               <span>Dia {projections.daysElapsed} de {projections.totalDaysInMonth}</span>
-              <span className="font-semibold text-slate-800">· {projections.monthProgressPercent}% do mês</span>
+              <span className="font-semibold text-slate-800">· {projections.monthProgressPercent}%</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
               <div
@@ -136,12 +136,12 @@ export function ProjectionsBanner({
         </div>
 
         {/* 2. Velocidade de Vendas (dV/dt) & Pacing */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
-                  Velocidade (dV/dt)
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
+                  Ritmo Diário
                 </span>
                 <MetricHelpTooltip
                   title="Velocidade de Vendas (dV/dt)"
@@ -149,7 +149,7 @@ export function ProjectionsBanner({
                   formula="dV/dt = Matrículas no Mês ÷ Dias Decorridos"
                 />
               </div>
-              <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                 Pacing
               </span>
             </div>
@@ -161,13 +161,13 @@ export function ProjectionsBanner({
               <span className="text-xs font-normal text-slate-500"> / dia</span>
             </p>
             <p className="mt-1 text-xs text-slate-500 truncate">
-              <strong className="text-slate-800 font-semibold">{projections.velocityDaily} vendas/dia</strong> · Est: <strong className="text-slate-700 font-semibold">{projections.projectedMonthEndSales.toLocaleString("pt-BR")}</strong> no mês
+              <strong className="text-slate-800 font-semibold">{projections.velocityDaily} vendas/dia</strong> · Est: <strong className="text-slate-700 font-semibold">{projections.projectedMonthEndSales}</strong>/mês
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs text-slate-600">
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs text-slate-600">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 truncate">Volume Homólogo MTD:</span>
+              <span className="text-[11px] text-slate-500 truncate">Volume MTD:</span>
               <MetricHelpTooltip
                 title="Volume Homólogo MTD"
                 explanation="Compara o volume de vendas até exatamente o mesmo dia do mês anterior (ex: dias 01 e 02 de Outubro vs dias 01 e 02 de Setembro), eliminando a distorção do mês ainda estar no início."
@@ -182,11 +182,11 @@ export function ProjectionsBanner({
         </div>
 
         {/* 3. Ticket Médio & Qualidade de Margem */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
                   Ticket Médio
                 </span>
                 <MetricHelpTooltip
@@ -195,15 +195,15 @@ export function ProjectionsBanner({
                   formula="Receita do Mês ÷ Matrículas do Mês"
                 />
               </div>
-              <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
-                Esteira R+
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                R+
               </span>
             </div>
             <p className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
               {formatCurrency(projections.currentAvgTicket)}
             </p>
             <p className="mt-1 text-xs text-slate-500 truncate">
-              Histórico consolidado:{" "}
+              Histórico:{" "}
               <strong className="text-slate-700 font-semibold">
                 {formatCurrency(
                   totalHistoricalSales && totalHistoricalSales > 0
@@ -214,9 +214,9 @@ export function ProjectionsBanner({
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs text-slate-600">
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs text-slate-600">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 truncate">Taxa de Aprovação:</span>
+              <span className="text-[11px] text-slate-500 truncate">Aprovação:</span>
               <MetricHelpTooltip
                 title="Taxa de Aprovação"
                 explanation="Percentual de pedidos e transações autorizados no gateway sem estorno ou recusa."
@@ -227,20 +227,20 @@ export function ProjectionsBanner({
         </div>
 
         {/* 4. Receita Total Acumulada do Ciclo */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
-                  Faturamento Total
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
+                  Total Acumulado
                 </span>
                 <MetricHelpTooltip
                   title="Faturamento Total Acumulado"
                   explanation="Soma auditada de todo o faturamento histórico de todas as 23 Business Units conectadas à planilha oficial MedCof."
                 />
               </div>
-              <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
-                Consolidado
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+                Geral
               </span>
             </div>
             <p
@@ -254,9 +254,9 @@ export function ProjectionsBanner({
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs text-slate-600">
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs text-slate-600">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 truncate">Pacing MoM Receita:</span>
+              <span className="text-[11px] text-slate-500 truncate">Receita MoM:</span>
               <MetricHelpTooltip
                 title="Pacing MoM (Month-over-Month)"
                 explanation="Ritmo comparativo de receita do mês atual em relação ao mesmo intervalo do mês anterior."
