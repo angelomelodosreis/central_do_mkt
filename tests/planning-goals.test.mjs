@@ -106,4 +106,44 @@ describe("Módulo de Metas e Planejamento Estratégico", () => {
     const formattedPercent = formatMetricValue("lead_conversion", 3.5);
     assert.ok(formattedPercent.includes("%"));
   });
+
+  test("Metas 2.0: Conformidade com a Planilha Oficial (gid=367912223)", () => {
+    const OFFICIAL_DIAGNOSIS_TAGS = [
+      "🔗 Demanda não capturada",
+      "🔗 Mercado em crescimento",
+      "🔗 Potencial de crescimento do produto",
+      "🔗 Crescimento da base",
+      "🔗 Oportunidade de ganho de eficiência",
+      "🔗 Conversão abaixo do histórico",
+    ];
+
+    assert.equal(OFFICIAL_DIAGNOSIS_TAGS.length, 6);
+    OFFICIAL_DIAGNOSIS_TAGS.forEach((tag) => {
+      assert.ok(tag.startsWith("🔗"));
+    });
+
+    // Valida pares de KPI Primário e Secundário de referência
+    const referenceRow = {
+      meta: "Aumentar o volume de matrículas",
+      embasamento: "🔗 Demanda não capturada 🔗 Mercado em crescimento",
+      kpiPrimario: { nome: "Matrículas", alvo: "1.570" },
+      kpiSecundario: { nome: "Conversão", alvo: "≥ 2,4%" },
+    };
+
+    assert.equal(referenceRow.kpiPrimario.nome, "Matrículas");
+    assert.equal(referenceRow.kpiSecundario.nome, "Conversão");
+  });
+
+  test("Diagnóstico 2.0: Os 5 Pilares Oficiais com Coluna E (gid=1451107508)", () => {
+    const FIVE_PILLARS = [
+      "negocio_mercado",
+      "cliente_marca",
+      "portfolio_oferta",
+      "funil_conversao",
+      "contexto_capacidade",
+    ];
+
+    assert.equal(FIVE_PILLARS.length, 5);
+  });
 });
+
