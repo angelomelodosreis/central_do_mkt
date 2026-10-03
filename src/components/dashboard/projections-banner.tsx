@@ -90,7 +90,7 @@ export function ProjectionsBanner({
       </div>
 
       {/* Grid de 4 Cards de Forecast em Design System Limpo */}
-      <div className="grid gap-3 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-4">
         {/* 1. Fechamento Projetado do Mês (Run-Rate) */}
         <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
@@ -167,7 +167,7 @@ export function ProjectionsBanner({
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs text-slate-600">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 truncate">Volume MTD:</span>
+              <span className="text-[11px] text-slate-500 whitespace-nowrap">Volume MTD:</span>
               <MetricHelpTooltip
                 title="Volume Homólogo MTD"
                 explanation="Compara o volume de vendas até exatamente o mesmo dia do mês anterior (ex: dias 01 e 02 de Outubro vs dias 01 e 02 de Setembro), eliminando a distorção do mês ainda estar no início."
@@ -216,7 +216,7 @@ export function ProjectionsBanner({
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs text-slate-600">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 truncate">Aprovação:</span>
+              <span className="text-[11px] text-slate-500 whitespace-nowrap">Aprovação:</span>
               <MetricHelpTooltip
                 title="Taxa de Aprovação"
                 explanation="Percentual de pedidos e transações autorizados no gateway sem estorno ou recusa."
@@ -256,7 +256,7 @@ export function ProjectionsBanner({
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-1 text-xs text-slate-600">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="text-[11px] text-slate-500 truncate">Receita MoM:</span>
+              <span className="text-[11px] text-slate-500 whitespace-nowrap">Receita MoM:</span>
               <MetricHelpTooltip
                 title="Pacing MoM (Month-over-Month)"
                 explanation="Ritmo comparativo de receita do mês atual em relação ao mesmo intervalo do mês anterior."

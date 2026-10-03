@@ -39,7 +39,7 @@ function ProjectionsBannerSkeleton() {
         <div className="h-8 w-44 rounded-xl bg-slate-100" />
       </div>
 
-      <div className="grid gap-4 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
             <div className="flex items-center justify-between">
@@ -254,9 +254,6 @@ export default async function DashboardPage({
               <span>
                 <strong>{plural(pendingUsers, "cadastro")}</strong> para aprovar
               </span>
-              <span className="rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-white">
-                {pendingUsers}
-              </span>
             </Link>
           )}
 
@@ -264,7 +261,10 @@ export default async function DashboardPage({
             href="/perfil"
             className="flex items-center gap-2 rounded-full border border-slate-200 bg-white p-1 pr-3 shadow-2xs hover:border-brand-300"
           >
-            <span className="flex size-7 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+            <span
+              aria-hidden="true"
+              className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white select-none"
+            >
               {firstName.slice(0, 1).toUpperCase()}
             </span>
             <span className="text-xs font-medium text-slate-700">
