@@ -27,6 +27,22 @@ export type MemberSummary = {
   roleLabel?: string;
 };
 
+function formatRole(role?: string | null): string {
+  if (!role) return "Membro";
+  switch (role.toLowerCase()) {
+    case "admin":
+      return "Administrador";
+    case "leader":
+      return "Líder de Squad";
+    case "member":
+      return "Membro";
+    case "viewer":
+      return "Leitor";
+    default:
+      return role;
+  }
+}
+
 export function ActivitySidebar({
   businessUnits,
   members,
@@ -159,10 +175,13 @@ export function ActivitySidebar({
             members.slice(0, 8).map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-2"
+                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-2.5 transition-colors hover:bg-slate-50"
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700 select-none"
+                  >
                     {m.name.slice(0, 1).toUpperCase()}
                   </span>
                   <div className="min-w-0">
@@ -170,13 +189,13 @@ export function ActivitySidebar({
                       {m.name}
                     </p>
                     <p className="truncate text-[10px] text-slate-500">
-                      {m.jobTitle || m.roleLabel || m.email}
+                      {m.jobTitle || formatRole(m.roleLabel)}
                     </p>
                   </div>
                 </div>
                 <span
-                  className="size-2 shrink-0 rounded-full bg-emerald-500"
-                  title="Ativo"
+                  className="size-2 shrink-0 rounded-full bg-emerald-500 ring-2 ring-emerald-100"
+                  title="Ativo na Central"
                 />
               </div>
             ))
@@ -186,7 +205,7 @@ export function ActivitySidebar({
 
       {/* Widget Inferior: Cadência Estratégica MedCof */}
       <div className="rounded-[2rem] border border-slate-200/80 bg-white p-5 shadow-2xs">
-        <div className="flex items-center justify-between pb-2">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
               <Calendar className="size-4" />

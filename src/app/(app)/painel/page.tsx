@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { count, eq } from "drizzle-orm";
-import { Bell, TrendingUp, Zap } from "lucide-react";
+import { Bell, TrendingUp, Zap, CheckCircle2 } from "lucide-react";
 
 import { TaskRow, type TaskRowData } from "../tarefas/task-row";
 import { Badge } from "@/components/ui/badge";
@@ -337,10 +337,23 @@ export default async function DashboardPage({
               />
               <CardBody className="px-0 py-0">
                 {tarefas.length === 0 ? (
-                  <EmptyState
-                    variant="inline"
-                    title="Nada pendente para você agora."
-                  />
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-xs text-slate-500">
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+                        <CheckCircle2 className="size-4" />
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-800">Fila 100% em dia</p>
+                        <p className="text-[11px] text-slate-500">Nenhuma entrega pendente para você no momento.</p>
+                      </div>
+                    </div>
+                    <Link
+                      href="/tarefas"
+                      className="text-xs font-semibold text-brand-600 hover:text-brand-800 transition"
+                    >
+                      Explorar quadro geral →
+                    </Link>
+                  </div>
                 ) : (
                   <ul className="divide-y divide-slate-100">
                     {tarefas.slice(0, 5).map((item) => (

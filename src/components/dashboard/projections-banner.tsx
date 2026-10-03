@@ -95,8 +95,8 @@ export function ProjectionsBanner({
         <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
                   Fechamento Projetado
                 </span>
                 <MetricHelpTooltip
@@ -110,7 +110,7 @@ export function ProjectionsBanner({
               </span>
             </div>
             <p
-              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums truncate"
+              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums"
               title={`Projeção completa: ${formatCurrency(projections.projectedMonthEndRevenue)}`}
             >
               {formatCompactCurrency(projections.projectedMonthEndRevenue)}
@@ -139,8 +139,8 @@ export function ProjectionsBanner({
         <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
                   Velocidade (dV/dt)
                 </span>
                 <MetricHelpTooltip
@@ -150,18 +150,18 @@ export function ProjectionsBanner({
                 />
               </div>
               <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
-                {projections.velocityDaily} vendas/dia
+                Pacing
               </span>
             </div>
             <p
-              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums truncate"
+              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums"
               title={`Ritmo diário exato: ${formatCurrency(projections.recentDailyRevenue)} / dia`}
             >
               {formatCompactCurrency(projections.recentDailyRevenue)}
               <span className="text-xs font-normal text-slate-500"> / dia</span>
             </p>
             <p className="mt-1 text-xs text-slate-500 truncate">
-              Estimativa: <strong className="text-slate-700 font-semibold">{projections.projectedMonthEndSales} matrículas</strong> no mês
+              <strong className="text-slate-800 font-semibold">{projections.velocityDaily} vendas/dia</strong> · Est: <strong className="text-slate-700 font-semibold">{projections.projectedMonthEndSales.toLocaleString("pt-BR")}</strong> no mês
             </p>
           </div>
 
@@ -185,8 +185,8 @@ export function ProjectionsBanner({
         <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
                   Ticket Médio
                 </span>
                 <MetricHelpTooltip
@@ -199,11 +199,11 @@ export function ProjectionsBanner({
                 Esteira R+
               </span>
             </div>
-            <p className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums truncate">
+            <p className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
               {formatCurrency(projections.currentAvgTicket)}
             </p>
             <p className="mt-1 text-xs text-slate-500 truncate">
-              Histórico:{" "}
+              Histórico consolidado:{" "}
               <strong className="text-slate-700 font-semibold">
                 {formatCurrency(
                   totalHistoricalSales && totalHistoricalSales > 0
@@ -230,8 +230,8 @@ export function ProjectionsBanner({
         <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors">
           <div>
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">
                   Faturamento Total
                 </span>
                 <MetricHelpTooltip
@@ -240,11 +240,11 @@ export function ProjectionsBanner({
                 />
               </div>
               <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
-                Acumulado
+                Consolidado
               </span>
             </div>
             <p
-              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums truncate"
+              className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums"
               title={`Faturamento total auditado: ${formatCurrency(totalHistoricalRevenue)}`}
             >
               {formatCompactCurrency(totalHistoricalRevenue)}

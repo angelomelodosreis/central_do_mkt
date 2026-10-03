@@ -23,7 +23,7 @@ export function QuickActionCards({
       tag: "Tempo Real · MoM",
       description: "Análise comparativa dia a dia, sazonalidade e BUs.",
       metric: `${formatCompactNumber(salesCount)} vendas registradas`,
-      fullMetric: `${salesCount.toLocaleString("pt-BR")} vendas registradas`,
+      fullMetric: `${salesCount.toLocaleString("pt-BR")} vendas registradas no ciclo`,
       href: "/panorama",
       icon: Compass,
       badgeText: "Google Sheets",
@@ -33,11 +33,11 @@ export function QuickActionCards({
       title: "Planejamento 2.0",
       tag: "Estratégia & Metas",
       description: "Diagnóstico semestral e metas 2.0 de todas as unidades.",
-      metric: `${busCount} Business Units`,
-      fullMetric: `${busCount} Business Units estruturadas`,
+      metric: "23 BUs Estruturadas",
+      fullMetric: "23 Business Units com metas e diagnóstico ativos",
       href: primaryBuSlug ? `/planejamento/${primaryBuSlug}` : "/planejamento",
       icon: Layers,
-      badgeText: "23 BUs MedCof",
+      badgeText: "Consolidado",
       isAlert: false,
     },
     {
@@ -45,7 +45,7 @@ export function QuickActionCards({
       tag: "Slack Canvas Feed",
       description: "Acompanhamento semanal por BU, pautas e prazos.",
       metric: "Pautas & Planos de Ação",
-      fullMetric: "Pautas & Planos de Ação",
+      fullMetric: "Pautas e planos de ação da cadência executiva",
       href: "/planejamento/revisoes",
       icon: MessageSquare,
       badgeText: "Semanal",
@@ -55,11 +55,22 @@ export function QuickActionCards({
       title: "Execução & SLA",
       tag: "Fila de Tarefas",
       description: "Entregáveis de marketing, campanhas e criativos.",
-      metric: `${tasksCount} ${tasksCount === 1 ? "tarefa" : "tarefas"}`,
-      fullMetric: `${tasksCount} ${tasksCount === 1 ? "tarefa atribuída" : "tarefas atribuídas"}`,
+      metric:
+        tasksCount === 0
+          ? "Fila 100% em dia"
+          : `${tasksCount} ${tasksCount === 1 ? "tarefa pendente" : "tarefas pendentes"}`,
+      fullMetric:
+        tasksCount === 0
+          ? "Nenhuma pendência na sua fila de execução direta"
+          : `${tasksCount} ${tasksCount === 1 ? "tarefa atribuída" : "tarefas atribuídas"}`,
       href: "/tarefas",
       icon: CheckSquare,
-      badgeText: delayedCount > 0 ? `${delayedCount} em atraso` : "Em dia",
+      badgeText:
+        delayedCount > 0
+          ? `${delayedCount} em atraso`
+          : tasksCount === 0
+            ? "Zerada"
+            : "Em dia",
       isAlert: delayedCount > 0,
     },
   ];

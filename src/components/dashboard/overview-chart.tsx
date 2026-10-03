@@ -88,6 +88,8 @@ export function OverviewChart({
     );
   }, [chartPoints, selectedMonthKey]);
 
+  const isCurrentMonth = selectedPoint.monthKey === defaultSelectedKey;
+
   return (
     <div className="relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#180f1c] via-[#211324] to-[#120a15] p-6 text-white shadow-[0_20px_45px_-12px_rgba(18,10,21,0.5)] ring-1 ring-white/10 sm:p-7">
       {/* Luz ambiente interna suave */}
@@ -252,15 +254,19 @@ export function OverviewChart({
 
         <div className="rounded-2xl bg-white/10 p-3 shadow-inner backdrop-blur-sm ring-1 ring-white/15 sm:p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-brand-300">
-            {projectedMonthEndFormatted
+            {isCurrentMonth && projectedMonthEndFormatted
               ? "Projeção Mês (Run-Rate)"
               : "Volume de Vendas"}
           </p>
           <p className="mt-1 font-display text-xl font-bold tracking-tight text-white sm:text-2xl tabular-nums truncate">
-            {projectedMonthEndFormatted || `${selectedPoint.sales} vendas`}
+            {isCurrentMonth && projectedMonthEndFormatted
+              ? projectedMonthEndFormatted
+              : `${selectedPoint.sales.toLocaleString("pt-BR")} matrículas`}
           </p>
           <p className="mt-0.5 text-[11px] text-brand-200">
-            {currentMonthName || selectedPoint.month}
+            {isCurrentMonth
+              ? `${selectedPoint.sales} matrículas até agora (${currentMonthName || selectedPoint.month})`
+              : `${selectedPoint.month}`}
           </p>
         </div>
 
@@ -272,7 +278,7 @@ export function OverviewChart({
             {formatCurrency(selectedPoint.avgTicket)}
           </p>
           <p className="mt-0.5 text-[11px] text-slate-400">
-            {selectedPoint.sales} vendas no mês
+            Média por matrícula ({selectedPoint.shortMonth})
           </p>
         </div>
       </div>
