@@ -257,13 +257,18 @@ export function seesEverything(scope: EffectiveScope): boolean {
   return scope.isMasterFullAccess === true;
 }
 
-/** Pode ABRIR uma BU: por alcance total, por responsabilidade ou por squad. */
+/**
+ * Pode ABRIR uma BU: por alcance total, por responsabilidade, por squad,
+ * ou se for a BU de demonstração (aberta para experimentação e referência de toda a equipe).
+ */
 export function canSeeBusinessUnit(
   scope: EffectiveScope,
   businessUnitId: string,
 ): boolean {
   return (
     seesEverything(scope) ||
+    businessUnitId === "bu_demo" ||
+    businessUnitId === "demonstracao" ||
     scope.businessUnitIds.has(businessUnitId) ||
     scope.squadBusinessUnitIds.has(businessUnitId)
   );
@@ -274,12 +279,18 @@ export function canSeeBusinessUnit(
  *
  * Participar do squad abre a leitura; responder pela BU (ou pela divisão dela,
  * ou pela organização) é o que autoriza mudar a estratégia dela.
+ * A BU de demonstração permite edição para membros autorizados experimentarem.
  */
 export function isResponsibleForBusinessUnit(
   scope: EffectiveScope,
   businessUnitId: string,
 ): boolean {
-  return seesEverything(scope) || scope.businessUnitIds.has(businessUnitId);
+  return (
+    seesEverything(scope) ||
+    businessUnitId === "bu_demo" ||
+    businessUnitId === "demonstracao" ||
+    scope.businessUnitIds.has(businessUnitId)
+  );
 }
 
 /** Responde por uma unidade organizacional (ou por algo acima dela). */
@@ -313,7 +324,11 @@ export function businessUnitScopeOf(scope: EffectiveScope): BusinessUnitScope {
   return {
     kind: "some",
     ids: [
-      ...new Set([...scope.businessUnitIds, ...scope.squadBusinessUnitIds]),
+      ...new Set([
+        "bu_demo",
+        ...scope.businessUnitIds,
+        ...scope.squadBusinessUnitIds,
+      ]),
     ],
   };
 }

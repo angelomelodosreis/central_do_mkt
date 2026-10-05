@@ -106,7 +106,9 @@ export async function requireStrategyBusinessUnit(
   const seesAll = seesEverything(currentUser.scope);
   // Consultado mesmo para quem vê tudo: é o que diferencia "esta BU é minha" de
   // "estou olhando a BU de outra pessoa" no cabeçalho.
-  const isMember = await isBusinessUnitMember(currentUser.id, unit.id);
+  const isDemo = unit.id === "bu_demo" || unit.slug === "demonstracao";
+  const isMember =
+    isDemo || (await isBusinessUnitMember(currentUser.id, unit.id));
   const podeVer = canSeeBusinessUnit(currentUser.scope, unit.id);
 
   if (!podeVer) redirect("/planejamento?erro=fora-do-escopo");
