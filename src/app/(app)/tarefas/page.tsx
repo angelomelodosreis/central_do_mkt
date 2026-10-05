@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { eq, sql } from "drizzle-orm";
 
 import { TasksWorkspace } from "./tasks-workspace";
 import type { TaskRowData } from "./task-row";
 import { PageHeader } from "@/components/ui/card";
 import { can, requirePermission } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
+import { businessUnit, planningReviewItem } from "@/lib/db/schema";
 import { seesEverything } from "@/lib/modules/access/scope";
+import { listUserNotifications } from "@/lib/modules/notifications/queries";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { listOrgUnits } from "@/lib/modules/org/queries";
 import { materializeRecurrences } from "@/lib/modules/tasks/recurrence";
@@ -30,12 +34,10 @@ export default async function TasksPage() {
     seesEverything(currentUser.scope) || currentUser.scope.orgUnitIds.size > 0;
 
   // As ocorrências vencidas nascem ANTES da leitura das listas: sem isto, a
-  // tarefa da semana só apareceria na segunda visita à tela. É aqui e não num
-  // agendador porque a plataforma não tem processo de fundo — e a primeira
-  // visita do dia resolve o mesmo problema sem infraestrutura nova.
+  // tarefa da semana só apareceria na segunda visita à tela.
   await materializeRecurrences();
 
-  const [paraMim, deleguei, todas, historico, people, teams, units] =
+  const [paraMim, deleguei, todas, historico, people, teams, units, notifications] =
     await Promise.all([
       listMyTasks(currentUser),
       // Com as encerradas: acompanhar o que foi delegado precisa mostrar o fim
@@ -43,20 +45,74 @@ export default async function TasksPage() {
       listTasksIDelegated(currentUser, { includeClosed: true }),
       podeVerTodas ? listAllTasks(currentUser) : Promise.resolve([]),
       listClosedTasks(currentUser),
-      // Só quem delega precisa da lista de gente; para os demais seria um
-      // seletor que eles não podem usar.
-      podeDelegar ? listAssignableUsers() : Promise.resolve([]),
-      podeDelegar ? listOrgUnits() : Promise.resolve([]),
+      // Lista de pessoas sempre disponível para que o criador de uma tarefa possa gerir o destino
+      listAssignableUsers(),
+      listOrgUnits(),
       listAccessibleBusinessUnits(currentUser),
+      listUserNotifications(currentUser.id, 40),
     ]);
 
   /**
-   * O relacionamento com cada tarefa é resolvido no SERVIDOR.
-   *
-   * A tela só desenha o que essa resposta permite — e o servidor revalida antes
-   * de gravar. Enquanto a tela decidia por conta própria, "quem vê o botão de
-   * concluir" e "quem pode concluir" eram duas respostas diferentes.
+   * Integra acompanhamentos e follow-ups de planejamento pendentes da pessoa
+   * para que subam diretamente na visualização "Para mim".
    */
+  const db = await getDb();
+  const userEmail = currentUser.email?.trim().toLowerCase();
+  const userName = currentUser.name?.trim().toLowerCase();
+
+  const openFollowUps = await db
+    .select({
+      item: planningReviewItem,
+      bu: {
+        id: businessUnit.id,
+        label: businessUnit.label,
+        slug: businessUnit.slug,
+      },
+    })
+    .from(planningReviewItem)
+    .innerJoin(businessUnit, eq(planningReviewItem.businessUnitId, businessUnit.id))
+    .where(sql`${planningReviewItem.status} != 'concluido'`);
+
+  const myFollowUps = openFollowUps.filter((r) => {
+    if (userEmail && r.item.assigneeEmail?.toLowerCase() === userEmail) return true;
+    if (userName && r.item.assigneeName.toLowerCase() === userName) return true;
+    return false;
+  });
+
+  const existingTitles = new Set(paraMim.map((p) => p.title.toLowerCase()));
+  const followUpRows: TaskRowData[] = myFollowUps
+    .filter(
+      (f) =>
+        !existingTitles.has(
+          `follow-up ${f.bu.label.toLowerCase()}: ${f.item.details.slice(0, 40).toLowerCase()}`,
+        ),
+    )
+    .map((f) => ({
+      id: f.item.id,
+      title: `[Follow-up BU] ${f.item.details.slice(0, 90).replace(/\n/g, " ")}`,
+      status: (f.item.status === "em_andamento"
+        ? "in_progress"
+        : f.item.status === "pendente"
+          ? "blocked"
+          : "todo") as any,
+      priority: f.item.priority === "alta" ? "high" : "normal",
+      dueDate: f.item.followUpDate ? f.item.followUpDate.toISOString() : null,
+      blockedReason: null,
+      assigneeId: currentUser.id,
+      assigneeName: f.item.assigneeName,
+      assignedTeamName: null,
+      businessUnitLabel: f.bu.label,
+      businessUnitSlug: f.bu.slug,
+      createdByName: f.item.coordinatorName,
+      createdAt: f.item.createdAt.toISOString(),
+      recorrente: false,
+      relation: {
+        isAssignee: true,
+        isDelegator: f.item.createdBy === currentUser.id || podeDelegar,
+        canClaim: false,
+      },
+    }));
+
   const toRow = (item: TaskListItem): TaskRowData => ({
     id: item.id,
     title: item.title,
@@ -77,6 +133,8 @@ export default async function TasksPage() {
     relation: relationFor(currentUser, item, { canDelegate: podeDelegar }),
   });
 
+  const allParaMim = [...paraMim.map(toRow), ...followUpRows];
+
   const times = currentUser.positions
     .map((position) => position.teamName)
     .join(", ");
@@ -87,16 +145,17 @@ export default async function TasksPage() {
         title="Tarefas"
         description={
           times
-            ? `Sua fila e a de ${times}.`
-            : "Sua fila de trabalho. Peça a um administrador para te colocar num time e você passa a receber também as tarefas endereçadas a ele."
+            ? `Sua fila, acompanhamentos e a de ${times}.`
+            : "Sua fila de trabalho e acompanhamentos de planejamento."
         }
       />
 
       <TasksWorkspace
-        paraMim={paraMim.map(toRow)}
+        paraMim={allParaMim}
         deleguei={deleguei.map(toRow)}
         todas={todas.map(toRow)}
         historico={historico.map(toRow)}
+        notifications={notifications}
         people={people}
         teams={teams
           .filter((unit) => unit.isActive)

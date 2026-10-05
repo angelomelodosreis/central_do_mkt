@@ -65,6 +65,9 @@ export default async function PlanningReviewsPage({
         assignableUsers={assignableUsers}
         currentCoordinator={currentUser.name || "Ingrid Silva"}
         preselectedBuSlug={params.bu}
+        currentUserId={currentUser.id}
+        currentUserEmail={currentUser.email}
+        isAdmin={currentUser.isSuperAdmin || currentUser.role === "admin" || currentUser.role === "leader"}
       />
     </div>
   );

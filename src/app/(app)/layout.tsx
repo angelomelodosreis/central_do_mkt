@@ -15,7 +15,7 @@ import { listBusinessUnits } from "@/lib/modules/bases/queries";
 import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { describePositions } from "@/lib/modules/org/people";
 import { listOrgUnits } from "@/lib/modules/org/queries";
-import { countMyOpenTasks } from "@/lib/modules/tasks/queries";
+import { countAllPendingForUser } from "@/lib/modules/notifications/queries";
 
 /**
  * Toda rota deste grupo lê a sessão do request, então nenhuma pode ser
@@ -85,12 +85,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     };
   }
 
-  // A contagem da fila é lida no menu porque é o aviso que faz a pessoa voltar:
-  // sem número visível, a tarefa delegada depende de alguém lembrar de abrir a
-  // tela.
-  const { total: minhasTarefas } = can(currentUser, "tasks")
-    ? await countMyOpenTasks(currentUser)
-    : { total: 0 };
+  // A contagem da fila e notificações de menções/follow-ups é lida no menu:
+  // o badge de destaque (vermelho vivo com contador) avisa a pessoa imediatamente
+  // quando há tarefas atribuídas ou quando ela foi mencionada em uma thread.
+  const { total: totalPendencias, notificacoesNaoLidas } = can(currentUser, "tasks")
+    ? await countAllPendingForUser(currentUser)
+    : { total: 0, notificacoesNaoLidas: 0 };
 
   const items: NavItem[] = [
     {
@@ -142,9 +142,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       href: "/tarefas",
       label: "Tarefas",
       description:
-        minhasTarefas > 0 ? `${minhasTarefas} na sua fila` : "Sua fila",
+        totalPendencias > 0
+          ? `${totalPendencias} pendência${totalPendencias > 1 ? "s" : ""}${notificacoesNaoLidas > 0 ? ` (${notificacoesNaoLidas} nova${notificacoesNaoLidas > 1 ? "s" : ""})` : ""}`
+          : "Sua fila",
       icon: "tasks",
-      badge: minhasTarefas > 0 ? minhasTarefas : undefined,
+      badge: totalPendencias > 0 ? totalPendencias : undefined,
     });
   }
 

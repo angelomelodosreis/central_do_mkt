@@ -21,6 +21,8 @@ import {
   Trash2,
   Tag,
   ArrowRight,
+  Pencil,
+  AtSign,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
@@ -32,6 +34,7 @@ import {
 import type { PlanningReviewWithComments } from "@/lib/modules/review/feed-queries";
 import {
   createPlanningReviewItemAction,
+  updatePlanningReviewItemAction,
   updatePlanningReviewItemStatusAction,
   addPlanningReviewCommentAction,
   deletePlanningReviewItemAction,
@@ -56,6 +59,9 @@ interface ReviewFeedViewProps {
   currentCoordinator?: string;
   preselectedBuSlug?: string;
   assignableUsers?: AssignableUserOption[];
+  currentUserId?: string;
+  currentUserEmail?: string;
+  isAdmin?: boolean;
 }
 
 const BU_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -114,10 +120,14 @@ export function ReviewFeedView({
   currentCoordinator = "Ingrid Silva",
   preselectedBuSlug,
   assignableUsers = [],
+  currentUserId,
+  currentUserEmail,
+  isAdmin = false,
 }: ReviewFeedViewProps) {
   const [items, setItems] = useState<PlanningReviewWithComments[]>(initialItems);
   const [selectedBu, setSelectedBu] = useState<string>(preselectedBuSlug || "all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [filterScope, setFilterScope] = useState<"all" | "mine" | "mentioned">("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [viewMode, setViewMode] = useState<"table" | "feed">("table");
 
@@ -126,12 +136,30 @@ export function ReviewFeedView({
     useState<PlanningReviewWithComments | null>(null);
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [showMentionPicker, setShowMentionPicker] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState("");
+  const [mentionedUserIds, setMentionedUserIds] = useState<Set<string>>(new Set());
 
   // Modal Novo Item
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // Form states
+  // Modal Editar Item (para quem criou ou coordena)
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<PlanningReviewWithComments | null>(null);
+  const [editBuId, setEditBuId] = useState("");
+  const [editCoordinator, setEditCoordinator] = useState("");
+  const [editAssignee, setEditAssignee] = useState("");
+  const [editAssigneeEmail, setEditAssigneeEmail] = useState("");
+  const [isCustomEditAssignee, setIsCustomEditAssignee] = useState(false);
+  const [editMeetingDate, setEditMeetingDate] = useState("");
+  const [editFollowUpDate, setEditFollowUpDate] = useState("");
+  const [editStatus, setEditStatus] = useState<PlanningReviewStatus>("novo");
+  const [editPriority, setEditPriority] = useState("normal");
+  const [editDetails, setEditDetails] = useState("");
+  const [editTag, setEditTag] = useState("");
+
+  // Form states - Create
   const [newItemBuId, setNewItemBuId] = useState(
     businessUnits.find((b) => b.slug === preselectedBuSlug)?.id ||
       businessUnits[0]?.id ||
@@ -157,8 +185,47 @@ export function ReviewFeedView({
   const [newItemDetails, setNewItemDetails] = useState("");
   const [newItemTag, setNewItemTag] = useState("");
 
+  const isUserMentioned = (item: PlanningReviewWithComments) => {
+    if (!currentCoordinator && !currentUserEmail) return false;
+    const nameLow = (currentCoordinator || "").toLowerCase();
+    const firstWord = nameLow.split(" ")[0];
+    return item.comments.some((c) => {
+      const cLow = c.content.toLowerCase();
+      return (
+        cLow.includes(`@${nameLow}`) ||
+        (firstWord.length > 2 && cLow.includes(`@${firstWord}`)) ||
+        (currentUserEmail && c.authorEmail?.toLowerCase() === currentUserEmail.toLowerCase())
+      );
+    });
+  };
+
+  const isUserAssigned = (item: PlanningReviewWithComments) => {
+    if (!currentCoordinator && !currentUserEmail) return false;
+    const nameLow = (currentCoordinator || "").toLowerCase();
+    const emailLow = (currentUserEmail || "").toLowerCase();
+    return (
+      item.assigneeName.toLowerCase() === nameLow ||
+      (item.assigneeEmail && item.assigneeEmail.toLowerCase() === emailLow) ||
+      (nameLow.length > 3 && item.assigneeName.toLowerCase().includes(nameLow))
+    );
+  };
+
+  const canEditItem = (item: PlanningReviewWithComments) => {
+    if (isAdmin) return true;
+    if (currentUserId && item.createdBy === currentUserId) return true;
+    if (currentCoordinator && item.coordinatorName.toLowerCase() === currentCoordinator.toLowerCase()) return true;
+    if (currentUserEmail && item.coordinatorEmail && item.coordinatorEmail.toLowerCase() === currentUserEmail.toLowerCase()) return true;
+    return false;
+  };
+
   // Filtered items
   const filteredItems = items.filter((item) => {
+    if (filterScope === "mine" && !isUserAssigned(item)) {
+      return false;
+    }
+    if (filterScope === "mentioned" && !isUserMentioned(item)) {
+      return false;
+    }
     if (selectedBu !== "all") {
       if (item.businessUnit.slug !== selectedBu && item.businessUnitId !== selectedBu) {
         return false;
@@ -185,6 +252,8 @@ export function ReviewFeedView({
   const pendenteCount = items.filter(
     (i) => i.status === "pendente" || i.status === "atrasado",
   ).length;
+  const myAssignedCount = items.filter(isUserAssigned).length;
+  const myMentionedCount = items.filter(isUserMentioned).length;
 
   // Handle status update
   const handleStatusChange = async (
@@ -209,20 +278,132 @@ export function ReviewFeedView({
     }
   };
 
-  // Handle send comment
+  // Handle open edit
+  const handleOpenEdit = (item: PlanningReviewWithComments) => {
+    setEditingItem(item);
+    setEditBuId(item.businessUnitId);
+    setEditCoordinator(item.coordinatorName);
+    setEditAssignee(item.assigneeName);
+    setEditAssigneeEmail(item.assigneeEmail || "");
+    setIsCustomEditAssignee(!assignableUsers.some((u) => u.name === item.assigneeName));
+    setEditMeetingDate(new Date(item.meetingDate).toISOString().split("T")[0]);
+    setEditFollowUpDate(new Date(item.followUpDate).toISOString().split("T")[0]);
+    setEditStatus(item.status);
+    setEditPriority(item.priority || "normal");
+    setEditDetails(item.details);
+    setEditTag(item.tags ? JSON.parse(item.tags).join(", ") : "");
+    setIsEditOpen(true);
+  };
+
+  // Handle submit edit
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem || !editDetails.trim() || !editAssignee.trim()) {
+      toast.error("Preencha os detalhes e o destinatário/responsável.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const tags = editTag
+          ? editTag.split(",").map((t) => t.trim()).filter(Boolean)
+          : [];
+
+        await updatePlanningReviewItemAction({
+          id: editingItem.id,
+          businessUnitId: editBuId,
+          coordinatorName: editCoordinator,
+          assigneeName: editAssignee,
+          assigneeEmail: editAssigneeEmail,
+          meetingDate: editMeetingDate,
+          followUpDate: editFollowUpDate,
+          status: editStatus,
+          priority: editPriority,
+          details: editDetails,
+          tags,
+        });
+
+        const selectedUnit = businessUnits.find((b) => b.id === editBuId);
+
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === editingItem.id
+              ? {
+                  ...it,
+                  businessUnitId: editBuId,
+                  coordinatorName: editCoordinator,
+                  assigneeName: editAssignee,
+                  assigneeEmail: editAssigneeEmail || null,
+                  meetingDate: new Date(`${editMeetingDate}T12:00:00Z`),
+                  followUpDate: new Date(`${editFollowUpDate}T12:00:00Z`),
+                  status: editStatus,
+                  priority: editPriority,
+                  details: editDetails,
+                  tags: tags.length > 0 ? JSON.stringify(tags) : null,
+                  businessUnit: {
+                    id: editBuId,
+                    slug: selectedUnit?.slug || it.businessUnit.slug,
+                    label: selectedUnit?.label || it.businessUnit.label,
+                    code: it.businessUnit.code,
+                  },
+                }
+              : it,
+          ),
+        );
+
+        if (activeThreadItem?.id === editingItem.id) {
+          setActiveThreadItem((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  businessUnitId: editBuId,
+                  coordinatorName: editCoordinator,
+                  assigneeName: editAssignee,
+                  details: editDetails,
+                  status: editStatus,
+                }
+              : null,
+          );
+        }
+
+        setIsEditOpen(false);
+        setEditingItem(null);
+        toast.success("Acompanhamento atualizado com sucesso!");
+      } catch (err: unknown) {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Erro ao atualizar item de acompanhamento.",
+        );
+      }
+    });
+  };
+
+  // Mention helper
+  const handleInsertMention = (user: AssignableUserOption) => {
+    setCommentText((prev) => (prev ? `${prev} @${user.name} ` : `@${user.name} `));
+    setMentionedUserIds((prev) => new Set([...prev, user.id]));
+    setShowMentionPicker(false);
+    setMentionSearch("");
+  };
+
+  // Handle send comment with mentions
   const handleSendComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeThreadItem || !commentText.trim()) return;
 
     const content = commentText.trim();
+    const currentMentionIds = Array.from(mentionedUserIds);
     setCommentText("");
+    setShowMentionPicker(false);
+    setMentionedUserIds(new Set());
     setIsSubmittingComment(true);
 
     const tempComment = {
       id: `temp_${Date.now()}`,
       reviewItemId: activeThreadItem.id,
       authorName: currentCoordinator || "Você",
-      authorEmail: null,
+      authorEmail: currentUserEmail || null,
       authorAvatar: null,
       authorRole: "Coordenação",
       content,
@@ -242,8 +423,16 @@ export function ReviewFeedView({
     );
 
     try {
-      await addPlanningReviewCommentAction(activeThreadItem.id, content);
-      toast.success("Comentário adicionado ao thread.");
+      const res = await addPlanningReviewCommentAction(
+        activeThreadItem.id,
+        content,
+        currentMentionIds,
+      );
+      if (res.notifiedCount && res.notifiedCount > 0) {
+        toast.success(`Comentário enviado e notificação enviada para ${res.notifiedCount} pessoa(s)!`);
+      } else {
+        toast.success("Comentário adicionado ao thread.");
+      }
     } catch {
       toast.error("Não foi possível enviar o comentário.");
     } finally {
@@ -433,6 +622,27 @@ export function ReviewFeedView({
       {/* Filter and View Switcher Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Scope Filter: Minhas Atribuições / Onde fui mencionado */}
+          {(myAssignedCount > 0 || myMentionedCount > 0) && (
+            <div className="relative">
+              <select
+                value={filterScope}
+                onChange={(e) => setFilterScope(e.target.value as any)}
+                className={cn(
+                  "appearance-none rounded-xl border py-2 pl-3 pr-8 text-sm font-semibold shadow-xs focus:outline-none focus:ring-1",
+                  filterScope !== "all"
+                    ? "border-purple-300 bg-purple-50 text-purple-900 focus:border-purple-500 focus:ring-purple-500"
+                    : "border-slate-200 bg-white text-slate-800 focus:border-brand-500 focus:ring-brand-500",
+                )}
+              >
+                <option value="all">Todas as pendências</option>
+                <option value="mine">Minhas atribuições ({myAssignedCount})</option>
+                <option value="mentioned">Onde fui mencionado ({myMentionedCount})</option>
+              </select>
+              <ChevronRight className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-4 rotate-90 text-slate-400" />
+            </div>
+          )}
+
           {/* BU Filter */}
           <div className="relative">
             <select
@@ -684,6 +894,16 @@ export function ReviewFeedView({
                             <span>{item.comments.length}</span>
                           </button>
 
+                          {canEditItem(item) && (
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              className="rounded-lg p-1 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-100 hover:text-brand-600 transition"
+                              title="Editar item (disponível para o criador e coordenação)"
+                            >
+                              <Pencil className="size-3.5" />
+                            </button>
+                          )}
+
                           <button
                             onClick={() => handleDeleteItem(item.id)}
                             className="rounded-lg p-1 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600 transition"
@@ -815,9 +1035,24 @@ export function ReviewFeedView({
                         ? `${item.comments.length} respostas no thread`
                         : "Responder / Iniciar thread..."}
                     </span>
+                    {isUserMentioned(item) && (
+                      <span className="ml-1 rounded-full bg-purple-100 px-1.5 py-0.2 text-[10px] font-bold text-purple-700">
+                        Você foi mencionado
+                      </span>
+                    )}
                   </button>
 
                   <div className="flex items-center gap-2">
+                    {canEditItem(item) && (
+                      <button
+                        onClick={() => handleOpenEdit(item)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-brand-600 transition"
+                        title="Editar item (disponível para quem criou e coordenação)"
+                      >
+                        <Pencil className="size-3.5" />
+                        <span>Editar</span>
+                      </button>
+                    )}
                     <Link
                       href={`/planejamento/${item.businessUnit.slug}/acompanhamento`}
                       className="text-xs text-slate-400 hover:text-slate-700 transition"
@@ -932,8 +1167,22 @@ export function ReviewFeedView({
                           })}
                         </span>
                       </div>
-                      <div className="rounded-xl rounded-tl-none bg-slate-100 px-3.5 py-2.5 text-slate-800 text-xs leading-relaxed">
-                        {comment.content}
+                      <div className="rounded-xl rounded-tl-none bg-slate-100 px-3.5 py-2.5 text-slate-800 text-xs leading-relaxed whitespace-pre-line">
+                        {comment.content
+                          .split(/(@[A-Za-zÀ-ÖØ-öø-ÿ0-9_.\s]+?)(?=[.,!?;:]?(\s|$))/g)
+                          .map((part, idx) => {
+                            if (part && part.startsWith("@")) {
+                              return (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center rounded bg-purple-100 px-1 py-0.2 text-[11px] font-bold text-purple-700 mx-0.5"
+                                >
+                                  {part}
+                                </span>
+                              );
+                            }
+                            return part;
+                          })}
                       </div>
                     </div>
                   </div>
@@ -946,30 +1195,96 @@ export function ReviewFeedView({
               onSubmit={handleSendComment}
               className="border-t border-slate-200 bg-white p-4"
             >
+              {/* Mention Picker Popover */}
+              {showMentionPicker && (
+                <div className="mb-2 max-h-48 overflow-y-auto rounded-xl border border-purple-200 bg-purple-50/70 p-2 shadow-lg animate-in fade-in">
+                  <div className="flex items-center justify-between pb-1.5 border-b border-purple-200/60 px-1">
+                    <span className="text-[11px] font-bold text-purple-900">
+                      Mencionar pessoa (@) para notificar
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowMentionPicker(false)}
+                      className="text-slate-400 hover:text-slate-700 text-xs p-0.5"
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Filtrar por nome..."
+                    value={mentionSearch}
+                    onChange={(e) => setMentionSearch(e.target.value)}
+                    className="mt-1.5 w-full rounded-lg border border-purple-200 bg-white px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    autoFocus
+                  />
+                  <div className="mt-1.5 space-y-0.5">
+                    {assignableUsers
+                      .filter((u) => !mentionSearch || u.name.toLowerCase().includes(mentionSearch.toLowerCase()))
+                      .slice(0, 7)
+                      .map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => handleInsertMention(u)}
+                          className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-purple-100 rounded-md transition"
+                        >
+                          <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-purple-200 text-[10px] font-bold text-purple-800">
+                            {u.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <span className="font-semibold text-slate-900 truncate">{u.name}</span>
+                          {u.jobTitleName && (
+                            <span className="text-[10px] text-slate-400 ml-auto truncate max-w-[140px]">{u.jobTitleName}</span>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               <div className="relative">
                 <textarea
                   rows={3}
-                  placeholder="Responder... (Ex: criativos aprovados, copy ajustada com social media)"
+                  placeholder="Responder... Use @ para mencionar alguém e enviar notificação"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-3 pr-12 text-xs text-slate-800 placeholder-slate-400 shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-3 pr-20 text-xs text-slate-800 placeholder-slate-400 shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
                   onKeyDown={(e) => {
+                    if (e.key === "@") {
+                      setShowMentionPicker(true);
+                    }
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSendComment(e);
                     }
                   }}
                 />
-                <button
-                  type="submit"
-                  disabled={!commentText.trim() || isSubmittingComment}
-                  className="absolute right-2.5 bottom-3.5 flex size-8 items-center justify-center rounded-lg bg-purple-600 text-white transition hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Send className="size-3.5" />
-                </button>
+                <div className="absolute right-2 bottom-3 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowMentionPicker(!showMentionPicker)}
+                    className={cn(
+                      "flex size-7 items-center justify-center rounded-lg transition text-xs font-bold",
+                      showMentionPicker
+                        ? "bg-purple-600 text-white"
+                        : "bg-slate-200 text-slate-700 hover:bg-purple-100 hover:text-purple-700",
+                    )}
+                    title="Mencionar pessoa (@)"
+                  >
+                    <AtSign className="size-3.5" />
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!commentText.trim() || isSubmittingComment}
+                    className="flex size-7 items-center justify-center rounded-lg bg-purple-600 text-white transition hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Send className="size-3" />
+                  </button>
+                </div>
               </div>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Pressione <strong>Enter</strong> para enviar, <strong>Shift + Enter</strong> para quebra de linha.
+              <p className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
+                <span>Pressione <strong>Enter</strong> para enviar, <strong>Shift + Enter</strong> para quebra de linha.</span>
+                <span className="text-purple-600 font-medium">Use @ para notificar pessoas</span>
               </p>
             </form>
           </div>
@@ -1192,6 +1507,208 @@ export function ReviewFeedView({
                   className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-brand-700 transition disabled:opacity-50"
                 >
                   {isPending ? "Cadastrando..." : "Cadastrar Acompanhamento"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL EDITAR ITEM */}
+      {isEditOpen && editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                  <Pencil className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Editar Item de Acompanhamento
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Edite as pautas, responsáveis, prazos ou status da ação.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditOpen(false);
+                  setEditingItem(null);
+                }}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Business Unit */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Business Unit *
+                  </label>
+                  <select
+                    value={editBuId}
+                    onChange={(e) => setEditBuId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    required
+                  >
+                    {businessUnits.map((bu) => (
+                      <option key={bu.id} value={bu.id}>
+                        {bu.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Destinatário / Responsável */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Destinatário / Responsável *
+                    </label>
+                    {assignableUsers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomEditAssignee(!isCustomEditAssignee);
+                        }}
+                        className="text-[11px] font-medium text-brand-600 hover:text-brand-800 transition"
+                      >
+                        {isCustomEditAssignee ? "Escolher da lista" : "+ Digitar outro"}
+                      </button>
+                    )}
+                  </div>
+
+                  {!isCustomEditAssignee && assignableUsers.length > 0 ? (
+                    <select
+                      value={editAssignee}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setEditAssignee(val);
+                        const match = assignableUsers.find((p) => p.name === val);
+                        setEditAssigneeEmail(match?.email || "");
+                      }}
+                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      required
+                    >
+                      <option value="">— Selecione o responsável —</option>
+                      {assignableUsers.map((user) => (
+                        <option key={user.id} value={user.name}>
+                          {user.name} {user.jobTitleName ? `(${user.jobTitleName})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Ex: João Fontes, Raquel Credidio"
+                      value={editAssignee}
+                      onChange={(e) => {
+                        setEditAssignee(e.target.value);
+                      }}
+                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      required
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {/* Data Reunião */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Data da Reunião *
+                  </label>
+                  <input
+                    type="date"
+                    value={editMeetingDate}
+                    onChange={(e) => setEditMeetingDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    required
+                  />
+                </div>
+
+                {/* Data Follow Up */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Data Follow Up *
+                  </label>
+                  <input
+                    type="date"
+                    value={editFollowUpDate}
+                    onChange={(e) => setEditFollowUpDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    required
+                  />
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as PlanningReviewStatus)}
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  >
+                    <option value="novo">Novo</option>
+                    <option value="em_andamento">Em andamento</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="concluido">Concluído</option>
+                    <option value="atrasado">Atrasado</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Detalhes / Ações */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Detalhes e Pautas da Reunião *
+                </label>
+                <textarea
+                  rows={4}
+                  value={editDetails}
+                  onChange={(e) => setEditDetails(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  required
+                />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Tags (separadas por vírgula)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Black November, Tráfego Pago, Provas Práticas"
+                  value={editTag}
+                  onChange={(e) => setEditTag(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditOpen(false);
+                    setEditingItem(null);
+                  }}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-brand-700 transition disabled:opacity-50"
+                >
+                  {isPending ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
             </form>

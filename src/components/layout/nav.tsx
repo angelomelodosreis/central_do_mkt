@@ -84,10 +84,10 @@ export function Nav({
                     <span
                       aria-hidden
                       className={cn(
-                        "absolute -right-1 -top-0.5 size-2 rounded-full ring-2",
+                        "absolute -right-1 -top-0.5 size-2.5 rounded-full ring-2",
                         isActive
                           ? "bg-white ring-brand-600"
-                          : "bg-brand-500 ring-white",
+                          : "bg-rose-500 ring-white",
                       )}
                     />
                   ) : null}
@@ -105,10 +105,10 @@ export function Nav({
                     {item.badge ? (
                       <span
                         className={cn(
-                          "shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums",
+                          "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums shadow-xs transition",
                           isActive
-                            ? "bg-white/20 text-white"
-                            : "bg-brand-50 text-brand-700",
+                            ? "bg-white text-brand-600"
+                            : "bg-rose-500 text-white",
                         )}
                       >
                         {item.badge}

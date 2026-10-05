@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   NewTaskDrawer,
@@ -19,26 +22,34 @@ import {
   TASK_STATUSES,
   TASK_STATUS_LABELS,
   type TaskStatus,
+  type UserNotification,
 } from "@/lib/db/schema";
+import {
+  markNotificationAsReadAction,
+  markAllNotificationsAsReadAction,
+} from "@/lib/modules/notifications/actions";
 import { isOverdue } from "@/lib/modules/tasks/state";
 import { cn } from "@/lib/utils/cn";
 import { matchesSearch } from "@/lib/utils/text";
 
-export type Visao = "para_mim" | "deleguei" | "todas" | "historico";
+export type Visao = "para_mim" | "deleguei" | "todas" | "historico" | "notificacoes";
 
 const VISAO_LABELS: Record<Visao, string> = {
   para_mim: "Para mim",
   deleguei: "Deleguei",
   todas: "Todas",
   historico: "Histórico",
+  notificacoes: "Menções & Avisos",
 };
 
 const VISAO_DESCRICOES: Record<Visao, string> = {
   para_mim:
-    "O que é seu e o que está aberto para o seu time, do mais urgente para o menos.",
+    "O que é seu, acompanhamentos e o que está aberto para o seu time, do mais urgente para o menos.",
   deleguei: "O que você passou para outras pessoas e como está cada uma.",
   todas: "Tudo em aberto no seu escopo de responsabilidade.",
   historico: "Concluídas e canceladas, na ordem em que terminaram.",
+  notificacoes:
+    "Avisos em tempo real de onde você foi mencionado em threads ou recebeu follow-ups de planejamento.",
 };
 
 type Filtros = {
@@ -68,18 +79,17 @@ const FILTROS_VAZIOS: Filtros = {
 /**
  * A área de tarefas, organizada por PERSPECTIVA.
  *
- * Duas perguntas diferentes, duas abas: "o que eu preciso fazer" e "o que eu
- * passei e como está". São visões de papéis opostos sobre a mesma base — e
- * misturá-las era o que fazia quem delegou receber botões de execução.
- *
- * Os filtros mudam com a aba: filtrar por responsável em "Para mim" seria um
- * seletor com uma opção só.
+ * Agora com suporte total a:
+ * - Menções e notificações em threads de revisão
+ * - Acompanhamentos atribuídos de BUs
+ * - Edição de tarefas para quem as criou
  */
 export function TasksWorkspace({
   paraMim,
   deleguei,
   todas,
   historico,
+  notifications = [],
   people,
   teams,
   businessUnits,
@@ -91,6 +101,7 @@ export function TasksWorkspace({
   deleguei: TaskRowData[];
   todas: TaskRowData[];
   historico: TaskRowData[];
+  notifications?: UserNotification[];
   people: AssignablePerson[];
   teams: AssignableTeam[];
   businessUnits: { id: string; label: string }[];
@@ -101,19 +112,23 @@ export function TasksWorkspace({
   const [visao, setVisao] = useState<Visao>("para_mim");
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS);
   const [criando, setCriando] = useState(false);
+  const [notifList, setNotifList] = useState<UserNotification[]>(notifications);
+
+  const unreadNotifCount = notifList.filter((n) => n.isRead === 0).length;
 
   const listas: Record<Visao, TaskRowData[]> = {
     para_mim: paraMim,
     deleguei,
     todas,
     historico,
+    notificacoes: [],
   };
 
   const abas: Visao[] = podeVerTodas
-    ? ["para_mim", "deleguei", "todas", "historico"]
-    : ["para_mim", "deleguei", "historico"];
+    ? ["para_mim", "deleguei", "todas", "historico", "notificacoes"]
+    : ["para_mim", "deleguei", "historico", "notificacoes"];
 
-  const lista = listas[visao];
+  const lista = listas[visao] || [];
 
   const travadasNaAba = lista.filter(
     (item) => item.status === "blocked",
@@ -161,8 +176,6 @@ export function TasksWorkspace({
     for (const item of lista) {
       contagem.set(item.status, (contagem.get(item.status) ?? 0) + 1);
     }
-    // Ordem fixa (a do enum), e não por contagem: um resumo que reordena a cada
-    // carregamento obriga a reler os rótulos toda vez.
     return TASK_STATUSES.filter((status) => contagem.has(status)).map(
       (status) => ({
         label: TASK_STATUS_LABELS[status],
@@ -172,21 +185,20 @@ export function TasksWorkspace({
     );
   }, [lista]);
 
-  const destinos: Destino[] = podeDelegar
-    ? [
-        ...teams.map((team) => ({
-          value: `team:${team.id}`,
-          label: `${"— ".repeat(team.depth)}${team.name}`,
-          triggerLabel: team.name,
-          hint: team.path,
-        })),
-        ...people.map((person) => ({
-          value: `user:${person.id}`,
-          label: person.name,
-          hint: person.label ?? undefined,
-        })),
-      ]
-    : [];
+  // Lista de destinos aberta para quem pode delegar OU quem criou tarefas gerir suas criações
+  const destinos: Destino[] = [
+    ...teams.map((team) => ({
+      value: `team:${team.id}`,
+      label: `${"— ".repeat(team.depth)}${team.name}`,
+      triggerLabel: team.name,
+      hint: team.path,
+    })),
+    ...people.map((person) => ({
+      value: `user:${person.id}`,
+      label: person.name,
+      hint: person.label ?? undefined,
+    })),
+  ];
 
   const temFiltro =
     Boolean(
@@ -204,8 +216,6 @@ export function TasksWorkspace({
     setFiltros((atual) => ({ ...atual, [chave]: valor }));
   }
 
-  // Nomes de quem delegou, extraídos da lista: montar o seletor a partir do que
-  // está na tela evita oferecer filtros que não devolvem nada.
   const delegadores = [
     ...new Set(lista.map((item) => item.createdByName).filter(Boolean)),
   ] as string[];
@@ -220,27 +230,53 @@ export function TasksWorkspace({
 
   return (
     <div className="space-y-4">
+      {/* Banner de Aviso de Menções quando houver novas */}
+      {unreadNotifCount > 0 && visao !== "notificacoes" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-200 bg-purple-50/80 p-3.5 text-xs text-purple-950 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xs shadow-xs">
+              @
+            </span>
+            <div>
+              <p className="font-semibold text-slate-900">
+                Você tem {unreadNotifCount} nova{unreadNotifCount > 1 ? "s" : ""} menção{unreadNotifCount > 1 ? "ões" : ""} em threads de planejamento
+              </p>
+              <p className="text-slate-600">
+                Veja o que foi solicitado ou alinhado pela coordenação e colegas.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setVisao("notificacoes")}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-3.5 py-1.5 font-semibold text-white shadow-xs hover:bg-purple-700 transition"
+          >
+            <span>Ver Menções</span>
+            <ArrowRight className="size-3" />
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PillTabs<Visao>
           value={visao}
           onChange={(proxima) => {
             setVisao(proxima);
-            // Filtros de uma aba raramente fazem sentido na outra — e um filtro
-            // esquecido faz a aba nova parecer vazia.
             setFiltros(FILTROS_VAZIOS);
           }}
           items={abas.map((aba) => ({
             value: aba,
             label: VISAO_LABELS[aba],
-            count: listas[aba].length,
+            count:
+              aba === "notificacoes"
+                ? unreadNotifCount
+                : listas[aba]?.length ?? 0,
             alert:
-              aba === "deleguei" &&
-              deleguei.some((item) => item.status === "blocked"),
+              (aba === "deleguei" &&
+                deleguei.some((item) => item.status === "blocked")) ||
+              (aba === "notificacoes" && unreadNotifCount > 0),
           }))}
         />
         <div className="flex flex-wrap items-center gap-2">
-          {/* Recorrentes fica ao lado da criação porque é a outra forma de
-              colocar trabalho na fila — e não uma configuração escondida. */}
           {podeDelegar ? (
             <ButtonLink href="/tarefas/recorrentes" variant="secondary">
               Recorrentes
@@ -254,189 +290,302 @@ export function TasksWorkspace({
 
       <p className="text-sm text-slate-500">{VISAO_DESCRICOES[visao]}</p>
 
-      {resumo.length > 0 && visao !== "para_mim" ? (
+      {/* Visão de Menções & Avisos */}
+      {visao === "notificacoes" ? (
         <Card>
-          <CardBody>
-            <StatSummary items={resumo} />
+          <CardBody className="px-0 py-0">
+            {notifList.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <EmptyState
+                  title={VAZIO_TITULOS.notificacoes}
+                  description={VAZIO_DESCRICOES.notificacoes}
+                />
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                <div className="flex items-center justify-between px-5 py-3 bg-slate-50/80 border-b border-slate-100">
+                  <span className="text-xs font-semibold text-slate-700">
+                    {notifList.length} aviso(s) e menção(ões) ({unreadNotifCount} pendente{unreadNotifCount === 1 ? "" : "s"})
+                  </span>
+                  {unreadNotifCount > 0 && (
+                    <button
+                      onClick={async () => {
+                        setNotifList((prev) => prev.map((n) => ({ ...n, isRead: 1 })));
+                        try {
+                          await markAllNotificationsAsReadAction();
+                          toast.success("Todas as notificações foram marcadas como lidas.");
+                        } catch {
+                          toast.error("Erro ao atualizar notificações.");
+                        }
+                      }}
+                      className="text-xs font-semibold text-purple-700 hover:text-purple-900 transition"
+                    >
+                      Marcar todas como lidas
+                    </button>
+                  )}
+                </div>
+                {notifList.map((notif) => (
+                  <div
+                    key={notif.id}
+                    className={cn(
+                      "p-4 transition hover:bg-slate-50 flex items-start justify-between gap-3",
+                      notif.isRead === 0 && "bg-purple-50/40",
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
+                          notif.type === "mention"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-brand-100 text-brand-700",
+                        )}
+                      >
+                        {notif.type === "mention" ? "@" : "📋"}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-xs text-slate-900">
+                            {notif.title}
+                          </span>
+                          {notif.isRead === 0 && (
+                            <span className="rounded bg-rose-100 px-1.5 py-0.2 text-[10px] font-bold text-rose-700">
+                              Novo
+                            </span>
+                          )}
+                          <span className="text-[11px] text-slate-400">
+                            {new Date(notif.createdAt).toLocaleDateString("pt-BR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed">
+                          {notif.content}
+                        </p>
+                        {notif.link && (
+                          <div className="pt-1 flex items-center gap-2">
+                            <Link
+                              href={notif.link}
+                              onClick={async () => {
+                                if (notif.isRead === 0) {
+                                  setNotifList((prev) =>
+                                    prev.map((n) => (n.id === notif.id ? { ...n, isRead: 1 } : n)),
+                                  );
+                                  await markNotificationAsReadAction(notif.id);
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 hover:text-purple-900 hover:underline"
+                            >
+                              <span>Abrir conversa / item na Central</span>
+                              <ArrowRight className="size-3" />
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {notif.isRead === 0 && (
+                      <button
+                        onClick={async () => {
+                          setNotifList((prev) =>
+                            prev.map((n) => (n.id === notif.id ? { ...n, isRead: 1 } : n)),
+                          );
+                          await markNotificationAsReadAction(notif.id);
+                        }}
+                        className="rounded px-2.5 py-1 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 transition"
+                        title="Marcar como lida"
+                      >
+                        Marcar lida
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </CardBody>
         </Card>
-      ) : null}
+      ) : (
+        <>
+          {resumo.length > 0 && visao !== "para_mim" ? (
+            <Card>
+              <CardBody>
+                <StatSummary items={resumo} />
+              </CardBody>
+            </Card>
+          ) : null}
 
-      {/* Busca e filtros */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <div className="min-w-56 flex-1">
-            <Input
-              value={filtros.busca}
-              onChange={(event) => set("busca", event.target.value)}
-              placeholder="Buscar tarefa, pessoa ou BU…"
-              aria-label="Buscar tarefa"
-            />
-          </div>
-          <FiltroRapido
-            ativo={filtros.atrasadas}
-            onClick={() => set("atrasadas", !filtros.atrasadas)}
-            total={atrasadasNaAba}
-          >
-            Atrasadas
-          </FiltroRapido>
-          <FiltroRapido
-            ativo={filtros.travadas}
-            onClick={() => set("travadas", !filtros.travadas)}
-            total={travadasNaAba}
-          >
-            Travadas
-          </FiltroRapido>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <div className={FIELD_WIDTHS.md}>
-            <Select
-              value={filtros.status}
-              onValueChange={(valor) => set("status", valor)}
-              ariaLabel="Filtrar por situação"
-              size="sm"
-              placeholder="Situação"
-              options={[
-                { value: "", label: "Todas as situações" },
-                ...TASK_STATUSES.filter((status) =>
-                  visao === "historico"
-                    ? status === "done" || status === "cancelled"
-                    : status !== "done" && status !== "cancelled",
-                ).map((status) => ({
-                  value: status,
-                  label: TASK_STATUS_LABELS[status],
-                })),
-              ]}
-            />
-          </div>
-
-          <div className={FIELD_WIDTHS.md}>
-            <Select
-              value={filtros.prioridade}
-              onValueChange={(valor) => set("prioridade", valor)}
-              ariaLabel="Filtrar por prioridade"
-              size="sm"
-              placeholder="Prioridade"
-              options={[
-                { value: "", label: "Qualquer prioridade" },
-                ...TASK_PRIORITIES.map((priority) => ({
-                  value: priority,
-                  label: TASK_PRIORITY_LABELS[priority],
-                })),
-              ]}
-            />
-          </div>
-
-          {/* Em "Para mim" o responsável é sempre a própria pessoa: o seletor
-              teria uma opção só. */}
-          {visao !== "para_mim" && responsaveis.length > 1 ? (
-            <div className={FIELD_WIDTHS.lg}>
-              <Select
-                value={filtros.responsavel}
-                onValueChange={(valor) => set("responsavel", valor)}
-                ariaLabel="Filtrar por responsável"
-                size="sm"
-                placeholder="Responsável"
-                options={[
-                  { value: "", label: "Qualquer responsável" },
-                  ...responsaveis.map(([id, nome]) => ({
-                    value: id,
-                    label: nome,
-                  })),
-                ]}
-              />
+          {/* Busca e filtros */}
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <div className="min-w-56 flex-1">
+                <Input
+                  value={filtros.busca}
+                  onChange={(event) => set("busca", event.target.value)}
+                  placeholder="Buscar tarefa, pessoa ou BU…"
+                  aria-label="Buscar tarefa"
+                />
+              </div>
+              <FiltroRapido
+                ativo={filtros.atrasadas}
+                onClick={() => set("atrasadas", !filtros.atrasadas)}
+                total={atrasadasNaAba}
+              >
+                Atrasadas
+              </FiltroRapido>
+              <FiltroRapido
+                ativo={filtros.travadas}
+                onClick={() => set("travadas", !filtros.travadas)}
+                total={travadasNaAba}
+              >
+                Travadas
+              </FiltroRapido>
             </div>
-          ) : null}
 
-          {/* Em "Deleguei" quem delegou é sempre a própria pessoa. */}
-          {visao !== "deleguei" && delegadores.length > 1 ? (
-            <div className={FIELD_WIDTHS.lg}>
-              <Select
-                value={filtros.delegador}
-                onValueChange={(valor) => set("delegador", valor)}
-                ariaLabel="Filtrar por quem delegou"
-                size="sm"
-                placeholder="Quem passou"
-                options={[
-                  { value: "", label: "Qualquer origem" },
-                  ...delegadores.map((nome) => ({ value: nome, label: nome })),
-                ]}
-              />
-            </div>
-          ) : null}
+            <div className="flex flex-wrap gap-2">
+              <div className={FIELD_WIDTHS.md}>
+                <Select
+                  value={filtros.status}
+                  onValueChange={(valor) => set("status", valor)}
+                  ariaLabel="Filtrar por situação"
+                  size="sm"
+                  placeholder="Situação"
+                  options={[
+                    { value: "", label: "Todas as situações" },
+                    ...TASK_STATUSES.map((status) => ({
+                      value: status,
+                      label: TASK_STATUS_LABELS[status],
+                    })),
+                  ]}
+                />
+              </div>
 
-          {businessUnits.length > 0 ? (
-            <div className={FIELD_WIDTHS.lg}>
-              <Select
-                value={filtros.businessUnit}
-                onValueChange={(valor) => set("businessUnit", valor)}
-                ariaLabel="Filtrar por Business Unit"
-                size="sm"
-                placeholder="Business Unit"
-                options={[
-                  { value: "", label: "Qualquer BU" },
-                  ...businessUnits.map((unit) => ({
-                    value: unit.label,
-                    label: unit.label,
-                  })),
-                ]}
-              />
-            </div>
-          ) : null}
+              <div className={FIELD_WIDTHS.md}>
+                <Select
+                  value={filtros.prioridade}
+                  onValueChange={(valor) => set("prioridade", valor)}
+                  ariaLabel="Filtrar por prioridade"
+                  size="sm"
+                  placeholder="Prioridade"
+                  options={[
+                    { value: "", label: "Todas as prioridades" },
+                    ...TASK_PRIORITIES.map((prioridade) => ({
+                      value: prioridade,
+                      label: TASK_PRIORITY_LABELS[prioridade],
+                    })),
+                  ]}
+                />
+              </div>
 
-          {temFiltro ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setFiltros(FILTROS_VAZIOS)}
-            >
-              Limpar filtros
-            </Button>
-          ) : null}
-        </div>
-      </div>
+              {visao !== "para_mim" && responsaveis.length > 1 ? (
+                <div className={FIELD_WIDTHS.lg}>
+                  <Select
+                    value={filtros.responsavel}
+                    onValueChange={(valor) => set("responsavel", valor)}
+                    ariaLabel="Filtrar por responsável"
+                    size="sm"
+                    placeholder="Responsável"
+                    options={[
+                      { value: "", label: "Qualquer responsável" },
+                      ...responsaveis.map(([id, nome]) => ({
+                        value: id,
+                        label: nome,
+                      })),
+                    ]}
+                  />
+                </div>
+              ) : null}
 
-      <Card>
-        <CardBody className="px-0 py-0">
-          {visiveis.length === 0 ? (
-            <div className="px-5 py-10">
+              {visao !== "deleguei" && delegadores.length > 1 ? (
+                <div className={FIELD_WIDTHS.lg}>
+                  <Select
+                    value={filtros.delegador}
+                    onValueChange={(valor) => set("delegador", valor)}
+                    ariaLabel="Filtrar por quem delegou"
+                    size="sm"
+                    placeholder="Quem passou"
+                    options={[
+                      { value: "", label: "Qualquer origem" },
+                      ...delegadores.map((nome) => ({ value: nome, label: nome })),
+                    ]}
+                  />
+                </div>
+              ) : null}
+
+              {businessUnits.length > 0 ? (
+                <div className={FIELD_WIDTHS.lg}>
+                  <Select
+                    value={filtros.businessUnit}
+                    onValueChange={(valor) => set("businessUnit", valor)}
+                    ariaLabel="Filtrar por Business Unit"
+                    size="sm"
+                    placeholder="Business Unit"
+                    options={[
+                      { value: "", label: "Qualquer BU" },
+                      ...businessUnits.map((unit) => ({
+                        value: unit.label,
+                        label: unit.label,
+                      })),
+                    ]}
+                  />
+                </div>
+              ) : null}
+
               {temFiltro ? (
-                <EmptyState
-                  title="Nenhuma tarefa com esses filtros"
-                  description="Ajuste a busca ou limpe os filtros para ver a lista inteira."
-                  action={
-                    <Button
-                      variant="secondary"
-                      onClick={() => setFiltros(FILTROS_VAZIOS)}
-                    >
-                      Limpar filtros
-                    </Button>
-                  }
-                />
-              ) : (
-                <EmptyState
-                  title={VAZIO_TITULOS[visao]}
-                  description={VAZIO_DESCRICOES[visao]}
-                  action={
-                    visao === "deleguei" && podeDelegar ? (
-                      <Button onClick={() => setCriando(true)}>
-                        + Nova tarefa
-                      </Button>
-                    ) : null
-                  }
-                />
-              )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setFiltros(FILTROS_VAZIOS)}
+                >
+                  Limpar filtros
+                </Button>
+              ) : null}
             </div>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {visiveis.map((item) => (
-                <TaskRow key={item.id} task={item} destinos={destinos} />
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+          </div>
+
+          <Card>
+            <CardBody className="px-0 py-0">
+              {visiveis.length === 0 ? (
+                <div className="px-5 py-10">
+                  {temFiltro ? (
+                    <EmptyState
+                      title="Nenhuma tarefa com esses filtros"
+                      description="Ajuste a busca ou limpe os filtros para ver a lista inteira."
+                      action={
+                        <Button
+                          variant="secondary"
+                          onClick={() => setFiltros(FILTROS_VAZIOS)}
+                        >
+                          Limpar filtros
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <EmptyState
+                      title={VAZIO_TITULOS[visao]}
+                      description={VAZIO_DESCRICOES[visao]}
+                      action={
+                        visao === "deleguei" && podeDelegar ? (
+                          <Button onClick={() => setCriando(true)}>
+                            + Nova tarefa
+                          </Button>
+                        ) : null
+                      }
+                    />
+                  )}
+                </div>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {visiveis.map((item) => (
+                    <TaskRow key={item.id} task={item} destinos={destinos} />
+                  ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
+        </>
+      )}
 
       <NewTaskDrawer
         open={criando}
@@ -452,19 +601,22 @@ export function TasksWorkspace({
 }
 
 const VAZIO_TITULOS: Record<Visao, string> = {
-  para_mim: "Nada pendente",
-  deleguei: "Você ainda não passou nenhuma tarefa",
-  todas: "Nada em aberto",
-  historico: "Nada encerrado ainda",
+  para_mim: "Nenhuma tarefa para você",
+  deleguei: "Você não passou nenhuma tarefa",
+  todas: "Nenhuma tarefa em aberto",
+  historico: "Nenhuma tarefa encerrada",
+  notificacoes: "Nenhum aviso ou menção no momento",
 };
 
 const VAZIO_DESCRICOES: Record<Visao, string> = {
   para_mim:
-    "Sua fila está limpa. Tarefas endereçadas ao seu time também aparecem aqui.",
+    "Sua fila está limpa. Tarefas endereçadas ao seu time e acompanhamentos de planejamento também aparecem aqui.",
   deleguei:
     "Tarefas criadas para outras pessoas ou para um time aparecem aqui, com a situação de cada uma.",
   todas: "Ninguém no seu escopo tem tarefa em aberto.",
   historico: "Tarefas concluídas e canceladas ficam guardadas aqui.",
+  notificacoes:
+    "Quando alguém mencionar você em uma thread ou atribuir um follow-up, você receberá um aviso aqui.",
 };
 
 function FiltroRapido({
