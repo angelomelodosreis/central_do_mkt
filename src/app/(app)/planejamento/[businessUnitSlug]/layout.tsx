@@ -49,7 +49,7 @@ export default async function BusinessUnitLayout({
     { href: `${base}/metas`, label: "Objetivo e Metas" },
     { href: `${base}/resultados`, label: "Resultados" },
     { href: `${base}/acompanhamento`, label: "Acompanhamento" },
-    { href: `${base}/revisao-trimestral`, label: "Revisão Trimestral" },
+    { href: `${base}/revisao-trimestral`, label: "Revisões do ciclo" },
     {
       href: `${base}/calendario`,
       label: "Calendário",

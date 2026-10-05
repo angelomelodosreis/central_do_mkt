@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 
-import { ReviewListClient } from "./review-list-client";
+import { ReviewCycleView } from "./review-cycle-view";
 import { ButtonLink } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/card";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
+import {
+  listRounds,
+  pickDefaultRound,
+} from "@/lib/modules/strategy/diagnosis";
 import { listQuarterlyReviews } from "@/lib/modules/strategy/quarterly-review";
 import {
   getCycleBySlug,
@@ -11,7 +15,7 @@ import {
   pickDefaultCycle,
 } from "@/lib/modules/strategy/queries";
 
-export const metadata: Metadata = { title: "Revisão Trimestral" };
+export const metadata: Metadata = { title: "Revisões do ciclo" };
 export const dynamic = "force-dynamic";
 
 export default async function QuarterlyReviewPage({
@@ -30,39 +34,62 @@ export default async function QuarterlyReviewPage({
     ? await getCycleBySlug(unit.id, ciclo)
     : pickDefaultCycle(cycles);
 
-  const reviews = await listQuarterlyReviews(unit.id, cycle?.id);
+  if (!cycle) {
+    return (
+      <EmptyState
+        title="Nenhum ciclo criado ainda"
+        description="As revisões são sempre de um ciclo. Comece criando o ciclo nos Ciclos da BU."
+        action={
+          <ButtonLink href={`/planejamento/${unit.slug}/ciclos`}>
+            Ir para Ciclos da BU
+          </ButtonLink>
+        }
+      />
+    );
+  }
+
+  const [reviews, rounds] = await Promise.all([
+    listQuarterlyReviews(unit.id, cycle.id),
+    listRounds(cycle.id),
+  ]);
+
+  const activeRound = pickDefaultRound(rounds);
+  const initialReview = reviews[0] ?? null;
 
   return (
-    <>
-      <PageHeader
-        title="Revisão Trimestral"
-        description={`Cadência de 3 meses: checar se ainda estamos pensando certo${cycle ? ` · ${cycle.name}` : ""}. O comitê responde às 7 perguntas estratégicas para validar o diagnóstico e decidir revisões de metas.`}
-      />
+    <div className="space-y-6">
+      {cycles.length > 1 && (
+        <div className="flex items-center justify-end gap-1.5 border-b border-slate-200 pb-2">
+          <span className="text-xs text-slate-400">Ciclos:</span>
+          {cycles.map((c) => (
+            <ButtonLink
+              key={c.id}
+              href={`/planejamento/${unit.slug}/revisao-trimestral?ciclo=${c.slug}`}
+              variant={c.id === cycle.id ? "primary" : "ghost"}
+              size="sm"
+              className="h-6 text-[11px] px-2"
+            >
+              {c.name}
+            </ButtonLink>
+          ))}
+        </div>
+      )}
 
-      <ReviewListClient
+      <ReviewCycleView
         businessUnitId={unit.id}
-        cycleId={cycle?.id ?? null}
-        reviews={reviews}
+        businessUnitSlug={unit.slug}
+        businessUnitName={unit.label}
+        cycleId={cycle.id}
+        cycleName={cycle.name}
+        cyclePeriod={activeRound?.cyclePeriod || "Jan - Jun/2027"}
+        cycleObjective={
+          activeRound?.cycleObjective ||
+          `Ser a principal referência nacional em educação médica para ${unit.label}.`
+        }
         canEdit={canEdit}
+        initialReview={initialReview}
+        allReviews={reviews}
       />
-
-      {cycles.length > 1 ? (
-        <nav className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
-          <span className="text-xs text-slate-500">Outros ciclos:</span>
-          {cycles
-            .filter((c) => c.id !== cycle?.id)
-            .map((c) => (
-              <ButtonLink
-                key={c.id}
-                href={`/planejamento/${unit.slug}/revisao-trimestral?ciclo=${c.slug}`}
-                variant="ghost"
-                size="sm"
-              >
-                {c.name}
-              </ButtonLink>
-            ))}
-        </nav>
-      ) : null}
-    </>
+    </div>
   );
 }

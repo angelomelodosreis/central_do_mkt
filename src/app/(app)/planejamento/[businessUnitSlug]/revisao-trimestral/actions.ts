@@ -165,3 +165,71 @@ export async function deleteQuarterlyReviewAction(
 
   revalidatePath(`/planejamento/${gate.unit.slug}`, "layout");
 }
+
+/** Grava a Revisão Trimestral/Semestral completa com status (rascunho ou concluída) e todas as respostas */
+export async function saveFullQuarterlyReviewAction(data: {
+  id?: string;
+  businessUnitId: string;
+  cycleId?: string | null;
+  quarter: string;
+  reviewDate?: string;
+  diagnosticValid?: string | null;
+  marketChanges?: string | null;
+  newProblems?: string | null;
+  missedOpportunities?: string | null;
+  objectiveAssumptions?: string | null;
+  needsGoalRevision?: string | null;
+  nextQuarterFocus?: string | null;
+  status: "in_progress" | "completed";
+}): Promise<{ ok: boolean; reviewId?: string; error?: string }> {
+  const gate = await requireEditor(data.businessUnitId);
+  if ("erro" in gate) return { ok: false, error: gate.erro };
+
+  const reviewDate = data.reviewDate ? new Date(data.reviewDate) : new Date();
+
+  try {
+    const id = await saveQuarterlyReview({
+      id: data.id,
+      businessUnitId: data.businessUnitId,
+      cycleId: data.cycleId ?? null,
+      quarter: data.quarter,
+      reviewDate,
+      diagnosticValid: data.diagnosticValid ?? null,
+      marketChanges: data.marketChanges ?? null,
+      newProblems: data.newProblems ?? null,
+      missedOpportunities: data.missedOpportunities ?? null,
+      objectiveAssumptions: data.objectiveAssumptions ?? null,
+      needsGoalRevision: data.needsGoalRevision ?? null,
+      nextQuarterFocus: data.nextQuarterFocus ?? null,
+      status: data.status,
+      userId: gate.currentUser.id,
+    });
+
+    await writeAuditLog({
+      actorUserId: gate.currentUser.id,
+      actorEmail: gate.currentUser.email,
+      action: data.id
+        ? "strategy_quarterly_review.update"
+        : "strategy_quarterly_review.create",
+      entityType: "strategy_quarterly_review",
+      entityId: id,
+      summary: `${data.id ? "Atualizou" : "Registrou"} a ${data.quarter} de ${gate.unit.label}`,
+      afterData: {
+        quarter: data.quarter,
+        status: data.status,
+        diagnosticValid: data.diagnosticValid,
+        needsGoalRevision: data.needsGoalRevision,
+      },
+    });
+
+    revalidatePath(`/planejamento/${gate.unit.slug}`, "layout");
+    return { ok: true, reviewId: id };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Erro ao salvar revisão.",
+    };
+  }
+}
+
