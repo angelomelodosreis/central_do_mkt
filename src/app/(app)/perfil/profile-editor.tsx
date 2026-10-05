@@ -113,6 +113,9 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
   const [selectedBuIds, setSelectedBuIds] =
     useState<string[]>(initialAccessibleIds);
   const [buSearch, setBuSearch] = useState("");
+  const [buFilterTab, setBuFilterTab] = useState<"all" | "active" | "inactive">(
+    "all",
+  );
   const [isPendingBUs, startBuTransition] = useTransition();
 
   // Identifica BUs em que a pessoa é Líder de squad (essas não são removidas por auto-serviço de leitor)
@@ -179,6 +182,10 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
   }
 
   const filteredBUs = data.allUnits.filter((bu) => {
+    const isSelected = selectedBuIds.includes(bu.id);
+    if (buFilterTab === "active" && !isSelected) return false;
+    if (buFilterTab === "inactive" && isSelected) return false;
+
     const term = buSearch.toLowerCase().trim();
     if (!term) return true;
     return (
@@ -464,104 +471,97 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
         </form>
       </section>
 
-      {/* ── SEÇÃO 2: Minhas Business Units Ativas ── */}
+      {/* ── SEÇÃO 2 (UNIFICADA): Minhas Business Units & Acesso ao Planejamento ── */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Building2 className="size-5 text-brand-600" />
               <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                Minhas Business Units Ativas
-              </h2>
-            </div>
-            <p className="mt-1 text-sm text-slate-500">
-              Frentes de negócio com acesso liberado para acompanhamento do
-              planejamento e cronogramas.
-            </p>
-          </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-            {data.accessibleUnits.length}{" "}
-            {data.accessibleUnits.length === 1 ? "BU" : "BUs"}
-          </span>
-        </div>
-
-        <div className="mt-6">
-          {data.accessibleUnits.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
-              <Building2 className="mx-auto size-8 text-slate-300" />
-              <p className="mt-2 text-sm font-semibold text-slate-800">
-                Nenhuma Business Unit vinculada ainda
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Selecione as BUs desejadas abaixo no gerenciador de BUs para
-                começar a acompanhar imediatamente como leitor.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {data.accessibleUnits.map((bu) => (
-                <Link
-                  key={bu.id}
-                  href={`/planejamento/${bu.slug}`}
-                  className="group flex flex-col justify-between rounded-xl border border-slate-200/90 bg-white p-4 transition hover:border-brand-300 hover:bg-slate-50/50 hover:shadow-2xs"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-semibold text-slate-900 group-hover:text-brand-700">
-                        {bu.label}
-                      </span>
-                      {bu.isLead ? (
-                        <Badge tone="brand">Líder</Badge>
-                      ) : (
-                        <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                          Leitor
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-2 flex items-center gap-1.5">
-                      <code className="rounded bg-brand-50 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-brand-700">
-                        {bu.slug
-                          ? `MEDCOF_${bu.slug.toUpperCase()}`
-                          : "MEDCOF_BU"}
-                      </code>
-                      {bu.divisionName && (
-                        <span className="text-[11px] text-slate-400">
-                          · {bu.divisionName}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center gap-1 text-xs font-medium text-brand-600 group-hover:text-brand-800">
-                    <span>Acessar Planejamento</span>
-                    <ArrowRight className="size-3" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── SEÇÃO 3: Gerenciar Minhas BUs como Leitor (Auto-atribuição Imediata) ── */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <BookOpen className="size-5 text-brand-600" />
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">
-                Gerenciar Minhas BUs de Leitor
+                Minhas Business Units de Atuação
               </h2>
               <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                 Liberação Direta
               </span>
+              <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs font-semibold text-slate-700">
+                {selectedBuIds.length} de {data.allUnits.length} BUs ativas
+              </span>
             </div>
             <p className="mt-1 text-sm text-slate-500">
-              Escolha as Business Units que você deseja acompanhar como{" "}
-              <strong>Leitor</strong>. O acesso para visualizar metas,
-              planejamento e cronogramas é liberado instantaneamente.
+              Escolha as Business Units que você acompanha na MedCof. O acesso
+              de <strong>Leitor</strong> para consultar metas, planejamento e
+              cronogramas é liberado instantaneamente.
             </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              onClick={handleSaveBUs}
+              disabled={isPendingBUs || !hasBuChanges}
+              className={`gap-2 font-medium shadow-xs transition ${
+                hasBuChanges
+                  ? "bg-brand-600 text-white hover:bg-brand-700 ring-2 ring-brand-500/20"
+                  : "bg-slate-100 text-slate-400 hover:bg-slate-100 cursor-default"
+              }`}
+            >
+              <Save className="size-4" />
+              {isPendingBUs
+                ? "Salvando..."
+                : hasBuChanges
+                ? `Salvar BUs (${selectedBuIds.length})`
+                : "Acessos Sincronizados"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Banner Informativo de Autonomia */}
+        <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/60 p-3.5 text-xs text-brand-900">
+          <p className="font-medium">
+            💡 Como colaborador da MedCof, você tem autonomia para entrar ou
+            sair do acompanhamento de qualquer BU a qualquer momento. Você terá
+            permissão de <strong>visualização completa</strong> dos dados de
+            estratégia, campanhas e personas.
+          </p>
+        </div>
+
+        {/* Barra de Filtros (Tabs + Busca) */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Tabs de Filtro */}
+          <div className="flex items-center rounded-xl bg-slate-100/90 p-1 text-xs font-semibold text-slate-600">
+            <button
+              type="button"
+              onClick={() => setBuFilterTab("all")}
+              className={`rounded-lg px-3 py-1.5 transition ${
+                buFilterTab === "all"
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "hover:text-slate-900"
+              }`}
+            >
+              Todas ({data.allUnits.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setBuFilterTab("active")}
+              className={`rounded-lg px-3 py-1.5 transition ${
+                buFilterTab === "active"
+                  ? "bg-white text-brand-700 shadow-xs"
+                  : "hover:text-slate-900"
+              }`}
+            >
+              Ativas ({selectedBuIds.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setBuFilterTab("inactive")}
+              className={`rounded-lg px-3 py-1.5 transition ${
+                buFilterTab === "inactive"
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "hover:text-slate-900"
+              }`}
+            >
+              Não Selecionadas ({data.allUnits.length - selectedBuIds.length})
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -577,24 +577,11 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
                 ? "Desmarcar visíveis"
                 : "Selecionar todas visíveis"}
             </Button>
-            <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-              {selectedBuIds.length} de {data.allUnits.length} BUs
-            </div>
           </div>
         </div>
 
-        {/* Banner Informativo de Autonomia */}
-        <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/60 p-3.5 text-xs text-brand-900">
-          <p className="font-medium">
-            💡 Como colaborador da MedCof, você tem autonomia para entrar ou
-            sair do acompanhamento de qualquer BU a qualquer momento. Você terá
-            permissão de <strong>visualização completa</strong> dos dados de
-            estratégia, campanhas e personas.
-          </p>
-        </div>
-
-        {/* Barra de Busca de BU */}
-        <div className="mt-4 relative">
+        {/* Campo de Busca */}
+        <div className="mt-3 relative">
           <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -614,8 +601,8 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
           )}
         </div>
 
-        {/* Grid de Seleção de BUs */}
-        <div className="mt-4 grid max-h-[420px] grid-cols-1 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Grid Unificado de BUs */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredBUs.map((bu) => {
             const isSelected = selectedBuIds.includes(bu.id);
             const isLead = leadBuIds.has(bu.id);
@@ -623,94 +610,125 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
             return (
               <div
                 key={bu.id}
-                role="checkbox"
-                aria-checked={isSelected}
-                tabIndex={0}
-                onClick={() => toggleBu(bu.id)}
-                onKeyDown={(e) => {
-                  if (e.key === " " || e.key === "Enter") {
-                    e.preventDefault();
-                    toggleBu(bu.id);
-                  }
-                }}
-                className={`group relative flex cursor-pointer select-none items-start gap-3 rounded-xl border p-3.5 transition-all ${
+                className={`group flex flex-col justify-between rounded-xl border p-4 transition-all ${
                   isSelected
-                    ? "border-brand-500 bg-brand-50/40 shadow-xs ring-1 ring-brand-500/30"
-                    : "border-slate-200/90 bg-white hover:border-slate-300 hover:bg-slate-50/60"
+                    ? "border-brand-300/90 bg-linear-to-b from-brand-50/30 to-white shadow-2xs"
+                    : "border-slate-200/80 bg-white/60 opacity-80 hover:border-slate-300 hover:bg-white hover:opacity-100"
                 }`}
               >
-                {/* Checkbox visual */}
-                <div
-                  className={`mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-md border transition-colors ${
-                    isSelected
-                      ? "border-brand-600 bg-brand-600 text-white"
-                      : "border-slate-300 bg-white group-hover:border-slate-400"
-                  }`}
-                >
-                  {isSelected && <Check className="size-3 stroke-[3]" />}
+                <div>
+                  <div className="flex items-start justify-between gap-2.5">
+                    {/* Botão de Toggle da BU */}
+                    <button
+                      type="button"
+                      onClick={() => toggleBu(bu.id)}
+                      className="flex items-start gap-2.5 text-left focus:outline-none flex-1 min-w-0"
+                    >
+                      <div
+                        className={`mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+                          isSelected
+                            ? "border-brand-600 bg-brand-600 text-white"
+                            : "border-slate-300 bg-white group-hover:border-slate-400"
+                        }`}
+                      >
+                        {isSelected && <Check className="size-3 stroke-[3]" />}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <span
+                          className={`block truncate text-sm font-semibold tracking-tight ${
+                            isSelected ? "text-slate-900" : "text-slate-600"
+                          }`}
+                        >
+                          {bu.label}
+                        </span>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-600">
+                            {bu.code ?? `MEDCOF_${bu.slug.toUpperCase()}`}
+                          </code>
+                          {bu.divisionName && (
+                            <span className="text-[11px] text-slate-400">
+                              · {bu.divisionName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Badge de Papel */}
+                    <div className="shrink-0">
+                      {isLead ? (
+                        <Badge tone="brand">Líder</Badge>
+                      ) : isSelected ? (
+                        <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                          Leitor Ativo
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400">
+                          Sem Acesso
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span
-                      className={`truncate text-sm font-semibold tracking-tight ${
-                        isSelected ? "text-brand-950" : "text-slate-800"
-                      }`}
-                    >
-                      {bu.label}
-                    </span>
-                    {isLead && (
-                      <span className="shrink-0 rounded-full bg-brand-100 px-1.5 py-0.2 text-[10px] font-semibold text-brand-800">
-                        Líder de Squad
-                      </span>
-                    )}
-                  </div>
+                {/* Rodapé do Card com Ações */}
+                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => toggleBu(bu.id)}
+                    className="font-medium text-slate-500 hover:text-slate-800 transition"
+                  >
+                    {isSelected ? "Desmarcar BU" : "+ Acompanhar"}
+                  </button>
 
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-600">
-                      {bu.code ?? `MEDCOF_${bu.slug.toUpperCase()}`}
-                    </code>
-                    {bu.divisionName && (
-                      <span className="text-[11px] text-slate-400">
-                        · {bu.divisionName}
-                      </span>
-                    )}
-                  </div>
+                  {isSelected && (
+                    <Link
+                      href={`/planejamento/${bu.slug}`}
+                      className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:text-brand-800 transition"
+                    >
+                      <span>Acessar Planejamento</span>
+                      <ArrowRight className="size-3" />
+                    </Link>
+                  )}
                 </div>
               </div>
             );
           })}
 
           {filteredBUs.length === 0 && (
-            <div className="col-span-full py-8 text-center text-sm text-slate-500">
-              Nenhuma Business Unit encontrada para &ldquo;{buSearch}&rdquo;.
+            <div className="col-span-full rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-500">
+              Nenhuma Business Unit encontrada com o filtro atual.
             </div>
           )}
         </div>
 
-        {/* Rodapé com Botão de Salvar BUs */}
+        {/* Rodapé com Botão de Salvar Alterações */}
         <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-500">
             {hasBuChanges ? (
-              <span className="font-medium text-amber-700">
-                Você tem alterações não salvas na sua lista de BUs.
+              <span className="font-semibold text-amber-700">
+                ⚠️ Você tem alterações não salvas. Clique em &ldquo;Salvar BUs&rdquo; para aplicar seus novos acessos.
               </span>
             ) : (
-              <span>
+              <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700">
+                <CheckCircle2 className="size-3.5 text-emerald-600" />
                 Suas BUs de leitor estão salvas e sincronizadas com seu acesso.
               </span>
             )}
           </p>
 
-          <Button
-            type="button"
-            onClick={handleSaveBUs}
-            disabled={isPendingBUs || !hasBuChanges}
-            className="gap-2 bg-brand-600 font-medium text-white shadow-xs hover:bg-brand-700"
-          >
-            <CheckCircle2 className="size-4" />
-            {isPendingBUs ? "Salvando acessos..." : "Salvar BUs como Leitor"}
-          </Button>
+          {hasBuChanges && (
+            <Button
+              type="button"
+              onClick={handleSaveBUs}
+              disabled={isPendingBUs}
+              className="gap-2 bg-brand-600 font-medium text-white shadow-xs hover:bg-brand-700"
+            >
+              <CheckCircle2 className="size-4" />
+              {isPendingBUs ? "Salvando acessos..." : "Salvar Alterações de BUs"}
+            </Button>
+          )}
         </div>
       </section>
 
