@@ -41,15 +41,13 @@ export default async function BusinessUnitLayout({
   ]);
   const base = `/planejamento/${unit.slug}`;
 
-  // Ordem lógica do trabalho MedCof: Ciclos da BU -> Diagnóstico -> Objetivo e Metas -> Resultados -> Acompanhamento -> Rituais -> Ativos
+  // Ordem lógica e limpa da BU: Visão geral -> Ciclos da BU -> Resultados -> Acompanhamento -> Calendário -> Personas -> Produtos -> Documentos
+  // (Diagnóstico, Objetivo/Metas e Revisões ficam integrados diretamente dentro de Ciclos da BU)
   const tabs: WorkspaceTab[] = [
     { href: base, label: "Visão geral" },
     { href: `${base}/ciclos`, label: "Ciclos da BU" },
-    { href: `${base}/diagnostico`, label: "Diagnóstico" },
-    { href: `${base}/metas`, label: "Objetivo e Metas" },
     { href: `${base}/resultados`, label: "Resultados" },
     { href: `${base}/acompanhamento`, label: "Acompanhamento" },
-    { href: `${base}/revisao-trimestral`, label: "Revisões do ciclo" },
     {
       href: `${base}/calendario`,
       label: "Calendário",

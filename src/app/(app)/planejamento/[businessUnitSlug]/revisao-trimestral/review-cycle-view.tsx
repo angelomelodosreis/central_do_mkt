@@ -191,24 +191,24 @@ export function ReviewCycleView({
         >
           <div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex size-8 items-center justify-center rounded-full bg-pink-50 text-pink-600 ring-2 ring-pink-400">
-                  <div className="size-2.5 rounded-full bg-pink-600" />
+                <div className="flex items-center gap-3">
+                <div className="flex size-9 items-center justify-center rounded-full bg-pink-50 text-pink-600 ring-2 ring-pink-400">
+                  <div className="size-3 rounded-full bg-pink-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <h3 className="font-bold text-base text-slate-900">
                     Revisão 1 (Trimestral)
                   </h3>
-                  <span className="text-[11px] text-slate-400">Mar/2027</span>
+                  <span className="text-xs text-slate-500 font-medium">Mar/2027</span>
                 </div>
               </div>
 
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-200">
                 {isCompleted ? "Concluída" : "Em andamento"}
               </span>
             </div>
 
-            <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+            <p className="mt-3 text-sm text-slate-600 leading-relaxed">
               Registre o que mudou desde o diagnóstico e, se necessário, ajuste o objetivo ou as metas.
             </p>
           </div>
@@ -216,10 +216,10 @@ export function ReviewCycleView({
           <div className="mt-4 pt-3 border-t border-slate-100">
             <button
               type="button"
-              className="w-full rounded-xl bg-pink-600 py-2 text-xs font-semibold text-white hover:bg-pink-700 transition flex items-center justify-center gap-1.5 shadow-2xs"
+              className="w-full rounded-xl bg-pink-600 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-pink-700 transition flex items-center justify-center gap-1.5 shadow-2xs"
             >
               Continuar revisão
-              <ChevronRight className="size-3.5" />
+              <ChevronRight className="size-4" />
             </button>
           </div>
         </div>
@@ -237,23 +237,23 @@ export function ReviewCycleView({
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex size-8 items-center justify-center rounded-full bg-slate-100 text-slate-400 border border-slate-200">
-                  <div className="size-2 rounded-full bg-slate-400" />
+                <div className="flex size-9 items-center justify-center rounded-full bg-slate-100 text-slate-400 border border-slate-200">
+                  <div className="size-3 rounded-full bg-slate-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900">
+                  <h3 className="font-bold text-base text-slate-900">
                     Revisão 2 (Semestral)
                   </h3>
-                  <span className="text-[11px] text-slate-400">Jun/2027</span>
+                  <span className="text-xs text-slate-500 font-medium">Jun/2027</span>
                 </div>
               </div>
 
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200">
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 border border-slate-200">
                 Não iniciada
               </span>
             </div>
 
-            <p className="mt-3 text-xs text-slate-600 leading-relaxed">
+            <p className="mt-3 text-sm text-slate-600 leading-relaxed">
               Revisão de encerramento do ciclo. Avaliação completa e resultados consolidados.
             </p>
           </div>
@@ -299,21 +299,21 @@ export function ReviewCycleView({
 
           {/* 1. O diagnóstico anterior continua válido? */}
           <div className="space-y-3">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 1
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   O diagnóstico anterior continua válido?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   De forma geral, o cenário identificado no início do ciclo ainda se mantém?
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-10">
               {[
                 {
                   id: "sim",
@@ -337,16 +337,16 @@ export function ReviewCycleView({
                   disabled={!canEdit}
                   onClick={() => setDiagnosticValid(opt.id)}
                   className={cn(
-                    "flex flex-col rounded-2xl border p-3.5 text-left transition shadow-2xs",
+                    "flex flex-col rounded-2xl border p-4 text-left transition shadow-2xs",
                     diagnosticValid === opt.id
                       ? "border-pink-300 bg-pink-50/30 ring-1 ring-pink-200 text-slate-900"
                       : "border-slate-200 bg-white hover:border-slate-300 text-slate-600",
                   )}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <div
                       className={cn(
-                        "size-3.5 rounded-full border flex items-center justify-center transition",
+                        "size-4 rounded-full border flex items-center justify-center transition",
                         diagnosticValid === opt.id
                           ? "border-pink-600 bg-pink-600"
                           : "border-slate-300",
@@ -356,9 +356,9 @@ export function ReviewCycleView({
                         <div className="size-1.5 rounded-full bg-white" />
                       )}
                     </div>
-                    <span className="text-xs font-bold">{opt.label}</span>
+                    <span className="text-sm font-bold">{opt.label}</span>
                   </div>
-                  <span className="text-[11px] text-slate-500 mt-1 pl-5.5">
+                  <span className="text-xs text-slate-500 mt-1 pl-6">
                     {opt.desc}
                   </span>
                 </button>
@@ -368,21 +368,21 @@ export function ReviewCycleView({
 
           {/* 2. O que mudou desde o último diagnóstico? */}
           <div className="space-y-2">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 2
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   O que mudou desde o último diagnóstico?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   Registre de forma breve as principais mudanças no cenário da BU.
                 </p>
               </div>
             </div>
 
-            <div className="relative pl-8">
+            <div className="relative pl-10">
               <textarea
                 value={marketChanges}
                 disabled={!canEdit}
@@ -390,9 +390,9 @@ export function ReviewCycleView({
                 onChange={(e) => setMarketChanges(e.target.value)}
                 placeholder="Ex.: A conversão melhorou nas últimas semanas, mas o volume de leads está abaixo do esperado."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3 pb-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
-              <span className="absolute bottom-2 right-2.5 text-[10px] tabular-nums font-mono text-slate-400">
+              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {marketChanges.length}/500
               </span>
             </div>
@@ -400,21 +400,21 @@ export function ReviewCycleView({
 
           {/* 3. Algum problema novo apareceu? */}
           <div className="space-y-2">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 3
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   Algum problema novo apareceu?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   Novos gargalos, riscos, concorrentes agressivos ou limitações operacionais.
                 </p>
               </div>
             </div>
 
-            <div className="relative pl-8">
+            <div className="relative pl-10">
               <textarea
                 value={newProblems}
                 disabled={!canEdit}
@@ -422,9 +422,9 @@ export function ReviewCycleView({
                 onChange={(e) => setNewProblems(e.target.value)}
                 placeholder="Ex.: Alta competitividade regional e aumento de CPL em campanhas pagas..."
                 rows={2}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3 pb-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
-              <span className="absolute bottom-2 right-2.5 text-[10px] tabular-nums font-mono text-slate-400">
+              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {newProblems.length}/500
               </span>
             </div>
@@ -432,21 +432,21 @@ export function ReviewCycleView({
 
           {/* 4. Alguma oportunidade deixou de existir? */}
           <div className="space-y-2">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 4
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   Alguma oportunidade deixou de existir?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   Mudanças de mercado, produtos ou frentes que perderam tração ou prioridade.
                 </p>
               </div>
             </div>
 
-            <div className="relative pl-8">
+            <div className="relative pl-10">
               <textarea
                 value={missedOpportunities}
                 disabled={!canEdit}
@@ -454,9 +454,9 @@ export function ReviewCycleView({
                 onChange={(e) => setMissedOpportunities(e.target.value)}
                 placeholder="Ex.: Janela de lançamento de Hands On encurtada pela grade de provas..."
                 rows={2}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3 pb-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
-              <span className="absolute bottom-2 right-2.5 text-[10px] tabular-nums font-mono text-slate-400">
+              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {missedOpportunities.length}/500
               </span>
             </div>
@@ -464,21 +464,21 @@ export function ReviewCycleView({
 
           {/* 5. Alguma premissa do objetivo mudou? */}
           <div className="space-y-2">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 5
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   Alguma premissa do objetivo mudou?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   O direcionamento amplo da BU continua o mesmo ou precisa de calibração?
                 </p>
               </div>
             </div>
 
-            <div className="relative pl-8">
+            <div className="relative pl-10">
               <textarea
                 value={objectiveAssumptions}
                 disabled={!canEdit}
@@ -486,9 +486,9 @@ export function ReviewCycleView({
                 onChange={(e) => setObjectiveAssumptions(e.target.value)}
                 placeholder="Ex.: A ambição macro se mantém com maior peso no Internato..."
                 rows={2}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3 pb-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
-              <span className="absolute bottom-2 right-2.5 text-[10px] tabular-nums font-mono text-slate-400">
+              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {objectiveAssumptions.length}/500
               </span>
             </div>
@@ -496,28 +496,28 @@ export function ReviewCycleView({
 
           {/* 6. Precisamos revisar alguma meta? */}
           <div className="space-y-3">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 6
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   Precisamos revisar alguma meta?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   Essa mudança impacta o objetivo ou alguma meta mensurável do ciclo?
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-4 pl-8">
+            <div className="flex gap-6 pl-10">
               {[
                 { id: "sim", label: "Sim" },
                 { id: "nao", label: "Não" },
               ].map((opt) => (
                 <label
                   key={opt.id}
-                  className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700"
+                  className="flex items-center gap-2.5 cursor-pointer text-sm font-semibold text-slate-700 hover:text-slate-900"
                 >
                   <input
                     type="radio"
@@ -526,7 +526,7 @@ export function ReviewCycleView({
                     checked={needsGoalRevision === opt.id}
                     disabled={!canEdit}
                     onChange={() => setNeedsGoalRevision(opt.id)}
-                    className="size-4 text-pink-600 focus:ring-pink-500 border-slate-300"
+                    className="size-4.5 text-pink-600 focus:ring-pink-500 border-slate-300"
                   />
                   <span>{opt.label}</span>
                 </label>
@@ -536,21 +536,21 @@ export function ReviewCycleView({
 
           {/* 7. Qual é o principal ponto de atenção para o próximo trimestre? */}
           <div className="space-y-2">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 7
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   Qual é o principal ponto de atenção para o próximo trimestre?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   O maior foco de acompanhamento para os próximos 3 meses.
                 </p>
               </div>
             </div>
 
-            <div className="relative pl-8">
+            <div className="relative pl-10">
               <textarea
                 value={nextQuarterFocus}
                 disabled={!canEdit}
@@ -558,9 +558,9 @@ export function ReviewCycleView({
                 onChange={(e) => setNextQuarterFocus(e.target.value)}
                 placeholder="Ex.: Manter a eficiência de aquisição e aumentar o share de mercado..."
                 rows={2}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3 pb-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
-              <span className="absolute bottom-2 right-2.5 text-[10px] tabular-nums font-mono text-slate-400">
+              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {nextQuarterFocus.length}/500
               </span>
             </div>
@@ -568,21 +568,21 @@ export function ReviewCycleView({
 
           {/* 8. Qual decisão foi tomada? */}
           <div className="space-y-2">
-            <div className="flex items-start gap-2.5">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-pink-50 text-xs font-bold text-pink-600">
+            <div className="flex items-start gap-3">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-pink-50 text-sm font-bold text-pink-600">
                 8
               </span>
               <div>
-                <label className="text-xs font-bold text-slate-900">
+                <label className="text-sm sm:text-base font-bold text-slate-900">
                   Qual decisão foi tomada?
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                   Descreva quais ajustes serão feitos (se houver).
                 </p>
               </div>
             </div>
 
-            <div className="relative pl-8">
+            <div className="relative pl-10">
               <textarea
                 value={decisionTaken}
                 disabled={!canEdit}
@@ -590,29 +590,29 @@ export function ReviewCycleView({
                 onChange={(e) => setDecisionTaken(e.target.value)}
                 placeholder="Ex.: Ajustar meta de matrículas e reforçar estratégia de geração de demanda."
                 rows={2}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3 pb-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
-              <span className="absolute bottom-2 right-2.5 text-[10px] tabular-nums font-mono text-slate-400">
+              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {decisionTaken.length}/500
               </span>
             </div>
           </div>
 
           {/* Botões de Ação do Form */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 pl-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100 pl-10">
             <button
               type="button"
               disabled={isPending || !canEdit}
               onClick={() => handleSave("in_progress")}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
             >
               Salvar como rascunho
             </button>
 
             <div className="flex items-center gap-3">
               {statusMessage && (
-                <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
-                  <Check className="size-3.5" />
+                <span className="text-sm text-emerald-700 font-semibold flex items-center gap-1.5">
+                  <Check className="size-4" />
                   {statusMessage}
                 </span>
               )}
@@ -621,7 +621,7 @@ export function ReviewCycleView({
                 type="button"
                 disabled={isPending || !canEdit}
                 onClick={() => handleSave("completed")}
-                className="rounded-xl bg-pink-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-pink-700 transition flex items-center gap-1.5 shadow-2xs"
+                className="rounded-xl bg-pink-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-pink-700 transition flex items-center gap-1.5 shadow-2xs"
               >
                 Concluir revisão →
               </button>

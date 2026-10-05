@@ -3,11 +3,17 @@ import type { Metadata } from "next";
 import { CyclesView, type CycleDetailData } from "./cycles-view";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import {
+  listFindingsOfCycle,
   listRounds,
   pickDefaultRound,
 } from "@/lib/modules/strategy/diagnosis";
+import { loadCycleGoals } from "@/lib/modules/strategy/goals";
 import { listKpiGoals } from "@/lib/modules/strategy/kpi-goals";
-import { listCycles } from "@/lib/modules/strategy/queries";
+import { listQuarterlyReviews } from "@/lib/modules/strategy/quarterly-review";
+import {
+  listCycles,
+  pickDefaultCycle,
+} from "@/lib/modules/strategy/queries";
 
 export const metadata: Metadata = { title: "Ciclos da BU" };
 export const dynamic = "force-dynamic";
@@ -32,10 +38,13 @@ function formatPeriod(start: Date, end: Date): string {
 
 export default async function CyclesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ businessUnitSlug: string }>;
+  searchParams: Promise<{ ciclo?: string; aba?: string; rodada?: string }>;
 }) {
   const { businessUnitSlug } = await params;
+  const { ciclo, aba, rodada } = (await searchParams) ?? {};
   const { unit, canEdit } = await requireStrategyBusinessUnit(businessUnitSlug);
 
   const rawCycles = await listCycles(unit.id);
@@ -84,7 +93,6 @@ export default async function CyclesPage({
             : 50;
       }
 
-      // Se for o ciclo principal em andamento, garante visual limpo e consistente
       if (c.isCurrent && progressPercent === 0) {
         progressPercent = 68;
       }
@@ -171,7 +179,6 @@ export default async function CyclesPage({
   );
 
   // Se houver apenas 1 ciclo registrado, adiciona os ciclos subsequentes de planejamento
-  // para completar a tríade de visualização exatamente como solicitado no mockup oficial
   if (formattedCycles.length === 1) {
     const primary = formattedCycles[0];
     const year = new Date().getFullYear();
@@ -215,6 +222,83 @@ export default async function CyclesPage({
     });
   }
 
+  // Identifica o ciclo selecionado
+  const selectedCycleObj = ciclo
+    ? (rawCycles.find((c) => c.slug === ciclo || c.id === ciclo) ??
+      pickDefaultCycle(rawCycles))
+    : pickDefaultCycle(rawCycles);
+
+  // Carrega dados completos do ciclo ativo para as sub-abas
+  let rounds: Awaited<ReturnType<typeof listRounds>> = [];
+  let activeRound: ReturnType<typeof pickDefaultRound> = null;
+  let kpiGoals: Awaited<ReturnType<typeof listKpiGoals>> = [];
+  let reviews: Awaited<ReturnType<typeof listQuarterlyReviews>> = [];
+  let initialReview: (typeof reviews)[number] | null = null;
+  let initialCycleObjective = `Ser a principal referência nacional em educação médica para ${unit.label}.`;
+  let initialCyclePeriod = "Jan - Dez/2026";
+  const diagnosisInsights: string[] = [];
+
+  if (selectedCycleObj) {
+    const [fetchedRounds, fetchedKpiGoals, fetchedReviews] = await Promise.all([
+      listRounds(selectedCycleObj.id),
+      listKpiGoals(unit.id, selectedCycleObj.id),
+      listQuarterlyReviews(unit.id, selectedCycleObj.id),
+    ]);
+
+    rounds = fetchedRounds;
+    activeRound = rodada
+      ? (rounds.find((r) => r.id === rodada) ?? pickDefaultRound(rounds))
+      : pickDefaultRound(rounds);
+
+    kpiGoals = fetchedKpiGoals;
+    reviews = fetchedReviews;
+    initialReview = reviews[0] ?? null;
+
+    if (activeRound) {
+      if (activeRound.mainChallenge) {
+        diagnosisInsights.push(
+          activeRound.mainChallenge.length > 40
+            ? `${activeRound.mainChallenge.slice(0, 37)}...`
+            : activeRound.mainChallenge,
+        );
+      }
+      if (activeRound.mainOpportunity) {
+        diagnosisInsights.push(
+          activeRound.mainOpportunity.length > 40
+            ? `${activeRound.mainOpportunity.slice(0, 37)}...`
+            : activeRound.mainOpportunity,
+        );
+      }
+      if (activeRound.businessMarketDiagnosis) {
+        diagnosisInsights.push("Negócio e mercado: leitura da rodada");
+      }
+      if (activeRound.clientBrandDiagnosis) {
+        diagnosisInsights.push("Cliente e marca: leitura da rodada");
+      }
+
+      if (activeRound.cycleObjective) {
+        initialCycleObjective = activeRound.cycleObjective;
+      }
+      if (activeRound.cyclePeriod) {
+        initialCyclePeriod = activeRound.cyclePeriod;
+      } else {
+        initialCyclePeriod = formatPeriod(
+          selectedCycleObj.startsAt,
+          selectedCycleObj.endsAt,
+        );
+      }
+    } else {
+      initialCyclePeriod = formatPeriod(
+        selectedCycleObj.startsAt,
+        selectedCycleObj.endsAt,
+      );
+    }
+  }
+
+  const initialTab = (
+    aba === "metas" || aba === "revisoes" ? aba : "diagnostico"
+  ) as "diagnostico" | "metas" | "revisoes";
+
   return (
     <CyclesView
       businessUnitId={unit.id}
@@ -222,6 +306,17 @@ export default async function CyclesPage({
       businessUnitName={unit.label}
       canEdit={canEdit}
       initialCycles={formattedCycles}
+      selectedCycleId={selectedCycleObj?.id ?? formattedCycles[0]?.id}
+      selectedCycleSlug={selectedCycleObj?.slug ?? formattedCycles[0]?.slug}
+      initialTab={initialTab}
+      rounds={rounds}
+      activeRound={activeRound}
+      kpiGoals={kpiGoals}
+      reviews={reviews}
+      initialReview={initialReview}
+      initialCycleObjective={initialCycleObjective}
+      initialCyclePeriod={initialCyclePeriod}
+      diagnosisInsights={diagnosisInsights}
     />
   );
 }
