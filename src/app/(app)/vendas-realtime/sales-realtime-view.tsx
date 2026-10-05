@@ -74,11 +74,12 @@ export function SalesRealtimeView({
       try {
         const buCode = selectedBu === "ALL" ? undefined : selectedBu;
         const [updatedData, updatedComp] = await Promise.all([
-          refreshSalesDataAction({ targetBuCode: buCode }),
+          refreshSalesDataAction({ targetBuCode: buCode, forceRefresh: true }),
           getComparativeSalesAction({
             currentMonthKey,
             previousMonthKey,
             targetBuCode: buCode,
+            forceRefresh: true,
           }),
         ]);
         setData(updatedData);
@@ -96,11 +97,12 @@ export function SalesRealtimeView({
       try {
         const targetBu = buCode === "ALL" ? undefined : buCode;
         const [updatedData, updatedComp] = await Promise.all([
-          refreshSalesDataAction({ targetBuCode: targetBu }),
+          refreshSalesDataAction({ targetBuCode: targetBu, forceRefresh: false }),
           getComparativeSalesAction({
             currentMonthKey,
             previousMonthKey,
             targetBuCode: targetBu,
+            forceRefresh: false,
           }),
         ]);
         setData(updatedData);
@@ -132,6 +134,7 @@ export function SalesRealtimeView({
             compareStartDate: params.compareStartDate,
             compareEndDate: params.compareEndDate,
             targetBuCode: buCode,
+            forceRefresh: false,
           });
           setComparative(res.comparative);
           toast.success(
@@ -152,6 +155,7 @@ export function SalesRealtimeView({
             currentMonthKey: cur,
             previousMonthKey: prev,
             targetBuCode: buCode,
+            forceRefresh: false,
           });
           setComparative(res.comparative);
           toast.success(

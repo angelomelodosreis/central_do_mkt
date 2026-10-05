@@ -177,7 +177,11 @@ export const BU_SHEET_TABS: BuSheetTabDef[] = [
 
 function loadSeedTransactions(): SaleTransaction[] {
   try {
-    const seedPath = path.join(process.cwd(), "src/lib/modules/sales/sales-seed-data.json");
+    const seedPath = path.join(
+      process.cwd(),
+      "src/lib/modules/sales",
+      "sales-seed-data.json",
+    );
     if (fs.existsSync(seedPath)) {
       const raw = fs.readFileSync(seedPath, "utf-8");
       const list = JSON.parse(raw) as SaleTransaction[];

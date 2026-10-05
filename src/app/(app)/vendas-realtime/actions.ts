@@ -72,19 +72,22 @@ export async function refreshSalesDataAction(options?: {
   targetBuCodes?: string[];
   startDate?: string;
   endDate?: string;
+  forceRefresh?: boolean;
 }): Promise<SalesAnalyticsResult> {
   const effectiveCodes = await resolveScopedBuCodes(
     options?.targetBuCodes ?? options?.targetBuCode,
   );
 
-  revalidatePath("/vendas-realtime");
-  revalidatePath("/painel");
-  revalidatePath("/panorama");
+  if (options?.forceRefresh) {
+    revalidatePath("/vendas-realtime");
+    revalidatePath("/painel");
+    revalidatePath("/panorama");
+  }
 
   return getLiveSalesAnalytics({
     ...options,
     targetBuCodes: effectiveCodes,
-    forceRefresh: true,
+    forceRefresh: options?.forceRefresh ?? false,
   });
 }
 
@@ -97,6 +100,7 @@ export async function getComparativeSalesAction(options?: {
   endDate?: string;
   compareStartDate?: string;
   compareEndDate?: string;
+  forceRefresh?: boolean;
 }) {
   const effectiveCodes = await resolveScopedBuCodes(
     options?.targetBuCodes ?? options?.targetBuCode,
@@ -105,6 +109,7 @@ export async function getComparativeSalesAction(options?: {
   return getLiveComparativeAnalytics({
     ...options,
     targetBuCodes: effectiveCodes,
+    forceRefresh: options?.forceRefresh ?? false,
   });
 }
 

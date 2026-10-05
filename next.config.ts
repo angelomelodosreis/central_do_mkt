@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   // Não gerar AGENTS.md/CLAUDE.md automaticamente na raiz do projeto.
   agentRules: false,
 
+  // Garante que o arquivo de dados consolidado de vendas seja empacotado nas funções da Vercel
+  outputFileTracingIncludes: {
+    "/**": ["./src/lib/modules/sales/sales-seed-data.json"],
+  },
+
   /**
    * Endereços antigos que mudaram de lugar na reestruturação.
    *

@@ -180,7 +180,7 @@ export function PanoramaView({
     [isMaster, unidades],
   );
 
-  // Atualização reativa de vendas ao alterar filtros de BU ou Meses
+  // Atualização reativa de vendas ao alterar filtros de BU ou Meses (Instantânea / 0ms)
   function updateSalesData(
     bus: string[],
     currMonth = currentMonthKey,
@@ -190,11 +190,12 @@ export function PanoramaView({
     startTransition(async () => {
       try {
         const [updatedLive, updatedComp] = await Promise.all([
-          refreshSalesDataAction({ targetBuCodes: codes }),
+          refreshSalesDataAction({ targetBuCodes: codes, forceRefresh: false }),
           getComparativeSalesAction({
             currentMonthKey: currMonth,
             previousMonthKey: prevMonth,
             targetBuCodes: codes,
+            forceRefresh: false,
           }),
         ]);
         setSalesData(updatedLive);
@@ -218,17 +219,18 @@ export function PanoramaView({
     updateSalesData([], currentMonthKey, previousMonthKey);
   }
 
-  // Sincronização geral
+  // Sincronização geral (Busca nova na planilha Google Sheets)
   function handleSync() {
     const codes = busSelecionadas.length > 0 ? busSelecionadas : defaultUserBuCodes;
     startTransition(async () => {
       try {
         const [updatedLive, updatedComp] = await Promise.all([
-          refreshSalesDataAction({ targetBuCodes: codes }),
+          refreshSalesDataAction({ targetBuCodes: codes, forceRefresh: true }),
           getComparativeSalesAction({
             currentMonthKey,
             previousMonthKey,
             targetBuCodes: codes,
+            forceRefresh: true,
           }),
         ]);
         setSalesData(updatedLive);
