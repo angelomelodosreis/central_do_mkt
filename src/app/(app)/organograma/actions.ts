@@ -12,6 +12,7 @@ import {
   team,
   teamMember,
   user,
+  session,
 } from "@/lib/db/schema";
 import { loadOrgTree, wouldCreateCycle } from "@/lib/modules/access/org-tree";
 import { writeAuditLog } from "@/lib/modules/audit/log";
@@ -28,16 +29,7 @@ function revalidateOrganograma() {
 }
 
 /**
- * Move uma pessoa de um squad para outro.
- *
- * É o arrastar do organograma. MOVER, e não copiar: arrastar de Dermatologia
- * para Ortopedia significa que ela deixou a primeira — se a intenção fosse
- * atender as duas, o caminho é "Adicionar squad" na ficha, que não tira nada.
- *
- * A liderança viaja com a pessoa: quem respondia por Dermatologia passa a
- * responder por Ortopedia. Descartar isso silenciosamente deixaria o squad de
- * origem sem responsável e o de destino com um vínculo raso, sem ninguém
- * perceber.
+ * Move uma pessoa de um squad para outro, ou tira ela de um squad se toSquadId for vazio.
  */
 export async function moveSquadMember(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
@@ -46,24 +38,58 @@ export async function moveSquadMember(formData: FormData): Promise<void> {
   const fromId = field(formData, "fromSquadId");
   const toId = field(formData, "toSquadId");
 
-  if (!userId || !toId || fromId === toId) return;
+  if (!userId) return;
 
   const db = await getDb();
 
-  const [pessoa, destino] = await Promise.all([
-    db
-      .select({ id: user.id, name: user.name, status: user.status })
-      .from(user)
-      .where(eq(user.id, userId))
-      .get(),
-    db
-      .select({ id: squad.id, name: squad.name })
-      .from(squad)
-      .where(eq(squad.id, toId))
-      .get(),
-  ]);
+  const pessoa = await db
+    .select({ id: user.id, name: user.name, status: user.status })
+    .from(user)
+    .where(eq(user.id, userId))
+    .get();
 
-  if (!pessoa || pessoa.status !== "active" || !destino) return;
+  if (!pessoa || pessoa.status !== "active") return;
+
+  // Se toId estiver vazio e fromId existir, é uma remoção daquele squad!
+  if (fromId && (!toId || toId === "remove")) {
+    const origem = await db
+      .select({
+        id: squadMember.id,
+        isLead: squadMember.isLead,
+        name: squad.name,
+      })
+      .from(squadMember)
+      .innerJoin(squad, eq(squadMember.squadId, squad.id))
+      .where(
+        and(eq(squadMember.userId, userId), eq(squadMember.squadId, fromId)),
+      )
+      .get();
+
+    if (origem) {
+      await db.delete(squadMember).where(eq(squadMember.id, origem.id));
+      await writeAuditLog({
+        actorUserId: admin.id,
+        actorEmail: admin.email,
+        action: "squad.member_remove",
+        entityType: "squad",
+        entityId: fromId,
+        summary: `Tirou ${pessoa.name} de ${origem.name}`,
+        beforeData: origem,
+      });
+      revalidateOrganograma();
+    }
+    return;
+  }
+
+  if (!toId || fromId === toId) return;
+
+  const destino = await db
+    .select({ id: squad.id, name: squad.name })
+    .from(squad)
+    .where(eq(squad.id, toId))
+    .get();
+
+  if (!destino) return;
 
   const origem = fromId
     ? await db
@@ -118,12 +144,7 @@ export async function moveSquadMember(formData: FormData): Promise<void> {
 }
 
 /**
- * Move uma pessoa de uma unidade organizacional para outra.
- *
- * O CARGO acompanha a pessoa e não é tocado aqui: quem muda de time continua
- * Designer. Era diferente quando o cargo morava no vínculo, e aquele desenho
- * obrigava a decidir, a cada arrastar, se o cargo viajava — pergunta que não
- * deveria existir.
+ * Move uma pessoa de uma unidade organizacional para outra, ou tira ela de uma unidade se toTeamId for vazio.
  */
 export async function moveTeamMember(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
@@ -132,24 +153,59 @@ export async function moveTeamMember(formData: FormData): Promise<void> {
   const fromId = field(formData, "fromTeamId");
   const toId = field(formData, "toTeamId");
 
-  if (!userId || !toId || fromId === toId) return;
+  if (!userId) return;
 
   const db = await getDb();
 
-  const [pessoa, destino] = await Promise.all([
-    db
-      .select({ id: user.id, name: user.name, status: user.status })
-      .from(user)
-      .where(eq(user.id, userId))
-      .get(),
-    db
-      .select({ id: team.id, name: team.name })
-      .from(team)
-      .where(eq(team.id, toId))
-      .get(),
-  ]);
+  const pessoa = await db
+    .select({ id: user.id, name: user.name, status: user.status })
+    .from(user)
+    .where(eq(user.id, userId))
+    .get();
 
-  if (!pessoa || pessoa.status !== "active" || !destino) return;
+  if (!pessoa || pessoa.status !== "active") return;
+
+  // Se toId estiver vazio e fromId existir, é uma remoção daquele time!
+  if (fromId && (!toId || toId === "remove")) {
+    const origem = await db
+      .select({
+        id: teamMember.id,
+        isLead: teamMember.isLead,
+        isPrimary: teamMember.isPrimary,
+        name: team.name,
+      })
+      .from(teamMember)
+      .innerJoin(team, eq(teamMember.teamId, team.id))
+      .where(
+        and(eq(teamMember.userId, userId), eq(teamMember.teamId, fromId)),
+      )
+      .get();
+
+    if (origem) {
+      await db.delete(teamMember).where(eq(teamMember.id, origem.id));
+      await writeAuditLog({
+        actorUserId: admin.id,
+        actorEmail: admin.email,
+        action: "user.org_change",
+        entityType: "user",
+        entityId: userId,
+        summary: `Tirou ${pessoa.name} de ${origem.name}`,
+        beforeData: { teamId: fromId },
+      });
+      revalidateOrganograma();
+    }
+    return;
+  }
+
+  if (!toId || fromId === toId) return;
+
+  const destino = await db
+    .select({ id: team.id, name: team.name })
+    .from(team)
+    .where(eq(team.id, toId))
+    .get();
+
+  if (!destino) return;
 
   const origem = fromId
     ? await db
@@ -296,3 +352,75 @@ export async function listSquadsForPicker(): Promise<
     .innerJoin(businessUnit, eq(squad.businessUnitId, businessUnit.id));
   return rows;
 }
+
+/**
+ * Tira a pessoa de toda a estrutura organizacional (remove de todos os times e squads).
+ */
+export async function removeFromAllOrgUnits(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+
+  const userId = field(formData, "userId");
+  if (!userId) return;
+
+  const db = await getDb();
+  const pessoa = await db
+    .select({ id: user.id, name: user.name })
+    .from(user)
+    .where(eq(user.id, userId))
+    .get();
+
+  if (!pessoa) return;
+
+  await db.delete(teamMember).where(eq(teamMember.userId, userId));
+  await db.delete(squadMember).where(eq(squadMember.userId, userId));
+
+  await writeAuditLog({
+    actorUserId: admin.id,
+    actorEmail: admin.email,
+    action: "user.org_change",
+    entityType: "user",
+    entityId: userId,
+    summary: `Tirou ${pessoa.name} de todos os times e squads pelo organograma`,
+  });
+
+  revalidateOrganograma();
+}
+
+/**
+ * Desativa a pessoa pelo organograma (muda status para suspended e derruba sessões).
+ * Isso faz a pessoa sumir do organograma e bloqueia seu acesso à Central.
+ */
+export async function deactivatePerson(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+
+  const userId = field(formData, "userId");
+  if (!userId || userId === admin.id) return;
+
+  const db = await getDb();
+  const pessoa = await db
+    .select({ id: user.id, name: user.name, email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .get();
+
+  if (!pessoa) return;
+
+  await db
+    .update(user)
+    .set({ status: "suspended", updatedAt: new Date() })
+    .where(eq(user.id, userId));
+
+  await db.delete(session).where(eq(session.userId, userId));
+
+  await writeAuditLog({
+    actorUserId: admin.id,
+    actorEmail: admin.email,
+    action: "user.suspend",
+    entityType: "user",
+    entityId: userId,
+    summary: `Desativou o acesso de ${pessoa.name} (${pessoa.email}) pelo organograma`,
+  });
+
+  revalidateOrganograma();
+}
+

@@ -1,6 +1,12 @@
 "use client";
 
-import { setPersonJobTitle } from "./actions";
+import { useState } from "react";
+
+import {
+  deactivatePerson,
+  removeFromAllOrgUnits,
+  setPersonJobTitle,
+} from "./actions";
 import type { OrgPerson, OrgSnapshot } from "./types";
 import {
   addSquadMember,
@@ -43,6 +49,9 @@ export function PersonDrawer({
   canEdit: boolean;
   onClose: () => void;
 }) {
+  const [confirmandoTirar, setConfirmandoTirar] = useState(false);
+  const [confirmandoDesativar, setConfirmandoDesativar] = useState(false);
+
   const unidadesDisponiveis = snapshot.units.filter(
     (unit) =>
       unit.isActive &&
@@ -163,8 +172,13 @@ export function PersonDrawer({
                           name="membershipId"
                           value={position.membershipId}
                         />
-                        <Button type="submit" size="sm" variant="ghost">
-                          Sair
+                        <Button
+                          type="submit"
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          Tirar do time
                         </Button>
                       </form>
                     </div>
@@ -234,8 +248,13 @@ export function PersonDrawer({
                           name="membershipId"
                           value={person.squadMembershipIds[item.id] ?? ""}
                         />
-                        <Button type="submit" size="sm" variant="ghost">
-                          Sair
+                        <Button
+                          type="submit"
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          Tirar do squad
                         </Button>
                       </form>
                     ) : null}
@@ -268,6 +287,105 @@ export function PersonDrawer({
             </form>
           ) : null}
         </section>
+
+        {/* Zona de perigo: Tirar da organização / desativar */}
+        {canEdit ? (
+          <section className="mt-6 rounded-2xl border border-red-200/90 bg-red-50/50 p-4 space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-red-900">
+              Tirar do organograma
+            </h4>
+            <p className="text-xs text-red-700">
+              Desvincule {person.name} de toda a estrutura ou suspenda o acesso à Central.
+            </p>
+
+            <div className="space-y-2 pt-1">
+              {confirmandoTirar ? (
+                <div className="rounded-xl border border-red-200 bg-white p-3 space-y-2">
+                  <p className="text-xs font-medium text-slate-800">
+                    Tem certeza? {person.name} será desvinculado(a) de todos os times e squads, ficando &quot;fora da estrutura&quot;.
+                  </p>
+                  <div className="flex gap-2">
+                    <form
+                      action={async (fd) => {
+                        await removeFromAllOrgUnits(fd);
+                        setConfirmandoTirar(false);
+                        onClose();
+                      }}
+                    >
+                      <input type="hidden" name="userId" value={person.userId} />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant="secondary"
+                        className="border-red-300 text-red-700 hover:bg-red-50"
+                      >
+                        Confirmar remoção
+                      </Button>
+                    </form>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setConfirmandoTirar(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="w-full border-red-200 text-red-700 hover:bg-red-100/70"
+                  onClick={() => setConfirmandoTirar(true)}
+                >
+                  Tirar de todos os times e squads
+                </Button>
+              )}
+
+              {confirmandoDesativar ? (
+                <div className="rounded-xl border border-red-200 bg-white p-3 space-y-2">
+                  <p className="text-xs font-medium text-slate-800">
+                    Suspender {person.name}? A pessoa perderá acesso imediato à Central e sumirá do organograma.
+                  </p>
+                  <div className="flex gap-2">
+                    <form
+                      action={async (fd) => {
+                        await deactivatePerson(fd);
+                        setConfirmandoDesativar(false);
+                        onClose();
+                      }}
+                    >
+                      <input type="hidden" name="userId" value={person.userId} />
+                      <Button type="submit" size="sm" variant="danger">
+                        Confirmar suspensão
+                      </Button>
+                    </form>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setConfirmandoDesativar(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="w-full text-red-600 hover:bg-red-100/60 hover:text-red-800"
+                  onClick={() => setConfirmandoDesativar(true)}
+                >
+                  Desativar usuário (suspender da Central)
+                </Button>
+              )}
+            </div>
+          </section>
+        ) : null}
 
         {canEdit ? (
           <ButtonLink

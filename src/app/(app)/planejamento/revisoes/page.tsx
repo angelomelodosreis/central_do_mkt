@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requirePermission } from "@/lib/auth/session";
 import { listBusinessUnits } from "@/lib/modules/bases/queries";
+import { listPeople } from "@/lib/modules/org/people";
 import { listReviewFeedItems } from "@/lib/modules/review/feed-queries";
 import { ReviewFeedView } from "./review-feed-view";
 
@@ -22,19 +23,27 @@ export default async function PlanningReviewsPage({
   const currentUser = await requirePermission("strategy", "view");
   const params = await searchParams;
 
-  const [allUnits, items] = await Promise.all([
+  const [allUnits, items, people] = await Promise.all([
     listBusinessUnits({ includeInactive: false }),
     listReviewFeedItems({
       businessUnitSlug: params.bu,
       status: params.status,
       search: params.search,
     }),
+    listPeople({ includeInactive: false }),
   ]);
 
   const buOptions = allUnits.map((u) => ({
     id: u.id,
     slug: u.slug,
     label: u.label,
+  }));
+
+  const assignableUsers = people.map((p) => ({
+    id: p.id,
+    name: p.name,
+    email: p.email,
+    jobTitleName: p.jobTitleName,
   }));
 
   return (
@@ -53,6 +62,7 @@ export default async function PlanningReviewsPage({
       <ReviewFeedView
         initialItems={items}
         businessUnits={buOptions}
+        assignableUsers={assignableUsers}
         currentCoordinator={currentUser.name || "Ingrid Silva"}
         preselectedBuSlug={params.bu}
       />

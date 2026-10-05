@@ -43,11 +43,19 @@ interface BuOption {
   label: string;
 }
 
+export interface AssignableUserOption {
+  id: string;
+  name: string;
+  email?: string | null;
+  jobTitleName?: string | null;
+}
+
 interface ReviewFeedViewProps {
   initialItems: PlanningReviewWithComments[];
   businessUnits: BuOption[];
   currentCoordinator?: string;
   preselectedBuSlug?: string;
+  assignableUsers?: AssignableUserOption[];
 }
 
 const BU_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -105,6 +113,7 @@ export function ReviewFeedView({
   businessUnits,
   currentCoordinator = "Ingrid Silva",
   preselectedBuSlug,
+  assignableUsers = [],
 }: ReviewFeedViewProps) {
   const [items, setItems] = useState<PlanningReviewWithComments[]>(initialItems);
   const [selectedBu, setSelectedBu] = useState<string>(preselectedBuSlug || "all");
@@ -129,7 +138,14 @@ export function ReviewFeedView({
       "",
   );
   const [newItemCoordinator, setNewItemCoordinator] = useState(currentCoordinator);
-  const [newItemAssignee, setNewItemAssignee] = useState("");
+  const [newItemAssignee, setNewItemAssignee] = useState(
+    assignableUsers[0]?.name || "",
+  );
+  const [newItemAssigneeEmail, setNewItemAssigneeEmail] = useState(
+    assignableUsers[0]?.email || "",
+  );
+  const [isCustomAssignee, setIsCustomAssignee] = useState(false);
+  const [createTaskNotification, setCreateTaskNotification] = useState(true);
   const [newItemMeetingDate, setNewItemMeetingDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -256,12 +272,14 @@ export function ReviewFeedView({
           businessUnitId: newItemBuId,
           coordinatorName: newItemCoordinator,
           assigneeName: newItemAssignee,
+          assigneeEmail: newItemAssigneeEmail,
           meetingDate: newItemMeetingDate,
           followUpDate: newItemFollowUpDate,
           status: newItemStatus,
           priority: newItemPriority,
           details: newItemDetails,
           tags,
+          createTaskNotification,
         });
 
         const selectedUnit = businessUnits.find((b) => b.id === newItemBuId);
@@ -275,7 +293,7 @@ export function ReviewFeedView({
           followUpDate: new Date(`${newItemFollowUpDate}T12:00:00Z`),
           details: newItemDetails,
           assigneeName: newItemAssignee,
-          assigneeEmail: null,
+          assigneeEmail: newItemAssigneeEmail || null,
           assigneeAvatar: null,
           status: newItemStatus,
           priority: newItemPriority,
@@ -296,9 +314,15 @@ export function ReviewFeedView({
         setItems((prev) => [createdItem, ...prev]);
         setIsCreateOpen(false);
         setNewItemDetails("");
-        setNewItemAssignee("");
+        setNewItemAssignee(assignableUsers[0]?.name || "");
+        setNewItemAssigneeEmail(assignableUsers[0]?.email || "");
+        setIsCustomAssignee(false);
         setNewItemTag("");
-        toast.success("Novo acompanhamento cadastrado com sucesso!");
+        toast.success(
+          createTaskNotification
+            ? `Acompanhamento cadastrado e tarefa gerada para ${newItemAssignee}!`
+            : "Novo acompanhamento cadastrado com sucesso!",
+        );
       } catch (err: unknown) {
         toast.error(
           err instanceof Error
@@ -999,19 +1023,59 @@ export function ReviewFeedView({
                   </select>
                 </div>
 
-                {/* Destinatário */}
+                {/* Destinatário / Responsável */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Destinatário / Responsável *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Mariana Vasconcelos, João Fontes"
-                    value={newItemAssignee}
-                    onChange={(e) => setNewItemAssignee(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                    required
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Destinatário / Responsável *
+                    </label>
+                    {assignableUsers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomAssignee(!isCustomAssignee);
+                          setNewItemAssignee("");
+                          setNewItemAssigneeEmail("");
+                        }}
+                        className="text-[11px] font-medium text-brand-600 hover:text-brand-800 transition"
+                      >
+                        {isCustomAssignee ? "Escolher da lista" : "+ Digitar outro"}
+                      </button>
+                    )}
+                  </div>
+
+                  {!isCustomAssignee && assignableUsers.length > 0 ? (
+                    <select
+                      value={newItemAssignee}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewItemAssignee(val);
+                        const match = assignableUsers.find((p) => p.name === val);
+                        setNewItemAssigneeEmail(match?.email || "");
+                      }}
+                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      required
+                    >
+                      <option value="">— Selecione o responsável —</option>
+                      {assignableUsers.map((user) => (
+                        <option key={user.id} value={user.name}>
+                          {user.name} {user.jobTitleName ? `(${user.jobTitleName})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="Ex: Mariana Vasconcelos, João Fontes"
+                      value={newItemAssignee}
+                      onChange={(e) => {
+                        setNewItemAssignee(e.target.value);
+                        setNewItemAssigneeEmail("");
+                      }}
+                      className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      required
+                    />
+                  )}
                 </div>
               </div>
 
@@ -1091,6 +1155,26 @@ export function ReviewFeedView({
                   onChange={(e) => setNewItemTag(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
+              </div>
+
+              {/* Notificação via Tarefas na Central */}
+              <div className="rounded-xl border border-brand-100 bg-brand-50/50 p-3">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={createTaskNotification}
+                    onChange={(e) => setCreateTaskNotification(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 size-4"
+                  />
+                  <div>
+                    <span className="block text-xs font-semibold text-slate-900">
+                      Notificar na Central: Gerar tarefa na fila de {newItemAssignee || "Mariana"}
+                    </span>
+                    <span className="block text-[11px] text-slate-500 mt-0.5">
+                      Cria uma tarefa de follow-up com o prazo estipulado, alertando a pessoa com badge no menu de Tarefas e no painel pessoal dela.
+                    </span>
+                  </div>
+                </label>
               </div>
 
               {/* Modal Buttons */}

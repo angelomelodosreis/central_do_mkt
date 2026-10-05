@@ -129,6 +129,7 @@ export function SquadsBoard({
                         canEdit={canEdit}
                         isLead={person.leadOfSquadIds.includes(unit.id)}
                         onOpen={onOpenPerson}
+                        onRemove={(userId, squadId) => mover(userId, squadId, "")}
                       />
                     ))
                   )}
@@ -141,15 +142,43 @@ export function SquadsBoard({
 
       {semSquad.length > 0 ? (
         <section
-          onDragOver={(event) => canEdit && event.preventDefault()}
-          className="mt-4 rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-3"
+          onDragOver={(event) => {
+            if (!canEdit) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            setSobre("fora_squad");
+          }}
+          onDragLeave={() =>
+            setSobre((atual) => (atual === "fora_squad" ? null : atual))
+          }
+          onDrop={(event) => {
+            if (!canEdit) return;
+            event.preventDefault();
+            setSobre(null);
+            const payload = readDrag(event);
+            if (!payload || !payload.fromId) return;
+            mover(payload.userId, payload.fromId, "");
+          }}
+          className={cn(
+            "mt-4 rounded-2xl border border-dashed p-3 transition-colors",
+            sobre === "fora_squad"
+              ? "border-red-400 bg-red-50/80 ring-2 ring-red-100"
+              : "border-amber-300 bg-amber-50/60",
+          )}
         >
-          <p className="mb-2 text-sm font-medium text-amber-900">
-            Fora de qualquer squad ({semSquad.length})
-          </p>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium text-amber-900">
+              Fora de qualquer squad ({semSquad.length})
+            </p>
+            {canEdit ? (
+              <span className="rounded-full border border-amber-200 bg-amber-100/90 px-2.5 py-0.5 text-xs font-normal text-amber-800">
+                Arraste uma pessoa para cá para tirar do squad
+              </span>
+            ) : null}
+          </div>
           <p className="mb-2.5 text-xs text-amber-800">
             Estas pessoas não veem planejamento de BU nenhuma. Arraste para um
-            squad acima.
+            squad acima para alocar, ou solte aqui para desvincular.
           </p>
           <div className="flex flex-wrap gap-1.5">
             {semSquad.map((person) => (
@@ -165,6 +194,32 @@ export function SquadsBoard({
             ))}
           </div>
         </section>
+      ) : canEdit ? (
+        <div
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            setSobre("fora_squad");
+          }}
+          onDragLeave={() =>
+            setSobre((atual) => (atual === "fora_squad" ? null : atual))
+          }
+          onDrop={(event) => {
+            event.preventDefault();
+            setSobre(null);
+            const payload = readDrag(event);
+            if (!payload || !payload.fromId) return;
+            mover(payload.userId, payload.fromId, "");
+          }}
+          className={cn(
+            "mt-4 rounded-2xl border border-dashed p-4 text-center text-xs transition-colors",
+            sobre === "fora_squad"
+              ? "border-red-400 bg-red-50 text-red-700 ring-2 ring-red-100"
+              : "border-slate-300 text-slate-500 hover:border-slate-400",
+          )}
+        >
+          Arraste uma pessoa para cá para tirar de qualquer squad
+        </div>
       ) : null}
     </>
   );
@@ -176,12 +231,14 @@ function MiniPerson({
   canEdit,
   isLead,
   onOpen,
+  onRemove,
 }: {
   person: OrgPerson;
   fromId: string | null;
   canEdit: boolean;
   isLead: boolean;
   onOpen: (userId: string) => void;
+  onRemove?: (userId: string, fromId: string) => void;
 }) {
   const [arrastando, setArrastando] = useState(false);
 
@@ -195,43 +252,75 @@ function MiniPerson({
     .join(" · ");
 
   return (
-    <button
-      type="button"
-      draggable={canEdit}
-      onDragStart={(event) => {
-        if (!canEdit) return;
-        writeDrag(event, { userId: person.userId, fromId });
-        setArrastando(true);
-      }}
-      onDragEnd={() => setArrastando(false)}
-      onClick={() => onOpen(person.userId)}
+    <div
       className={cn(
-        "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-left shadow-sm transition-all",
-        canEdit ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        "group relative flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-left shadow-2xs transition-all",
+        canEdit ? "hover:border-brand-300 hover:shadow-xs" : "",
         arrastando && "opacity-40",
-        "hover:border-brand-300 hover:shadow",
       )}
     >
-      <span className="flex items-center gap-2">
-        <Avatar name={person.name} size="sm" />
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate text-xs font-medium text-slate-900">
-              {person.name}
+      <button
+        type="button"
+        draggable={canEdit}
+        onDragStart={(event) => {
+          if (!canEdit) return;
+          writeDrag(event, { userId: person.userId, fromId });
+          setArrastando(true);
+        }}
+        onDragEnd={() => setArrastando(false)}
+        onClick={() => onOpen(person.userId)}
+        className={cn(
+          "min-w-0 flex-1 text-left",
+          canEdit ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        )}
+      >
+        <span className="flex items-center gap-2">
+          <Avatar name={person.name} size="sm" />
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5">
+              <span className="truncate text-xs font-medium text-slate-900">
+                {person.name}
+              </span>
+              {isLead ? (
+                <span
+                  title="Responde por este squad"
+                  aria-label="Responde por este squad"
+                  className="size-1.5 shrink-0 rounded-full bg-brand-500"
+                />
+              ) : null}
             </span>
-            {isLead ? (
-              <span
-                title="Responde por este squad"
-                aria-label="Responde por este squad"
-                className="size-1.5 shrink-0 rounded-full bg-brand-500"
-              />
-            ) : null}
-          </span>
-          <span className="mt-0.5 block truncate text-xs text-slate-500">
-            {contexto || "fora da estrutura"}
+            <span className="mt-0.5 block truncate text-xs text-slate-500">
+              {contexto || "fora da estrutura"}
+            </span>
           </span>
         </span>
-      </span>
-    </button>
+      </button>
+
+      {canEdit && fromId && onRemove ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(person.userId, fromId);
+          }}
+          title={`Tirar ${person.name} deste squad`}
+          aria-label={`Tirar ${person.name} deste squad`}
+          className="ml-1 shrink-0 rounded-lg p-1 text-slate-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+        >
+          <svg
+            className="size-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      ) : null}
+    </div>
   );
 }

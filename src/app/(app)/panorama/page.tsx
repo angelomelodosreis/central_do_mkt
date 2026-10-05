@@ -91,13 +91,22 @@ export default async function PanoramaPage() {
   // Preenchimento de semanas com base nos dados reais do Google Sheets se o banco não tiver
   const weeklyMap = new Map<
     string,
-    { revenue: number; sales: number; leads: number; mediaSpend: number }
+    {
+      businessUnitId: string;
+      weekIso: string;
+      revenue: number;
+      sales: number;
+      leads: number;
+      mediaSpend: number;
+    }
   >();
 
   for (const s of semanais) {
     const weekIso = getWeekStartIso(s.weekStart);
-    const key = `${s.businessUnitId}_${weekIso}`;
+    const key = `${s.businessUnitId}:::${weekIso}`;
     weeklyMap.set(key, {
+      businessUnitId: s.businessUnitId,
+      weekIso,
       revenue: s.revenue ?? 0,
       sales: s.sales ?? 0,
       leads: s.leads ?? 0,
@@ -112,8 +121,10 @@ export default async function PanoramaPage() {
     const buId = buCodeToIdMap.get(normalizedCode) || buCodeToIdMap.get(t.businessUnitCode);
     if (!buId) continue; // Garante que transações de outras BUs nunca sejam atribuídas indevidamente
     const weekIso = getWeekStartIso(t.timestamp);
-    const key = `${buId}_${weekIso}`;
+    const key = `${buId}:::${weekIso}`;
     const existing = weeklyMap.get(key) ?? {
+      businessUnitId: buId,
+      weekIso,
       revenue: 0,
       sales: 0,
       leads: 0,
@@ -127,12 +138,11 @@ export default async function PanoramaPage() {
     weeklyMap.set(key, existing);
   }
 
-  const enrichedSemanais = Array.from(weeklyMap.entries()).map(([k, val]) => {
-    const [bId, weekIso] = k.split("_");
-    const weekStartDate = getWeekStartDate(weekIso);
+  const enrichedSemanais = Array.from(weeklyMap.values()).map((val) => {
+    const weekStartDate = getWeekStartDate(val.weekIso);
     return {
-      businessUnitId: bId,
-      weekIso,
+      businessUnitId: val.businessUnitId,
+      weekIso: val.weekIso,
       weekStart: weekStartDate.getTime(),
       revenue: val.revenue,
       sales: val.sales,

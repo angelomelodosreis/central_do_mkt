@@ -2,11 +2,15 @@ import type { ReactNode } from "react";
 
 import { CommandPalette } from "@/components/layout/command-palette";
 import { Nav, type NavItem } from "@/components/layout/nav";
+import { OnboardingModal } from "@/components/layout/onboarding-modal";
 import { RouteLoadingIndicator } from "@/components/layout/route-loading-indicator";
 import { TestModeBanner } from "@/components/layout/test-mode-banner";
 import { ROLE_LABELS } from "@/components/ui/badge";
 import { can, isPlatformAdmin, requireUser } from "@/lib/auth/session";
+import { listBusinessUnits } from "@/lib/modules/bases/queries";
+import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { describePositions } from "@/lib/modules/org/people";
+import { listOrgUnits } from "@/lib/modules/org/queries";
 import { countMyOpenTasks } from "@/lib/modules/tasks/queries";
 
 /**
@@ -26,6 +30,43 @@ export const dynamic = "force-dynamic";
  */
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const currentUser = await requireUser();
+
+  // Verifica se o usuário precisa do popup de configuração inicial (onboarding)
+  // Apenas para quem já tem conta ativa mas ainda está sem time ou sem BU vinculada
+  // (Cargo não pode ser editado pelo colaborador, apenas pela administração)
+  const isMaster = isFullAccessMaster(currentUser);
+  const isMissingTeam = currentUser.positions.length === 0;
+  const isMissingBU = currentUser.scope.squadBusinessUnitIds.size === 0;
+  const needsOnboarding = !isMaster && (isMissingTeam || isMissingBU);
+
+  let onboardingData = null;
+  if (needsOnboarding) {
+    const [orgUnits, bus] = await Promise.all([
+      listOrgUnits(),
+      listBusinessUnits({ includeInactive: false }),
+    ]);
+
+    onboardingData = {
+      jobTitleName: currentUser.jobTitleName,
+      availableTeams: orgUnits
+        .filter((u) => u.isActive)
+        .map((u) => ({
+          id: u.id,
+          name: u.name,
+          path: u.path,
+        })),
+      businessUnits: bus.map((b) => ({
+        id: b.id,
+        label: b.label,
+        code: b.code,
+        slug: b.slug,
+        divisionName: b.divisionName,
+      })),
+      initialTeamId: currentUser.positions[0]?.teamId ?? null,
+      initialBuIds: Array.from(currentUser.scope.squadBusinessUnitIds),
+      userName: currentUser.name,
+    };
+  }
 
   // A contagem da fila é lida no menu porque é o aviso que faz a pessoa voltar:
   // sem número visível, a tarefa delegada depende de alguém lembrar de abrir a
@@ -79,7 +120,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     });
   }
 
-
   if (can(currentUser, "tasks")) {
     items.push({
       href: "/tarefas",
@@ -99,12 +139,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     description: "Times, cargos e squads",
     icon: "org",
   });
-
-
-  // Parâmetros deixou de existir como menu: tinha uma única área, e ela
-  // pertence ao Gerador de Nomes — quem cria um modelo é quem acabou de
-  // descobrir que falta um formato. A permissão continua separando quem USA o
-  // gerador de quem DEFINE os modelos.
 
   if (
     isPlatformAdmin(currentUser) ||
@@ -144,6 +178,16 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </main>
       </div>
       <CommandPalette />
+      {onboardingData && (
+        <OnboardingModal
+          userName={onboardingData.userName}
+          jobTitleName={onboardingData.jobTitleName}
+          availableTeams={onboardingData.availableTeams}
+          businessUnits={onboardingData.businessUnits}
+          initialTeamId={onboardingData.initialTeamId}
+          initialBuIds={onboardingData.initialBuIds}
+        />
+      )}
     </div>
   );
 }

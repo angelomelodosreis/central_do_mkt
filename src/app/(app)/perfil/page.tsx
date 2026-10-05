@@ -10,6 +10,7 @@ import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { listBusinessUnits } from "@/lib/modules/bases/queries";
 import { getUserBuRequests } from "@/lib/modules/access/bu-requests";
 import { loadPositions } from "@/lib/modules/org/people";
+import { listOrgUnits } from "@/lib/modules/org/queries";
 import { ProfileEditor, type ProfileData } from "./profile-editor";
 
 export const metadata: Metadata = {
@@ -21,18 +22,29 @@ export default async function ProfilePage() {
   const currentUser = await requireUser();
   const db = await getDb();
 
-  const [accessibleUnits, allUnits, myRequests, positions, twoFactorRecord] =
-    await Promise.all([
-      listAccessibleBusinessUnits(currentUser),
-      listBusinessUnits({ includeInactive: false }),
-      getUserBuRequests(currentUser.id),
-      loadPositions([currentUser.id]),
-      db
-        .select({ verified: twoFactor.verified })
-        .from(twoFactor)
-        .where(eq(twoFactor.userId, currentUser.id))
-        .get(),
-    ]);
+  const [
+    accessibleUnits,
+    allUnits,
+    myRequests,
+    positions,
+    orgUnits,
+    twoFactorRecord,
+  ] = await Promise.all([
+    listAccessibleBusinessUnits(currentUser),
+    listBusinessUnits({ includeInactive: false }),
+    getUserBuRequests(currentUser.id),
+    loadPositions([currentUser.id]),
+    listOrgUnits(),
+    db
+      .select({ verified: twoFactor.verified })
+      .from(twoFactor)
+      .where(eq(twoFactor.userId, currentUser.id))
+      .get(),
+  ]);
+
+  const userPositions = positions.get(currentUser.id) ?? [];
+  const primaryPos =
+    userPositions.find((p) => p.isPrimary) ?? userPositions[0] ?? null;
 
   const role = currentUser.role as UserRole;
   const profileData: ProfileData = {
@@ -46,10 +58,24 @@ export default async function ProfilePage() {
     isSuperAdmin: currentUser.isSuperAdmin,
     twoFactorEnabled: Boolean(twoFactorRecord),
     twoFactorVerified: twoFactorRecord?.verified === true,
-    teams: (positions.get(currentUser.id) ?? []).map((p) => ({
+    primaryTeamId: primaryPos?.teamId ?? null,
+    teams: userPositions.map((p) => ({
       id: p.teamId,
       name: p.teamName,
+      path: p.path,
+      isPrimary: p.isPrimary,
+      isLead: p.isLead,
     })),
+    availableTeams: orgUnits
+      .filter((u) => u.isActive)
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        slug: u.slug,
+        kind: u.kind,
+        path: u.path,
+        depth: u.depth,
+      })),
     accessibleUnits,
     allUnits: allUnits.map((u) => ({
       id: u.id,
@@ -65,7 +91,7 @@ export default async function ProfilePage() {
     <>
       <PageHeader
         title="Meu Perfil"
-        description="Visualize seus acessos, configure seu nome de exibição, consulte suas Business Units e gerencie sua segurança."
+        description="Configure seu time no organograma, gerencie seu acesso como leitor às Business Units e mantenha seus dados atualizados."
       />
 
       <div className="mt-6">

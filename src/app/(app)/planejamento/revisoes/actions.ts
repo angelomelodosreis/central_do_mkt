@@ -8,6 +8,8 @@ import {
   businessUnit,
   planningReviewComment,
   planningReviewItem,
+  task,
+  user,
   type PlanningReviewStatus,
 } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
@@ -33,6 +35,7 @@ export async function createPlanningReviewItemAction(data: {
   status: PlanningReviewStatus;
   priority?: string;
   tags?: string[];
+  createTaskNotification?: boolean;
 }) {
   const currentUser = await requirePermission("strategy", "edit");
   const db = await getDb();
@@ -63,7 +66,7 @@ export async function createPlanningReviewItemAction(data: {
   });
 
   const bu = await db
-    .select({ slug: businessUnit.slug })
+    .select({ slug: businessUnit.slug, label: businessUnit.label })
     .from(businessUnit)
     .where(eq(businessUnit.id, data.businessUnitId))
     .get();
@@ -74,9 +77,51 @@ export async function createPlanningReviewItemAction(data: {
     action: "bu_review.create",
     entityType: "business_unit",
     entityId: data.businessUnitId,
-    summary: `Criou item de revisão para BU ${data.businessUnitId}`,
+    summary: `Criou item de revisão para BU ${bu?.label || data.businessUnitId}`,
   });
 
+  // Notificação via Tarefas: se solicitado, gera uma tarefa na fila da pessoa
+  if (data.createTaskNotification) {
+    const targetUser = await db
+      .select({ id: user.id, name: user.name })
+      .from(user)
+      .where(
+        data.assigneeEmail
+          ? eq(user.email, data.assigneeEmail.trim())
+          : eq(user.name, data.assigneeName.trim())
+      )
+      .get();
+
+    if (targetUser) {
+      const taskId = newId("tsk");
+      const buLabel = bu?.label || "Planejamento";
+      await db.insert(task).values({
+        id: taskId,
+        title: `Follow-up ${buLabel}: ${data.details.slice(0, 80).replace(/\n/g, " ")}`,
+        description: data.details,
+        status: "todo",
+        priority: data.priority === "alta" ? "high" : "normal",
+        dueDate: followUpDateObj,
+        assigneeId: targetUser.id,
+        businessUnitId: data.businessUnitId,
+        createdBy: currentUser.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await writeAuditLog({
+        actorUserId: currentUser.id,
+        actorEmail: currentUser.email,
+        action: "task.create",
+        entityType: "task",
+        entityId: taskId,
+        summary: `Criou tarefa para ${targetUser.name} a partir do acompanhamento de ${buLabel}`,
+      });
+
+      revalidatePath("/tarefas", "layout");
+      revalidatePath("/painel");
+    }
+  }
 
   revalidateAll(bu?.slug);
   return { success: true, id };

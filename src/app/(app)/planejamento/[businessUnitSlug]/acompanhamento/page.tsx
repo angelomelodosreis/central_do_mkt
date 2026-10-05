@@ -9,6 +9,7 @@ import { REVIEW_STATUS_DOTS, REVIEW_STATUS_LABELS } from "@/lib/db/schema";
 import { listReviews, loadPendingActions } from "@/lib/modules/review/queries";
 import { listReviewFeedItems } from "@/lib/modules/review/feed-queries";
 import { listBusinessUnits } from "@/lib/modules/bases/queries";
+import { listPeople } from "@/lib/modules/org/people";
 import { ReviewFeedView } from "../../revisoes/review-feed-view";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import { cn } from "@/lib/utils/cn";
@@ -35,12 +36,20 @@ export default async function AcompanhamentoPage({
 
   const base = `/planejamento/${unit.slug}/acompanhamento`;
 
-  const [reunioes, pendentes, feedItems, allUnits] = await Promise.all([
+  const [reunioes, pendentes, feedItems, allUnits, people] = await Promise.all([
     listReviews(unit.id),
     loadPendingActions(unit.id, ""),
     listReviewFeedItems({ businessUnitId: unit.id }),
     listBusinessUnits({ includeInactive: false }),
+    listPeople({ includeInactive: false }),
   ]);
+
+  const assignableUsers = people.map((p) => ({
+    id: p.id,
+    name: p.name,
+    email: p.email,
+    jobTitleName: p.jobTitleName,
+  }));
 
 
   const hoje = new Date();
@@ -198,6 +207,7 @@ export default async function AcompanhamentoPage({
         <ReviewFeedView
           initialItems={feedItems}
           businessUnits={allUnits.map((u) => ({ id: u.id, slug: u.slug, label: u.label }))}
+          assignableUsers={assignableUsers}
           currentCoordinator="Ingrid Silva"
           preselectedBuSlug={unit.slug}
         />
