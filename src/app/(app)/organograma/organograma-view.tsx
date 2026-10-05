@@ -161,6 +161,7 @@ export function OrganogramaView({
           people={snapshot.people}
           units={snapshot.units}
           onOpenPerson={setAberto}
+          searchTerm={busca}
         />
       ) : null}
 
