@@ -41,11 +41,12 @@ export default async function BusinessUnitLayout({
   ]);
   const base = `/planejamento/${unit.slug}`;
 
-  // Ordem lógica do trabalho MedCof: Diagnóstico -> Metas -> Resultados -> Acompanhamento -> Rituais -> Ativos
+  // Ordem lógica do trabalho MedCof: Ciclos da BU -> Diagnóstico -> Objetivo e Metas -> Resultados -> Acompanhamento -> Rituais -> Ativos
   const tabs: WorkspaceTab[] = [
     { href: base, label: "Visão geral" },
-    { href: `${base}/diagnostico`, label: "Diagnóstico 2.0" },
-    { href: `${base}/metas`, label: "Metas 2.0" },
+    { href: `${base}/ciclos`, label: "Ciclos da BU" },
+    { href: `${base}/diagnostico`, label: "Diagnóstico" },
+    { href: `${base}/metas`, label: "Objetivo e Metas" },
     { href: `${base}/resultados`, label: "Resultados" },
     { href: `${base}/acompanhamento`, label: "Acompanhamento" },
     { href: `${base}/revisao-trimestral`, label: "Revisão Trimestral" },

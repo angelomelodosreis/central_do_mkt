@@ -1222,4 +1222,64 @@ export async function saveCycleObjectiveAndGoalsAction(data: {
   return { ok: true };
 }
 
+/** Cria um novo ciclo de planejamento estratégico para a Business Unit */
+export async function createCycleAction(data: {
+  businessUnitId: string;
+  name: string;
+  slug?: string;
+  startsAt: string;
+  endsAt: string;
+  isCurrent?: boolean;
+}): Promise<{ ok: boolean; cycleId?: string; error?: string }> {
+  const gate = await requireStrategyEditor(data.businessUnitId);
+  if ("erro" in gate) return { ok: false, error: gate.erro };
+
+  const db = await getDb();
+  const now = new Date();
+  const slug = data.slug || toKebabCase(data.name) || `ciclo-${Date.now()}`;
+  const startsAt = new Date(data.startsAt);
+  const endsAt = new Date(data.endsAt);
+  const id = newId("cyc");
+
+  if (data.isCurrent) {
+    await db
+      .update(strategyCycle)
+      .set({ isCurrent: false, updatedAt: now })
+      .where(eq(strategyCycle.businessUnitId, data.businessUnitId));
+  }
+
+  await db.insert(strategyCycle).values({
+    id,
+    businessUnitId: data.businessUnitId,
+    name: data.name,
+    slug,
+    startsAt,
+    endsAt,
+    isCurrent: Boolean(data.isCurrent),
+    createdBy: gate.currentUser.id,
+    updatedBy: gate.currentUser.id,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "strategy_cycle.create",
+    entityType: "strategy_cycle",
+    entityId: id,
+    summary: `Criou o "${data.name}" em ${gate.unit.label}`,
+    afterData: {
+      name: data.name,
+      slug,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+    },
+  });
+
+  revalidateStrategy(gate.unit.slug);
+  return { ok: true, cycleId: id };
+}
+
+
 
