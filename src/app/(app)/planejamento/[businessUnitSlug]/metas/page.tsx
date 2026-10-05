@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { GoalSection } from "./goal-section";
 import { KpiGoalsTable } from "./kpi-goals-table";
 import { ButtonLink } from "@/components/ui/button";
-import { Card, CardBody, EmptyState, PageHeader } from "@/components/ui/card";
+import { Card, CardBody, EmptyState } from "@/components/ui/card";
 import {
   GOAL_SCOPES,
   GOAL_SCOPE_LABELS,
@@ -24,6 +24,8 @@ import { listKpiGoals } from "@/lib/modules/strategy/kpi-goals";
 import {
   listFindingsOfCycle,
   listGoalRevisions,
+  listRounds,
+  pickDefaultRound,
 } from "@/lib/modules/strategy/diagnosis";
 import {
   getCycleBySlug,
@@ -31,7 +33,7 @@ import {
   pickDefaultCycle,
 } from "@/lib/modules/strategy/queries";
 
-export const metadata: Metadata = { title: "Metas" };
+export const metadata: Metadata = { title: "Objetivo e Metas do Ciclo" };
 export const dynamic = "force-dynamic";
 
 export default async function GoalsPage({
@@ -52,11 +54,7 @@ export default async function GoalsPage({
 
   if (!cycle) {
     return (
-      <>
-        <PageHeader
-          title="Metas"
-          description="O compromisso da BU para o ciclo e para cada semestre."
-        />
+      <div className="space-y-6">
         <EmptyState
           title="Nenhum ciclo criado ainda"
           description="A meta é sempre de um ciclo. Comece criando o ciclo no calendário."
@@ -66,15 +64,60 @@ export default async function GoalsPage({
             </ButtonLink>
           }
         />
-      </>
+      </div>
     );
   }
 
-  const goals = await loadCycleGoals(cycle.id);
-  const kpiGoals = await listKpiGoals(unit.id, cycle.id);
-  const achados = await listFindingsOfCycle(cycle.id);
+  const [goals, kpiGoals, achados, rounds] = await Promise.all([
+    loadCycleGoals(cycle.id),
+    listKpiGoals(unit.id, cycle.id),
+    listFindingsOfCycle(cycle.id),
+    listRounds(cycle.id),
+  ]);
 
-  // As revisões de cada meta existente, para o histórico na leitura.
+  const activeRound = pickDefaultRound(rounds);
+
+  // Extrai insights do diagnóstico atual para sugerir no embasamento
+  const diagnosisInsights: string[] = [];
+  if (activeRound) {
+    if (activeRound.mainChallenge) {
+      diagnosisInsights.push(
+        activeRound.mainChallenge.length > 40
+          ? `${activeRound.mainChallenge.slice(0, 37)}...`
+          : activeRound.mainChallenge,
+      );
+    }
+    if (activeRound.mainOpportunity) {
+      diagnosisInsights.push(
+        activeRound.mainOpportunity.length > 40
+          ? `${activeRound.mainOpportunity.slice(0, 37)}...`
+          : activeRound.mainOpportunity,
+      );
+    }
+    if (activeRound.businessMarketDiagnosis) {
+      diagnosisInsights.push("Negócio e mercado: leitura da rodada");
+    }
+    if (activeRound.clientBrandDiagnosis) {
+      diagnosisInsights.push("Cliente e marca: consideração");
+    }
+    if (activeRound.portfolioOfferDiagnosis) {
+      diagnosisInsights.push("Portfólio: competitividade da oferta");
+    }
+    if (activeRound.funnelConversionDiagnosis) {
+      diagnosisInsights.push("Funil: taxa de conversão");
+    }
+  }
+  for (const achado of achados.slice(0, 5)) {
+    if (!diagnosisInsights.includes(achado.statement)) {
+      diagnosisInsights.push(achado.statement);
+    }
+  }
+
+  const initialCycleObjective =
+    activeRound?.cycleObjective ?? goals.cycle?.objective ?? "";
+  const initialCyclePeriod = activeRound?.cyclePeriod ?? "Jan – Jun/2027";
+
+  // Revisões de cada meta existente para o histórico semestral
   const revisoesPorMeta = new Map<
     string,
     { changedAt: Date; reason: string | null }[]
@@ -93,148 +136,119 @@ export default async function GoalsPage({
 
   const divergencias = checkSums(goals);
   const semestreAtual = currentSemester(cycle);
-
-  // Metas que não apontam nenhum achado: o outro lado do relatório de órfãos.
   const comAchado = new Set(achados.flatMap((a) => a.goalIds));
   const metasSemAchado = GOAL_SCOPES.map((scope) => goals[scope])
     .filter((meta): meta is NonNullable<typeof meta> => meta !== null)
     .filter((meta) => !comAchado.has(meta.id));
 
   return (
-    <>
-      <PageHeader
-        title="Metas"
-        // O nome do ciclo já costuma trazer o da BU ("Clínica Médica · 2026"),
-        // então repetir a BU aqui soaria como erro de texto.
-        description={`O compromisso de ${cycle.name}. Quanto dele já foi feito aparece na visão geral; a conversa sobre ele, no Acompanhamento.`}
-      />
+    <div className="space-y-8">
+      {/* ── Seletor de Ciclos (quando há múltiplos ciclos) ── */}
+      {cycles.length > 1 && (
+        <div className="flex items-center justify-end gap-1.5 border-b border-slate-200 pb-2">
+          <span className="text-xs text-slate-400">Ciclos:</span>
+          {cycles.map((c) => (
+            <ButtonLink
+              key={c.id}
+              href={`/planejamento/${unit.slug}/metas?ciclo=${c.slug}`}
+              variant={c.id === cycle.id ? "primary" : "ghost"}
+              size="sm"
+              className="h-6 text-[11px] px-2"
+            >
+              {c.name}
+            </ButtonLink>
+          ))}
+        </div>
+      )}
 
-      {/* Metas 2.0 - Desdobramento do Diagnóstico em KPIs Primários e Secundários */}
-      <section className="mb-10">
+      {/* ── PARTE 3: Objetivo e Metas do Ciclo (Oficial) ── */}
+      <section>
         <KpiGoalsTable
           businessUnitId={unit.id}
+          businessUnitSlug={unit.slug}
+          businessUnitName={unit.label}
           cycleId={cycle.id}
-          goals={kpiGoals}
+          cycleSlug={cycle.slug}
           canEdit={canEdit}
+          initialCycleObjective={initialCycleObjective}
+          initialCyclePeriod={initialCyclePeriod}
+          initialGoals={kpiGoals}
+          diagnosisInsights={diagnosisInsights}
         />
       </section>
 
-      <div className="mb-4 mt-8 flex items-center justify-between border-t border-slate-200 pt-6">
-        <div>
-          <h2 className="font-display text-base font-semibold text-slate-900">
-            Detalhamento e Alocação por Semestre (H1 / H2)
-          </h2>
-          <p className="text-xs text-slate-500">
-            Distribuição semestral das metas numéricas e de escopo para acompanhamento de ritmo.
-          </p>
+      {/* ── Seção Opcional: Detalhamento por Semestre (H1 / H2) ── */}
+      <details className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
+        <summary className="flex cursor-pointer items-center justify-between font-display text-sm font-semibold text-slate-800 list-none">
+          <div>
+            <span>Detalhamento e Alocação por Semestre (H1 / H2)</span>
+            <p className="text-xs font-normal text-slate-500 mt-0.5">
+              Distribuição semestral das metas numéricas e de escopo para acompanhamento de ritmo.
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-pink-600 group-open:rotate-180 transition-transform">
+            ▼
+          </span>
+        </summary>
+
+        <div className="mt-6 pt-4 border-t border-slate-100 space-y-6">
+          {divergencias.length > 0 && (
+            <Card className="border-amber-300 bg-amber-50/50">
+              <CardBody>
+                <p className="text-sm font-medium text-amber-900">
+                  Os semestres não fecham a meta do ciclo
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-amber-800">
+                  {divergencias.map((d) => (
+                    <li key={d.metric} className="tabular-nums">
+                      <span className="font-medium">
+                        {metricLabel(d.metric)}
+                      </span>
+                      {": ciclo pede "}
+                      {formatMetricValue(d.metric, d.cycleTarget)}
+                      {", semestres somam "}
+                      {formatMetricValue(d.metric, d.semestersSum)}
+                      <span className="text-amber-700">
+                        {" ("}
+                        {d.diff > 0 ? "+" : ""}
+                        {(d.diff * 100).toLocaleString("pt-BR", {
+                          maximumFractionDigits: 1,
+                        })}
+                        {"%)"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CardBody>
+            </Card>
+          )}
+
+          <div className="grid gap-6">
+            {(["h1", "h2"] as const).map((scope) => {
+              const meta = goals[scope];
+              const range = scopeRange(cycle, scope);
+              const past = scopeIsPast(cycle, scope);
+              const isCurrent = scope === semestreAtual;
+
+              return (
+                <GoalSection
+                  key={scope}
+                  cycleId={cycle.id}
+                  scope={scope}
+                  goal={meta}
+                  periodLabel={formatRange(range.startsAt, range.endsAt)}
+                  partial={range.partial}
+                  isCurrent={isCurrent}
+                  isPast={past}
+                  canEdit={canEdit}
+                  findings={achados}
+                  revisions={meta ? (revisoesPorMeta.get(meta.id) ?? []) : []}
+                />
+              );
+            })}
+          </div>
         </div>
-      </div>
-
-      {divergencias.length > 0 ? (
-        <Card className="mb-6 border-amber-300 bg-amber-50/50">
-          <CardBody>
-            <p className="text-sm font-medium text-amber-900">
-              Os semestres não fecham a meta do ciclo
-            </p>
-            <ul className="mt-2 space-y-1 text-sm text-amber-800">
-              {divergencias.map((d) => (
-                <li key={d.metric} className="tabular-nums">
-                  <span className="font-medium">{metricLabel(d.metric)}</span>
-                  {": ciclo pede "}
-                  {formatMetricValue(d.metric, d.cycleTarget)}
-                  {", semestres somam "}
-                  {formatMetricValue(d.metric, d.semestersSum)}
-                  <span className="text-amber-700">
-                    {" ("}
-                    {d.diff > 0 ? "+" : ""}
-                    {(d.diff * 100).toLocaleString("pt-BR", {
-                      maximumFractionDigits: 1,
-                    })}
-                    {"%)"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-xs text-amber-700">
-              É só um aviso — pode ser erro de digitação ou margem proposital.
-              Nada impede de salvar assim.
-            </p>
-          </CardBody>
-        </Card>
-      ) : null}
-
-      {metasSemAchado.length > 0 && achados.length > 0 ? (
-        <Card className="mb-6 border-amber-300 bg-amber-50/50">
-          <CardBody>
-            <p className="text-sm font-medium text-amber-900">
-              {metasSemAchado.length === 1
-                ? "Uma meta não aponta nenhum achado do diagnóstico"
-                : `${metasSemAchado.length} metas não apontam nenhum achado do diagnóstico`}
-            </p>
-            <p className="mt-1 text-sm text-amber-800">
-              {metasSemAchado
-                .map((meta) => GOAL_SCOPE_LABELS[meta.scope])
-                .join(", ")}
-            </p>
-            <p className="mt-2 text-xs text-amber-700">
-              Meta sem achado é meta que ninguém sustentou. Edite a meta e
-              marque o que ela responde.
-            </p>
-          </CardBody>
-        </Card>
-      ) : null}
-
-      <Card>
-        <CardBody className="px-0 py-0">
-          {GOAL_SCOPES.map((scope) => {
-            const { startsAt, endsAt, partial } = scopeRange(cycle, scope);
-            return (
-              <GoalSection
-                key={scope}
-                cycleId={cycle.id}
-                scope={scope}
-                goal={goals[scope]}
-                periodLabel={formatRange(startsAt, endsAt)}
-                partial={partial}
-                isCurrent={semestreAtual === scope}
-                isPast={scope !== "cycle" && scopeIsPast(cycle, scope)}
-                canEdit={canEdit}
-                findings={achados}
-                revisions={
-                  goals[scope]
-                    ? (revisoesPorMeta.get(goals[scope]!.id) ?? [])
-                    : []
-                }
-              />
-            );
-          })}
-        </CardBody>
-      </Card>
-
-      {cycles.length > 1 ? (
-        <nav className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
-          <span className="text-xs text-slate-500">Outros ciclos:</span>
-          {cycles
-            .filter((c) => c.id !== cycle.id)
-            .map((c) => (
-              <ButtonLink
-                key={c.id}
-                href={`/planejamento/${unit.slug}/metas?ciclo=${c.slug}`}
-                variant="ghost"
-                size="sm"
-              >
-                {c.name}
-              </ButtonLink>
-            ))}
-        </nav>
-      ) : null}
-
-      <p className="mt-6 text-xs text-slate-500">
-        Os semestres são civis — {GOAL_SCOPE_SHORT.h1} vai de janeiro a junho e{" "}
-        {GOAL_SCOPE_SHORT.h2} de julho a dezembro — mesmo quando o ciclo não
-        começa em janeiro. Quando o ciclo é mais curto, o período mostrado já
-        vem recortado.
-      </p>
-    </>
+      </details>
+    </div>
   );
 }

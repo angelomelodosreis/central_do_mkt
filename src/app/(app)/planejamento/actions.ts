@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import type { StrategyFormState } from "./form-state";
 import { requirePermission } from "@/lib/auth/session";
@@ -10,10 +10,11 @@ import {
   businessUnit,
   strategyCycle,
   strategyGoal,
-  strategyFinding,
   strategyGoalFinding,
   strategyGoalRevision,
   strategyGoalTarget,
+  strategyKpiGoal,
+  strategyFinding,
   strategyProduct,
   strategyRound,
   timelineItem,
@@ -1085,4 +1086,140 @@ export async function seedDefaultKpiGoalsAction(
 
   revalidateStrategy(gate.unit.slug);
 }
+
+/** Grava em lote o Objetivo Macro do Ciclo, Período e as Metas 2.0 (KPIs Primários e Secundários) */
+export async function saveCycleObjectiveAndGoalsAction(data: {
+  businessUnitId: string;
+  cycleId: string;
+  cycleObjective: string;
+  cyclePeriod: string;
+  goals: Array<{
+    id?: string;
+    title: string;
+    diagnosisBaseline?: string | null;
+    primaryKpiName?: string | null;
+    primaryKpiTarget?: string | null;
+    secondaryKpiName?: string | null;
+    secondaryKpiTarget?: string | null;
+    sortOrder?: number;
+  }>;
+}): Promise<{ ok: boolean; error?: string }> {
+  const gate = await requireStrategyEditor(data.businessUnitId);
+  if ("erro" in gate) return { ok: false, error: gate.erro };
+
+  const db = await getDb();
+  const now = new Date();
+
+  // 1. Atualiza ou cria a rodada ativa para salvar cycleObjective e cyclePeriod
+  const existingRound = await db
+    .select()
+    .from(strategyRound)
+    .where(eq(strategyRound.cycleId, data.cycleId))
+    .orderBy(desc(strategyRound.sequence))
+    .limit(1);
+
+  if (existingRound.length > 0) {
+    await db
+      .update(strategyRound)
+      .set({
+        cycleObjective: data.cycleObjective?.trim() || null,
+        cyclePeriod: data.cyclePeriod?.trim() || null,
+        updatedBy: gate.currentUser.id,
+        updatedAt: now,
+      })
+      .where(eq(strategyRound.id, existingRound[0].id));
+  } else {
+    await db.insert(strategyRound).values({
+      id: newId("rnd"),
+      cycleId: data.cycleId,
+      sequence: 1,
+      referenceDate: now,
+      isOpen: true,
+      cycleObjective: data.cycleObjective?.trim() || null,
+      cyclePeriod: data.cyclePeriod?.trim() || null,
+      createdBy: gate.currentUser.id,
+      updatedBy: gate.currentUser.id,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 2. Sincroniza as metas 2.0 (strategyKpiGoal)
+  const existingGoals = await db
+    .select()
+    .from(strategyKpiGoal)
+    .where(
+      and(
+        eq(strategyKpiGoal.businessUnitId, data.businessUnitId),
+        eq(strategyKpiGoal.cycleId, data.cycleId),
+      ),
+    );
+
+  const existingIds = new Set(existingGoals.map((g) => g.id));
+  const incomingIds = new Set(data.goals.map((g) => g.id).filter(Boolean));
+
+  // Excluir metas que não estão mais na lista
+  for (const existing of existingGoals) {
+    if (!incomingIds.has(existing.id)) {
+      await db
+        .delete(strategyKpiGoal)
+        .where(eq(strategyKpiGoal.id, existing.id));
+    }
+  }
+
+  // Atualizar ou inserir metas
+  for (let i = 0; i < data.goals.length; i++) {
+    const item = data.goals[i];
+    const sortOrder = item.sortOrder ?? (i + 1) * 10;
+
+    if (item.id && existingIds.has(item.id)) {
+      await db
+        .update(strategyKpiGoal)
+        .set({
+          title: item.title,
+          diagnosisBaseline: item.diagnosisBaseline ?? null,
+          primaryKpiName: item.primaryKpiName ?? null,
+          primaryKpiTarget: item.primaryKpiTarget ?? null,
+          secondaryKpiName: item.secondaryKpiName ?? null,
+          secondaryKpiTarget: item.secondaryKpiTarget ?? null,
+          sortOrder,
+          updatedBy: gate.currentUser.id,
+          updatedAt: now,
+        })
+        .where(eq(strategyKpiGoal.id, item.id));
+    } else {
+      const id =
+        item.id && !item.id.startsWith("temp-") ? item.id : newId("kpi_goal");
+      await db.insert(strategyKpiGoal).values({
+        id,
+        businessUnitId: data.businessUnitId,
+        cycleId: data.cycleId,
+        title: item.title,
+        diagnosisBaseline: item.diagnosisBaseline ?? null,
+        primaryKpiName: item.primaryKpiName ?? null,
+        primaryKpiTarget: item.primaryKpiTarget ?? null,
+        secondaryKpiName: item.secondaryKpiName ?? null,
+        secondaryKpiTarget: item.secondaryKpiTarget ?? null,
+        sortOrder,
+        createdBy: gate.currentUser.id,
+        updatedBy: gate.currentUser.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "kpi_goal.update",
+    entityType: "strategy_cycle",
+    entityId: data.cycleId,
+    summary: `Salvou o objetivo e ${data.goals.length} metas do ciclo de ${gate.unit.label}`,
+  });
+
+  revalidateStrategy(gate.unit.slug);
+  return { ok: true };
+}
+
 

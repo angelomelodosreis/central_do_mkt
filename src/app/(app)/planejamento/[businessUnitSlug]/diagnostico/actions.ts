@@ -610,3 +610,54 @@ export async function saveMeasurements(
         : `${medidas.length} ${medidas.length === 1 ? "indicador registrado" : "indicadores registrados"}.`,
   };
 }
+
+/** Grava o Diagnóstico da BU completo (5 Pilares + Síntese com Desafio e Oportunidade) */
+export async function saveFullDiagnosisAction(data: {
+  roundId: string;
+  businessUnitId: string;
+  businessMarketDiagnosis?: string | null;
+  clientBrandDiagnosis?: string | null;
+  portfolioOfferDiagnosis?: string | null;
+  funnelConversionDiagnosis?: string | null;
+  contextCapacityDiagnosis?: string | null;
+  mainChallenge?: string | null;
+  mainOpportunity?: string | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  const gate = await gateByRound(data.roundId);
+  if ("erro" in gate) return { ok: false, error: gate.erro };
+  if (!gate.round.isOpen) {
+    return { ok: false, error: "Esta rodada está fechada para edição." };
+  }
+
+  const db = await getDb();
+  const updatePayload = {
+    businessMarketDiagnosis: data.businessMarketDiagnosis?.trim() || null,
+    clientBrandDiagnosis: data.clientBrandDiagnosis?.trim() || null,
+    portfolioOfferDiagnosis: data.portfolioOfferDiagnosis?.trim() || null,
+    funnelConversionDiagnosis: data.funnelConversionDiagnosis?.trim() || null,
+    contextCapacityDiagnosis: data.contextCapacityDiagnosis?.trim() || null,
+    mainChallenge: data.mainChallenge?.trim() || null,
+    mainOpportunity: data.mainOpportunity?.trim() || null,
+    updatedBy: gate.currentUser.id,
+    updatedAt: new Date(),
+  };
+
+  await db
+    .update(strategyRound)
+    .set(updatePayload)
+    .where(eq(strategyRound.id, data.roundId));
+
+  await writeAuditLog({
+    actorUserId: gate.currentUser.id,
+    actorEmail: gate.currentUser.email,
+    action: "strategy_round.update",
+    entityType: "strategy_round",
+    entityId: data.roundId,
+    summary: `Atualizou o Diagnóstico da BU e síntese na ${gate.round.sequence}ª rodada de ${gate.unit.label}`,
+    afterData: updatePayload,
+  });
+
+  revalidateStrategy(gate.unit.slug);
+  return { ok: true };
+}
+

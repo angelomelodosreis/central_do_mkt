@@ -1,38 +1,17 @@
 import type { Metadata } from "next";
 
 import { toggleRound } from "./actions";
-import { LensBlock } from "./lens-block";
-import {
-  MeasurementsForm,
-  OpenRoundForm,
-  RoundSummaryForm,
-} from "./round-forms";
+import { DiagnosisTableView } from "./diagnosis-table-view";
+import { OpenRoundForm } from "./round-forms";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  EmptyState,
-  PageHeader,
-} from "@/components/ui/card";
-import { DIAGNOSIS_LENSES } from "@/lib/db/schema";
+import { EmptyState, PageHeader } from "@/components/ui/card";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import {
-  buildEvidence,
-  computeAttainment,
-  groupByLens,
-  listFindings,
-  listMeasurements,
   listRounds,
   pickDefaultRound,
   roundLabel,
 } from "@/lib/modules/strategy/diagnosis";
-import {
-  formatMetricValue,
-  loadCycleGoals,
-  metricLabel,
-} from "@/lib/modules/strategy/goals";
 import {
   getCycleBySlug,
   listCycles,
@@ -40,7 +19,7 @@ import {
 } from "@/lib/modules/strategy/queries";
 import { formatDate } from "@/lib/utils/format";
 
-export const metadata: Metadata = { title: "Diagnóstico" };
+export const metadata: Metadata = { title: "Diagnóstico da BU" };
 export const dynamic = "force-dynamic";
 
 export default async function DiagnosisPage({
@@ -65,7 +44,7 @@ export default async function DiagnosisPage({
     return (
       <>
         <PageHeader
-          title="Diagnóstico"
+          title="Diagnóstico da BU"
           description="A leitura que embasa as metas da BU."
         />
         <EmptyState
@@ -81,321 +60,111 @@ export default async function DiagnosisPage({
     );
   }
 
-  const [rounds, goals] = await Promise.all([
-    listRounds(cycle.id),
-    loadCycleGoals(cycle.id),
-  ]);
+  const rounds = await listRounds(cycle.id);
 
   const round = rodada
     ? (rounds.find((r) => r.id === rodada) ?? pickDefaultRound(rounds))
     : pickDefaultRound(rounds);
 
-  const [evidence, findings, measurements] = await Promise.all([
-    buildEvidence(cycle, goals),
-    round ? listFindings(round.id) : Promise.resolve([]),
-    round ? listMeasurements(round.id) : Promise.resolve([]),
-  ]);
-
-  const porLente = groupByLens(findings);
-  const atingimento = computeAttainment(goals, measurements);
-  const orfaos = findings.filter((f) => f.goalIds.length === 0);
+  if (!round) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Diagnóstico da BU"
+          description={`Ciclo ${cycle.name}. Abra a primeira rodada para iniciar o diagnóstico.`}
+        />
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs">
+          <OpenRoundForm cycleId={cycle.id} isFirst />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <PageHeader
-        title="Diagnóstico"
-        description={`A leitura que embasa as metas de ${cycle.name}. Roda a cada 3 a 6 meses; a meta é revisada na mesma rodada.`}
-      />
-
-      {/* ── Rodada ── */}
-      <Card className="mb-6">
-        <CardHeader
-          title={round ? roundLabel(round) : "Nenhuma rodada ainda"}
-          description={
-            round
-              ? `Leitura de ${formatDate(round.referenceDate)} · atualizada em ${formatDate(round.updatedAt)}`
-              : "O diagnóstico acontece em rodadas. Abra a primeira para começar."
-          }
-          action={
-            round && canEdit ? (
-              <form action={toggleRound}>
-                <input type="hidden" name="roundId" value={round.id} />
-                <Button type="submit" variant="ghost" size="sm">
-                  {round.isOpen ? "Fechar rodada" : "Reabrir"}
-                </Button>
-              </form>
-            ) : null
-          }
-        />
-        <CardBody className="space-y-4">
-          {round ? (
-            <>
-              <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                {round.isOpen ? (
-                  <Badge tone="brand">Aberta</Badge>
-                ) : (
-                  <Badge>Fechada</Badge>
-                )}
-                <span>
-                  {findings.length}{" "}
-                  {findings.length === 1 ? "achado" : "achados"} nesta rodada
-                </span>
-              </p>
-
-              {canEdit && round.isOpen ? (
-                <RoundSummaryForm
-                  roundId={round.id}
-                  summary={round.summary}
-                  mainChallenge={round.mainChallenge}
-                  mainOpportunity={round.mainOpportunity}
-                  cycleObjective={round.cycleObjective}
-                  cyclePeriod={round.cyclePeriod}
-                />
-              ) : (
-                <div className="space-y-4">
-                  {(round.mainChallenge || round.mainOpportunity) && (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {round.mainChallenge && (
-                        <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-3.5">
-                          <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-800">
-                            Principal desafio da BU hoje
-                          </p>
-                          <p className="mt-1 text-sm text-slate-800 whitespace-pre-line">
-                            {round.mainChallenge}
-                          </p>
-                        </div>
-                      )}
-                      {round.mainOpportunity && (
-                        <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3.5">
-                          <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">
-                            Principal oportunidade de crescimento
-                          </p>
-                          <p className="mt-1 text-sm text-slate-800 whitespace-pre-line">
-                            {round.mainOpportunity}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {round.cycleObjective && (
-                    <div className="rounded-lg border border-brand-200 bg-brand-50/40 p-3.5">
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-800">
-                          Objetivo Macro do Ciclo
-                        </p>
-                        {round.cyclePeriod && (
-                          <span className="text-xs font-medium text-brand-700">
-                            Período: {round.cyclePeriod}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-base font-semibold text-slate-900">
-                        {round.cycleObjective}
-                      </p>
-                    </div>
-                  )}
-
-                  {round.summary && (
-                    <p className="whitespace-pre-line text-sm text-slate-700">
-                      {round.summary}
-                    </p>
-                  )}
-                </div>
-              )}
-            </>
-          ) : canEdit ? (
-            <OpenRoundForm cycleId={cycle.id} isFirst />
+    <div className="space-y-6">
+      {/* ── Barra Superior com Status da Rodada & Ciclo ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-2xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="font-semibold text-slate-900 text-xs">
+            {roundLabel(round)}
+          </span>
+          <span className="text-slate-300">·</span>
+          <span className="text-xs text-slate-500">
+            Ref: {formatDate(round.referenceDate)}
+          </span>
+          {round.isOpen ? (
+            <Badge tone="brand">Aberta para edição</Badge>
           ) : (
-            <p className="text-sm text-slate-500">
-              Ninguém abriu uma rodada de diagnóstico para este ciclo ainda.
-            </p>
+            <Badge>Fechada</Badge>
           )}
 
-          {round && canEdit ? (
-            <div className="border-t border-slate-100 pt-4">
-              <OpenRoundForm cycleId={cycle.id} isFirst={false} />
-            </div>
-          ) : null}
-
-          {rounds.length > 1 ? (
-            <nav className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-              <span className="text-xs text-slate-500">
-                Rodadas anteriores:
-              </span>
+          {rounds.length > 1 && (
+            <div className="flex items-center gap-1.5 ml-2 border-l border-slate-200 pl-3">
+              <span className="text-[11px] text-slate-400">Outras rodadas:</span>
               {rounds
-                .filter((r) => r.id !== round?.id)
+                .filter((r) => r.id !== round.id)
                 .map((r) => (
                   <ButtonLink
                     key={r.id}
                     href={`${base}/diagnostico?rodada=${r.id}`}
                     variant="ghost"
                     size="sm"
+                    className="h-6 text-[11px] px-2"
                   >
                     {roundLabel(r)}
                   </ButtonLink>
                 ))}
-            </nav>
-          ) : null}
-        </CardBody>
-      </Card>
+            </div>
+          )}
+        </div>
 
-      {/* ── Alvo × realizado ── */}
-      {round ? (
-        <Card className="mb-6">
-          <CardHeader
-            title="Onde estamos"
-            description={
-              goals.cycle && goals.cycle.targets.length > 0
-                ? "O realizado desta rodada contra o alvo da meta do ciclo."
-                : "A meta do ciclo ainda não definiu indicadores — sem alvo não há o que comparar."
-            }
-            action={
-              <ButtonLink href={`${base}/metas`} variant="ghost" size="sm">
-                Metas
-              </ButtonLink>
-            }
-          />
-          <CardBody className="space-y-4">
-            {atingimento.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {atingimento.map((a) => {
-                  const bom = a.percent >= 95;
-                  const atencao = a.percent >= 75 && a.percent < 95;
-                  return (
-                    <div
-                      key={a.metric}
-                      className="rounded-lg border border-slate-200 px-3 py-2"
-                    >
-                      <p className="text-xs text-slate-500">
-                        {metricLabel(a.metric)}
-                        {a.inverted ? " (menor é melhor)" : ""}
-                      </p>
-                      <p className="font-display text-xl font-semibold tabular-nums text-slate-900">
-                        {formatMetricValue(a.metric, a.actual)}
-                        <span className="text-sm font-normal text-slate-500">
-                          {" / "}
-                          {formatMetricValue(a.metric, a.target)}
-                        </span>
-                      </p>
-                      <p
-                        className={
-                          bom
-                            ? "text-xs font-medium text-emerald-700"
-                            : atencao
-                              ? "text-xs font-medium text-amber-700"
-                              : "text-xs font-medium text-danger-700"
-                        }
-                      >
-                        {a.percent.toLocaleString("pt-BR", {
-                          maximumFractionDigits: 0,
-                        })}
-                        % do alvo
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : null}
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <form action={toggleRound}>
+              <input type="hidden" name="roundId" value={round.id} />
+              <Button type="submit" variant="ghost" size="sm" className="h-7 text-xs">
+                {round.isOpen ? "Fechar rodada" : "Reabrir rodada"}
+              </Button>
+            </form>
+          )}
 
-            {canEdit &&
-            round.isOpen &&
-            goals.cycle &&
-            goals.cycle.targets.length > 0 ? (
-              <div
-                className={
-                  atingimento.length > 0 ? "border-t border-slate-100 pt-4" : ""
-                }
-              >
-                <MeasurementsForm
-                  roundId={round.id}
-                  targets={goals.cycle.targets}
-                  measurements={measurements}
-                />
-              </div>
-            ) : null}
-
-            {!goals.cycle || goals.cycle.targets.length === 0 ? (
-              <p className="text-sm text-slate-500">
-                Defina a meta geral do ciclo com pelo menos um indicador para
-                poder registrar o realizado aqui.
-              </p>
-            ) : null}
-          </CardBody>
-        </Card>
-      ) : null}
-
-      {/* ── As cinco lentes ── */}
-      <Card>
-        <CardBody className="px-0 py-0">
-          {DIAGNOSIS_LENSES.map((lens) => {
-            let pillarDiagnosis: string | null = null;
-            if (round) {
-              if (lens === "negocio_mercado") pillarDiagnosis = round.businessMarketDiagnosis;
-              else if (lens === "cliente_marca") pillarDiagnosis = round.clientBrandDiagnosis;
-              else if (lens === "portfolio_oferta") pillarDiagnosis = round.portfolioOfferDiagnosis;
-              else if (lens === "funil_conversao") pillarDiagnosis = round.funnelConversionDiagnosis;
-              else if (lens === "contexto_capacidade") pillarDiagnosis = round.contextCapacityDiagnosis;
-            }
-            return (
-              <LensBlock
-                key={lens}
-                lens={lens}
-                evidence={evidence[lens]}
-                findings={porLente[lens]}
-                roundId={round && round.isOpen ? round.id : null}
-                canEdit={canEdit}
-                pillarDiagnosis={pillarDiagnosis}
-              />
-            );
-          })}
-        </CardBody>
-      </Card>
-
-      {/* ── Órfãos ── */}
-      {orfaos.length > 0 ? (
-        <Card className="mt-6 border-amber-300 bg-amber-50/50">
-          <CardHeader
-            title={`${orfaos.length} ${orfaos.length === 1 ? "achado sem meta" : "achados sem meta"}`}
-            description="Nenhuma meta responde a estes achados. Pode ser decisão consciente — mas é bom que seja consciente."
-            action={
-              <ButtonLink href={`${base}/metas`} variant="ghost" size="sm">
-                Ir para Metas
-              </ButtonLink>
-            }
-          />
-          <CardBody className="px-0 py-0">
-            <ul className="divide-y divide-amber-200/60">
-              {orfaos.map((achado) => (
-                <li
-                  key={achado.id}
-                  className="px-5 py-2.5 text-sm text-amber-900"
+          {cycles.length > 1 && (
+            <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+              <span className="text-[11px] text-slate-400">Ciclos:</span>
+              {cycles.map((c) => (
+                <ButtonLink
+                  key={c.id}
+                  href={`${base}/diagnostico?ciclo=${c.slug}`}
+                  variant={c.id === cycle.id ? "primary" : "ghost"}
+                  size="sm"
+                  className="h-6 text-[11px] px-2"
                 >
-                  {achado.statement}
-                </li>
+                  {c.name}
+                </ButtonLink>
               ))}
-            </ul>
-          </CardBody>
-        </Card>
-      ) : null}
+            </div>
+          )}
+        </div>
+      </div>
 
-      {cycles.length > 1 ? (
-        <nav className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
-          <span className="text-xs text-slate-500">Outros ciclos:</span>
-          {cycles
-            .filter((c) => c.id !== cycle.id)
-            .map((c) => (
-              <ButtonLink
-                key={c.id}
-                href={`${base}/diagnostico?ciclo=${c.slug}`}
-                variant="ghost"
-                size="sm"
-              >
-                {c.name}
-              </ButtonLink>
-            ))}
-        </nav>
-      ) : null}
-    </>
+      {/* ── Visão Oficial Executiva: PARTE 1 & PARTE 2 ── */}
+      <DiagnosisTableView
+        businessUnitId={unit.id}
+        businessUnitSlug={unit.slug}
+        cycleSlug={cycle.slug}
+        roundId={round.id}
+        canEdit={canEdit}
+        isOpen={round.isOpen}
+        initialData={{
+          businessMarketDiagnosis: round.businessMarketDiagnosis,
+          clientBrandDiagnosis: round.clientBrandDiagnosis,
+          portfolioOfferDiagnosis: round.portfolioOfferDiagnosis,
+          funnelConversionDiagnosis: round.funnelConversionDiagnosis,
+          contextCapacityDiagnosis: round.contextCapacityDiagnosis,
+          mainChallenge: round.mainChallenge,
+          mainOpportunity: round.mainOpportunity,
+        }}
+      />
+    </div>
   );
 }
