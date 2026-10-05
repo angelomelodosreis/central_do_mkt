@@ -388,7 +388,6 @@ export function ReviewCycleView({
                 disabled={!canEdit}
                 maxLength={500}
                 onChange={(e) => setMarketChanges(e.target.value)}
-                placeholder="Ex.: A conversão melhorou nas últimas semanas, mas o volume de leads está abaixo do esperado."
                 rows={3}
                 className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
@@ -420,7 +419,6 @@ export function ReviewCycleView({
                 disabled={!canEdit}
                 maxLength={500}
                 onChange={(e) => setNewProblems(e.target.value)}
-                placeholder="Ex.: Alta competitividade regional e aumento de CPL em campanhas pagas..."
                 rows={2}
                 className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
@@ -452,7 +450,6 @@ export function ReviewCycleView({
                 disabled={!canEdit}
                 maxLength={500}
                 onChange={(e) => setMissedOpportunities(e.target.value)}
-                placeholder="Ex.: Janela de lançamento de Hands On encurtada pela grade de provas..."
                 rows={2}
                 className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
@@ -484,7 +481,6 @@ export function ReviewCycleView({
                 disabled={!canEdit}
                 maxLength={500}
                 onChange={(e) => setObjectiveAssumptions(e.target.value)}
-                placeholder="Ex.: A ambição macro se mantém com maior peso no Internato..."
                 rows={2}
                 className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
@@ -556,7 +552,6 @@ export function ReviewCycleView({
                 disabled={!canEdit}
                 maxLength={500}
                 onChange={(e) => setNextQuarterFocus(e.target.value)}
-                placeholder="Ex.: Manter a eficiência de aquisição e aumentar o share de mercado..."
                 rows={2}
                 className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />
@@ -588,7 +583,6 @@ export function ReviewCycleView({
                 disabled={!canEdit}
                 maxLength={500}
                 onChange={(e) => setDecisionTaken(e.target.value)}
-                placeholder="Ex.: Ajustar meta de matrículas e reforçar estratégia de geração de demanda."
                 rows={2}
                 className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 resize-none transition"
               />

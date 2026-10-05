@@ -83,7 +83,6 @@ export function QuarterlyReviewForm({
             id="quarter"
             name="quarter"
             defaultValue={initialData?.quarter ?? "Q1"}
-            placeholder="Ex.: Q1, Q2, Q3, Q4"
             required
           />
         </Field>
