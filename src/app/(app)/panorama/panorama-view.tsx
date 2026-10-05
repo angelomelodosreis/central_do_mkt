@@ -615,6 +615,8 @@ export function PanoramaView({
             data={compData.buComparison}
             currentLabel={compData.currentPeriod.label}
             previousLabel={compData.previousPeriod.label}
+            daysElapsed={compData.currentPeriod.daysElapsed}
+            isInProgress={compData.currentPeriod.isCurrentPeriodInProgress}
           />
 
           {/* Feed de Transações Ao Vivo */}

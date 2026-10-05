@@ -55,12 +55,23 @@ export function ComparativePeriodPicker({
   const [selectedPrevMonth, setSelectedPrevMonth] = useState(previousMonthKey);
 
   // Estados locais para modo custom range (dia, mês e ano)
-  // Data base padrão: 01/10/2026 até hoje (ou 02/10/2026)
+  const [refNow] = useState(() => new Date());
+  const toLocalIso = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  const todayIso = toLocalIso(refNow);
+  const curY = refNow.getFullYear();
+  const curM = String(refNow.getMonth() + 1).padStart(2, "0");
+  const monthStartIso = `${curY}-${curM}-01`;
+
   const [startDate, setStartDate] = useState(
-    activeStartDate || "2026-10-01",
+    activeStartDate || monthStartIso,
   );
   const [endDate, setEndDate] = useState(
-    activeEndDate || "2026-10-02",
+    activeEndDate || todayIso,
   );
 
   // Tipo de comparação para o período customizado
@@ -72,7 +83,7 @@ export function ComparativePeriodPicker({
     activeCompareStartDate || "2026-09-01",
   );
   const [compareEndDate, setCompareEndDate] = useState(
-    activeCompareEndDate || "2026-09-02",
+    activeCompareEndDate || "2026-09-05",
   );
 
   // Formata YYYY-MM-DD para DD/MM/AAAA
@@ -148,46 +159,47 @@ export function ComparativePeriodPicker({
       | "last_month_full",
   ) => {
     setMode("custom_range");
-    const refDate = new Date("2026-10-02T12:00:00Z");
-    const toIso = (d: Date) => d.toISOString().slice(0, 10);
+    const refDate = refNow;
 
-    let sDate = "2026-10-01";
-    let eDate = "2026-10-02";
+    let sDate = monthStartIso;
+    let eDate = todayIso;
     let cType: "previous_month_same_days" | "preceding_period" = "previous_month_same_days";
 
     if (preset === "today") {
-      const d = toIso(refDate);
-      sDate = d;
-      eDate = d;
+      sDate = todayIso;
+      eDate = todayIso;
       cType = "previous_month_same_days";
     } else if (preset === "yesterday") {
       const y = new Date(refDate.getTime() - 86400000);
-      const d = toIso(y);
+      const d = toLocalIso(y);
       sDate = d;
       eDate = d;
       cType = "previous_month_same_days";
     } else if (preset === "last7") {
       const s = new Date(refDate.getTime() - 6 * 86400000);
-      sDate = toIso(s);
-      eDate = toIso(refDate);
+      sDate = toLocalIso(s);
+      eDate = todayIso;
       cType = "preceding_period";
     } else if (preset === "last14") {
       const s = new Date(refDate.getTime() - 13 * 86400000);
-      sDate = toIso(s);
-      eDate = toIso(refDate);
+      sDate = toLocalIso(s);
+      eDate = todayIso;
       cType = "preceding_period";
     } else if (preset === "last30") {
       const s = new Date(refDate.getTime() - 29 * 86400000);
-      sDate = toIso(s);
-      eDate = toIso(refDate);
+      sDate = toLocalIso(s);
+      eDate = todayIso;
       cType = "preceding_period";
     } else if (preset === "current_month_mtd") {
-      sDate = "2026-10-01";
-      eDate = "2026-10-02";
+      sDate = monthStartIso;
+      eDate = todayIso;
       cType = "previous_month_same_days";
     } else if (preset === "last_month_full") {
-      sDate = "2026-09-01";
-      eDate = "2026-09-30";
+      const prevMNum = refDate.getMonth() === 0 ? 12 : refDate.getMonth();
+      const prevYNum = refDate.getMonth() === 0 ? curY - 1 : curY;
+      const prevLastDay = new Date(prevYNum, prevMNum, 0).getDate();
+      sDate = `${prevYNum}-${String(prevMNum).padStart(2, "0")}-01`;
+      eDate = `${prevYNum}-${String(prevMNum).padStart(2, "0")}-${String(prevLastDay).padStart(2, "0")}`;
       cType = "previous_month_same_days";
     }
 
@@ -316,19 +328,31 @@ export function ComparativePeriodPicker({
                 onClick={() => applyPreset("current_month_mtd")}
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
-                  startDate === "2026-10-01" && endDate === "2026-10-02"
+                  startDate === monthStartIso && endDate === todayIso
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-blue-900 border-blue-200 hover:bg-blue-50",
                 )}
               >
-                ⚡ Outubro/2026 MTD (01 a 02/10)
+                ⚡ Mês Atual MTD (01 a {String(refNow.getDate()).padStart(2, "0")}/{curM})
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset("today")}
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
+                  startDate === todayIso && endDate === todayIso
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
+                )}
+              >
+                Hoje ({String(refNow.getDate()).padStart(2, "0")}/{curM})
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset("last7")}
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
-                  startDate === "2026-09-26" && endDate === "2026-10-02"
+                  endDate === todayIso && startDate === toLocalIso(new Date(refNow.getTime() - 6 * 86400000))
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
                 )}
@@ -340,7 +364,7 @@ export function ComparativePeriodPicker({
                 onClick={() => applyPreset("last14")}
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
-                  startDate === "2026-09-19" && endDate === "2026-10-02"
+                  endDate === todayIso && startDate === toLocalIso(new Date(refNow.getTime() - 13 * 86400000))
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
                 )}
@@ -352,19 +376,19 @@ export function ComparativePeriodPicker({
                 onClick={() => applyPreset("last_month_full")}
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
-                  startDate === "2026-09-01" && endDate === "2026-09-30"
+                  startDate.startsWith(`${refNow.getMonth() === 0 ? curY - 1 : curY}-${String(refNow.getMonth() === 0 ? 12 : refNow.getMonth()).padStart(2, "0")}-01`) && compareType === "previous_month_same_days"
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-blue-900 border-blue-200 hover:bg-blue-50",
                 )}
               >
-                Setembro/2026 Completo
+                Mês Anterior Completo
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset("last30")}
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition shadow-2xs border",
-                  startDate === "2026-09-03" && endDate === "2026-10-02"
+                  endDate === todayIso && startDate === toLocalIso(new Date(refNow.getTime() - 29 * 86400000))
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
                 )}

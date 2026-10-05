@@ -65,10 +65,14 @@ export function BuGrowthMatrix({
   data,
   currentLabel,
   previousLabel,
+  daysElapsed,
+  isInProgress,
 }: {
   data: BuComparisonStat[];
   currentLabel: string;
   previousLabel: string;
+  daysElapsed?: number;
+  isInProgress?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "gainers" | "decliners">("all");
@@ -178,7 +182,9 @@ export function BuGrowthMatrix({
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Comparativo de tração por unidade: {currentLabel} vs {previousLabel}
+            {metricMode === "homologous" && daysElapsed && isInProgress
+              ? `Comparativo homólogo por unidade: ${currentLabel} (01 a ${String(daysElapsed).padStart(2, "0")}) vs ${previousLabel} (01 a ${String(daysElapsed).padStart(2, "0")})`
+              : `Comparativo de tração por unidade: ${currentLabel} vs ${previousLabel}`}
           </p>
         </div>
 
@@ -246,9 +252,9 @@ export function BuGrowthMatrix({
                     ? "bg-white text-blue-900 shadow-2xs"
                     : "text-blue-700 hover:text-blue-900"
                 }`}
-                title="Compara apenas os mesmos dias decorridos de cada mês (avaliação justa)"
+                title={`Compara apenas os dias 01 a ${daysElapsed ?? "decorridos"} de cada mês (avaliação justa)`}
               >
-                Homólogo MTD
+                {daysElapsed && isInProgress ? `Homólogo MTD (01 a ${String(daysElapsed).padStart(2, "0")})` : "Homólogo MTD"}
               </button>
               <button
                 type="button"
@@ -258,9 +264,9 @@ export function BuGrowthMatrix({
                     ? "bg-white text-slate-900 shadow-2xs"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
-                title="Compara o faturamento parcial de agora contra o mês anterior inteiro fechado"
+                title="Compara o faturamento parcial de agora contra o mês anterior inteiro fechado (30 dias)"
               >
-                Total Bruto
+                Total Mês Fechado
               </button>
             </div>
           )}
@@ -353,7 +359,11 @@ export function BuGrowthMatrix({
                   className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
                   title={`Ordenar por ${currentLabel}`}
                 >
-                  <span>{currentLabel}</span>
+                  <span>
+                    {isInProgress && daysElapsed
+                      ? `${currentLabel} (01 a ${String(daysElapsed).padStart(2, "0")})`
+                      : currentLabel}
+                  </span>
                   <span className="text-[10px] text-brand-600">{sortField === "current" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
                 </button>
               </th>
@@ -364,7 +374,13 @@ export function BuGrowthMatrix({
                   className="inline-flex items-center gap-1 hover:text-slate-900 transition ml-auto"
                   title={`Ordenar por ${previousLabel}`}
                 >
-                  <span>{metricMode === "homologous" ? `${previousLabel} (mesmos dias)` : previousLabel}</span>
+                  <span>
+                    {metricMode === "homologous"
+                      ? (daysElapsed && isInProgress
+                          ? `${previousLabel} (01 a ${String(daysElapsed).padStart(2, "0")})`
+                          : `${previousLabel} (mesmos dias)`)
+                      : `${previousLabel} (Mês Completo)`}
+                  </span>
                   <span className="text-[10px] text-brand-600">{sortField === "previous" ? (sortDirection === "asc" ? "▲" : "▼") : ""}</span>
                 </button>
               </th>

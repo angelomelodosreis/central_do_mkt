@@ -332,6 +332,8 @@ export function SalesRealtimeView({
             data={comparative.buComparison}
             currentLabel={comparative.currentPeriod.label}
             previousLabel={comparative.previousPeriod.label}
+            daysElapsed={comparative.currentPeriod.daysElapsed}
+            isInProgress={comparative.currentPeriod.isCurrentPeriodInProgress}
           />
         </div>
       )}
