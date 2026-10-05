@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   ArrowRight,
   BookOpen,
+  Briefcase,
   Building2,
   Check,
   CheckCircle2,
@@ -30,6 +31,7 @@ import { SignOutButton } from "@/components/layout/sign-out-button";
 import {
   updateProfileNameAction,
   updateUserPrimaryTeamAction,
+  updateUserJobTitleAction,
   selfAssignReaderBUsAction,
 } from "./actions";
 import type { BuRequestItem } from "@/lib/modules/access/bu-requests";
@@ -62,6 +64,12 @@ export type BuOption = {
   divisionName?: string | null;
 };
 
+export type JobTitleOption = {
+  id: string;
+  name: string;
+  sortOrder: number;
+};
+
 export type ProfileData = {
   id: string;
   name: string;
@@ -69,7 +77,9 @@ export type ProfileData = {
   emailDomain: string;
   role: UserRole;
   roleLabel: string;
+  jobTitleId: string | null;
   jobTitleName: string | null;
+  availableJobTitles: JobTitleOption[];
   isSuperAdmin: boolean;
   twoFactorEnabled: boolean;
   twoFactorVerified: boolean;
@@ -85,6 +95,12 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
   // ── ESTADO: Nome ──
   const [name, setName] = useState(data.name);
   const [isPendingName, startNameTransition] = useTransition();
+
+  // ── ESTADO: Cargo / Função ──
+  const [selectedJobTitleId, setSelectedJobTitleId] = useState<string>(
+    data.jobTitleId ?? "",
+  );
+  const [isPendingJobTitle, startJobTitleTransition] = useTransition();
 
   // ── ESTADO: Time / Área no Organograma ──
   const [selectedTeamId, setSelectedTeamId] = useState<string>(
@@ -114,6 +130,20 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
 
     startNameTransition(async () => {
       const res = await updateProfileNameAction(name);
+      if (res.success) {
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  }
+
+  function handleSaveJobTitle(e: React.FormEvent) {
+    e.preventDefault();
+    startJobTitleTransition(async () => {
+      const res = await updateUserJobTitleAction(
+        selectedJobTitleId ? selectedJobTitleId : null,
+      );
       if (res.success) {
         toast.success(res.message);
       } else {
@@ -187,6 +217,7 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
     });
   }
 
+  const hasJobTitleChanges = selectedJobTitleId !== (data.jobTitleId ?? "");
   const hasTeamChanges = selectedTeamId !== (data.primaryTeamId ?? "");
   const hasBuChanges =
     selectedBuIds.length !== initialAccessibleIds.length ||
@@ -231,6 +262,73 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
           <div className="flex items-center gap-2">
             <SignOutButton className="text-xs" />
           </div>
+        </div>
+
+        {/* ── Bloco: Escolha de Cargo / Função (Organograma) ── */}
+        <div className="mt-8 border-t border-slate-100 pt-6">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Briefcase className="size-4.5 text-brand-600" />
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Meu Cargo / Função
+                </h3>
+                <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                  Organograma
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Selecione seu cargo na MedCof (ex: Analista de Tráfego, Designer, Assistente, Copywriter, Coordenador...).
+                Ele identifica sua atuação nas tarefas, relatórios e no organograma.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveJobTitle} className="mt-4 max-w-2xl">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="user-cargo"
+                  className="block text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Cargo Oficial
+                </label>
+                <select
+                  id="user-cargo"
+                  value={selectedJobTitleId}
+                  onChange={(e) => setSelectedJobTitleId(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                >
+                  <option value="">— Sem cargo definido —</option>
+                  {data.availableJobTitles.map((cargo) => (
+                    <option key={cargo.id} value={cargo.id}>
+                      {cargo.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  type="submit"
+                  disabled={isPendingJobTitle || !hasJobTitleChanges}
+                  className="w-full gap-2 bg-brand-600 text-white hover:bg-brand-700"
+                >
+                  <Save className="size-4" />
+                  {isPendingJobTitle ? "Salvando..." : "Salvar Cargo"}
+                </Button>
+              </div>
+            </div>
+
+            {data.jobTitleName && (
+              <p className="mt-2 text-xs text-slate-500">
+                Cargo atual:{" "}
+                <span className="font-semibold text-slate-800">
+                  {data.jobTitleName}
+                </span>
+              </p>
+            )}
+          </form>
         </div>
 
         {/* ── Bloco: Escolha de Time / Área de Atuação (Organograma) ── */}

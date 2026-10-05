@@ -4,13 +4,14 @@ import { eq } from "drizzle-orm";
 import { PageHeader } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
-import { twoFactor, type UserRole } from "@/lib/db/schema";
+import { jobTitle, twoFactor, type UserRole } from "@/lib/db/schema";
 import { USER_ROLE_LABELS } from "@/lib/db/schema/auth.schema";
 import { listAccessibleBusinessUnits } from "@/lib/modules/org/scope";
 import { listBusinessUnits } from "@/lib/modules/bases/queries";
 import { getUserBuRequests } from "@/lib/modules/access/bu-requests";
 import { loadPositions } from "@/lib/modules/org/people";
 import { listOrgUnits } from "@/lib/modules/org/queries";
+import { sortByName } from "@/lib/utils/text";
 import { ProfileEditor, type ProfileData } from "./profile-editor";
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default async function ProfilePage() {
     positions,
     orgUnits,
     twoFactorRecord,
+    activeJobTitles,
   ] = await Promise.all([
     listAccessibleBusinessUnits(currentUser),
     listBusinessUnits({ includeInactive: false }),
@@ -40,6 +42,14 @@ export default async function ProfilePage() {
       .from(twoFactor)
       .where(eq(twoFactor.userId, currentUser.id))
       .get(),
+    db
+      .select({
+        id: jobTitle.id,
+        name: jobTitle.name,
+        sortOrder: jobTitle.sortOrder,
+      })
+      .from(jobTitle)
+      .where(eq(jobTitle.isActive, true)),
   ]);
 
   const userPositions = positions.get(currentUser.id) ?? [];
@@ -54,7 +64,15 @@ export default async function ProfilePage() {
     emailDomain: currentUser.emailDomain,
     role,
     roleLabel: USER_ROLE_LABELS[role] ?? role,
+    jobTitleId: currentUser.jobTitleId,
     jobTitleName: currentUser.jobTitleName,
+    availableJobTitles: sortByName(activeJobTitles, (item) => item.name).map(
+      (item) => ({
+        id: item.id,
+        name: item.name,
+        sortOrder: item.sortOrder,
+      }),
+    ),
     isSuperAdmin: currentUser.isSuperAdmin,
     twoFactorEnabled: Boolean(twoFactorRecord),
     twoFactorVerified: twoFactorRecord?.verified === true,

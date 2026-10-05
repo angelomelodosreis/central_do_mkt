@@ -18,6 +18,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { saveUserOnboardingSetupAction } from "@/app/(app)/onboarding-actions";
 
+export type OnboardingJobTitle = {
+  id: string;
+  name: string;
+};
+
 export type OnboardingTeam = {
   id: string;
   name: string;
@@ -35,6 +40,8 @@ export type OnboardingBU = {
 export function OnboardingModal({
   userName,
   jobTitleName,
+  initialJobTitleId,
+  availableJobTitles = [],
   availableTeams,
   businessUnits,
   initialTeamId,
@@ -42,6 +49,8 @@ export function OnboardingModal({
 }: {
   userName: string;
   jobTitleName?: string | null;
+  initialJobTitleId?: string | null;
+  availableJobTitles?: OnboardingJobTitle[];
   availableTeams: OnboardingTeam[];
   businessUnits: OnboardingBU[];
   initialTeamId?: string | null;
@@ -49,6 +58,9 @@ export function OnboardingModal({
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedJobTitleId, setSelectedJobTitleId] = useState<string>(
+    initialJobTitleId ?? "",
+  );
   const [teamId, setTeamId] = useState<string>(initialTeamId ?? "");
   const [selectedBuIds, setSelectedBuIds] = useState<string[]>(
     initialBuIds ?? [],
@@ -116,15 +128,16 @@ export function OnboardingModal({
   }
 
   function handleSave() {
-    if (!teamId && selectedBuIds.length === 0) {
+    if (!selectedJobTitleId && !teamId && selectedBuIds.length === 0) {
       toast.error(
-        "Por favor, selecione seu time ou ao menos uma Business Unit de atuação.",
+        "Por favor, selecione seu cargo, time ou ao menos uma Business Unit de atuação.",
       );
       return;
     }
 
     startTransition(async () => {
       const res = await saveUserOnboardingSetupAction({
+        jobTitleId: selectedJobTitleId || null,
         teamId: teamId || null,
         businessUnitIds: selectedBuIds,
       });
@@ -166,8 +179,7 @@ export function OnboardingModal({
                 </span>
               </div>
               <p className="mt-0.5 text-xs text-slate-500">
-                Escolha seu time no organograma e as Business Units que você vai
-                acompanhar como leitor.
+                Configure seu cargo, seu time no organograma e as Business Units que você vai acompanhar.
               </p>
             </div>
           </div>
@@ -184,24 +196,44 @@ export function OnboardingModal({
 
         {/* Corpo com Rolagem */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Informação de Cargo (Somente Leitura - Definido por Admins) */}
-          <div className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-slate-50/70 p-3 text-xs">
-            <div className="flex items-center gap-2.5">
-              <Briefcase className="size-4 text-slate-500" />
-              <div>
-                <span className="font-semibold text-slate-700">Cargo Oficial:</span>{" "}
-                <span className="font-bold text-slate-900">
-                  {jobTitleName ?? "Aguardando atribuição da gestão"}
-                </span>
-              </div>
+          {/* Seção 1: Cargo / Função */}
+          <div>
+            <div className="flex items-center gap-2">
+              <Briefcase className="size-4 text-brand-600" />
+              <label
+                htmlFor="onboarding-cargo"
+                className="text-xs font-bold uppercase tracking-wider text-slate-700"
+              >
+                1. Qual é o seu Cargo ou Função na MedCof? *
+              </label>
             </div>
-            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-              <Lock className="size-3" />
-              Definido por Administradores
-            </span>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Identifica seu papel nas tarefas, comentários e no organograma (ex: Analista, Designer, Assistente, Copywriter...).
+            </p>
+            <select
+              id="onboarding-cargo"
+              value={selectedJobTitleId}
+              onChange={(e) => setSelectedJobTitleId(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            >
+              <option value="">— Selecione seu cargo oficial —</option>
+              {availableJobTitles.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {jobTitleName && (
+              <p className="mt-1 text-[11px] text-slate-500">
+                Atualmente cadastrado como:{" "}
+                <span className="font-semibold text-slate-700">
+                  {jobTitleName}
+                </span>
+              </p>
+            )}
           </div>
 
-          {/* Seção 1: Time / Área no Organograma */}
+          {/* Seção 2: Time / Área no Organograma */}
           <div>
             <div className="flex items-center gap-2">
               <Users className="size-4 text-brand-600" />
@@ -209,7 +241,7 @@ export function OnboardingModal({
                 htmlFor="onboarding-time"
                 className="text-xs font-bold uppercase tracking-wider text-slate-700"
               >
-                1. Qual é o seu Time ou Área de Atuação? *
+                2. Qual é o seu Time ou Área de Atuação? *
               </label>
             </div>
             <p className="mt-0.5 text-xs text-slate-500">
@@ -231,14 +263,14 @@ export function OnboardingModal({
             </select>
           </div>
 
-          {/* Seção 2: Business Units e Squads */}
+          {/* Seção 3: Business Units e Squads */}
           <div>
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <Building2 className="size-4 text-brand-600" />
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    2. Quais Business Units você vai atuar / acompanhar? *
+                    3. Quais Business Units você vai atuar / acompanhar? *
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500">

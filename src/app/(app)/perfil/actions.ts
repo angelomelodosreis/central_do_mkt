@@ -8,6 +8,7 @@ import { getDb } from "@/lib/db/client";
 import {
   businessUnit,
   buAccessRequest,
+  jobTitle,
   squad,
   squadMember,
   team,
@@ -327,3 +328,78 @@ export async function selfAssignReaderBUsAction(
     count: targetSet.size,
   };
 }
+
+/**
+ * Atualiza o Cargo / Função do usuário (ex: Analista de Tráfego, Designer, etc.).
+ */
+export async function updateUserJobTitleAction(
+  jobTitleId: string | null,
+): Promise<{ success: boolean; message: string }> {
+  const currentUser = await requireUser();
+  const db = await getDb();
+  const targetId = jobTitleId?.trim() ? jobTitleId.trim() : null;
+
+  if (targetId) {
+    const targetTitle = await db
+      .select({ id: jobTitle.id, name: jobTitle.name })
+      .from(jobTitle)
+      .where(and(eq(jobTitle.id, targetId), eq(jobTitle.isActive, true)))
+      .get();
+
+    if (!targetTitle) {
+      return {
+        success: false,
+        message: "Cargo selecionado não encontrado ou inativo.",
+      };
+    }
+
+    await db
+      .update(user)
+      .set({ jobTitleId: targetId, updatedAt: new Date() })
+      .where(eq(user.id, currentUser.id));
+
+    await writeAuditLog({
+      actorUserId: currentUser.id,
+      actorEmail: currentUser.email,
+      action: "user.org_change",
+      entityType: "user",
+      entityId: currentUser.id,
+      summary: `Atualizou seu cargo para "${targetTitle.name}"`,
+      afterData: { jobTitleId: targetId, jobTitleName: targetTitle.name },
+    });
+
+    revalidatePath("/perfil");
+    revalidatePath("/organograma", "layout");
+    revalidatePath("/admin/usuarios", "layout");
+    revalidatePath("/planejamento", "layout");
+
+    return {
+      success: true,
+      message: `Seu cargo foi atualizado para "${targetTitle.name}".`,
+    };
+  } else {
+    await db
+      .update(user)
+      .set({ jobTitleId: null, updatedAt: new Date() })
+      .where(eq(user.id, currentUser.id));
+
+    await writeAuditLog({
+      actorUserId: currentUser.id,
+      actorEmail: currentUser.email,
+      action: "user.org_change",
+      entityType: "user",
+      entityId: currentUser.id,
+      summary: "Removeu a definição de cargo do perfil",
+    });
+
+    revalidatePath("/perfil");
+    revalidatePath("/organograma", "layout");
+    revalidatePath("/admin/usuarios", "layout");
+
+    return {
+      success: true,
+      message: "Cargo desvinculado com sucesso.",
+    };
+  }
+}
+

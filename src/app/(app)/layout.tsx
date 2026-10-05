@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { eq } from "drizzle-orm";
+
 import { CommandPalette } from "@/components/layout/command-palette";
 import { Nav, type NavItem } from "@/components/layout/nav";
 import { OnboardingModal } from "@/components/layout/onboarding-modal";
@@ -7,6 +9,8 @@ import { RouteLoadingIndicator } from "@/components/layout/route-loading-indicat
 import { TestModeBanner } from "@/components/layout/test-mode-banner";
 import { ROLE_LABELS } from "@/components/ui/badge";
 import { can, isPlatformAdmin, requireUser } from "@/lib/auth/session";
+import { getDb } from "@/lib/db/client";
+import { jobTitle } from "@/lib/db/schema";
 import { listBusinessUnits } from "@/lib/modules/bases/queries";
 import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { describePositions } from "@/lib/modules/org/people";
@@ -32,22 +36,35 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const currentUser = await requireUser();
 
   // Verifica se o usuário precisa do popup de configuração inicial (onboarding)
-  // Apenas para quem já tem conta ativa mas ainda está sem time ou sem BU vinculada
-  // (Cargo não pode ser editado pelo colaborador, apenas pela administração)
+  // Ativado para quem ainda está sem cargo, sem time ou sem BU vinculada
   const isMaster = isFullAccessMaster(currentUser);
+  const isMissingCargo = !currentUser.jobTitleId;
   const isMissingTeam = currentUser.positions.length === 0;
   const isMissingBU = currentUser.scope.squadBusinessUnitIds.size === 0;
-  const needsOnboarding = !isMaster && (isMissingTeam || isMissingBU);
+  const needsOnboarding =
+    !isMaster && (isMissingCargo || isMissingTeam || isMissingBU);
 
   let onboardingData = null;
   if (needsOnboarding) {
-    const [orgUnits, bus] = await Promise.all([
+    const db = await getDb();
+    const [orgUnits, bus, activeJobTitles] = await Promise.all([
       listOrgUnits(),
       listBusinessUnits({ includeInactive: false }),
+      db
+        .select({
+          id: jobTitle.id,
+          name: jobTitle.name,
+        })
+        .from(jobTitle)
+        .where(eq(jobTitle.isActive, true)),
     ]);
 
     onboardingData = {
       jobTitleName: currentUser.jobTitleName,
+      initialJobTitleId: currentUser.jobTitleId,
+      availableJobTitles: activeJobTitles.sort((a, b) =>
+        a.name.localeCompare(b.name, "pt-BR"),
+      ),
       availableTeams: orgUnits
         .filter((u) => u.isActive)
         .map((u) => ({
@@ -182,6 +199,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <OnboardingModal
           userName={onboardingData.userName}
           jobTitleName={onboardingData.jobTitleName}
+          initialJobTitleId={onboardingData.initialJobTitleId}
+          availableJobTitles={onboardingData.availableJobTitles}
           availableTeams={onboardingData.availableTeams}
           businessUnits={onboardingData.businessUnits}
           initialTeamId={onboardingData.initialTeamId}

@@ -8,10 +8,12 @@ import { getDb } from "@/lib/db/client";
 import {
   businessUnit,
   buAccessRequest,
+  jobTitle,
   squad,
   squadMember,
   team,
   teamMember,
+  user,
 } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
 import { newId } from "@/lib/utils/id";
@@ -19,11 +21,11 @@ import { newId } from "@/lib/utils/id";
 export type OnboardingSetupInput = {
   teamId?: string | null;
   businessUnitIds: string[];
+  jobTitleId?: string | null;
 };
 
 /**
- * Salva a configuração inicial do colaborador (Time no Organograma e BUs como Leitor).
- * CARGO é estritamente de gestão administrativa e NÃO pode ser editado por colaboradores.
+ * Salva a configuração inicial do colaborador (Cargo, Time no Organograma e BUs como Leitor).
  */
 export async function saveUserOnboardingSetupAction(
   input: OnboardingSetupInput,
@@ -32,7 +34,33 @@ export async function saveUserOnboardingSetupAction(
   const db = await getDb();
   const now = new Date();
 
-  // 1. Atualiza Time / Área Principal se selecionado
+  // 1. Atualiza Cargo / Função se selecionado
+  if (input.jobTitleId) {
+    const cargo = await db
+      .select({ id: jobTitle.id, name: jobTitle.name })
+      .from(jobTitle)
+      .where(and(eq(jobTitle.id, input.jobTitleId), eq(jobTitle.isActive, true)))
+      .get();
+
+    if (cargo) {
+      await db
+        .update(user)
+        .set({ jobTitleId: cargo.id, updatedAt: now })
+        .where(eq(user.id, currentUser.id));
+
+      await writeAuditLog({
+        actorUserId: currentUser.id,
+        actorEmail: currentUser.email,
+        action: "user.org_change",
+        entityType: "user",
+        entityId: currentUser.id,
+        summary: `Definiu seu cargo inicial como "${cargo.name}" via onboarding`,
+        afterData: { jobTitleId: cargo.id, jobTitleName: cargo.name },
+      });
+    }
+  }
+
+  // 2. Atualiza Time / Área Principal se selecionado
   if (input.teamId) {
     const time = await db
       .select({ id: team.id, name: team.name })
