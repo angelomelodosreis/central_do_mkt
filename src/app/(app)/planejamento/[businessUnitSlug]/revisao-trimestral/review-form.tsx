@@ -171,7 +171,6 @@ export function QuarterlyReviewForm({
             rows={2}
             className="font-sans text-sm"
             defaultValue={initialData?.marketChanges ?? ""}
-            placeholder="Descreva fatos novos externos relevantes observados no trimestre..."
           />
         </Field>
 
@@ -187,7 +186,6 @@ export function QuarterlyReviewForm({
             rows={2}
             className="font-sans text-sm"
             defaultValue={initialData?.newProblems ?? ""}
-            placeholder="Aponte novas fragilidades que não foram mapeadas na rodada inicial..."
           />
         </Field>
 
@@ -203,7 +201,6 @@ export function QuarterlyReviewForm({
             rows={2}
             className="font-sans text-sm"
             defaultValue={initialData?.missedOpportunities ?? ""}
-            placeholder="O que deixamos na mesa nestes últimos 90 dias..."
           />
         </Field>
 
@@ -219,7 +216,6 @@ export function QuarterlyReviewForm({
             rows={2}
             className="font-sans text-sm"
             defaultValue={initialData?.objectiveAssumptions ?? ""}
-            placeholder="Valide ou conteste as premissas usadas para desenhar o plano semestral..."
           />
         </Field>
 
@@ -266,7 +262,6 @@ export function QuarterlyReviewForm({
             rows={3}
             className="font-sans text-sm"
             defaultValue={initialData?.nextQuarterFocus ?? ""}
-            placeholder="Defina em 2 a 3 frases o foco imperativo para o próximo trimestre..."
           />
         </Field>
       </div>
