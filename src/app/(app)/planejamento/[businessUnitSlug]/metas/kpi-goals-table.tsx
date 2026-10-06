@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Target,
   BarChart2,
-  Calendar,
   Lightbulb,
   Info,
   Plus,
@@ -324,49 +323,27 @@ export function KpiGoalsTable({
           </div>
         </div>
 
-        {/* Inputs de Objetivo & Período */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4">
-          <div>
-            <label className="text-xs font-semibold text-slate-800 flex items-center gap-1 mb-1.5">
-              Objetivo da BU no ciclo <span className="text-pink-600">*</span>
-            </label>
-            <div className="relative">
-              <textarea
-                value={cycleObjective}
-                disabled={!canEdit}
-                maxLength={500}
-                onChange={(e) => handleObjectiveChange(e.target.value)}
-                placeholder="Ex.: Ser a principal referência nacional em educação médica para Ginecologia e Obstetrícia."
-                rows={3}
-                className={cn(
-                  "w-full rounded-xl border border-slate-200 bg-white p-3 pb-6 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition resize-none",
-                  !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                )}
-              />
-              <span className="absolute bottom-2 right-2.5 text-[10px] tabular-nums font-mono text-slate-400">
-                {cycleObjective.length}/500
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-800 flex items-center gap-1 mb-1.5">
-              Período do ciclo <span className="text-pink-600">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={cyclePeriod}
-                disabled={!canEdit}
-                onChange={(e) => handlePeriodChange(e.target.value)}
-                placeholder="Jan – Jun/2027"
-                className={cn(
-                  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition",
-                  !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                )}
-              />
-              <Calendar className="absolute right-3 top-3 size-4 text-slate-400 pointer-events-none" />
-            </div>
+        {/* Input de Objetivo da BU no ciclo */}
+        <div>
+          <label className="text-xs font-semibold text-slate-800 flex items-center gap-1 mb-1.5">
+            Objetivo da BU no ciclo <span className="text-pink-600">*</span>
+          </label>
+          <div className="relative">
+            <textarea
+              value={cycleObjective}
+              disabled={!canEdit}
+              maxLength={500}
+              onChange={(e) => handleObjectiveChange(e.target.value)}
+              placeholder="Ex.: Ser a principal referência nacional em educação médica para Ginecologia e Obstetrícia."
+              rows={3}
+              className={cn(
+                "w-full rounded-xl border border-slate-200 bg-white p-3.5 pb-6 text-sm text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition resize-none",
+                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+              )}
+            />
+            <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
+              {cycleObjective.length}/500
+            </span>
           </div>
         </div>
 
