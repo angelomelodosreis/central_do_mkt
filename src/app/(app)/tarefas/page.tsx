@@ -87,35 +87,40 @@ export default async function TasksPage() {
           `follow-up ${f.bu.label.toLowerCase()}: ${f.item.details.slice(0, 40).toLowerCase()}`,
         ),
     )
-    .map((f) => ({
-      id: f.item.id,
-      title: `[Follow-up BU] ${f.item.details.slice(0, 90).replace(/\n/g, " ")}`,
-      status: (f.item.status === "em_andamento"
-        ? "in_progress"
-        : f.item.status === "pendente"
-          ? "blocked"
-          : "todo") as any,
-      priority: f.item.priority === "alta" ? "high" : "normal",
-      dueDate: f.item.followUpDate ? f.item.followUpDate.toISOString() : null,
-      blockedReason: null,
-      assigneeId: currentUser.id,
-      assigneeName: f.item.assigneeName,
-      assignedTeamName: null,
-      businessUnitLabel: f.bu.label,
-      businessUnitSlug: f.bu.slug,
-      createdByName: f.item.coordinatorName,
-      createdAt: f.item.createdAt.toISOString(),
-      recorrente: false,
-      relation: {
-        isAssignee: true,
-        isDelegator: f.item.createdBy === currentUser.id || podeDelegar,
-        canClaim: false,
-      },
-    }));
+    .map((f) => {
+      const firstLine = f.item.details.split("\n")[0]?.replace(/^[-*•]\s*/, "").trim() || "Acompanhamento";
+      return {
+        id: f.item.id,
+        title: `[Acompanhamento ${f.bu.label}] ${firstLine}`,
+        description: f.item.details,
+        status: (f.item.status === "em_andamento"
+          ? "in_progress"
+          : f.item.status === "pendente"
+            ? "blocked"
+            : "todo") as any,
+        priority: f.item.priority === "alta" ? "high" : "normal",
+        dueDate: f.item.followUpDate ? f.item.followUpDate.toISOString() : null,
+        blockedReason: null,
+        assigneeId: currentUser.id,
+        assigneeName: f.item.assigneeName,
+        assignedTeamName: null,
+        businessUnitLabel: f.bu.label,
+        businessUnitSlug: f.bu.slug,
+        createdByName: f.item.coordinatorName,
+        createdAt: f.item.createdAt.toISOString(),
+        recorrente: false,
+        relation: {
+          isAssignee: true,
+          isDelegator: f.item.createdBy === currentUser.id || podeDelegar,
+          canClaim: false,
+        },
+      };
+    });
 
   const toRow = (item: TaskListItem): TaskRowData => ({
     id: item.id,
     title: item.title,
+    description: item.description,
     status: item.status,
     priority: item.priority,
     dueDate: item.dueDate?.toISOString() ?? null,

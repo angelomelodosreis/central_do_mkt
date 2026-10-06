@@ -30,6 +30,7 @@ import { formatDate } from "@/lib/utils/format";
 export type TaskRowData = {
   id: string;
   title: string;
+  description?: string | null;
   status: TaskStatus;
   priority: TaskPriority;
   dueDate: string | null;
@@ -187,6 +188,15 @@ export function TaskRow({
             <p className="mt-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-900">
               Travada: {task.blockedReason}
             </p>
+          ) : null}
+
+          {task.description && task.description.trim() !== task.title.trim() ? (
+            <div className="mt-2.5 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-wrap max-w-2xl font-sans">
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                O que deve ser feito:
+              </span>
+              {task.description}
+            </div>
           ) : null}
         </div>
 

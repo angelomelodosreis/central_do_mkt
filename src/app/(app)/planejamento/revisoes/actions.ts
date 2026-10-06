@@ -112,9 +112,10 @@ export async function createPlanningReviewItemAction(data: {
     if (data.createTaskNotification) {
       const taskId = newId("tsk");
       const buLabel = bu?.label || "Planejamento";
+      const firstLine = data.details.split("\n")[0]?.replace(/^[-*•]\s*/, "").trim() || "Acompanhamento";
       await db.insert(task).values({
         id: taskId,
-        title: `Follow-up ${buLabel}: ${data.details.slice(0, 80).replace(/\n/g, " ")}`,
+        title: `Follow-up ${buLabel}: ${firstLine}`,
         description: data.details,
         status: "todo",
         priority: data.priority === "alta" ? "high" : "normal",

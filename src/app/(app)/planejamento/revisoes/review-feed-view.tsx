@@ -23,6 +23,7 @@ import {
   ArrowRight,
   Pencil,
   AtSign,
+  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
@@ -187,8 +188,17 @@ export function ReviewFeedView({
 
   const isUserMentioned = (item: PlanningReviewWithComments) => {
     if (!currentCoordinator && !currentUserEmail) return false;
-    const nameLow = (currentCoordinator || "").toLowerCase();
+    const nameLow = (currentCoordinator || "").toLowerCase().trim();
     const firstWord = nameLow.split(" ")[0];
+    const detailsLow = (item.details || "").toLowerCase();
+
+    if (
+      detailsLow.includes(`@${nameLow}`) ||
+      (firstWord.length > 2 && detailsLow.includes(`@${firstWord}`))
+    ) {
+      return true;
+    }
+
     return item.comments.some((c) => {
       const cLow = c.content.toLowerCase();
       return (
@@ -201,13 +211,33 @@ export function ReviewFeedView({
 
   const isUserAssigned = (item: PlanningReviewWithComments) => {
     if (!currentCoordinator && !currentUserEmail) return false;
-    const nameLow = (currentCoordinator || "").toLowerCase();
-    const emailLow = (currentUserEmail || "").toLowerCase();
-    return (
-      item.assigneeName.toLowerCase() === nameLow ||
-      (item.assigneeEmail && item.assigneeEmail.toLowerCase() === emailLow) ||
-      (nameLow.length > 3 && item.assigneeName.toLowerCase().includes(nameLow))
-    );
+    const nameLow = (currentCoordinator || "").toLowerCase().trim();
+    const emailLow = (currentUserEmail || "").toLowerCase().trim();
+    const itemAssignee = (item.assigneeName || "").toLowerCase().trim();
+    const itemEmail = (item.assigneeEmail || "").toLowerCase().trim();
+
+    if (emailLow && itemEmail && emailLow === itemEmail) return true;
+    if (nameLow && itemAssignee) {
+      if (itemAssignee === nameLow) return true;
+      if (itemAssignee.includes(nameLow) || nameLow.includes(itemAssignee)) return true;
+      const userParts = nameLow.split(/\s+/).filter(Boolean);
+      const itemParts = itemAssignee.split(/\s+/).filter(Boolean);
+      if (userParts.length > 0 && itemParts.length > 0) {
+        if (userParts[0] === itemParts[0]) {
+          if (userParts.length === 1 || itemParts.length === 1) return true;
+          if (userParts[userParts.length - 1] === itemParts[itemParts.length - 1]) return true;
+        }
+      }
+    }
+    if (nameLow && item.details) {
+      const detailsLow = item.details.toLowerCase();
+      const firstWord = nameLow.split(" ")[0];
+      if (detailsLow.includes(`@${nameLow}`) || (firstWord.length > 2 && detailsLow.includes(`@${firstWord}`))) {
+        return true;
+      }
+    }
+    if (currentUserId && item.createdBy === currentUserId) return true;
+    return false;
   };
 
   const canEditItem = (item: PlanningReviewWithComments) => {
@@ -576,8 +606,17 @@ export function ReviewFeedView({
         </div>
 
         {/* Counter Summary Pills */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 border-t border-slate-100 pt-4">
-          <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5 border-t border-slate-100 pt-4">
+          <button
+            type="button"
+            onClick={() => setFilterScope("all")}
+            className={cn(
+              "flex items-center gap-3 rounded-xl p-3 text-left transition",
+              filterScope === "all"
+                ? "bg-slate-100 ring-2 ring-slate-300 shadow-xs"
+                : "bg-slate-50 hover:bg-slate-100/70",
+            )}
+          >
             <div className="flex size-9 items-center justify-center rounded-lg bg-white shadow-xs text-slate-700">
               <LayoutList className="size-4" />
             </div>
@@ -585,7 +624,26 @@ export function ReviewFeedView({
               <p className="text-xs text-slate-500 font-medium">Total de Itens</p>
               <p className="text-lg font-bold text-slate-900">{totalCount}</p>
             </div>
-          </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterScope(filterScope === "mine" ? "all" : "mine")}
+            className={cn(
+              "flex items-center gap-3 rounded-xl p-3 text-left transition",
+              filterScope === "mine"
+                ? "bg-purple-100 ring-2 ring-purple-500 shadow-xs"
+                : "bg-purple-50/60 hover:bg-purple-100/50",
+            )}
+          >
+            <div className="flex size-9 items-center justify-center rounded-lg bg-white shadow-xs text-purple-700">
+              <UserCheck className="size-4" />
+            </div>
+            <div>
+              <p className="text-xs text-purple-800 font-medium">Minhas Tarefas</p>
+              <p className="text-lg font-bold text-purple-950">{myAssignedCount}</p>
+            </div>
+          </button>
 
           <div className="flex items-center gap-3 rounded-xl bg-sky-50/50 p-3">
             <div className="flex size-9 items-center justify-center rounded-lg bg-white shadow-xs text-sky-600">
@@ -622,26 +680,76 @@ export function ReviewFeedView({
       {/* Filter and View Switcher Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Scope Filter: Minhas Atribuições / Onde fui mencionado */}
-          {(myAssignedCount > 0 || myMentionedCount > 0) && (
-            <div className="relative">
-              <select
-                value={filterScope}
-                onChange={(e) => setFilterScope(e.target.value as any)}
+          {/* Quick Scope Filter Buttons: Todas vs Somente minhas tarefas vs Onde fui mencionado */}
+          <div className="flex flex-wrap items-center rounded-xl border border-slate-200 bg-slate-100/70 p-1">
+            <button
+              type="button"
+              onClick={() => setFilterScope("all")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
+                filterScope === "all"
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900",
+              )}
+            >
+              <span>Todas as pendências</span>
+              <span className="rounded-full bg-slate-200/80 px-1.5 py-0.2 text-[10px] text-slate-700 font-bold">
+                {totalCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterScope(filterScope === "mine" ? "all" : "mine")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
+                filterScope === "mine"
+                  ? "bg-purple-600 text-white shadow-xs"
+                  : "text-purple-700 hover:text-purple-900 hover:bg-white/50",
+              )}
+            >
+              <UserCheck className="size-3.5" />
+              <span>Mostrar somente minhas tarefas</span>
+              <span
                 className={cn(
-                  "appearance-none rounded-xl border py-2 pl-3 pr-8 text-sm font-semibold shadow-xs focus:outline-none focus:ring-1",
-                  filterScope !== "all"
-                    ? "border-purple-300 bg-purple-50 text-purple-900 focus:border-purple-500 focus:ring-purple-500"
-                    : "border-slate-200 bg-white text-slate-800 focus:border-brand-500 focus:ring-brand-500",
+                  "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
+                  filterScope === "mine"
+                    ? "bg-white/25 text-white"
+                    : "bg-purple-100 text-purple-800",
                 )}
               >
-                <option value="all">Todas as pendências</option>
-                <option value="mine">Minhas atribuições ({myAssignedCount})</option>
-                <option value="mentioned">Onde fui mencionado ({myMentionedCount})</option>
-              </select>
-              <ChevronRight className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-4 rotate-90 text-slate-400" />
-            </div>
-          )}
+                {myAssignedCount}
+              </span>
+            </button>
+
+            {myMentionedCount > 0 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setFilterScope(filterScope === "mentioned" ? "all" : "mentioned")
+                }
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
+                  filterScope === "mentioned"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "text-purple-700 hover:text-purple-900 hover:bg-white/50",
+                )}
+              >
+                <AtSign className="size-3.5" />
+                <span>Onde fui mencionado</span>
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
+                    filterScope === "mentioned"
+                      ? "bg-white/25 text-white"
+                      : "bg-purple-100 text-purple-800",
+                  )}
+                >
+                  {myMentionedCount}
+                </span>
+              </button>
+            )}
+          </div>
 
           {/* BU Filter */}
           <div className="relative">
@@ -740,6 +848,7 @@ export function ReviewFeedView({
           </p>
           <button
             onClick={() => {
+              setFilterScope("all");
               setSelectedBu("all");
               setSelectedStatus("all");
               setSearchTerm("");
