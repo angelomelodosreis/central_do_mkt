@@ -50,6 +50,12 @@ export async function getPermissionsForRole(
       map[row.moduleKey] = { canView: row.canView, canEdit: row.canEdit };
     }
   }
+
+  // Membros e editores possuem autorização para criar e editar personas nas BUs que acessam
+  if (role === "member" || role === "editor") {
+    map.personas = { canView: true, canEdit: true };
+  }
+
   return map;
 }
 

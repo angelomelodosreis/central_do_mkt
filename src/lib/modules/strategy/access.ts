@@ -114,7 +114,10 @@ export async function requireStrategyBusinessUnit(
   if (!podeVer) redirect("/planejamento?erro=fora-do-escopo");
 
   const canEditModule = (moduleKey: ModuleKey) =>
-    podeVer && currentUser.permissions[moduleKey].canEdit;
+    podeVer &&
+    (Boolean(currentUser.permissions[moduleKey]?.canEdit) ||
+      (moduleKey === "personas" &&
+        (currentUser.role === "member" || currentUser.role === "editor")));
 
   return {
     currentUser,

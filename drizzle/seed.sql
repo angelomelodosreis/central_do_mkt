@@ -75,7 +75,7 @@ INSERT OR IGNORE INTO role_permission (id, role, module_key, can_view, can_edit,
   -- Membro: usa o gerador e lê a documentação
   ('perm_member_name_generator', 'member', 'name_generator', 1, 0, unixepoch()),
   ('perm_member_documentation',  'member', 'documentation',  1, 0, unixepoch()),
-  ('perm_member_personas',       'member', 'personas',       1, 0, unixepoch()),
+  ('perm_member_personas',       'member', 'personas',       1, 1, unixepoch()),
   ('perm_member_strategy',       'member', 'strategy',       1, 0, unixepoch()),
   ('perm_member_panorama',       'member', 'panorama',       0, 0, unixepoch()),
   ('perm_member_parameters',     'member', 'parameters',     0, 0, unixepoch()),
