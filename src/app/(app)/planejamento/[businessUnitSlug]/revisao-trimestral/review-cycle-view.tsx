@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   XCircle,
   RefreshCw,
+  BarChart2,
 } from "lucide-react";
 import { saveFullQuarterlyReviewAction } from "./actions";
 import type { QuarterlyReview } from "@/lib/modules/strategy/quarterly-review";
@@ -147,22 +148,22 @@ export function ReviewCycleView({
         </div>
       </div>
 
-      {/* ── HERO BANNER: Revisão Trimestral (Card 3D Pastel) ── */}
-      <div className="rounded-3xl border border-emerald-100/90 bg-gradient-to-r from-emerald-50/60 via-teal-50/20 to-white p-6 sm:p-7 shadow-2xs space-y-6">
+      {/* ── HERO BANNER: Revisões do Ciclo (Conforme Referência Oficial) ── */}
+      <div className="rounded-3xl border border-rose-200/90 bg-gradient-to-r from-rose-50/60 via-pink-50/20 to-white p-6 sm:p-7 shadow-2xs space-y-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 border border-emerald-200/60 shadow-2xs">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[#e2263c] border border-rose-200/80 shadow-2xs">
               <RefreshCw className="size-6" />
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
-                REVISÃO ESTRATÉGICA DO CICLO
+              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600">
+                ACOMPANHAMENTO ESTRATÉGICO
               </span>
               <h2 className="mt-0.5 font-display text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                Ainda estamos <span className="text-emerald-600">no caminho certo?</span>
+                <span className="text-[#e2263c]">Revisões</span> do ciclo
               </h2>
               <p className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
-                As revisões são check-ins rápidos para entender o cenário de mercado, revalidar as premissas do diagnóstico e garantir que o ciclo continue no rumo pretendido com agilidade.
+                Acompanhe as revisões trimestral e semestral e registre o que mudou desde o último diagnóstico.
               </p>
             </div>
           </div>
@@ -173,12 +174,12 @@ export function ReviewCycleView({
           </div>
 
           {/* Callout Informativo */}
-          <div className="flex max-w-xs shrink-0 items-start gap-3 rounded-2xl border border-emerald-200/70 bg-white/90 backdrop-blur-xs p-4 shadow-2xs">
-            <Info className="size-4.5 shrink-0 text-emerald-600 mt-0.5" />
+          <div className="flex max-w-xs shrink-0 items-start gap-3 rounded-2xl border border-rose-200/80 bg-rose-50/70 backdrop-blur-xs p-4 shadow-2xs">
+            <Info className="size-4.5 shrink-0 text-[#e2263c] mt-0.5" />
             <div>
-              <p className="text-xs font-bold text-emerald-900">Ajuste de Rota Ágil</p>
-              <p className="mt-0.5 text-xs font-medium text-emerald-800/90 leading-relaxed">
-                As revisões acontecem a cada trimestre para corrigir rumo e destravar oportunidades sem esperar o fim do ciclo.
+              <p className="text-xs font-bold text-rose-900">Importante</p>
+              <p className="mt-0.5 text-xs font-medium text-rose-800 leading-relaxed">
+                As revisões são check-ins rápidos para entender o cenário e garantir que o ciclo continue no caminho certo.
               </p>
             </div>
           </div>
@@ -190,27 +191,27 @@ export function ReviewCycleView({
           <div
             onClick={() => setSelectedQuarter("Q1")}
             className={cn(
-              "rounded-2xl border p-5 transition shadow-2xs flex flex-col justify-between cursor-pointer",
+              "rounded-3xl border-2 p-6 transition shadow-2xs flex flex-col justify-between cursor-pointer",
               selectedQuarter === "Q1"
-                ? "border-emerald-300 bg-white ring-2 ring-emerald-100"
+                ? "border-rose-300 bg-gradient-to-r from-rose-50/70 via-pink-50/40 to-rose-50/20 ring-2 ring-rose-100"
                 : "border-slate-200 bg-white/80 hover:border-slate-300",
             )}
           >
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-2 ring-emerald-300">
-                    <div className="size-3 rounded-full bg-emerald-600" />
+                  <div className="flex size-10 items-center justify-center rounded-full bg-rose-100 text-[#e2263c] border border-rose-200 ring-4 ring-rose-50">
+                    <div className="size-3.5 rounded-full bg-[#e2263c]" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-slate-900">
                       Revisão 1 (Trimestral)
                     </h3>
-                    <span className="text-xs text-slate-500 font-medium">1º Trimestre do Ciclo</span>
+                    <span className="text-xs text-slate-500 font-medium">Mar/2027</span>
                   </div>
                 </div>
 
-                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+                <span className="rounded-full bg-sky-50 px-3 py-0.5 text-xs font-semibold text-sky-700 border border-sky-200">
                   {isCompleted ? "Concluída" : "Em andamento"}
                 </span>
               </div>
@@ -220,13 +221,14 @@ export function ReviewCycleView({
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100">
+            <div className="mt-4 pt-3 border-t border-rose-100/70">
               <button
                 type="button"
-                className="w-full rounded-xl bg-emerald-600 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-emerald-700 transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                style={{ borderRadius: "9999px" }}
+                className="w-full bg-[#e2263c] hover:bg-[#cf1730] py-2.5 text-xs sm:text-sm font-semibold text-white transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
               >
                 Continuar revisão
-                <ChevronRight className="size-4" />
+                <ArrowRight className="size-4" />
               </button>
             </div>
           </div>
@@ -235,43 +237,44 @@ export function ReviewCycleView({
           <div
             onClick={() => setSelectedQuarter("Q2")}
             className={cn(
-              "rounded-2xl border p-5 transition shadow-2xs flex flex-col justify-between cursor-pointer",
+              "rounded-3xl border p-6 transition shadow-2xs flex flex-col justify-between cursor-pointer",
               selectedQuarter === "Q2"
-                ? "border-emerald-300 bg-white ring-2 ring-emerald-100"
-                : "border-slate-200 bg-white/80 hover:border-slate-300",
+                ? "border-rose-300 bg-white ring-2 ring-rose-100"
+                : "border-slate-200 bg-white/90 hover:border-slate-300",
             )}
           >
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-slate-100 text-slate-400 border border-slate-200">
-                    <div className="size-3 rounded-full bg-slate-400" />
+                  <div className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 border border-slate-200">
+                    <div className="size-3.5 rounded-full bg-slate-400" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base text-slate-900">
                       Revisão 2 (Semestral)
                     </h3>
-                    <span className="text-xs text-slate-500 font-medium">2º Trimestre / Encerramento</span>
+                    <span className="text-xs text-slate-500 font-medium">Jun/2027</span>
                   </div>
                 </div>
 
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 border border-slate-200">
+                <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs font-semibold text-slate-600 border border-slate-200">
                   Não iniciada
                 </span>
               </div>
 
               <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Revisão de encerramento do ciclo. Avaliação consolidada e aprendizados estratégicos.
+                Revisão de encerramento do ciclo. Avaliação completa e resultados consolidados.
               </p>
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-100">
               <button
                 type="button"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                style={{ borderRadius: "9999px" }}
+                className="w-full border border-slate-300 bg-white hover:bg-slate-50 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 Iniciar revisão
-                <ChevronRight className="size-3.5" />
+                <ArrowRight className="size-3.5" />
               </button>
             </div>
           </div>
@@ -286,11 +289,11 @@ export function ReviewCycleView({
           <div className="border-b border-slate-100 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <div className="size-3 rounded-full border-2 border-emerald-500 bg-emerald-100" />
+                <div className="size-3.5 rounded-full border-2 border-[#e2263c] bg-rose-100" />
                 <h3 className="font-display text-base font-bold text-slate-900">
-                  {selectedQuarter === "Q1" ? "Revisão 1 (Trimestral)" : "Revisão 2 (Semestral)"}
+                  {selectedQuarter === "Q1" ? "Revisão 1 (Trimestral) · Mar/2027" : "Revisão 2 (Semestral) · Jun/2027"}
                 </h3>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-[10px] font-semibold text-sky-700 border border-sky-200">
                   Em andamento
                 </span>
               </div>
@@ -301,14 +304,14 @@ export function ReviewCycleView({
 
             <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
               <Clock className="size-3.5 text-slate-400" />
-              <span>Preenchimento rápido ~5 minutos</span>
+              <span>Preenchimento rápido ~ 5 minutos</span>
             </div>
           </div>
 
           {/* 1. O diagnóstico anterior continua válido? */}
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-600">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-50 text-sm font-bold text-[#e2263c] border border-rose-100">
                 1
               </span>
               <div>
@@ -347,7 +350,7 @@ export function ReviewCycleView({
                   className={cn(
                     "flex flex-col rounded-2xl border p-4 text-left transition shadow-2xs cursor-pointer",
                     diagnosticValid === opt.id
-                      ? "border-emerald-300 bg-emerald-50/30 ring-1 ring-emerald-200 text-slate-900"
+                      ? "border-2 border-rose-300 bg-[#fef2f3] ring-2 ring-rose-100 text-slate-900"
                       : "border-slate-200 bg-white hover:border-slate-300 text-slate-600",
                   )}
                 >
@@ -356,7 +359,7 @@ export function ReviewCycleView({
                       className={cn(
                         "size-4 rounded-full border flex items-center justify-center transition",
                         diagnosticValid === opt.id
-                          ? "border-emerald-600 bg-emerald-600"
+                          ? "border-[#e2263c] bg-[#e2263c]"
                           : "border-slate-300",
                       )}
                     >
@@ -377,7 +380,7 @@ export function ReviewCycleView({
           {/* 2. O que mudou desde o último diagnóstico? */}
           <div className="space-y-2">
             <div className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-600">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-50 text-sm font-bold text-[#e2263c] border border-rose-100">
                 2
               </span>
               <div>
@@ -396,9 +399,9 @@ export function ReviewCycleView({
                 disabled={!canEdit}
                 maxLength={500}
                 onChange={(e) => setMarketChanges(e.target.value)}
-                placeholder="Registre aqui as mudanças ocorridas..."
+                placeholder="Ex.: A conversão melhorou nas últimas semanas, mas o volume de leads está abaixo do esperado."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
               />
               <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {marketChanges.length}/500
@@ -409,7 +412,7 @@ export function ReviewCycleView({
           {/* 3. Algum problema novo apareceu? */}
           <div className="space-y-2">
             <div className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-600">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-50 text-sm font-bold text-[#e2263c] border border-rose-100">
                 3
               </span>
               <div>
@@ -430,7 +433,7 @@ export function ReviewCycleView({
                 onChange={(e) => setNewProblems(e.target.value)}
                 placeholder="Registre novos problemas identificados..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
               />
               <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {newProblems.length}/500
@@ -441,7 +444,7 @@ export function ReviewCycleView({
           {/* 4. Alguma oportunidade foi perdida ou precisa ser acelerada? */}
           <div className="space-y-2">
             <div className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-600">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-50 text-sm font-bold text-[#e2263c] border border-rose-100">
                 4
               </span>
               <div>
@@ -462,7 +465,7 @@ export function ReviewCycleView({
                 onChange={(e) => setMissedOpportunities(e.target.value)}
                 placeholder="Registre oportunidades a acelerar..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
               />
               <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {missedOpportunities.length}/500
@@ -473,7 +476,7 @@ export function ReviewCycleView({
           {/* 5. As premissas do objetivo ainda se sustentam? */}
           <div className="space-y-2">
             <div className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-600">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-50 text-sm font-bold text-[#e2263c] border border-rose-100">
                 5
               </span>
               <div>
@@ -494,7 +497,7 @@ export function ReviewCycleView({
                 onChange={(e) => setObjectiveAssumptions(e.target.value)}
                 placeholder="Avalie a sustentabilidade do objetivo..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
               />
               <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {objectiveAssumptions.length}/500
@@ -505,7 +508,7 @@ export function ReviewCycleView({
           {/* 6. Alguma meta precisa ser revisada? */}
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-600">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-50 text-sm font-bold text-[#e2263c] border border-rose-100">
                 6
               </span>
               <div>
@@ -531,7 +534,7 @@ export function ReviewCycleView({
                   className={cn(
                     "flex items-center gap-2.5 rounded-2xl border px-5 py-3 text-sm font-semibold transition shadow-2xs cursor-pointer",
                     needsGoalRevision === opt.id
-                      ? "border-emerald-300 bg-emerald-50/40 text-emerald-900 ring-1 ring-emerald-200"
+                      ? "border-2 border-rose-300 bg-[#fef2f3] text-slate-900 ring-1 ring-rose-200"
                       : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
                   )}
                 >
@@ -539,7 +542,7 @@ export function ReviewCycleView({
                     className={cn(
                       "size-4 rounded-full border flex items-center justify-center transition",
                       needsGoalRevision === opt.id
-                        ? "border-emerald-600 bg-emerald-600"
+                        ? "border-[#e2263c] bg-[#e2263c]"
                         : "border-slate-300",
                     )}
                   >
@@ -556,7 +559,7 @@ export function ReviewCycleView({
           {/* 7. Qual é o foco prioritário para o próximo trimestre? */}
           <div className="space-y-2">
             <div className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-600">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-50 text-sm font-bold text-[#e2263c] border border-rose-100">
                 7
               </span>
               <div>
@@ -577,7 +580,7 @@ export function ReviewCycleView({
                 onChange={(e) => setNextQuarterFocus(e.target.value)}
                 placeholder="Ex.: Priorizar lançamento da extensão de pós-graduação e otimizar funil de conversão orgânica..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
               />
               <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
                 {nextQuarterFocus.length}/500
@@ -596,18 +599,19 @@ export function ReviewCycleView({
               disabled={!canEdit}
               onChange={(e) => setDecisionTaken(e.target.value)}
               placeholder="Ex.: Manter meta principal e acelerar investimento em tráfego direto para Internato."
-              className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition shadow-2xs"
+              className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition shadow-2xs"
             />
           </div>
 
-          {/* Botões de Ação */}
+          {/* Botões de Ação em Pílula */}
           {canEdit && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-6">
               <button
                 type="button"
                 onClick={() => handleSave("in_progress")}
                 disabled={isPending}
-                className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+                style={{ borderRadius: "9999px" }}
+                className="border border-slate-200 bg-white px-6 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
               >
                 Salvar como rascunho
               </button>
@@ -616,7 +620,8 @@ export function ReviewCycleView({
                 type="button"
                 onClick={() => handleSave("completed")}
                 disabled={isPending}
-                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-2xs cursor-pointer"
+                style={{ borderRadius: "9999px" }}
+                className="inline-flex items-center gap-2 bg-[#e2263c] hover:bg-[#cf1730] px-7 py-2.5 text-xs font-bold text-white transition shadow-xs cursor-pointer"
               >
                 {isPending ? (
                   <>
@@ -631,7 +636,8 @@ export function ReviewCycleView({
                 ) : (
                   <>
                     <CheckCircle2 className="size-3.5" />
-                    Concluir e Salvar Revisão
+                    Concluir revisão
+                    <ArrowRight className="size-4" />
                   </>
                 )}
               </button>
@@ -639,77 +645,89 @@ export function ReviewCycleView({
           )}
         </div>
 
-        {/* LADO DIREITO: Painel de Apoio e Status */}
+        {/* LADO DIREITO: Painel de Apoio e Status Fiel à Referência */}
         <div className="space-y-5">
           {/* Status do Ciclo */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
-            <h4 className="font-display text-sm font-bold text-slate-900">
-              Status do Ciclo
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-2xs space-y-3">
+            <h4 className="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
+              <BarChart2 className="size-4 text-[#e2263c]" />
+              Status do ciclo
             </h4>
-            <div className="space-y-2">
-              {[
-                {
-                  id: "on_track",
-                  label: "Dentro do planejado",
-                  color: "emerald",
-                  desc: "Metas e ações caminhando conforme previsto.",
-                },
-                {
-                  id: "attention",
-                  label: "Atenção necessária",
-                  color: "amber",
-                  desc: "Pequenos desvios exigem monitoramento ativo.",
-                },
-                {
-                  id: "at_risk",
-                  label: "Em risco",
-                  color: "rose",
-                  desc: "Desvios relevantes exigem intervenção imediata.",
-                },
-              ].map((st) => (
-                <button
-                  key={st.id}
-                  type="button"
-                  onClick={() => setCycleStatus(st.id as any)}
-                  className={cn(
-                    "w-full rounded-2xl border p-3.5 text-left transition shadow-2xs cursor-pointer",
-                    cycleStatus === st.id
-                      ? "border-emerald-300 bg-emerald-50/30 ring-1 ring-emerald-200 text-slate-900"
-                      : "border-slate-200 bg-white hover:border-slate-300 text-slate-600",
-                  )}
-                >
-                  <p className="text-xs font-bold text-slate-900">{st.label}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{st.desc}</p>
-                </button>
-              ))}
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3.5 shadow-2xs">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-2xs">
+                <Check className="size-5 stroke-[2.5]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-emerald-950">Dentro do planejado</p>
+                <p className="text-xs text-emerald-700 mt-0.5 leading-relaxed">
+                  O ciclo segue conforme o esperado, com ajustes pontuais.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Principais mudanças desta revisão */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-2xs space-y-3">
+            <h4 className="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
+              <FileText className="size-4 text-[#e2263c]" />
+              Principais mudanças desta revisão
+            </h4>
+            <div className="space-y-2 text-xs text-slate-600 leading-relaxed pt-1">
+              <p className="flex items-start gap-2">
+                <span className="text-[#e2263c] font-bold text-[10px] mt-0.5">◆</span>
+                <span>Conversão apresentou melhora nas últimas semanas.</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-[#e2263c] font-bold text-[10px] mt-0.5">◆</span>
+                <span>Identificamos uma nova oportunidade no público R2/R3.</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-[#e2263c] font-bold text-[10px] mt-0.5">◆</span>
+                <span>Ajuste na meta de matrículas para o 2º semestre.</span>
+              </p>
             </div>
           </div>
 
           {/* Linha do Tempo das Revisões */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
             <h4 className="font-display text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="size-4 text-emerald-600" />
-              Linha do Tempo
+              <Clock className="size-4 text-[#e2263c]" />
+              Linha do tempo das revisões
             </h4>
 
-            <div className="space-y-4 relative pl-4 border-l-2 border-emerald-100 ml-2">
+            <div className="space-y-4 relative pl-5 border-l-2 border-slate-100 ml-3">
+              {/* Node 1 */}
               <div className="relative">
-                <div className="absolute -left-[23px] top-1 size-3.5 rounded-full border-2 border-emerald-500 bg-white" />
-                <span className="text-xs font-bold text-slate-900">
-                  Revisão 1 (Trimestral)
-                </span>
+                <div className="absolute -left-[27px] top-0.5 size-4 rounded-full border-2 border-[#e2263c] bg-rose-50 flex items-center justify-center">
+                  <div className="size-1.5 rounded-full bg-[#e2263c]" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-900">Revisão 1 (Trimestral)</span>
+                  <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 border border-sky-200">
+                    Em andamento
+                  </span>
+                </div>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Check-in de validação de rota intermediária.
+                  Mar/2027 · Preenchimento em andamento.
                 </p>
               </div>
 
+              {/* Node 2 */}
               <div className="relative pt-2">
-                <div className="absolute -left-[23px] top-3 size-3.5 rounded-full border-2 border-slate-300 bg-white" />
-                <span className="text-xs font-bold text-slate-700">
-                  Revisão 2 (Semestral)
-                </span>
+                <div className="absolute -left-[27px] top-2.5 size-4 rounded-full border-2 border-slate-300 bg-slate-50 flex items-center justify-center">
+                  <div className="size-1.5 rounded-full bg-slate-400" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-700">Revisão 2 (Semestral)</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600 border border-slate-200">
+                    Não iniciada
+                  </span>
+                </div>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Balanço consolidado e fechamento do ciclo.
+                  Jun/2027
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                  Revisão de encerramento do ciclo. Avaliação completa e resultados consolidados.
                 </p>
               </div>
             </div>

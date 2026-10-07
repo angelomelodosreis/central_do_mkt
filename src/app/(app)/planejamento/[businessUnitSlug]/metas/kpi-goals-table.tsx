@@ -340,16 +340,16 @@ export function KpiGoalsTable({
         </div>
       </div>
 
-      {/* ── SEÇÃO 1: OBJETIVO DO CICLO (Card 3D Pastel) ── */}
-      <div className="rounded-3xl border border-rose-100/90 bg-gradient-to-r from-rose-50/50 via-pink-50/20 to-white p-6 sm:p-7 shadow-2xs space-y-6">
+      {/* ── SEÇÃO 1: OBJETIVO DO CICLO (Card Rosa Pastel Oficial) ── */}
+      <div className="rounded-3xl border border-rose-200 bg-[#fef2f3] p-6 sm:p-7 shadow-2xs space-y-6">
         {/* Topo do Banner com Ilustração 3D */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 border border-rose-200/60 shadow-2xs">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[#e2263c] border border-rose-200/80 shadow-2xs">
               <Target className="size-6" />
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-500">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600">
                 OBJETIVO DO CICLO
               </span>
               <h2 className="mt-0.5 font-display text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
@@ -367,11 +367,11 @@ export function KpiGoalsTable({
           </div>
 
           {/* Callout Importante */}
-          <div className="flex max-w-xs shrink-0 items-start gap-3 rounded-2xl border border-rose-200/70 bg-white/90 backdrop-blur-xs p-4 shadow-2xs">
-            <Info className="size-4.5 shrink-0 text-rose-600 mt-0.5" />
+          <div className="flex max-w-xs shrink-0 items-start gap-3 rounded-2xl border border-rose-200 bg-white/95 backdrop-blur-xs p-4 shadow-2xs">
+            <Info className="size-4.5 shrink-0 text-[#e2263c] mt-0.5" />
             <div>
               <p className="text-xs font-bold text-rose-900">Importante</p>
-              <p className="mt-0.5 text-xs font-medium text-rose-800/90 leading-relaxed">
+              <p className="mt-0.5 text-xs font-medium text-rose-800 leading-relaxed">
                 O objetivo é a direção estratégica da BU. Ele deve ser amplo e inspiracional, sem entrar em detalhes de produtos, campanhas ou KPIs.
               </p>
             </div>
@@ -381,7 +381,7 @@ export function KpiGoalsTable({
         {/* Input de Objetivo da BU no ciclo */}
         <div>
           <label className="text-xs font-semibold text-slate-800 flex items-center gap-1 mb-1.5">
-            Objetivo da BU no ciclo <span className="text-rose-600">*</span>
+            Objetivo da BU no ciclo <span className="text-[#e2263c]">*</span>
           </label>
           <div className="relative">
             <textarea
@@ -392,7 +392,7 @@ export function KpiGoalsTable({
               placeholder="Ex.: Ser a principal referência nacional em educação médica para Ginecologia e Obstetrícia."
               rows={3}
               className={cn(
-                "w-full rounded-2xl border border-slate-200 bg-white p-4 pb-7 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100 transition resize-none shadow-2xs",
+                "w-full rounded-2xl border border-rose-200 bg-white p-4 pb-7 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition resize-none shadow-2xs",
                 !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
               )}
             />
@@ -403,9 +403,9 @@ export function KpiGoalsTable({
         </div>
 
         {/* Chips de Exemplos Clicáveis com Ícones Dedicados */}
-        <div className="rounded-2xl border border-rose-100 bg-rose-50/30 p-4">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-rose-600 mb-3">
-            <Lightbulb className="size-4" />
+        <div className="rounded-2xl border border-rose-200/80 bg-rose-100/50 p-4">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 mb-3">
+            <Lightbulb className="size-4 text-[#e2263c]" />
             <span>Exemplos de objetivo da BU:</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -417,9 +417,9 @@ export function KpiGoalsTable({
                   type="button"
                   disabled={!canEdit}
                   onClick={() => handleApplyExample(example.text)}
-                  className="rounded-2xl border border-rose-100 bg-white p-3.5 text-left text-xs font-medium text-slate-700 hover:border-rose-300 hover:bg-rose-50/50 hover:text-slate-900 transition shadow-2xs flex flex-col justify-between gap-2.5 cursor-pointer group"
+                  className="rounded-2xl border border-rose-200/70 bg-white p-3.5 text-left text-xs font-medium text-slate-700 hover:border-rose-300 hover:bg-rose-50/50 hover:text-slate-900 transition shadow-2xs flex flex-col justify-between gap-2.5 cursor-pointer group"
                 >
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-100 transition">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-[#e2263c] group-hover:bg-rose-100 transition">
                     <Icon className="size-4" />
                   </div>
                   <span className="leading-snug text-[11px] text-slate-700 group-hover:text-slate-900">
@@ -432,20 +432,20 @@ export function KpiGoalsTable({
         </div>
       </div>
 
-      {/* ── SEÇÃO 2: METAS DO CICLO (Card 3D Pastel) ── */}
-      <div className="rounded-3xl border border-violet-100/90 bg-gradient-to-r from-violet-50/50 via-purple-50/20 to-white p-6 sm:p-7 shadow-2xs space-y-6">
+      {/* ── SEÇÃO 2: METAS DO CICLO (Card Roxo Pastel Oficial) ── */}
+      <div className="rounded-3xl border border-purple-200 bg-[#faf5ff] p-6 sm:p-7 shadow-2xs space-y-6">
         {/* Topo do Banner com Ilustração 3D */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600 border border-violet-200/60 shadow-2xs">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-600 border border-purple-200/80 shadow-2xs">
               <BarChart2 className="size-6" />
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-violet-500">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-purple-600">
                 METAS DO CICLO
               </span>
               <h2 className="mt-0.5 font-display text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                Como vamos <span className="text-violet-600">chegar lá?</span>
+                Como vamos <span className="text-purple-600">chegar lá?</span>
               </h2>
               <p className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
                 Desdobre o objetivo em 3 a 5 metas principais, com KPIs claros e mensuráveis. Utilize como embasamento os achados do diagnóstico.
@@ -459,11 +459,11 @@ export function KpiGoalsTable({
           </div>
 
           {/* Callout KPI secundário */}
-          <div className="flex max-w-xs shrink-0 items-start gap-3 rounded-2xl border border-violet-200/70 bg-white/90 backdrop-blur-xs p-4 shadow-2xs">
-            <Info className="size-4.5 shrink-0 text-violet-600 mt-0.5" />
+          <div className="flex max-w-xs shrink-0 items-start gap-3 rounded-2xl border border-purple-200 bg-white/95 backdrop-blur-xs p-4 shadow-2xs">
+            <Info className="size-4.5 shrink-0 text-purple-600 mt-0.5" />
             <div>
-              <p className="text-xs font-bold text-violet-900">KPI secundário</p>
-              <p className="mt-0.5 text-xs font-medium text-violet-800/90 leading-relaxed">
+              <p className="text-xs font-bold text-purple-900">KPI secundário</p>
+              <p className="mt-0.5 text-xs font-medium text-purple-800 leading-relaxed">
                 Você pode adicionar um ou mais KPIs secundários, separados por vírgula.
               </p>
             </div>
@@ -471,11 +471,11 @@ export function KpiGoalsTable({
         </div>
 
         {/* Tabela de Metas 2.0 Fiel à Referência */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
+        <div className="overflow-hidden rounded-2xl border border-purple-200/80 bg-white shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-purple-200 bg-purple-50/70 text-[11px] font-bold uppercase tracking-wider text-purple-900">
                   <th scope="col" className="px-3 py-3.5 w-12 text-center">
                     #
                   </th>
@@ -766,7 +766,8 @@ export function KpiGoalsTable({
             <button
               type="button"
               onClick={addGoalRow}
-              className="inline-flex items-center gap-1.5 rounded-full border border-purple-300 bg-white px-5 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 hover:border-purple-400 transition shadow-2xs cursor-pointer"
+              style={{ borderRadius: "9999px" }}
+              className="inline-flex items-center gap-1.5 border border-purple-300 bg-white px-5 py-2.5 text-xs font-semibold text-purple-700 hover:bg-purple-50 hover:border-purple-400 transition shadow-2xs cursor-pointer"
             >
               <Plus className="size-4" />
               Adicionar meta
@@ -776,10 +777,11 @@ export function KpiGoalsTable({
       </div>
 
       {/* ── Barra de Ações e Salvar Metas ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-2xs">
         <Link
           href={diagnosticoHref}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
+          style={{ borderRadius: "9999px" }}
+          className="inline-flex items-center gap-1.5 border border-slate-200 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
         >
           <ArrowLeft className="size-3.5 text-slate-500" />
           Voltar para Diagnóstico da BU
@@ -793,7 +795,7 @@ export function KpiGoalsTable({
           )}
 
           {!hasChanges && !statusMessage && canEdit && (
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               Todas as metas salvas no ciclo.
             </span>
           )}
@@ -803,11 +805,12 @@ export function KpiGoalsTable({
               type="button"
               onClick={handleSave}
               disabled={isPending || (!hasChanges && !statusMessage)}
+              style={{ borderRadius: "9999px" }}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-semibold shadow-2xs transition cursor-pointer",
+                "inline-flex items-center gap-2 px-6 py-2.5 text-xs font-bold shadow-xs transition cursor-pointer border",
                 hasChanges
-                  ? "bg-rose-600 text-white hover:bg-rose-700"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                  ? "bg-[#e2263c] text-white border-[#e2263c] hover:bg-[#cf1730]"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
                 isPending && "opacity-60 cursor-not-allowed",
               )}
             >
@@ -823,7 +826,7 @@ export function KpiGoalsTable({
                 </>
               ) : (
                 <>
-                  <Save className="size-3.5" />
+                  <Save className="size-3.5 text-slate-500" />
                   Salvar Objetivo e Metas
                 </>
               )}

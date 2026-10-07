@@ -264,9 +264,9 @@ export function CyclesView({
 
       {/* ── DETALHES DO CICLO SELECIONADO ── */}
       {selectedCycle && (
-        <div className="space-y-6 rounded-3xl border border-pink-100/90 bg-white p-6 md:p-8 shadow-xs">
+        <div className="space-y-6 rounded-3xl border border-slate-200/80 bg-slate-50/60 p-6 md:p-8 shadow-xs">
           {/* Header do Ciclo Ativo */}
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between border-b border-slate-100 pb-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
@@ -298,13 +298,13 @@ export function CyclesView({
             </div>
 
             {/* Box lateral de período */}
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 shrink-0">
-              <Calendar className="size-5 text-pink-600" />
+            <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/50 px-4 py-3 shrink-0">
+              <Calendar className="size-5 text-[#e2263c]" />
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
                   Período do ciclo
                 </p>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-slate-900">
                   {selectedCycle.periodLabel}
                 </p>
               </div>
@@ -317,9 +317,9 @@ export function CyclesView({
               type="button"
               onClick={() => setActiveTab("diagnostico")}
               className={cn(
-                "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs",
+                "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs cursor-pointer",
                 activeTab === "diagnostico"
-                  ? "border-pink-300 bg-pink-50/40 ring-2 ring-pink-100 text-slate-900"
+                  ? "border-rose-300 bg-[#fef2f3] ring-2 ring-rose-100 text-slate-900"
                   : "border-slate-200 bg-white hover:bg-slate-50/70 text-slate-600",
               )}
             >
@@ -327,7 +327,7 @@ export function CyclesView({
                 className={cn(
                   "flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-xl transition",
                   activeTab === "diagnostico"
-                    ? "bg-pink-100 text-pink-600"
+                    ? "bg-rose-100 text-[#e2263c]"
                     : "bg-slate-100 text-slate-400",
                 )}
               >
@@ -343,9 +343,9 @@ export function CyclesView({
               type="button"
               onClick={() => setActiveTab("metas")}
               className={cn(
-                "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs",
+                "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs cursor-pointer",
                 activeTab === "metas"
-                  ? "border-pink-300 bg-pink-50/40 ring-2 ring-pink-100 text-slate-900"
+                  ? "border-purple-300 bg-[#faf5ff] ring-2 ring-purple-100 text-slate-900"
                   : "border-slate-200 bg-white hover:bg-slate-50/70 text-slate-600",
               )}
             >
@@ -353,7 +353,7 @@ export function CyclesView({
                 className={cn(
                   "flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-xl transition",
                   activeTab === "metas"
-                    ? "bg-pink-100 text-pink-600"
+                    ? "bg-purple-100 text-purple-600"
                     : "bg-slate-100 text-slate-400",
                 )}
               >
@@ -373,9 +373,9 @@ export function CyclesView({
               type="button"
               onClick={() => setActiveTab("revisoes")}
               className={cn(
-                "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs",
+                "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs cursor-pointer",
                 activeTab === "revisoes"
-                  ? "border-pink-300 bg-pink-50/40 ring-2 ring-pink-100 text-slate-900"
+                  ? "border-rose-300 bg-[#fef2f3] ring-2 ring-rose-100 text-slate-900"
                   : "border-slate-200 bg-white hover:bg-slate-50/70 text-slate-600",
               )}
             >
@@ -383,7 +383,7 @@ export function CyclesView({
                 className={cn(
                   "flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-xl transition",
                   activeTab === "revisoes"
-                    ? "bg-pink-100 text-pink-600"
+                    ? "bg-rose-100 text-[#e2263c]"
                     : "bg-slate-100 text-slate-400",
                 )}
               >
