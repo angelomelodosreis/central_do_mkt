@@ -431,6 +431,7 @@ export function CyclesView({
                     canEdit={canEdit}
                     isOpen={activeRound.isOpen}
                     initialData={activeRound}
+                    onSelectTab={setActiveTab}
                   />
                 </>
               ) : (
@@ -461,6 +462,7 @@ export function CyclesView({
                 initialCyclePeriod={initialCyclePeriod}
                 initialGoals={kpiGoals}
                 diagnosisInsights={diagnosisInsights}
+                onSelectTab={setActiveTab}
               />
             </div>
           )}
@@ -479,6 +481,7 @@ export function CyclesView({
                 canEdit={canEdit}
                 initialReview={initialReview}
                 allReviews={reviews}
+                onSelectTab={setActiveTab}
               />
             </div>
           )}
