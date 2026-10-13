@@ -82,6 +82,21 @@ function parsePains(
     .filter((entry) => entry.pain.length > 0);
 }
 
+function parseTags(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => String(item).trim()).filter(Boolean);
+    }
+  } catch {
+    return raw
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 type PersonaInput = ReturnType<typeof readPersonaInput>;
 
 function readPersonaInput(formData: FormData) {
@@ -89,6 +104,14 @@ function readPersonaInput(formData: FormData) {
     businessUnitId: field(formData, "businessUnitId"),
     name: field(formData, "name"),
     headline: field(formData, "headline"),
+    avatar: field(formData, "avatar"),
+    quote: field(formData, "quote"),
+    targetExam: field(formData, "targetExam"),
+    attempt: field(formData, "attempt"),
+    studyRoutine: field(formData, "studyRoutine"),
+    owner: field(formData, "owner"),
+    status: field(formData, "status") || "active",
+    tags: parseTags(String(formData.get("tags") ?? "")),
     ageRange: field(formData, "ageRange"),
     gender: field(formData, "gender"),
     location: field(formData, "location"),
@@ -181,6 +204,15 @@ export async function createPersona(
     slug,
     name: input.name,
     headline: input.headline || null,
+    avatar: input.avatar || null,
+    quote: input.quote || null,
+    targetExam: input.targetExam || null,
+    attempt: input.attempt || null,
+    studyRoutine: input.studyRoutine || null,
+    owner: input.owner || null,
+    status: input.status || "active",
+    lastReviewedAt: now,
+    tags: input.tags.length > 0 ? input.tags : null,
     ageRange: input.ageRange || null,
     gender: input.gender || null,
     location: input.location || null,
@@ -275,6 +307,15 @@ export async function updatePersona(
       slug,
       name: input.name,
       headline: input.headline || null,
+      avatar: input.avatar || null,
+      quote: input.quote || null,
+      targetExam: input.targetExam || null,
+      attempt: input.attempt || null,
+      studyRoutine: input.studyRoutine || null,
+      owner: input.owner || null,
+      status: input.status || "active",
+      lastReviewedAt: new Date(),
+      tags: input.tags.length > 0 ? input.tags : null,
       ageRange: input.ageRange || null,
       gender: input.gender || null,
       location: input.location || null,

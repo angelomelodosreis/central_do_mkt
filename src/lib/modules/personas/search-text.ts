@@ -8,6 +8,12 @@ import {
 export type PersonaSearchInput = {
   name: string;
   headline?: string | null;
+  quote?: string | null;
+  targetExam?: string | null;
+  attempt?: string | null;
+  studyRoutine?: string | null;
+  owner?: string | null;
+  tags?: string[] | null;
   ageRange?: string | null;
   gender?: string | null;
   location?: string | null;
@@ -36,6 +42,12 @@ export function buildPersonaSearchText(
   const parts = [
     input.name,
     input.headline,
+    input.quote,
+    input.targetExam,
+    input.attempt,
+    input.studyRoutine,
+    input.owner,
+    ...(input.tags ?? []),
     input.ageRange,
     input.gender,
     input.location,

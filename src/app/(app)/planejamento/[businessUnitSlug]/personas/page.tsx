@@ -10,6 +10,7 @@ import {
   EmptyState,
   PageHeader,
 } from "@/components/ui/card";
+import { PersonaAvatar } from "@/components/personas/persona-avatar-picker";
 import { listPersonasOfBusinessUnit } from "@/lib/modules/personas/queries";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 
@@ -97,33 +98,72 @@ export default async function BusinessUnitPersonasPage({
                   <li key={item.id}>
                     <Link
                       href={`${base}/${item.slug}`}
-                      className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3.5 transition-colors hover:bg-slate-50"
+                      className="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-slate-50"
                     >
-                      <span className="min-w-0">
-                        <span className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-slate-900">
+                      <PersonaAvatar
+                        avatar={item.avatar}
+                        name={item.name}
+                        className="size-11 shrink-0 shadow-2xs"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900 text-sm sm:text-base">
                             {item.name}
                           </span>
-                          {item.isActive ? null : (
-                            <Badge tone="neutral">Inativa</Badge>
+                          {item.status === "in_review" ? (
+                            <Badge tone="warning">Em revisão</Badge>
+                          ) : item.status === "archived" || !item.isActive ? (
+                            <Badge tone="neutral">Arquivada</Badge>
+                          ) : (
+                            <Badge tone="success">Ativa</Badge>
                           )}
+                          {item.targetExam ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                              {item.targetExam}
+                            </span>
+                          ) : null}
                           {item.openPainCount > 0 ? (
                             <Badge tone="warning">
                               {item.openPainCount} sem solução
                             </Badge>
                           ) : null}
-                        </span>
+                        </div>
                         {item.headline ? (
-                          <span className="mt-0.5 block text-sm text-slate-500">
+                          <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">
                             {item.headline}
+                          </p>
+                        ) : null}
+                        {item.tags && item.tags.length > 0 ? (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {item.tags.slice(0, 4).map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-medium"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {item.tags.length > 4 ? (
+                              <span className="text-[10px] text-slate-400">
+                                +{item.tags.length - 4}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <span className="block text-xs font-medium text-slate-700">
+                          {item.painCount === 1
+                            ? "1 dor mapeada"
+                            : `${item.painCount} dores`}
+                        </span>
+                        {item.owner ? (
+                          <span className="block text-[11px] text-slate-400 mt-0.5">
+                            {item.owner}
                           </span>
                         ) : null}
-                      </span>
-                      <span className="shrink-0 text-xs text-slate-500">
-                        {item.painCount === 1
-                          ? "1 dor mapeada"
-                          : `${item.painCount} dores mapeadas`}
-                      </span>
+                      </div>
                     </Link>
                   </li>
                 ))}

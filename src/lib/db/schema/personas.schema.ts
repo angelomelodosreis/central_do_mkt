@@ -33,6 +33,26 @@ export const persona = sqliteTable(
     /** Uma frase que resume quem é. Aparece na listagem. */
     headline: text("headline"),
 
+    // Novos campos do protótipo compacto --------------------------------------
+    /** Identificador do avatar nativo ('preset:1'..'preset:8') ou data-URL/URL da foto subida. */
+    avatar: text("avatar"),
+    /** "Uma frase dela" — insumo direto de copy e identidade. */
+    quote: text("quote"),
+    /** Prova-alvo selecionada (ENAMED, ENARE, Revalida, Títulos de Especialista MedCof). */
+    targetExam: text("target_exam"),
+    /** Tentativa: 'Primeira' | 'Retentativa' | 'Não se aplica' */
+    attempt: text("attempt"),
+    /** Rotina de estudo: 'Internato / faculdade', 'Plantonista', etc. */
+    studyRoutine: text("study_routine"),
+    /** Responsável pela persona (governança). */
+    owner: text("owner"),
+    /** Status de governança: 'active' | 'in_review' | 'archived'. */
+    status: text("status").default("active"),
+    /** Data da última revisão estratégica da persona. */
+    lastReviewedAt: integer("last_reviewed_at", { mode: "timestamp" }),
+    /** Tags livres da persona para busca e segmentação rápida. */
+    tags: text("tags", { mode: "json" }).$type<string[]>(),
+
     // Perfil demográfico ------------------------------------------------------
     ageRange: text("age_range"),
     gender: text("gender"),

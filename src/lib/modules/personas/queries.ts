@@ -12,7 +12,17 @@ import { sortByName } from "@/lib/utils/text";
 
 export type PersonaListItem = Pick<
   Persona,
-  "id" | "slug" | "name" | "headline" | "isActive" | "updatedAt"
+  | "id"
+  | "slug"
+  | "name"
+  | "headline"
+  | "isActive"
+  | "updatedAt"
+  | "avatar"
+  | "targetExam"
+  | "owner"
+  | "status"
+  | "tags"
 > & {
   businessUnitId: string;
   painCount: number;
@@ -52,6 +62,11 @@ export async function listPersonasByBusinessUnit(): Promise<
       isActive: persona.isActive,
       updatedAt: persona.updatedAt,
       businessUnitId: persona.businessUnitId,
+      avatar: persona.avatar,
+      targetExam: persona.targetExam,
+      owner: persona.owner,
+      status: persona.status,
+      tags: persona.tags,
     })
     .from(persona)
     .orderBy(asc(persona.name));
@@ -93,6 +108,11 @@ export async function listPersonasOfBusinessUnit(
       isActive: persona.isActive,
       updatedAt: persona.updatedAt,
       businessUnitId: persona.businessUnitId,
+      avatar: persona.avatar,
+      targetExam: persona.targetExam,
+      owner: persona.owner,
+      status: persona.status,
+      tags: persona.tags,
     })
     .from(persona)
     .where(eq(persona.businessUnitId, businessUnitId))

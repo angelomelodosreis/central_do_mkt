@@ -6,6 +6,7 @@ import { RichTextContent } from "@/components/rich-text/renderer";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, EmptyState } from "@/components/ui/card";
+import { PersonaAvatar } from "@/components/personas/persona-avatar-picker";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
 import {
   isRichDocEmpty,
@@ -57,28 +58,64 @@ export default async function PersonaDetailPage({
       </nav>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            {found.name}
-          </h1>
-          {found.headline ? (
-            <p className="mt-1 max-w-2xl text-sm text-slate-500">
-              {found.headline}
-            </p>
-          ) : null}
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {found.isActive ? null : <Badge tone="neutral">Inativa</Badge>}
-            {openPains.length > 0 ? (
-              <Badge tone="warning">
-                {openPains.length}{" "}
-                {openPains.length === 1
-                  ? "dor sem solução"
-                  : "dores sem solução"}
-              </Badge>
+        <div className="flex items-start gap-4 min-w-0">
+          <PersonaAvatar
+            avatar={found.avatar}
+            name={found.name}
+            className="size-16 sm:size-20 shrink-0 shadow-xs border-2 border-slate-200"
+          />
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+              {found.name}
+            </h1>
+            {found.headline ? (
+              <p className="mt-1 max-w-2xl text-sm text-slate-500">
+                {found.headline}
+              </p>
             ) : null}
-            <span className="text-xs text-slate-500">
-              Atualizada em {formatDateTime(found.updatedAt)}
-            </span>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {found.status === "in_review" ? (
+                <Badge tone="warning">Em revisão</Badge>
+              ) : found.status === "archived" || !found.isActive ? (
+                <Badge tone="neutral">Arquivada</Badge>
+              ) : (
+                <Badge tone="success">Ativa</Badge>
+              )}
+              {found.targetExam ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                  {found.targetExam}
+                </span>
+              ) : null}
+              {openPains.length > 0 ? (
+                <Badge tone="warning">
+                  {openPains.length}{" "}
+                  {openPains.length === 1
+                    ? "dor sem solução"
+                    : "dores sem solução"}
+                </Badge>
+              ) : null}
+              {found.owner ? (
+                <span className="text-xs text-slate-500">
+                  Responsável: <strong>{found.owner}</strong>
+                </span>
+              ) : null}
+              <span className="text-xs text-slate-400">
+                · Atualizada em {formatDateTime(found.updatedAt)}
+              </span>
+            </div>
+
+            {found.tags && found.tags.length > 0 ? (
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {found.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200/60"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -88,6 +125,17 @@ export default async function PersonaDetailPage({
           </ButtonLink>
         ) : null}
       </div>
+
+      {found.quote ? (
+        <div className="mb-6 rounded-xl border border-rose-100 bg-rose-50/40 p-4 sm:p-5">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#e2263c]">
+            Uma frase dela
+          </span>
+          <p className="mt-1 text-base sm:text-lg font-medium text-slate-800 italic">
+            “{found.quote}”
+          </p>
+        </div>
+      ) : null}
 
       <div className="space-y-4">
         <div className="grid gap-6 sm:grid-cols-2">
@@ -107,13 +155,16 @@ export default async function PersonaDetailPage({
           </Card>
 
           <Card>
-            <CardHeader title="Carreira" />
+            <CardHeader title="Carreira e Jornada" />
             <CardBody className="px-0 py-0">
               <DataList
                 items={[
+                  ["Prova-alvo", found.targetExam],
                   ["Momento de carreira", found.careerStage],
-                  ["Cargo ou ocupação", found.currentRole],
+                  ["Tentativa", found.attempt],
+                  ["Rotina de estudo", found.studyRoutine],
                   ["Onde trabalha", found.workplace],
+                  ["Cargo ou ocupação", found.currentRole],
                   ["Objetivo profissional", found.careerGoal],
                 ]}
               />
