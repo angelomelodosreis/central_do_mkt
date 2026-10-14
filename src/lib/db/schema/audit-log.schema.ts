@@ -81,6 +81,7 @@ export const AUDIT_ACTIONS = [
   // Personas
   "persona.create",
   "persona.update", // reversível
+  "persona.delete",
   // Planejamento estratégico
   "strategy_cycle.create",
   "strategy_product.create",

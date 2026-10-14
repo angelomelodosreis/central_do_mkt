@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { PersonaForm } from "../../persona-form";
 import { TogglePersonaButton } from "./toggle-persona-button";
+import { DeletePersonaButton } from "./delete-persona-button";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/card";
 import { getPersonaBySlug } from "@/lib/modules/personas/queries";
 import { requireStrategyBusinessUnit } from "@/lib/modules/strategy/access";
@@ -83,14 +84,14 @@ export default async function EditPersonaPage({ params }: { params: Params }) {
         }}
       />
 
-      <div className="mt-8">
-        <Card className={found.isActive ? "border-danger-200" : undefined}>
+      <div className="mt-8 space-y-4">
+        <Card className={found.isActive ? "border-amber-200" : undefined}>
           <CardHeader
             title={found.isActive ? "Desativar persona" : "Reativar persona"}
             description={
               found.isActive
-                ? "Ela sai das listagens, mas continua existindo — campanhas antigas que a citam seguem fazendo sentido."
-                : "Ela volta a aparecer nas listagens."
+                ? "Ela sai das listagens ativas, mas continua existindo como referência de campanhas."
+                : "Ela volta a aparecer na lista de personas ativas."
             }
           />
           <CardBody>
@@ -98,6 +99,19 @@ export default async function EditPersonaPage({ params }: { params: Params }) {
               personaId={found.id}
               personaName={found.name}
               isActive={found.isActive}
+            />
+          </CardBody>
+        </Card>
+
+        <Card className="border-red-200">
+          <CardHeader
+            title="Excluir persona definitivamente"
+            description="Remove esta persona e todas as suas dores do banco. Use para limpar testes e cadastros feitos por engano."
+          />
+          <CardBody>
+            <DeletePersonaButton
+              personaId={found.id}
+              personaName={found.name}
             />
           </CardBody>
         </Card>

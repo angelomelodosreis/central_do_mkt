@@ -412,3 +412,64 @@ export async function togglePersona(formData: FormData): Promise<void> {
 
   revalidatePersonaViews();
 }
+
+/**
+ * Exclui definitivamente uma persona e suas dores associadas.
+ * Permite limpar testes e cadastros feitos por engano.
+ */
+export async function deletePersona(formData: FormData): Promise<void> {
+  const currentUser = await requirePermission("personas", "edit");
+
+  const personaId = field(formData, "personaId");
+  if (!personaId) return;
+
+  const db = await getDb();
+  const existing = await db
+    .select({
+      id: persona.id,
+      name: persona.name,
+      slug: persona.slug,
+      businessUnitId: persona.businessUnitId,
+    })
+    .from(persona)
+    .where(eq(persona.id, personaId))
+    .get();
+
+  if (!existing) return;
+  if (!(await podeEditarBu(currentUser, existing.businessUnitId))) return;
+
+  const unit = await db
+    .select({ slug: businessUnit.slug, label: businessUnit.label })
+    .from(businessUnit)
+    .where(eq(businessUnit.id, existing.businessUnitId))
+    .get();
+
+  // Remove dores filhas primeiro (cascade de integridade)
+  await db.delete(personaPain).where(eq(personaPain.personaId, personaId));
+
+  // Remove a persona
+  await db.delete(persona).where(eq(persona.id, personaId));
+
+  await writeAuditLog({
+    actorUserId: currentUser.id,
+    actorEmail: currentUser.email,
+    action: "persona.delete",
+    entityType: "persona",
+    entityId: personaId,
+    summary: `Excluiu a persona "${existing.name}" em ${unit?.label ?? "BU"}`,
+    beforeData: {
+      id: existing.id,
+      name: existing.name,
+      slug: existing.slug,
+      businessUnitId: existing.businessUnitId,
+    },
+  });
+
+  if (unit?.slug) {
+    revalidatePersonaViews(unit.slug);
+    redirect(`/planejamento/${unit.slug}/personas`);
+  } else {
+    revalidatePersonaViews();
+    redirect("/planejamento");
+  }
+}
