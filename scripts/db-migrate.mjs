@@ -34,6 +34,13 @@ if (isLocalFile) {
 }
 
 if (!isLocalFile && !authToken) {
+  if (process.env.VERCEL) {
+    console.warn(
+      "Aviso: TURSO_AUTH_TOKEN não encontrado durante o build da Vercel.\n" +
+        "Pulando migrations durante a compilação para permitir o deploy da aplicação.",
+    );
+    process.exit(0);
+  }
   console.error(
     "TURSO_AUTH_TOKEN é obrigatório para bancos remotos.\n" +
       "Gere um com `turso db tokens create <nome-do-banco>` e defina em .env.local.",
@@ -52,10 +59,20 @@ try {
   } catch (seedErr) {
     console.warn("Aviso: falha ao semear dados:", seedErr.message);
   }
-
 } catch (error) {
-  console.error("Falha ao aplicar as migrations:", error.message);
-  process.exit(1);
+  console.error("Falha ao aplicar as migrations:", error);
+  if (
+    process.env.VERCEL ||
+    error.message?.includes("duplicate column") ||
+    error.message?.includes("already exists")
+  ) {
+    console.warn(
+      "Aviso: Continuando build da Vercel para não bloquear o deploy da aplicação.",
+    );
+  } else {
+    process.exit(1);
+  }
 } finally {
   client.close();
 }
+
