@@ -43,7 +43,9 @@ jobs:
         continue-on-error: true
 
       - name: Build
-        run: npm run build
+        run: |
+          mkdir -p .data
+          npm run build
         env:
           # O build não acessa o banco, mas o cliente é montado na importação e
           # exige a variável. Um arquivo local vazio serve — nada é lido dele.

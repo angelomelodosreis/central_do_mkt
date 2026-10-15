@@ -14,6 +14,8 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { config as loadEnv } from "dotenv";
+import fs from "node:fs";
+import path from "node:path";
 import { seedPlanningAllBus } from "./seed-planning-all-bus.mjs";
 import { seedPlanningReviewFeed } from "./seed-planning-review-feed.mjs";
 
@@ -22,6 +24,14 @@ loadEnv({ path: ".env.local", quiet: true });
 const url = process.env.TURSO_DATABASE_URL ?? "file:./.data/local.db";
 const authToken = process.env.TURSO_AUTH_TOKEN;
 const isLocalFile = url.startsWith("file:");
+
+if (isLocalFile) {
+  const filePath = url.replace(/^file:/, "");
+  const dir = path.dirname(filePath);
+  if (dir && !fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
 
 if (!isLocalFile && !authToken) {
   console.error(
