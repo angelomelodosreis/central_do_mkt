@@ -863,7 +863,6 @@ export function calculateComparativeAnalysis(
     const isLatestMonth = availableMonths.length > 0 && availableMonths[0].key === currentKey;
     const todayStr = new Date().toISOString().slice(0, 10);
     const isCurrentCalendarMonth = todayStr.startsWith(currentKey);
-
     if ((isLatestMonth || isCurrentCalendarMonth) && maxDayWithSales < currentDaysCount) {
       isCurrentPeriodInProgress = true;
       daysElapsed = Math.max(1, maxDayWithSales);

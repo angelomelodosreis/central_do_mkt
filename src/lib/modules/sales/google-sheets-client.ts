@@ -378,33 +378,20 @@ async function executeFetchGoogleSheetsSalesData(
     // continua para fallback
   }
 
-  // 3. Fallback com seed auditado de 51.600+ vendas cobrindo todas as 23 BUs da MedCof
-  const seedFallback = loadSeedTransactions();
-  if (seedFallback.length >= 20000) {
-    const result: FetchSalesResult = {
-      success: true,
-      transactions: seedFallback,
-      sourceType: "google_sheets_live",
-    };
-    memoryCachedSales = { timestamp: now, data: result };
-    return result;
-  }
-
-  // 3. Fallback para URL CSV padrão de uma única aba caso o paralelo falhe
+  // 3. Busca a planilha ao vivo consolidada (DEFAULT_LIVE_CSV_URL) que contém as vendas recentes em tempo real
+  let liveTxs: SaleTransaction[] = [];
   const envUrl = process.env.GOOGLE_SHEETS_SALES_CSV_URL;
   const urls = [
     envUrl,
     DEFAULT_LIVE_CSV_URL,
-    `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`,
-    `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`,
-    `https://docs.google.com/spreadsheets/d/${sheetId}/pub?gid=${gid}&single=true&output=csv`,
     `https://docs.google.com/spreadsheets/d/${sheetId}/pub?output=csv`,
+    `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`,
   ].filter((u): u is string => Boolean(u && u.trim()));
 
   for (const url of urls) {
     try {
       const response = await fetch(url, {
-        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CentralDoMkt/1.0",
         },
@@ -415,18 +402,36 @@ async function executeFetchGoogleSheetsSalesData(
         if (text && !text.includes("<!DOCTYPE html") && text.includes(",")) {
           const parsed = parseCsvSalesData(text);
           if (parsed.length > 0) {
-            const result: FetchSalesResult = {
-              success: true,
-              transactions: parsed,
-              sourceType: "google_sheets_live",
-            };
-            memoryCachedSales = { timestamp: now, data: result };
-            return result;
+            liveTxs = parsed;
+            break;
           }
         }
       }
     } catch {
-      // continua
+      // continua para a próxima URL
+    }
+  }
+
+  // 4. Carrega o histórico profundo do seed (51.600+ vendas) e faz merge com as vendas ao vivo
+  const seedFallback = loadSeedTransactions();
+
+  if (liveTxs.length > 0 || seedFallback.length > 0) {
+    const txMap = new Map<string, SaleTransaction>();
+    for (const t of seedFallback) {
+      txMap.set(t.id, t);
+    }
+    for (const t of liveTxs) {
+      txMap.set(t.id, t);
+    }
+    const consolidatedList = Array.from(txMap.values());
+    if (consolidatedList.length >= 1000) {
+      const result: FetchSalesResult = {
+        success: true,
+        transactions: consolidatedList,
+        sourceType: liveTxs.length > 0 ? "google_sheets_live" : "sample_fallback",
+      };
+      memoryCachedSales = { timestamp: now, data: result };
+      return result;
     }
   }
 
