@@ -210,14 +210,25 @@ export function PageInsightsView({
             )}
           </div>
 
-          {/* Atalhos Rápidos entre LPs Principais */}
+          {/* Atalhos Rápidos entre BUs e Subdomínios Principais */}
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-[11px] font-semibold text-slate-400 mr-1">Alternar LP:</span>
+            <span className="text-[11px] font-semibold text-slate-400 mr-1">Alternar BU:</span>
             {[
               { id: "lp-grupomedcof", label: "🩺 Grupo MedCof" },
               { id: "lp-medcofderma", label: "🧴 MedCof Derma" },
               { id: "lp-medcofendocrino", label: "🧬 MedCof Endócrino" },
+              { id: "lp-app-medcof", label: "💻 App MedCof" },
+              { id: "lp-qbank-prime", label: "🎯 QBank Prime" },
+              { id: "lp-revalida", label: "🇧🇷 Revalida" },
               { id: "lp-extensivo-2025", label: "📚 Extensivo" },
+              { id: "lp-cardiologia", label: "🫀 Cardio" },
+              { id: "lp-cirurgia", label: "🔪 Cirurgia" },
+              { id: "lp-clinica-medica", label: "🩺 Clínica Médica" },
+              { id: "lp-pediatria", label: "👶 Pediatria" },
+              { id: "lp-ginecologia", label: "🤰 Ginecologia" },
+              { id: "lp-ortopedia", label: "🦴 Ortopedia" },
+              { id: "lp-oftalmologia", label: "👁️ Oftalmo" },
+              { id: "lp-concursus", label: "🏛️ Concursus" },
             ].map((shortcut) => (
               <Link
                 key={shortcut.id}
@@ -328,7 +339,23 @@ export function PageInsightsView({
               )}
             >
               <Layers className="size-3.5 text-emerald-500" />
-              Profundidade de Scroll
+              Scroll
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("heatmap");
+                setMode("clean");
+              }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition",
+                activeTab === "heatmap" && mode === "clean"
+                  ? "bg-white font-semibold text-slate-900 shadow-xs"
+                  : "hover:text-slate-900"
+              )}
+            >
+              <Eye className="size-3.5 text-slate-500" />
+              Página Limpa
             </button>
           </div>
 

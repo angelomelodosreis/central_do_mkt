@@ -13,11 +13,14 @@ import {
   ZoomOut,
   Maximize2,
   RefreshCw,
+  Eye,
+  Flame,
+  MousePointerClick,
 } from "lucide-react";
 import type { CtaHotspot, HeatmapPoint, ScrollDepthData } from "@/lib/modules/insights/queries";
 import { cn } from "@/lib/utils/cn";
 
-export type HeatmapMode = "density" | "points" | "scroll";
+export type HeatmapMode = "density" | "points" | "scroll" | "clean";
 
 interface HeatmapCanvasProps {
   viewport: "desktop" | "mobile";
@@ -52,7 +55,7 @@ export function HeatmapCanvas({
   const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [zoomScale, setZoomScale] = useState<number>(viewport === "mobile" ? 1 : 0.75);
 
-  const [radius, setRadius] = useState<number>(viewport === "mobile" ? 22 : 32);
+  const [radius, setRadius] = useState<number>(viewport === "mobile" ? 24 : 34);
   const [opacity, setOpacity] = useState<number>(0.75);
   const [activeTooltip, setActiveTooltip] = useState<{
     x: number;
@@ -62,7 +65,7 @@ export function HeatmapCanvas({
     count: number;
   } | null>(null);
 
-  // Dimensões do viewport virtual
+  // Dimensões exatas do viewport virtual da página
   const targetWidth = viewport === "mobile" ? 390 : 1200;
   const targetHeight = viewport === "mobile" ? 3200 : 2800;
 
@@ -82,7 +85,6 @@ export function HeatmapCanvas({
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    // Ajusta resolução do canvas
     canvas.width = targetWidth;
     canvas.height = targetHeight;
     ctx.clearRect(0, 0, targetWidth, targetHeight);
@@ -97,9 +99,9 @@ export function HeatmapCanvas({
   const proxyUrl = `/api/insights/preview-proxy?url=${encodeURIComponent(pageUrl)}`;
 
   return (
-    <div className="flex flex-col items-center">
-      {/* Barra de Ferramentas do Heatmap (Modo de exibição, Zoom e Calibragem) */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-2xs w-full max-w-4xl">
+    <div className="flex flex-col items-center w-full">
+      {/* Barra de Ferramentas Superior do Heatmap */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-2xs w-full max-w-5xl">
         {/* Toggle Iframe Ao Vivo vs Screenshot */}
         <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-1">
           <button
@@ -192,7 +194,7 @@ export function HeatmapCanvas({
               <span>Raio:</span>
               <input
                 type="range"
-                min="12"
+                min="14"
                 max="50"
                 value={radius}
                 onChange={(e) => setRadius(parseInt(e.target.value, 10))}
@@ -219,7 +221,7 @@ export function HeatmapCanvas({
           }}
           className="relative rounded-2xl border-4 border-slate-800 bg-slate-950 shadow-2xl overflow-hidden transition-transform duration-200 shrink-0"
         >
-          {/* Barra superior de navegador */}
+          {/* Barra superior estilo Browser */}
           <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-2 text-xs text-slate-400 select-none">
             <div className="flex items-center gap-1.5">
               <span className="size-3 rounded-full bg-rose-500/80 inline-block" />
@@ -227,199 +229,164 @@ export function HeatmapCanvas({
               <span className="size-3 rounded-full bg-emerald-500/80 inline-block" />
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-slate-800 px-3 py-1 font-mono text-[11px] text-slate-300 max-w-md truncate">
-              <span>🔒</span>
+              <span className="text-emerald-400">🔒</span>
               <span className="truncate">{pageUrl}</span>
             </div>
             <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+              <span className="inline-block size-2 rounded-full bg-emerald-500" />
+              <span>Cloudflare Edge</span>
+              <span>·</span>
               <span>{viewport === "mobile" ? "390 × 3200 (iPhone)" : "1200 × 2800 (Desktop)"}</span>
             </div>
           </div>
 
-          {/* Área de Visualização com Scroll */}
+          {/* Área de Visualização com Scroll Sincronizado */}
           <div className="relative h-[720px] overflow-y-auto overflow-x-hidden bg-slate-900 scroll-smooth">
-            {/* Opção 1: IFRAME AO VIVO DA PÁGINA REAL */}
-            {displaySource === "iframe" ? (
-              <div
-                className="relative"
-                style={{ width: targetWidth, height: targetHeight }}
-              >
-                {isIframeLoading && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 text-white backdrop-blur-xs">
-                    <div className="size-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mb-3" />
-                    <span className="text-xs font-semibold">Carregando visualização ao vivo de {pageUrl}...</span>
-                  </div>
-                )}
-                <iframe
-                  key={iframeKey}
-                  src={proxyUrl}
-                  title="Landing Page Live Preview"
-                  onLoad={() => setIsIframeLoading(false)}
-                  style={{
-                    width: targetWidth,
-                    height: targetHeight,
-                    border: "none",
-                  }}
-                  className="w-full h-full bg-white select-none pointer-events-auto"
+            {/* CONTAINER UNIFICADO: Iframe + Canvas + Hotspots compartilham exatamente o mesmo espaço */}
+            <div
+              className="relative"
+              style={{ width: targetWidth, height: targetHeight, minHeight: targetHeight }}
+            >
+              {/* CAMADA 0: IFRAME AO VIVO OU SCREENSHOT */}
+              {displaySource === "iframe" ? (
+                <>
+                  {isIframeLoading && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 text-white backdrop-blur-xs">
+                      <div className="size-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mb-3" />
+                      <span className="text-xs font-semibold">Carregando visualização ao vivo de {pageUrl}...</span>
+                      <span className="text-[11px] text-slate-400 mt-1">Conectando via Cloudflare Edge</span>
+                    </div>
+                  )}
+                  <iframe
+                    key={iframeKey}
+                    src={proxyUrl}
+                    title="Landing Page Live Preview"
+                    onLoad={() => setIsIframeLoading(false)}
+                    style={{
+                      width: targetWidth,
+                      height: targetHeight,
+                      border: "none",
+                    }}
+                    className="w-full h-full bg-white select-none pointer-events-none"
+                  />
+                </>
+              ) : screenshotUrl ? (
+                <img
+                  src={screenshotUrl}
+                  alt="Screenshot da Landing Page"
+                  className="w-full object-top select-none pointer-events-none"
+                  style={{ width: targetWidth, minHeight: targetHeight }}
                 />
-              </div>
-            ) : screenshotUrl ? (
-              /* Opção 2: Screenshot Real */
-              <img
-                src={screenshotUrl}
-                alt="Screenshot da Landing Page"
-                className="w-full object-top select-none pointer-events-none"
-                style={{ width: targetWidth, minHeight: targetHeight }}
-              />
-            ) : (
-              /* Opção 3: Wireframe Mockup MedCof */
-              <div
+              ) : (
+                /* Mockup Ilustrativo MedCof */
+                <div
+                  style={{ width: targetWidth, height: targetHeight }}
+                  className="relative w-full bg-radial from-slate-900 via-slate-950 to-black p-8 text-slate-300"
+                >
+                  <div className="space-y-16 opacity-90">
+                    <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-10 text-center space-y-4">
+                      <div className="inline-block rounded-full bg-brand-500/10 px-4 py-1 text-xs font-semibold text-brand-400">
+                        MedCof Oficial · Preparatório & Residência
+                      </div>
+                      <h1 className="text-3xl font-extrabold tracking-tight text-white max-w-xl mx-auto">
+                        A sua aprovação na residência médica começa aqui.
+                      </h1>
+                      <p className="text-sm text-slate-400 max-w-md mx-auto">
+                        Mais de 8.000 médicos aprovados nas instituições mais concorridas do país.
+                      </p>
+                      <div className="pt-4 flex justify-center gap-3">
+                        <span className="rounded-xl bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-500/20">
+                          Quero me matricular
+                        </span>
+                        <span className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-semibold text-slate-300">
+                          Conhecer metodologia
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CAMADA 1: CANVAS TÉRMICO 2D (Sincronizado 1:1 com a página) */}
+              <canvas
+                ref={canvasRef}
+                width={targetWidth}
+                height={targetHeight}
                 style={{ width: targetWidth, height: targetHeight }}
-                className="relative w-full bg-radial from-slate-900 via-slate-950 to-black p-8 text-slate-300"
-              >
-                <div className="space-y-16 opacity-90">
-                  <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-10 text-center space-y-4">
-                    <div className="inline-block rounded-full bg-brand-500/10 px-4 py-1 text-xs font-semibold text-brand-400">
-                      MedCof Oficial · Preparatório & Residência
-                    </div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-white max-w-xl mx-auto">
-                      A sua aprovação na residência médica começa aqui.
-                    </h1>
-                    <p className="text-sm text-slate-400 max-w-md mx-auto">
-                      Mais de 8.000 médicos aprovados nas instituições mais concorridas do país.
-                    </p>
-                    <div className="pt-4 flex justify-center gap-3">
-                      <span className="rounded-xl bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-500/20">
-                        Quero me matricular
-                      </span>
-                      <span className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-semibold text-slate-300">
-                        Conhecer metodologia
-                      </span>
-                    </div>
-                  </div>
+                className={cn(
+                  "absolute inset-0 pointer-events-none transition-opacity duration-300 z-10",
+                  mode === "clean" || mode === "points" ? "opacity-0" : "opacity-100"
+                )}
+              />
 
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 space-y-3">
-                      <div className="size-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-                        Q
-                      </div>
-                      <h3 className="font-bold text-white text-base">Banco de Questões QBank Prime</h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        Mais de 100.000 questões comentadas em vídeo e texto por especialistas.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 space-y-3">
-                      <div className="size-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
-                        ★
-                      </div>
-                      <h3 className="font-bold text-white text-base">Inteligência Preditiva MedCof</h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        Direcionamento individual com base nos seus pontos fracos por banca.
-                      </p>
-                    </div>
-                  </div>
+              {/* CAMADA 2: HOTSPOTS DE CLIQUES E CTAS */}
+              {(mode === "points" || mode === "density") && (
+                <div
+                  className="absolute inset-0 pointer-events-auto z-20"
+                  style={{ width: targetWidth, height: targetHeight }}
+                >
+                  {ctaHotspots.map((cta, index) => {
+                    const pixelX = (cta.x / 1000) * targetWidth;
+                    const pixelY = (cta.y / 1000) * targetHeight;
+                    const isTop1 = index === 0;
 
-                  <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-8 space-y-6">
-                    <div className="text-center">
-                      <h2 className="text-xl font-bold text-white">Escolha o seu plano de estudos</h2>
-                      <p className="text-xs text-slate-400">Acesso ilimitado até o dia da sua prova</p>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      {["Extensivo Anual", "Intensivo R-Plus", "QBank Prime"].map((p, i) => (
+                    return (
+                      <div
+                        key={cta.elementId}
+                        style={{ left: pixelX, top: pixelY }}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                        onMouseEnter={() => {
+                          setActiveTooltip({
+                            x: pixelX,
+                            y: pixelY,
+                            title: cta.elementLabel,
+                            subtitle: `ID: ${cta.elementId}${cta.sectionId ? ` · Seção: ${cta.sectionId}` : ""}`,
+                            count: cta.clicks,
+                          });
+                        }}
+                        onMouseLeave={() => setActiveTooltip(null)}
+                      >
+                        {isTop1 && (
+                          <span className="absolute -inset-2 animate-ping rounded-full bg-rose-500 opacity-60" />
+                        )}
+
                         <div
-                          key={p}
                           className={cn(
-                            "rounded-2xl border p-5 space-y-3",
-                            i === 0
-                              ? "border-brand-500 bg-brand-950/20"
-                              : "border-slate-800 bg-slate-900/30"
+                            "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-xl ring-2 transition-transform group-hover:scale-125",
+                            isTop1
+                              ? "bg-rose-600 text-white ring-rose-300"
+                              : "bg-slate-900/90 text-white ring-amber-400 backdrop-blur-md"
                           )}
                         >
-                          <span className="text-xs font-bold text-brand-400">{p}</span>
-                          <div className="text-xl font-black text-white">12x R$ 349</div>
-                          <div className="rounded-lg bg-slate-800 py-1.5 text-center text-xs text-slate-300 font-semibold">
-                            Assinar agora
-                          </div>
+                          <span className="size-2 rounded-full bg-amber-400" />
+                          <span>{cta.clicks}</span>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TOOLTIP INTERATIVO DE CTA */}
+              {activeTooltip && (
+                <div
+                  style={{
+                    left: Math.min(targetWidth - 220, Math.max(20, activeTooltip.x - 100)),
+                    top: Math.max(10, activeTooltip.y - 75),
+                  }}
+                  className="absolute pointer-events-none z-50 rounded-xl border border-slate-700 bg-slate-900/95 p-2.5 text-xs text-white shadow-2xl backdrop-blur-md transition-all w-52"
+                >
+                  <div className="font-bold text-amber-400 truncate">{activeTooltip.title}</div>
+                  <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                    {activeTooltip.subtitle}
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between border-t border-slate-800 pt-1 text-[11px]">
+                    <span className="text-slate-400">Total de cliques:</span>
+                    <span className="font-bold text-white">{activeTooltip.count}</span>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Camada 1: Canvas para Mapa de Calor de Densidade & Scrollmap */}
-            <canvas
-              ref={canvasRef}
-              className={cn(
-                "absolute inset-0 pointer-events-none transition-opacity duration-300 z-10",
-                mode === "points" ? "opacity-0" : "opacity-100"
               )}
-            />
-
-            {/* Camada 2: Pinpoints e Hotspots Interativos (Modo Pontos & CTAs) */}
-            {mode === "points" && (
-              <div className="absolute inset-0 pointer-events-auto z-20">
-                {ctaHotspots.map((cta, index) => {
-                  const pixelX = (cta.x / 1000) * targetWidth;
-                  const pixelY = (cta.y / 1000) * targetHeight;
-                  const isTop1 = index === 0;
-
-                  return (
-                    <div
-                      key={cta.elementId}
-                      style={{ left: pixelX, top: pixelY }}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
-                      onMouseEnter={() => {
-                        setActiveTooltip({
-                          x: pixelX,
-                          y: pixelY,
-                          title: cta.elementLabel,
-                          subtitle: `ID: ${cta.elementId}${cta.sectionId ? ` · Seção: ${cta.sectionId}` : ""}`,
-                          count: cta.clicks,
-                        });
-                      }}
-                      onMouseLeave={() => setActiveTooltip(null)}
-                    >
-                      {isTop1 && (
-                        <span className="absolute -inset-2 animate-ping rounded-full bg-rose-500 opacity-60" />
-                      )}
-
-                      <div
-                        className={cn(
-                          "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold shadow-xl ring-2 transition-transform group-hover:scale-125",
-                          isTop1
-                            ? "bg-rose-600 text-white ring-rose-300"
-                            : "bg-slate-900/90 text-white ring-amber-400 backdrop-blur-md"
-                        )}
-                      >
-                        <span className="size-2 rounded-full bg-amber-400" />
-                        <span>{cta.clicks}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Tooltip Interativo de CTA */}
-            {activeTooltip && (
-              <div
-                style={{
-                  left: Math.min(targetWidth - 220, Math.max(20, activeTooltip.x - 100)),
-                  top: Math.max(10, activeTooltip.y - 75),
-                }}
-                className="absolute pointer-events-none z-50 rounded-xl border border-slate-700 bg-slate-900/95 p-2.5 text-xs text-white shadow-2xl backdrop-blur-md transition-all w-52"
-              >
-                <div className="font-bold text-amber-400 truncate">{activeTooltip.title}</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">
-                  {activeTooltip.subtitle}
-                </div>
-                <div className="mt-1.5 flex items-center justify-between border-t border-slate-800 pt-1 text-[11px]">
-                  <span className="text-slate-400">Total de cliques:</span>
-                  <span className="font-bold text-white">{activeTooltip.count}</span>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -460,7 +427,7 @@ function renderDensityHeatmap(
   for (const pt of points) {
     const px = (pt.x / 1000) * width;
     const py = (pt.y / 1000) * height;
-    const alpha = Math.min(1, Math.max(0.1, pt.weight / Math.max(1, maxWeight * 0.75)));
+    const alpha = Math.min(1, Math.max(0.12, pt.weight / Math.max(1, maxWeight * 0.75)));
     sCtx.globalAlpha = alpha;
     sCtx.drawImage(brushCanvas, px - radius, py - radius);
   }

@@ -14,6 +14,24 @@ export type InsightsOverviewFilter = {
   viewport?: InsightViewport | "all";
 };
 
+export type BuAccessStat = {
+  buId: string;
+  buCode: string;
+  buLabel: string;
+  buSlug: string;
+  mainUrl: string;
+  pagesCount: number;
+  totalVisits: number;
+  visitsSharePercent: number; // % do tráfego total
+  ctaClicks: number;
+  ctaClickRate: number; // %
+  formStarts: number;
+  leads: number;
+  conversionRate: number; // %
+  cloudflareStatus: "active" | "proxied";
+  topPageId: string;
+};
+
 export type InsightsOverviewData = {
   totalVisits: number;
   totalCtaClicks: number;
@@ -28,6 +46,7 @@ export type InsightsOverviewData = {
     ctaClicks: number;
     leads: number;
   }[];
+  buAccessStats: BuAccessStat[];
   topPages: {
     id: string;
     name: string;
@@ -254,6 +273,72 @@ export async function getInsightsOverview(
     })
     .sort((a, b) => b.visits - a.visits);
 
+  // 3. Tabela consolidada de acesso e visitas de todas as 23 Business Units
+  const allBus = await db
+    .select({
+      id: businessUnit.id,
+      label: businessUnit.label,
+      code: businessUnit.code,
+      slug: businessUnit.slug,
+      sortOrder: businessUnit.sortOrder,
+    })
+    .from(businessUnit)
+    .where(eq(businessUnit.isActive, true))
+    .orderBy(businessUnit.sortOrder, businessUnit.label);
+
+  const buAccessStats: BuAccessStat[] = allBus
+    .map((bu) => {
+      const buPages = pages.filter((p) => p.businessUnitId === bu.id);
+      let buVisits = 0;
+      let buClicks = 0;
+      let buFormStarts = 0;
+      let buLeads = 0;
+
+      for (const p of buPages) {
+        const stat = pageStatsMap.get(p.id);
+        if (stat) {
+          buVisits += stat.visits;
+          buClicks += stat.ctaClicks;
+          buFormStarts += stat.formStarts;
+          buLeads += stat.leads;
+        }
+      }
+
+      const visitsShare = totalVisits > 0 ? (buVisits / totalVisits) * 100 : 0;
+      const cr = buVisits > 0 ? (buLeads / buVisits) * 100 : 0;
+      const ctr = buVisits > 0 ? (buClicks / buVisits) * 100 : 0;
+
+      let canonicalUrl = `https://grupomedcof.com.br/${bu.slug.replace(/_/g, "-")}`;
+      if (bu.slug === "dermatologia") canonicalUrl = "https://medcofderma.com.br";
+      else if (bu.slug === "endocrinologia") canonicalUrl = "https://medcofendocrino.com.br";
+      else if (bu.slug === "endocrinologia_pediatrica")
+        canonicalUrl = "https://medcofendocrino.com.br/pediatrica";
+      else if (bu.slug === "revalida") canonicalUrl = "https://revalida.grupomedcof.com.br";
+      else if (bu.slug === "concursus") canonicalUrl = "https://concursus.grupomedcof.com.br";
+      else if (bu.slug === "residencia") canonicalUrl = "https://grupomedcof.com.br";
+
+      const topPage = buPages[0];
+
+      return {
+        buId: bu.id,
+        buCode: bu.code || `MEDCOF_${bu.slug.toUpperCase()}`,
+        buLabel: bu.label,
+        buSlug: bu.slug,
+        mainUrl: topPage ? topPage.url : canonicalUrl,
+        pagesCount: buPages.length,
+        totalVisits: buVisits,
+        visitsSharePercent: Math.round(visitsShare * 10) / 10,
+        ctaClicks: buClicks,
+        ctaClickRate: Math.round(ctr * 10) / 10,
+        formStarts: buFormStarts,
+        leads: buLeads,
+        conversionRate: Math.round(cr * 10) / 10,
+        cloudflareStatus: "proxied" as const,
+        topPageId: topPage ? topPage.id : `lp-${bu.slug.replace(/_/g, "-")}`,
+      };
+    })
+    .sort((a, b) => b.totalVisits - a.totalVisits);
+
   return {
     totalVisits,
     totalCtaClicks,
@@ -262,6 +347,7 @@ export async function getInsightsOverview(
     conversionRate: Math.round(conversionRate * 10) / 10,
     ctaClickRate: Math.round(ctaClickRate * 10) / 10,
     dailyChart,
+    buAccessStats,
     topPages,
   };
 }
@@ -275,6 +361,7 @@ function emptyOverview(): InsightsOverviewData {
     conversionRate: 0,
     ctaClickRate: 0,
     dailyChart: [],
+    buAccessStats: [],
     topPages: [],
   };
 }

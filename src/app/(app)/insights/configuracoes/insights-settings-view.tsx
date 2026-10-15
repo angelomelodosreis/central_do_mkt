@@ -165,57 +165,54 @@ export function InsightsSettingsView({
         </button>
       </div>
 
-      {/* Snippet de Integração Global */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
+      {/* Informação de Integração Nativa Cloudflare Edge */}
+      <div className="rounded-2xl border border-sky-200/80 bg-gradient-to-r from-sky-500/5 via-brand-500/5 to-emerald-500/5 p-6 shadow-2xs space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Code2 className="size-5 text-brand-600" />
-              <h2 className="text-base font-semibold text-slate-900">
-                Código de Integração Global (Tag de Coleta)
+              <Globe className="size-5 text-sky-600" />
+              <h2 className="text-base font-bold text-slate-900">
+                Ativação Nativa Cloudflare Edge (Sem Instalação de Scripts)
               </h2>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Insira esta tag no <code>&lt;head&gt;</code> ou antes do fechamento do <code>&lt;/body&gt;</code> da sua landing page.
+            <p className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
+              Todas as páginas sob os domínios <strong className="text-slate-900">grupomedcof.com.br</strong>, <strong className="text-slate-900">medcofderma.com.br</strong> e <strong className="text-slate-900">medcofendocrino.com.br</strong> já operam com proxy ativo na Cloudflare. Não é necessário editar código nem instalar tags de script nas páginas — a telemetria é capturada automaticamente na borda para as 23 Business Units.
             </p>
           </div>
 
-          {/* Seletor de Página para o Snippet */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Página selecionada:</span>
-            <select
-              value={selectedPageForSnippet}
-              onChange={(e) => setSelectedPageForSnippet(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-brand-500 focus:outline-none"
-            >
-              {pages.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.id})
-                </option>
-              ))}
-            </select>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-600/20">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              Cloudflare Edge Ativo
+            </span>
           </div>
         </div>
 
-        <div className="relative rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs text-emerald-400">
-          <button
-            type="button"
-            onClick={handleCopySnippet}
-            className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-sans font-medium text-slate-200 hover:bg-slate-700 transition"
-          >
-            {isCopied ? (
-              <>
-                <Check className="size-3.5 text-emerald-400" />
-                <span>Copiado!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="size-3.5 text-slate-400" />
-                <span>Copiar Código</span>
-              </>
-            )}
-          </button>
-          <pre className="overflow-x-auto pr-28 select-all">{snippetCode}</pre>
+        {/* 3 Domínios Principais Conectados */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs text-slate-900">🩺 grupomedcof.com.br</span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase">Edge Conectado</span>
+            </div>
+            <p className="text-[11px] text-slate-500">Portal Principal, Extensivo e Especialidades R+</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs text-slate-900">🧴 medcofderma.com.br</span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase">Edge Conectado</span>
+            </div>
+            <p className="text-[11px] text-slate-500">MedCof Derma, Prova TED e Dermatologia</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs text-slate-900">🧬 medcofendocrino.com.br</span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase">Edge Conectado</span>
+            </div>
+            <p className="text-[11px] text-slate-500">MedCof Endócrino, TEEM e Especialidades</p>
+          </div>
         </div>
 
         {/* Guia de Atributos para Desenvolvedores */}
