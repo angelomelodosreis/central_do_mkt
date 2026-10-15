@@ -308,14 +308,31 @@ export async function getInsightsOverview(
       const cr = buVisits > 0 ? (buLeads / buVisits) * 100 : 0;
       const ctr = buVisits > 0 ? (buClicks / buVisits) * 100 : 0;
 
-      let canonicalUrl = `https://grupomedcof.com.br/${bu.slug.replace(/_/g, "-")}`;
-      if (bu.slug === "dermatologia") canonicalUrl = "https://medcofderma.com.br";
+      let canonicalUrl = `https://${bu.slug.replace(/_/g, "")}.grupomedcof.com.br`;
+      if (bu.slug === "anestesiologia") canonicalUrl = "https://anestesio.grupomedcof.com.br";
+      else if (bu.slug === "cardiologia") canonicalUrl = "https://cardio.grupomedcof.com.br";
+      else if (bu.slug === "cirurgia") canonicalUrl = "https://cirurgia.grupomedcof.com.br";
+      else if (bu.slug === "clinica_medica") canonicalUrl = "https://clinicof.grupomedcof.com.br";
+      else if (bu.slug === "concursus") canonicalUrl = "https://concursus.grupomedcof.com.br";
+      else if (bu.slug === "dermatologia") canonicalUrl = "https://medcofderma.com.br";
       else if (bu.slug === "endocrinologia") canonicalUrl = "https://medcofendocrino.com.br";
       else if (bu.slug === "endocrinologia_pediatrica")
         canonicalUrl = "https://medcofendocrino.com.br/pediatrica";
-      else if (bu.slug === "revalida") canonicalUrl = "https://revalida.grupomedcof.com.br";
-      else if (bu.slug === "concursus") canonicalUrl = "https://concursus.grupomedcof.com.br";
+      else if (bu.slug === "ginecologia_e_obstetricia") canonicalUrl = "https://tego.grupomedcof.com.br";
+      else if (bu.slug === "ps" || bu.slug === "lifehacks") canonicalUrl = "https://lifehacks.grupomedcof.com.br";
+      else if (bu.slug === "medicina_de_emergencia") canonicalUrl = "https://aulaavcisquemico.grupomedcof.com.br";
+      else if (bu.slug === "medicina_intensiva") canonicalUrl = "https://temi.grupomedcof.com.br";
+      else if (bu.slug === "oftalmologia") canonicalUrl = "https://oftalmo.grupomedcof.com.br";
+      else if (bu.slug === "ortopedia") canonicalUrl = "https://ortopedia.grupomedcof.com.br";
+      else if (bu.slug === "otorrinolaringologia") canonicalUrl = "https://otorrino.grupomedcof.com.br";
+      else if (bu.slug === "pediatria") canonicalUrl = "https://pediatria.grupomedcof.com.br";
+      else if (bu.slug === "radiologia") canonicalUrl = "https://radio.grupomedcof.com.br";
       else if (bu.slug === "residencia") canonicalUrl = "https://grupomedcof.com.br";
+      else if (bu.slug === "revalida") canonicalUrl = "https://revaliday.grupomedcof.com.br";
+      else if (bu.slug === "urologia") canonicalUrl = "https://uro.grupomedcof.com.br";
+      else if (bu.slug === "usa") canonicalUrl = "https://usa.grupomedcof.com.br";
+      else if (bu.slug === "enamed") canonicalUrl = "https://enamed.grupomedcof.com.br";
+      else if (bu.slug === "internato") canonicalUrl = "https://internato.grupomedcof.com.br";
 
       const topPage = buPages[0];
 
