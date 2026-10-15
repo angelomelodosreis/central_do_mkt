@@ -441,15 +441,60 @@ export async function getInsightPageById(pageId: string) {
     .replace(/-/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
-  let inferredUrl = `https://grupomedcof.com.br/${clean}`;
-  if (pageId.includes("derma")) inferredUrl = "https://medcofderma.com.br";
-  else if (pageId.includes("endocrino")) inferredUrl = "https://medcofendocrino.com.br";
-  else if (pageId.includes("app")) inferredUrl = "https://app.grupomedcof.com.br";
-  else if (pageId.includes("qbank")) inferredUrl = "https://qbank.grupomedcof.com.br";
-  else if (pageId.includes("revalida")) inferredUrl = "https://revalida.grupomedcof.com.br";
-  else if (pageId.includes("concursus")) inferredUrl = "https://concursus.grupomedcof.com.br";
-  else if (pageId.includes("materiais")) inferredUrl = "https://materiais.grupomedcof.com.br";
-  else if (pageId.includes("blog")) inferredUrl = "https://blog.grupomedcof.com.br";
+  const SUBDOMAIN_MAP: Record<string, string> = {
+    otorrino: "https://otorrino.grupomedcof.com.br",
+    cardio: "https://cardio.grupomedcof.com.br",
+    cardiologia: "https://cardio.grupomedcof.com.br",
+    cirurgia: "https://cirurgia.grupomedcof.com.br",
+    clinica: "https://clinicof.grupomedcof.com.br",
+    "clinica-medica": "https://clinicof.grupomedcof.com.br",
+    clinicof: "https://clinicof.grupomedcof.com.br",
+    anestesio: "https://anestesio.grupomedcof.com.br",
+    anestesiologia: "https://anestesio.grupomedcof.com.br",
+    pediatria: "https://pediatria.grupomedcof.com.br",
+    ortopedia: "https://ortopedia.grupomedcof.com.br",
+    oftalmo: "https://oftalmo.grupomedcof.com.br",
+    oftalmologia: "https://oftalmo.grupomedcof.com.br",
+    radio: "https://radio.grupomedcof.com.br",
+    radiologia: "https://radio.grupomedcof.com.br",
+    uro: "https://uro.grupomedcof.com.br",
+    urologia: "https://uro.grupomedcof.com.br",
+    temi: "https://temi.grupomedcof.com.br",
+    tego: "https://tego.grupomedcof.com.br",
+    ginecologia: "https://tego.grupomedcof.com.br",
+    lifehacks: "https://lifehacks.grupomedcof.com.br",
+    usa: "https://usa.grupomedcof.com.br",
+    revalida: "https://revaliday.grupomedcof.com.br",
+    revaliday: "https://revaliday.grupomedcof.com.br",
+    hiit: "https://hiit.grupomedcof.com",
+    concursus: "https://concursus.grupomedcof.com.br",
+    gastro: "https://gastro.grupomedcof.com.br",
+    derma: "https://medcofderma.com.br",
+    dermatologia: "https://medcofderma.com.br",
+    medcofderma: "https://medcofderma.com.br",
+    endocrino: "https://medcofendocrino.com.br",
+    endocrinologia: "https://medcofendocrino.com.br",
+    medcofendocrino: "https://medcofendocrino.com.br",
+    app: "https://app.grupomedcof.com.br",
+    qbank: "https://qbank.grupomedcof.com.br",
+    materiais: "https://materiais.grupomedcof.com.br",
+    blog: "https://blog.grupomedcof.com.br",
+    grupomedcof: "https://grupomedcof.com.br",
+    "extensivo-2025": "https://grupomedcof.com.br/extensivo-2025",
+  };
+
+  let inferredUrl = SUBDOMAIN_MAP[clean.toLowerCase()];
+  if (!inferredUrl) {
+    if (pageId.includes("derma")) inferredUrl = "https://medcofderma.com.br";
+    else if (pageId.includes("endocrino")) inferredUrl = "https://medcofendocrino.com.br";
+    else if (pageId.includes("app")) inferredUrl = "https://app.grupomedcof.com.br";
+    else if (pageId.includes("qbank")) inferredUrl = "https://qbank.grupomedcof.com.br";
+    else if (pageId.includes("revalida")) inferredUrl = "https://revaliday.grupomedcof.com.br";
+    else if (pageId.includes("concursus")) inferredUrl = "https://concursus.grupomedcof.com.br";
+    else if (pageId.includes("materiais")) inferredUrl = "https://materiais.grupomedcof.com.br";
+    else if (pageId.includes("blog")) inferredUrl = "https://blog.grupomedcof.com.br";
+    else inferredUrl = `https://${clean}.grupomedcof.com.br`;
+  }
 
   try {
     await db.insert(insightPage).values({

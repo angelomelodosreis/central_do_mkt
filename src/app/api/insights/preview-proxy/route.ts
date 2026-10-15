@@ -8,6 +8,58 @@ export const runtime = "nodejs";
  * Remove cabeçalhos de bloqueio de frame, neutraliza scripts conflitantes/redirecionamentos
  * e reescreve todas as URLs raiz (CSS, imagens, fontes, SVGs) para o domínio original da página.
  */
+function normalizeMedcofUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    const path = parsed.pathname.toLowerCase().replace(/^\/|\/$/g, "");
+
+    // Se for rota sob grupomedcof.com.br que é subdomínio próprio no ecossistema
+    if (parsed.hostname.includes("grupomedcof.com.br")) {
+      const pathToSubdomain: Record<string, string> = {
+        otorrino: "https://otorrino.grupomedcof.com.br",
+        cardio: "https://cardio.grupomedcof.com.br",
+        cardiologia: "https://cardio.grupomedcof.com.br",
+        cirurgia: "https://cirurgia.grupomedcof.com.br",
+        clinica: "https://clinicof.grupomedcof.com.br",
+        "clinica-medica": "https://clinicof.grupomedcof.com.br",
+        anestesio: "https://anestesio.grupomedcof.com.br",
+        anestesiologia: "https://anestesio.grupomedcof.com.br",
+        pediatria: "https://pediatria.grupomedcof.com.br",
+        ortopedia: "https://ortopedia.grupomedcof.com.br",
+        oftalmo: "https://oftalmo.grupomedcof.com.br",
+        oftalmologia: "https://oftalmo.grupomedcof.com.br",
+        radio: "https://radio.grupomedcof.com.br",
+        radiologia: "https://radio.grupomedcof.com.br",
+        uro: "https://uro.grupomedcof.com.br",
+        urologia: "https://uro.grupomedcof.com.br",
+        temi: "https://temi.grupomedcof.com.br",
+        "medicina-intensiva": "https://temi.grupomedcof.com.br",
+        tego: "https://tego.grupomedcof.com.br",
+        ginecologia: "https://tego.grupomedcof.com.br",
+        lifehacks: "https://lifehacks.grupomedcof.com.br",
+        usa: "https://usa.grupomedcof.com.br",
+        revalida: "https://revaliday.grupomedcof.com.br",
+        hiit: "https://hiit.grupomedcof.com",
+        "hiit-target": "https://hiit.grupomedcof.com",
+        concursus: "https://concursus.grupomedcof.com.br",
+        gastro: "https://gastro.grupomedcof.com.br",
+        derma: "https://medcofderma.com.br",
+        dermatologia: "https://medcofderma.com.br",
+        endocrino: "https://medcofendocrino.com.br",
+        endocrinologia: "https://medcofendocrino.com.br",
+      };
+
+      if (path && pathToSubdomain[path]) {
+        return pathToSubdomain[path];
+      }
+    }
+
+    return rawUrl;
+  } catch {
+    return rawUrl;
+  }
+}
+
 export async function GET(request: Request) {
   try {
     await requireUser();
@@ -16,11 +68,13 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const targetUrl = searchParams.get("url");
+  const rawTargetUrl = searchParams.get("url");
 
-  if (!targetUrl) {
+  if (!rawTargetUrl) {
     return new NextResponse("URL alvo ausente", { status: 400 });
   }
+
+  const targetUrl = normalizeMedcofUrl(rawTargetUrl);
 
   try {
     const parsedTarget = new URL(targetUrl);
@@ -39,6 +93,19 @@ export async function GET(request: Request) {
       },
       redirect: "follow",
     });
+
+    if (response.status === 404) {
+      return new NextResponse(
+        `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+          <div style="text-align:center;max-width:500px;background:#1e293b;padding:32px;border-radius:16px;border:1px solid #334155;">
+            <h2 style="color:#ef4444;margin-top:0;">Página Não Encontrada (404)</h2>
+            <p style="color:#94a3b8;font-size:14px;line-height:1.6;">A URL solicitada não existe no servidor de destino: <code>${targetUrl}</code></p>
+            <p style="color:#38bdf8;font-size:13px;">Se esta frente possui subdomínio próprio, acerte o cadastro no painel de LPs.</p>
+          </div>
+        </body></html>`,
+        { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      );
+    }
 
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("text/html")) {
