@@ -19,6 +19,7 @@ const ALLOWED_ORIGIN_PATTERNS = [
   /^https?:\/\/([a-zA-Z0-9-]+\.)*medcof\.com\.br$/,
   /^https?:\/\/([a-zA-Z0-9-]+\.)*medcofderma\.com\.br$/,
   /^https?:\/\/([a-zA-Z0-9-]+\.)*medcofendocrino\.com\.br$/,
+  /^https?:\/\/([a-zA-Z0-9-]+\.)*medcof[a-zA-Z0-9-]*\.com\.br$/,
   /^https?:\/\/([a-zA-Z0-9-]+\.)*pages\.dev$/,
   /^https?:\/\/([a-zA-Z0-9-]+\.)*vercel\.app$/,
 ];

@@ -305,7 +305,82 @@ export async function getInsightPageById(pageId: string) {
     .where(eq(insightPage.id, pageId))
     .get();
 
-  return page || null;
+  if (page) return page;
+
+  // 1. Tenta buscar por URL aproximada
+  const byUrl = await db
+    .select({
+      id: insightPage.id,
+      name: insightPage.name,
+      url: insightPage.url,
+      businessUnitId: insightPage.businessUnitId,
+      buName: businessUnit.label,
+      isActive: insightPage.isActive,
+      version: insightPage.version,
+      screenshotUrlDesktop: insightPage.screenshotUrlDesktop,
+      screenshotUrlMobile: insightPage.screenshotUrlMobile,
+      screenshotUpdatedAt: insightPage.screenshotUpdatedAt,
+      trackedElements: insightPage.trackedElements,
+      createdAt: insightPage.createdAt,
+      updatedAt: insightPage.updatedAt,
+    })
+    .from(insightPage)
+    .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id))
+    .where(sql`${insightPage.url} LIKE ${'%' + pageId.replace(/^lp-/, "") + '%'}`)
+    .get();
+
+  if (byUrl) return byUrl;
+
+  // 2. Auto-provisionamento imediato para subdomínios ou novas páginas MedCof
+  const clean = pageId.replace(/^lp-/, "");
+  const formattedName = clean
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  let inferredUrl = `https://grupomedcof.com.br/${clean}`;
+  if (pageId.includes("derma")) inferredUrl = "https://medcofderma.com.br";
+  else if (pageId.includes("endocrino")) inferredUrl = "https://medcofendocrino.com.br";
+  else if (pageId.includes("app")) inferredUrl = "https://app.grupomedcof.com.br";
+  else if (pageId.includes("qbank")) inferredUrl = "https://qbank.grupomedcof.com.br";
+  else if (pageId.includes("revalida")) inferredUrl = "https://revalida.grupomedcof.com.br";
+  else if (pageId.includes("concursus")) inferredUrl = "https://concursus.grupomedcof.com.br";
+  else if (pageId.includes("materiais")) inferredUrl = "https://materiais.grupomedcof.com.br";
+  else if (pageId.includes("blog")) inferredUrl = "https://blog.grupomedcof.com.br";
+
+  try {
+    await db.insert(insightPage).values({
+      id: pageId,
+      name: formattedName || pageId,
+      url: inferredUrl,
+      version: "v1",
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    return await db
+      .select({
+        id: insightPage.id,
+        name: insightPage.name,
+        url: insightPage.url,
+        businessUnitId: insightPage.businessUnitId,
+        buName: businessUnit.label,
+        isActive: insightPage.isActive,
+        version: insightPage.version,
+        screenshotUrlDesktop: insightPage.screenshotUrlDesktop,
+        screenshotUrlMobile: insightPage.screenshotUrlMobile,
+        screenshotUpdatedAt: insightPage.screenshotUpdatedAt,
+        trackedElements: insightPage.trackedElements,
+        createdAt: insightPage.createdAt,
+        updatedAt: insightPage.updatedAt,
+      })
+      .from(insightPage)
+      .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id))
+      .where(eq(insightPage.id, pageId))
+      .get();
+  } catch {
+    return null;
+  }
 }
 
 /**

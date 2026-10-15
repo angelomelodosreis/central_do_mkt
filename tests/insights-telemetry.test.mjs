@@ -10,8 +10,16 @@ test("MedCof Insights Telemetria e Coletor", async (t) => {
   await t.test("isOriginAllowed valida allowlist oficial da MedCof e bloqueia origens externas", () => {
     assert.equal(isOriginAllowed("https://grupomedcof.com.br"), true);
     assert.equal(isOriginAllowed("https://extensivo.grupomedcof.com.br"), true);
+    assert.equal(isOriginAllowed("https://app.grupomedcof.com.br"), true);
+    assert.equal(isOriginAllowed("https://qbank.grupomedcof.com.br"), true);
+    assert.equal(isOriginAllowed("https://revalida.grupomedcof.com.br"), true);
+    assert.equal(isOriginAllowed("https://materiais.grupomedcof.com.br"), true);
+    assert.equal(isOriginAllowed("https://blog.grupomedcof.com.br"), true);
+    assert.equal(isOriginAllowed("https://cardio.grupomedcof.com.br"), true);
     assert.equal(isOriginAllowed("https://medcofderma.com.br"), true);
+    assert.equal(isOriginAllowed("https://pediatrica.medcofendocrino.com.br"), true);
     assert.equal(isOriginAllowed("https://medcofendocrino.com.br"), true);
+    assert.equal(isOriginAllowed("https://medcofpos.com.br"), true);
     assert.equal(isOriginAllowed("https://minha-lp.pages.dev"), true);
     assert.equal(isOriginAllowed("http://localhost:3000"), true);
     assert.equal(isOriginAllowed("http://127.0.0.1:3000"), true);

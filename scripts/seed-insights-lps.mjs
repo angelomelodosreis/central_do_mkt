@@ -10,13 +10,14 @@ const isLocalFile = url.startsWith("file:");
 const client = createClient(isLocalFile ? { url } : { url, authToken });
 
 export async function seedInsightsLps(dbClient = client) {
-  console.log("Semeando páginas e eventos de Heatmap para MedCof, Derma e Endócrino...");
+  console.log("Semeando páginas e eventos de Heatmap para todas as frentes e subdomínios MedCof...");
 
   const pages = [
     {
       id: "lp-grupomedcof",
       name: "Grupo MedCof · Portal Principal",
       url: "https://grupomedcof.com.br",
+      businessUnitId: "bu_residencia",
       version: "v1",
       isActive: 1,
     },
@@ -24,6 +25,7 @@ export async function seedInsightsLps(dbClient = client) {
       id: "lp-medcofderma",
       name: "MedCof Derma · Dermatologia & TED",
       url: "https://medcofderma.com.br",
+      businessUnitId: "bu_dermatologia",
       version: "v1",
       isActive: 1,
     },
@@ -31,6 +33,7 @@ export async function seedInsightsLps(dbClient = client) {
       id: "lp-medcofendocrino",
       name: "MedCof Endócrino · TEEM & Especialidades",
       url: "https://medcofendocrino.com.br",
+      businessUnitId: "bu_endocrinologia",
       version: "v1",
       isActive: 1,
     },
@@ -38,6 +41,207 @@ export async function seedInsightsLps(dbClient = client) {
       id: "lp-extensivo-2025",
       name: "Extensivo MedCof 2025 / 2026",
       url: "https://grupomedcof.com.br/extensivo-2025",
+      businessUnitId: "bu_residencia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-app-medcof",
+      name: "App MedCof · Plataforma Web",
+      url: "https://app.grupomedcof.com.br",
+      businessUnitId: "bu_residencia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-qbank-prime",
+      name: "QBank Prime · Banco de Questões",
+      url: "https://qbank.grupomedcof.com.br",
+      businessUnitId: "bu_residencia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-materiais",
+      name: "Materiais & E-books Gratuitos",
+      url: "https://materiais.grupomedcof.com.br",
+      businessUnitId: "bu_residencia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-blog",
+      name: "Blog MedCof · Notícias & Editais",
+      url: "https://blog.grupomedcof.com.br",
+      businessUnitId: "bu_residencia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-revalida",
+      name: "MedCof Revalida · INEP & USP",
+      url: "https://revalida.grupomedcof.com.br",
+      businessUnitId: "bu_revalida",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-concursus",
+      name: "Concursus · Carreiras e Concursos Médicos",
+      url: "https://concursus.grupomedcof.com.br",
+      businessUnitId: "bu_concursus",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-hiit-target",
+      name: "HIIT Target · Revisão Reta Final",
+      url: "https://grupomedcof.com.br/hiit-target",
+      businessUnitId: "bu_residencia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-cardiologia",
+      name: "MedCof Cardiologia · R+ Cardio & TEC",
+      url: "https://grupomedcof.com.br/cardiologia",
+      businessUnitId: "bu_cardiologia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-cirurgia",
+      name: "MedCof Cirurgia · R+ Cirurgia Geral",
+      url: "https://grupomedcof.com.br/cirurgia",
+      businessUnitId: "bu_cirurgia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-clinica-medica",
+      name: "MedCof Clínica Médica · R+ Clínica",
+      url: "https://grupomedcof.com.br/clinica-medica",
+      businessUnitId: "bu_clinica_medica",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-pediatria",
+      name: "MedCof Pediatria · R+ Pediatria & TEP",
+      url: "https://grupomedcof.com.br/pediatria",
+      businessUnitId: "bu_pediatria",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-ginecologia",
+      name: "MedCof Ginecologia e Obstetrícia · TEGO",
+      url: "https://grupomedcof.com.br/ginecologia",
+      businessUnitId: "bu_ginecologia_e_obstetricia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-ortopedia",
+      name: "MedCof Ortopedia · TEOT & R+ Ortopedia",
+      url: "https://grupomedcof.com.br/ortopedia",
+      businessUnitId: "bu_ortopedia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-oftalmologia",
+      name: "MedCof Oftalmologia · Prova CBO & R+",
+      url: "https://grupomedcof.com.br/oftalmologia",
+      businessUnitId: "bu_oftalmologia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-anestesiologia",
+      name: "MedCof Anestesiologia · TSA & R+ Anestesia",
+      url: "https://grupomedcof.com.br/anestesiologia",
+      businessUnitId: "bu_anestesiologia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-medicina-intensiva",
+      name: "MedCof UTI · Terapia Intensiva & AMIB",
+      url: "https://grupomedcof.com.br/medicina-intensiva",
+      businessUnitId: "bu_medicina_intensiva",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-pronto-socorro",
+      name: "MedCof Pronto Socorro · Medicina de Emergência",
+      url: "https://grupomedcof.com.br/ps",
+      businessUnitId: "bu_medicina_de_emergencia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-radiologia",
+      name: "MedCof Radiologia & Diagnóstico por Imagem",
+      url: "https://grupomedcof.com.br/radiologia",
+      businessUnitId: "bu_radiologia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-urologia",
+      name: "MedCof Urologia · TiSBU & R+ Urologia",
+      url: "https://grupomedcof.com.br/urologia",
+      businessUnitId: "bu_urologia",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-enamed",
+      name: "MedCof Enamed · Preparação Exame Nacional",
+      url: "https://grupomedcof.com.br/enamed",
+      businessUnitId: "bu_enamed",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-internato",
+      name: "MedCof Internato · Ciclo Clínico e Prático",
+      url: "https://grupomedcof.com.br/internato",
+      businessUnitId: "bu_internato",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-lifehacks",
+      name: "MedCof Lifehacks · Condutas e Plantão Médico",
+      url: "https://grupomedcof.com.br/lifehacks",
+      businessUnitId: "bu_lifehacks",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-usa",
+      name: "MedCof USA · USMLE Step 1 e 2 CK",
+      url: "https://grupomedcof.com.br/usa",
+      businessUnitId: "bu_usa",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-endocrino-pediatrica",
+      name: "MedCof Endocrinologia Pediátrica · CAAEP",
+      url: "https://medcofendocrino.com.br/pediatrica",
+      businessUnitId: "bu_endocrinologia_pediatrica",
+      version: "v1",
+      isActive: 1,
+    },
+    {
+      id: "lp-otorrinolaringologia",
+      name: "MedCof Otorrinolaringologia · Prova ABORL",
+      url: "https://grupomedcof.com.br/otorrino",
+      businessUnitId: "bu_otorrinolaringologia",
       version: "v1",
       isActive: 1,
     },
@@ -53,11 +257,16 @@ export async function seedInsightsLps(dbClient = client) {
 
     if (existing.rows.length === 0) {
       await dbClient.execute({
-        sql: `INSERT INTO insight_page (id, name, url, version, is_active, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        args: [p.id, p.name, p.url, p.version, p.isActive, now, now],
+        sql: `INSERT INTO insight_page (id, name, url, business_unit_id, version, is_active, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [p.id, p.name, p.url, p.businessUnitId || null, p.version, p.isActive, now, now],
       });
       console.log(`[seed-insights] Página ${p.name} (${p.id}) cadastrada.`);
+    } else {
+      await dbClient.execute({
+        sql: `UPDATE insight_page SET business_unit_id = ?, name = ?, url = ? WHERE id = ?`,
+        args: [p.businessUnitId || null, p.name, p.url, p.id],
+      });
     }
 
     // Verifica se já existem eventos para não duplicar
@@ -70,20 +279,21 @@ export async function seedInsightsLps(dbClient = client) {
       console.log(`[seed-insights] Gerando eventos de telemetria para ${p.id}...`);
 
       const ctas = [
-        { id: "hero-primary-cta", label: "Quero me matricular agora", section: "hero", x: 500, y: 180, clicks: 84 },
-        { id: "hero-secondary-cta", label: "Conhecer metodologia", section: "hero", x: 620, y: 180, clicks: 42 },
-        { id: "qbank-demo-cta", label: "Testar QBank grátis", section: "metodologia", x: 480, y: 350, clicks: 65 },
-        { id: "pricing-plan-annual", label: "Assinar Plano Anual", section: "precos", x: 320, y: 580, clicks: 58 },
-        { id: "pricing-plan-rplus", label: "Assinar Intensivo R-Plus", section: "precos", x: 500, y: 580, clicks: 92 },
-        { id: "lead-form-submit", label: "Enviar formulário de contato", section: "formulario", x: 500, y: 820, clicks: 47 },
-        { id: "whatsapp-floating-btn", label: "Falar com consultor no WhatsApp", section: "global", x: 940, y: 920, clicks: 38 },
+        { id: "hero-primary-cta", label: "Quero me matricular agora", section: "hero", x: 500, y: 180, clicks: 75 + Math.floor(Math.random() * 30) },
+        { id: "hero-secondary-cta", label: "Conhecer metodologia", section: "hero", x: 620, y: 180, clicks: 35 + Math.floor(Math.random() * 20) },
+        { id: "qbank-demo-cta", label: "Testar QBank grátis", section: "metodologia", x: 480, y: 350, clicks: 50 + Math.floor(Math.random() * 25) },
+        { id: "pricing-plan-annual", label: "Assinar Plano Anual", section: "precos", x: 320, y: 580, clicks: 45 + Math.floor(Math.random() * 25) },
+        { id: "pricing-plan-rplus", label: "Assinar Intensivo R-Plus", section: "precos", x: 500, y: 580, clicks: 80 + Math.floor(Math.random() * 30) },
+        { id: "lead-form-submit", label: "Enviar formulário de contato", section: "formulario", x: 500, y: 820, clicks: 40 + Math.floor(Math.random() * 20) },
+        { id: "whatsapp-floating-btn", label: "Falar com consultor no WhatsApp", section: "global", x: 940, y: 920, clicks: 30 + Math.floor(Math.random() * 20) },
       ];
 
       const batch = [];
       let eventIdx = 0;
 
       // 1. Page views
-      for (let i = 0; i < 280; i++) {
+      const viewsCount = 200 + Math.floor(Math.random() * 150);
+      for (let i = 0; i < viewsCount; i++) {
         const timeAgo = now - Math.floor(Math.random() * 25 * 86400000);
         const vp = i % 3 === 0 ? "mobile" : "desktop";
         const sId = `session_${p.id}_${i}`;
@@ -158,7 +368,6 @@ export async function seedInsightsLps(dbClient = client) {
         for (let k = 0; k < cta.clicks; k++) {
           const timeAgo = now - Math.floor(Math.random() * 25 * 86400000);
           const vp = k % 3 === 0 ? "mobile" : "desktop";
-          // Dispersão natural ao redor do elemento
           const jitterX = Math.round(cta.x + (Math.random() * 30 - 15));
           const jitterY = Math.round(cta.y + (Math.random() * 20 - 10));
 
@@ -186,7 +395,8 @@ export async function seedInsightsLps(dbClient = client) {
       }
 
       // 5. Form Submissions (Leads confirmados)
-      for (let s = 0; s < 45; s++) {
+      const leadsCount = 25 + Math.floor(Math.random() * 25);
+      for (let s = 0; s < leadsCount; s++) {
         const timeAgo = now - Math.floor(Math.random() * 25 * 86400000);
         const vp = s % 3 === 0 ? "mobile" : "desktop";
 
@@ -220,7 +430,7 @@ export async function seedInsightsLps(dbClient = client) {
     }
   }
 
-  console.log("Semeação de páginas e eventos de Heatmap concluída com sucesso.");
+  console.log("Semeação de páginas e eventos de Heatmap concluída com sucesso para todas as 29 frentes.");
 }
 
 // Execução direta

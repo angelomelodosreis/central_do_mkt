@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/session";
 import { listAllInsightPages } from "@/lib/modules/insights/queries";
 import { getDb } from "@/lib/db/client";
 import { insightPage } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,17 @@ export async function POST(request: Request) {
 
     const id = `lp-${slugCandidate || Date.now()}`;
     const db = await getDb();
+
+    // Se já existir por id ou url, retorna o id existente
+    const existing = await db
+      .select({ id: insightPage.id })
+      .from(insightPage)
+      .where(sql`${insightPage.id} = ${id} OR ${insightPage.url} = ${url}`)
+      .get();
+
+    if (existing) {
+      return NextResponse.json({ ok: true, id: existing.id, existing: true }, { status: 200 });
+    }
 
     await db.insert(insightPage).values({
       id,
