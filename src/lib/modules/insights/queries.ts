@@ -36,8 +36,12 @@ export type InsightsOverviewData = {
     version: string;
     visits: number;
     ctaClicks: number;
+    ctaClickRate: number;
+    formStarts: number;
+    formStartRate: number;
     leads: number;
     conversionRate: number;
+    avgScrollDepth: number;
     lastActivity: Date | null;
   }[];
 };
@@ -92,6 +96,7 @@ export async function getInsightsOverview(
     .select({
       pageId: insightEvent.pageId,
       eventType: insightEvent.eventType,
+      scrollPercent: insightEvent.scrollPercent,
       createdAt: insightEvent.createdAt,
     })
     .from(insightEvent)
@@ -113,18 +118,33 @@ export async function getInsightsOverview(
     dailyMap.set(dateKey, { visits: 0, ctaClicks: 0, leads: 0 });
   }
 
-  // Agrupamento por página
+  // Agrupamento por página com métricas de desempenho avançadas
   const pageStatsMap = new Map<
     string,
-    { visits: number; ctaClicks: number; leads: number; lastActivity: Date | null }
+    {
+      visits: number;
+      ctaClicks: number;
+      formStarts: number;
+      leads: number;
+      scrollTotal: number;
+      scrollCount: number;
+      lastActivity: Date | null;
+    }
   >();
 
   pages.forEach((p) => {
-    pageStatsMap.set(p.id, { visits: 0, ctaClicks: 0, leads: 0, lastActivity: null });
+    pageStatsMap.set(p.id, {
+      visits: 0,
+      ctaClicks: 0,
+      formStarts: 0,
+      leads: 0,
+      scrollTotal: 0,
+      scrollCount: 0,
+      lastActivity: null,
+    });
   });
 
   for (const ev of events) {
-    // Filtro por BU se aplicável
     const pageInfo = pageMap.get(ev.pageId);
     if (filters.buId && pageInfo?.businessUnitId !== filters.buId) {
       continue;
@@ -135,7 +155,15 @@ export async function getInsightsOverview(
 
     let pStat = pageStatsMap.get(ev.pageId);
     if (!pStat) {
-      pStat = { visits: 0, ctaClicks: 0, leads: 0, lastActivity: null };
+      pStat = {
+        visits: 0,
+        ctaClicks: 0,
+        formStarts: 0,
+        leads: 0,
+        scrollTotal: 0,
+        scrollCount: 0,
+        lastActivity: null,
+      };
       pageStatsMap.set(ev.pageId, pStat);
     }
 
@@ -156,11 +184,18 @@ export async function getInsightsOverview(
         break;
       case "form_start":
         totalFormStarts += 1;
+        pStat.formStarts += 1;
         break;
       case "form_submit":
         totalFormSubmits += 1;
         pStat.leads += 1;
         if (dayRecord) dayRecord.leads += 1;
+        break;
+      case "scroll_depth":
+        if (typeof ev.scrollPercent === "number") {
+          pStat.scrollTotal += ev.scrollPercent;
+          pStat.scrollCount += 1;
+        }
         break;
     }
   }
@@ -184,10 +219,22 @@ export async function getInsightsOverview(
       const stat = pageStatsMap.get(p.id) || {
         visits: 0,
         ctaClicks: 0,
+        formStarts: 0,
         leads: 0,
+        scrollTotal: 0,
+        scrollCount: 0,
         lastActivity: null,
       };
       const cr = stat.visits > 0 ? (stat.leads / stat.visits) * 100 : 0;
+      const ctaRate = stat.visits > 0 ? (stat.ctaClicks / stat.visits) * 100 : 0;
+      const formRate = stat.visits > 0 ? (stat.formStarts / stat.visits) * 100 : 0;
+      const avgScroll =
+        stat.scrollCount > 0
+          ? Math.round(stat.scrollTotal / stat.scrollCount)
+          : stat.visits > 0
+          ? 55
+          : 0;
+
       return {
         id: p.id,
         name: p.name,
@@ -196,8 +243,12 @@ export async function getInsightsOverview(
         version: p.version,
         visits: stat.visits,
         ctaClicks: stat.ctaClicks,
+        ctaClickRate: Math.round(ctaRate * 10) / 10,
+        formStarts: stat.formStarts,
+        formStartRate: Math.round(formRate * 10) / 10,
         leads: stat.leads,
         conversionRate: Math.round(cr * 10) / 10,
+        avgScrollDepth: avgScroll,
         lastActivity: stat.lastActivity,
       };
     })
