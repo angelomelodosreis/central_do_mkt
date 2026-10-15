@@ -225,6 +225,13 @@
       "when": 1788500009000,
       "tag": "0031_delete_test_persona_heloiza",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1788500010000,
+      "tag": "0032_add_comments_to_strategy_kpi_goal",
+      "breakpoints": true
     }
   ]
 }

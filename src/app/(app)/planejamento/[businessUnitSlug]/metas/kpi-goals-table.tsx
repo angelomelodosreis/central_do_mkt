@@ -38,8 +38,42 @@ type GoalRow = {
   primaryKpiTarget: string;
   secondaryKpiName: string;
   secondaryKpiTarget: string;
+  comments: string;
   sortOrder: number;
 };
+
+const DIAGNOSIS_PILLARS = [
+  {
+    key: "businessMarketDiagnosis",
+    num: 1,
+    title: "1. Negócio e mercado",
+    shortTitle: "1. Negócio",
+  },
+  {
+    key: "clientBrandDiagnosis",
+    num: 2,
+    title: "2. Cliente e marca",
+    shortTitle: "2. Cliente e marca",
+  },
+  {
+    key: "portfolioOfferDiagnosis",
+    num: 3,
+    title: "3. Portfólio e oferta",
+    shortTitle: "3. Portfólio e oferta",
+  },
+  {
+    key: "funnelConversionDiagnosis",
+    num: 4,
+    title: "4. Funil e conversão",
+    shortTitle: "4. Funil e conversão",
+  },
+  {
+    key: "contextCapacityDiagnosis",
+    num: 5,
+    title: "5. Contexto e capacidade",
+    shortTitle: "5. Contexto e capacidade",
+  },
+] as const;
 
 const SUGGESTED_DIAGNOSIS_TAGS = [
   "Mercado em crescimento",
@@ -73,32 +107,36 @@ const COMMON_KPIS = [
 const DEFAULT_ROWS_TEMPLATE: GoalRow[] = [
   {
     id: "temp-1",
-    title: "Captura de Demanda e Penetração de Mercado no Ciclo",
-    tags: ["Demanda não capturada", "Mercado em crescimento"],
-    primaryKpiName: "Faturamento Bruto",
-    primaryKpiTarget: "R$ 1.500.000",
-    secondaryKpiName: "Volume de Vendas, Ticket Médio",
-    secondaryKpiTarget: "",
+    title: "Ampliar a participação da MedCof GO no mercado",
+    tags: ["1. Negócio e mercado", "Demanda não capturada", "Mercado em crescimento"],
+    primaryKpiName: "Market share",
+    primaryKpiTarget: "8,20%",
+    secondaryKpiName: "Número de alunos",
+    secondaryKpiTarget: "159 alunos",
+    comments:
+      "potencial de mercado é que tenha crescimento estimado de 1.933 pessoas para o TEGO, nesse valor colocado teríamos crescimento estimado de 18,7%",
     sortOrder: 10,
   },
   {
     id: "temp-2",
-    title: "Crescimento da Base de Alunos",
-    tags: ["Baixa penetração no mercado", "Oportunidade de expansão"],
-    primaryKpiName: "Novas matrículas",
-    primaryKpiTarget: "1.570",
-    secondaryKpiName: "Conversão, CAC",
-    secondaryKpiTarget: "",
+    title: "Diversificar as fontes de receita da BU",
+    tags: ["3. Portfólio e oferta", "Potencial de crescimento", "Crescimento da base"],
+    primaryKpiName: "Participação dos produtos não TEGO no faturamento",
+    primaryKpiTarget: "Mínimo de 15 alunos no GO Atualiza",
+    secondaryKpiName: "Faturamento de produtos não TEGO",
+    secondaryKpiTarget: "R$ 52.455 de faturamento com o GO Atualiza",
+    comments: "",
     sortOrder: 20,
   },
   {
     id: "temp-3",
-    title: "Rentabilidade e Eficiência",
-    tags: ["CAC acima do ideal", "Oportunidade de otimização"],
-    primaryKpiName: "CAC",
-    primaryKpiTarget: "≤ R$ 1.331",
-    secondaryKpiName: "LTV, Margem Bruta",
-    secondaryKpiTarget: "",
+    title: "Melhorar a eficiência do funil e dos investimentos de marketing",
+    tags: ["4. Funil e conversão", "Oportunidade de ganho de eficiência", "Conversão abaixo do histórico"],
+    primaryKpiName: "Taxa de conversão de leads em matrículas",
+    primaryKpiTarget: "≥ 2,5%",
+    secondaryKpiName: "CAC",
+    secondaryKpiTarget: "≤ R$ 1.331",
+    comments: "",
     sortOrder: 30,
   },
 ];
@@ -122,6 +160,7 @@ export function KpiGoalsTable({
   initialCyclePeriod,
   initialGoals,
   diagnosisInsights = [],
+  activeRound,
   onSelectTab,
 }: {
   businessUnitId: string;
@@ -134,6 +173,7 @@ export function KpiGoalsTable({
   initialCyclePeriod?: string | null;
   initialGoals: StrategyKpiGoal[];
   diagnosisInsights?: string[];
+  activeRound?: any | null;
   onSelectTab?: (tab: "diagnostico" | "metas" | "revisoes") => void;
 }) {
   const [cycleObjective, setCycleObjective] = useState(
@@ -153,6 +193,7 @@ export function KpiGoalsTable({
         primaryKpiTarget: g.primaryKpiTarget ?? "",
         secondaryKpiName: g.secondaryKpiName ?? "",
         secondaryKpiTarget: g.secondaryKpiTarget ?? "",
+        comments: (g as any).comments ?? "",
         sortOrder: g.sortOrder ?? (idx + 1) * 10,
       }));
     }
@@ -242,6 +283,7 @@ export function KpiGoalsTable({
       primaryKpiTarget: "",
       secondaryKpiName: "",
       secondaryKpiTarget: "",
+      comments: "",
       sortOrder: newIndex * 10,
     };
     setGoals((prev) => [...prev, newRow]);
@@ -278,6 +320,64 @@ export function KpiGoalsTable({
     setStatusMessage(null);
   }
 
+  function handleNavigateToDiagnosis(tag: string) {
+    let pillarNum = 1;
+    const lower = tag.toLowerCase();
+    if (
+      lower.includes("1") ||
+      lower.includes("negócio") ||
+      lower.includes("negocio") ||
+      lower.includes("mercado")
+    ) {
+      pillarNum = 1;
+    } else if (
+      lower.includes("2") ||
+      lower.includes("cliente") ||
+      lower.includes("marca")
+    ) {
+      pillarNum = 2;
+    } else if (
+      lower.includes("3") ||
+      lower.includes("portfólio") ||
+      lower.includes("portfolio") ||
+      lower.includes("oferta")
+    ) {
+      pillarNum = 3;
+    } else if (
+      lower.includes("4") ||
+      lower.includes("funil") ||
+      lower.includes("conversão") ||
+      lower.includes("conversao")
+    ) {
+      pillarNum = 4;
+    } else if (
+      lower.includes("5") ||
+      lower.includes("contexto") ||
+      lower.includes("capacidade")
+    ) {
+      pillarNum = 5;
+    }
+
+    if (onSelectTab) {
+      onSelectTab("diagnostico");
+      setTimeout(() => {
+        const el = document.getElementById(`pilar-${pillarNum}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("bg-sky-100/90", "transition-all", "duration-500");
+          setTimeout(() => {
+            el.classList.remove("bg-sky-100/90");
+          }, 2500);
+        }
+      }, 120);
+    } else {
+      const targetUrl = `/planejamento/${businessUnitSlug}/ciclos?${
+        cycleSlug ? `ciclo=${cycleSlug}&` : ""
+      }aba=diagnostico#pilar-${pillarNum}`;
+      window.location.href = targetUrl;
+    }
+  }
+
   function handleSave() {
     if (!canEdit) return;
     startTransition(async () => {
@@ -291,6 +391,7 @@ export function KpiGoalsTable({
         primaryKpiTarget: g.primaryKpiTarget.trim() || null,
         secondaryKpiName: g.secondaryKpiName.trim() || null,
         secondaryKpiTarget: g.secondaryKpiTarget.trim() || null,
+        comments: g.comments?.trim() || null,
         sortOrder: (idx + 1) * 10,
       }));
 
@@ -479,26 +580,32 @@ export function KpiGoalsTable({
                   <th scope="col" className="px-3 py-3.5 w-12 text-center">
                     #
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[220px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[210px]">
                     Meta <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[270px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[240px]">
                     <span className="flex items-center gap-1">
                       Embasamento no Diagnóstico <span className="text-rose-600">*</span>
                       <HelpCircle className="size-3 text-slate-400" />
                     </span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[150px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[140px]">
                     KPI Principal <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[120px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[110px]">
                     Valor-Alvo <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[190px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[140px]">
                     <span className="flex items-center gap-1">
-                      KPI Secundário (um ou mais)
+                      KPI Secundário
                       <HelpCircle className="size-3 text-slate-400" />
                     </span>
+                  </th>
+                  <th scope="col" className="px-4 py-3.5 min-w-[110px]">
+                    Valor-Alvo
+                  </th>
+                  <th scope="col" className="px-4 py-3.5 min-w-[200px]">
+                    Comentários
                   </th>
                   {canEdit && (
                     <th scope="col" className="px-3 py-3.5 w-12 text-center">
@@ -531,7 +638,7 @@ export function KpiGoalsTable({
                             onChange={(e) =>
                               updateGoalRow(row.id, { title: e.target.value })
                             }
-                            placeholder="Ex.: Captura de Demanda e Penetração de Mercado no Ciclo"
+                            placeholder="Ex.: Ampliar a participação da MedCof GO no mercado"
                             rows={2}
                             className={cn(
                               "w-full rounded-xl border border-slate-200 bg-white p-2.5 pb-5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-none shadow-2xs",
@@ -551,14 +658,22 @@ export function KpiGoalsTable({
                             {row.tags.map((tag, tIdx) => (
                               <span
                                 key={tIdx}
-                                className="inline-flex items-center gap-1 rounded-lg bg-purple-50/80 px-2.5 py-1 text-[11px] font-semibold text-purple-700 border border-purple-200 shadow-2xs"
+                                className="inline-flex items-center gap-1 rounded-lg bg-purple-50/90 px-2 py-1 text-[11px] font-semibold text-purple-700 border border-purple-200/90 shadow-2xs hover:bg-purple-100 transition"
                               >
-                                <span>🔗 {tag}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleNavigateToDiagnosis(tag)}
+                                  title={`Ver diagnóstico: ${tag}`}
+                                  className="inline-flex items-center gap-1 hover:underline cursor-pointer text-purple-700 hover:text-purple-900"
+                                >
+                                  <span>🔗 {tag}</span>
+                                </button>
                                 {canEdit && (
                                   <button
                                     type="button"
                                     onClick={() => removeTagFromRow(row.id, tag)}
-                                    className="text-purple-400 hover:text-purple-900 cursor-pointer"
+                                    className="text-purple-400 hover:text-rose-600 cursor-pointer ml-0.5"
+                                    title="Remover"
                                   >
                                     <X className="size-3" />
                                   </button>
@@ -580,43 +695,90 @@ export function KpiGoalsTable({
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-violet-700 transition cursor-pointer"
                               >
                                 <Plus className="size-3 text-violet-600" />
-                                Adicionar insight do diagnóstico
+                                Adicionar pilar ou insight do diagnóstico
                               </button>
 
                               {/* Dropdown / Popover de Insights */}
                               {activePickerRowId === row.id && (
                                 <div
                                   ref={pickerRef}
-                                  className="absolute left-0 top-full z-20 mt-1 w-80 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xl space-y-3"
+                                  className="absolute left-0 top-full z-30 mt-1 w-84 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl space-y-3"
                                 >
-                                  {diagnosisInsights.length > 0 && (
-                                    <div>
-                                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                        Do diagnóstico da BU
-                                      </p>
-                                      <div className="mt-1 flex flex-wrap gap-1">
-                                        {diagnosisInsights.map((ins, iIdx) => (
+                                  {/* Pilares do Diagnóstico (com texto real preenchido) */}
+                                  <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-purple-700 flex items-center gap-1">
+                                      <span>🔗</span> Pilares do Diagnóstico
+                                    </p>
+                                    <div className="mt-1.5 flex flex-col gap-1 max-h-44 overflow-y-auto pr-1">
+                                      {DIAGNOSIS_PILLARS.map((pillar) => {
+                                        const filledText = activeRound?.[pillar.key] as string | undefined;
+                                        return (
                                           <button
-                                            key={iIdx}
+                                            key={pillar.key}
                                             type="button"
                                             onClick={() => {
-                                              addTagToRow(row.id, ins);
+                                              addTagToRow(row.id, pillar.title);
                                               setActivePickerRowId(null);
                                             }}
-                                            className="rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-700 hover:bg-purple-100 hover:text-purple-800 border border-slate-200 transition cursor-pointer"
+                                            className="group flex flex-col items-start rounded-xl p-1.5 text-left border border-slate-100 bg-slate-50/60 hover:bg-purple-50 hover:border-purple-200 transition cursor-pointer"
                                           >
-                                            {ins}
+                                            <div className="flex items-center justify-between w-full">
+                                              <span className="text-[11px] font-bold text-slate-800 group-hover:text-purple-900">
+                                                🔗 {pillar.title}
+                                              </span>
+                                              {filledText ? (
+                                                <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
+                                                  Preenchido
+                                                </span>
+                                              ) : (
+                                                <span className="text-[9px] text-slate-400">
+                                                  Vazio
+                                                </span>
+                                              )}
+                                            </div>
+                                            {filledText && (
+                                              <p className="mt-0.5 text-[10px] text-slate-500 line-clamp-1 italic">
+                                                &ldquo;{filledText}&rdquo;
+                                              </p>
+                                            )}
                                           </button>
-                                        ))}
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+
+                                  {/* Desafios e Oportunidades da Rodada */}
+                                  {diagnosisInsights.filter((ins) => !ins.startsWith("1.") && !ins.startsWith("2.") && !ins.startsWith("3.") && !ins.startsWith("4.") && !ins.startsWith("5.")).length > 0 && (
+                                    <div>
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Da rodada ativa
+                                      </p>
+                                      <div className="mt-1 flex flex-wrap gap-1">
+                                        {diagnosisInsights
+                                          .filter((ins) => !ins.startsWith("1.") && !ins.startsWith("2.") && !ins.startsWith("3.") && !ins.startsWith("4.") && !ins.startsWith("5."))
+                                          .map((ins, iIdx) => (
+                                            <button
+                                              key={iIdx}
+                                              type="button"
+                                              onClick={() => {
+                                                addTagToRow(row.id, ins);
+                                                setActivePickerRowId(null);
+                                              }}
+                                              className="rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-medium text-slate-700 hover:bg-purple-100 hover:text-purple-800 border border-slate-200 transition cursor-pointer"
+                                            >
+                                              {ins}
+                                            </button>
+                                          ))}
                                       </div>
                                     </div>
                                   )}
 
+                                  {/* Insights sugeridos */}
                                   <div>
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                       Insights sugeridos
                                     </p>
-                                    <div className="mt-1 flex flex-wrap gap-1 max-h-36 overflow-y-auto">
+                                    <div className="mt-1 flex flex-wrap gap-1 max-h-28 overflow-y-auto">
                                       {SUGGESTED_DIAGNOSIS_TAGS.map(
                                         (tag, sIdx) => (
                                           <button
@@ -635,6 +797,7 @@ export function KpiGoalsTable({
                                     </div>
                                   </div>
 
+                                  {/* Input livre */}
                                   <div className="border-t border-slate-100 pt-2">
                                     <div className="flex gap-1.5">
                                       <input
@@ -651,7 +814,7 @@ export function KpiGoalsTable({
                                             setActivePickerRowId(null);
                                           }
                                         }}
-                                        placeholder="Novo insight…"
+                                        placeholder="Novo insight ou pilar…"
                                         className="w-full rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] focus:outline-none focus:border-violet-500"
                                       />
                                       <button
@@ -687,7 +850,7 @@ export function KpiGoalsTable({
                                 primaryKpiName: e.target.value,
                               })
                             }
-                            placeholder="Ex.: Faturamento Bruto"
+                            placeholder="Ex.: Market share"
                             className={cn(
                               "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
                               !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
@@ -712,7 +875,7 @@ export function KpiGoalsTable({
                               primaryKpiTarget: e.target.value,
                             })
                           }
-                          placeholder="Ex.: R$ 1.500.000"
+                          placeholder="Ex.: 8,20%"
                           className={cn(
                             "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs font-medium",
                             !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
@@ -720,7 +883,7 @@ export function KpiGoalsTable({
                         />
                       </td>
 
-                      {/* KPI Secundário (um ou mais) */}
+                      {/* KPI Secundário */}
                       <td className="px-4 py-3.5">
                         <input
                           type="text"
@@ -731,12 +894,58 @@ export function KpiGoalsTable({
                               secondaryKpiName: e.target.value,
                             })
                           }
-                          placeholder="Ex.: Volume de Vendas, Ticket Médio"
+                          placeholder="Ex.: Número de alunos"
                           className={cn(
                             "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
                             !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
                           )}
                         />
+                      </td>
+
+                      {/* Valor-Alvo (Secundário) */}
+                      <td className="px-4 py-3.5">
+                        <input
+                          type="text"
+                          value={row.secondaryKpiTarget}
+                          disabled={!canEdit}
+                          onChange={(e) =>
+                            updateGoalRow(row.id, {
+                              secondaryKpiTarget: e.target.value,
+                            })
+                          }
+                          placeholder="Ex.: 159 alunos"
+                          className={cn(
+                            "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs font-medium",
+                            !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                          )}
+                        />
+                      </td>
+
+                      {/* Comentários */}
+                      <td className="px-4 py-3.5">
+                        <div className="relative">
+                          <textarea
+                            value={row.comments}
+                            disabled={!canEdit}
+                            maxLength={500}
+                            rows={2}
+                            onChange={(e) =>
+                              updateGoalRow(row.id, {
+                                comments: e.target.value,
+                              })
+                            }
+                            placeholder="Ex.: potencial de mercado de 1.933 pessoas..."
+                            className={cn(
+                              "w-full rounded-xl border border-slate-200 bg-white p-2.5 pb-4 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-none shadow-2xs",
+                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                            )}
+                          />
+                          {row.comments.length > 0 && (
+                            <span className="absolute bottom-1 right-2 text-[8px] tabular-nums font-mono text-slate-400">
+                              {row.comments.length}/500
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Ações */}

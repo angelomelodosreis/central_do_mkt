@@ -255,25 +255,34 @@ export default async function CyclesPage({
     initialReview = reviews[0] ?? null;
 
     if (activeRound) {
+      if (activeRound.businessMarketDiagnosis) {
+        diagnosisInsights.push("1. Negócio e mercado");
+      }
+      if (activeRound.clientBrandDiagnosis) {
+        diagnosisInsights.push("2. Cliente e marca");
+      }
+      if (activeRound.portfolioOfferDiagnosis) {
+        diagnosisInsights.push("3. Portfólio e oferta");
+      }
+      if (activeRound.funnelConversionDiagnosis) {
+        diagnosisInsights.push("4. Funil e conversão");
+      }
+      if (activeRound.contextCapacityDiagnosis) {
+        diagnosisInsights.push("5. Contexto e capacidade");
+      }
       if (activeRound.mainChallenge) {
         diagnosisInsights.push(
-          activeRound.mainChallenge.length > 40
-            ? `${activeRound.mainChallenge.slice(0, 37)}...`
+          activeRound.mainChallenge.length > 50
+            ? `${activeRound.mainChallenge.slice(0, 47)}...`
             : activeRound.mainChallenge,
         );
       }
       if (activeRound.mainOpportunity) {
         diagnosisInsights.push(
-          activeRound.mainOpportunity.length > 40
-            ? `${activeRound.mainOpportunity.slice(0, 37)}...`
+          activeRound.mainOpportunity.length > 50
+            ? `${activeRound.mainOpportunity.slice(0, 47)}...`
             : activeRound.mainOpportunity,
         );
-      }
-      if (activeRound.businessMarketDiagnosis) {
-        diagnosisInsights.push("Negócio e mercado: leitura da rodada");
-      }
-      if (activeRound.clientBrandDiagnosis) {
-        diagnosisInsights.push("Cliente e marca: leitura da rodada");
       }
 
       if (activeRound.cycleObjective) {

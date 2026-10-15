@@ -308,7 +308,7 @@ export function DiagnosisTableView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {PILLARS.map((pillar) => {
+                {PILLARS.map((pillar, pIdx) => {
                   const Icon = pillar.icon;
                   const value = data[pillar.key];
                   const charCount = value.length;
@@ -316,7 +316,9 @@ export function DiagnosisTableView({
                   return (
                     <tr
                       key={pillar.key}
-                      className="hover:bg-slate-50/70 transition-colors align-top"
+                      id={`pilar-${pIdx + 1}`}
+                      data-pillar-key={pillar.key}
+                      className="hover:bg-slate-50/70 transition-colors align-top scroll-mt-28 target:bg-sky-50/90 target:ring-2 target:ring-sky-400/80 rounded-xl"
                     >
                       {/* Coluna 1: Pilar */}
                       <td className="px-4 py-4">

@@ -1101,6 +1101,7 @@ export async function saveCycleObjectiveAndGoalsAction(data: {
     primaryKpiTarget?: string | null;
     secondaryKpiName?: string | null;
     secondaryKpiTarget?: string | null;
+    comments?: string | null;
     sortOrder?: number;
   }>;
 }): Promise<{ ok: boolean; error?: string }> {
@@ -1182,6 +1183,7 @@ export async function saveCycleObjectiveAndGoalsAction(data: {
           primaryKpiTarget: item.primaryKpiTarget ?? null,
           secondaryKpiName: item.secondaryKpiName ?? null,
           secondaryKpiTarget: item.secondaryKpiTarget ?? null,
+          comments: item.comments ?? null,
           sortOrder,
           updatedBy: gate.currentUser.id,
           updatedAt: now,
@@ -1200,6 +1202,7 @@ export async function saveCycleObjectiveAndGoalsAction(data: {
         primaryKpiTarget: item.primaryKpiTarget ?? null,
         secondaryKpiName: item.secondaryKpiName ?? null,
         secondaryKpiTarget: item.secondaryKpiTarget ?? null,
+        comments: item.comments ?? null,
         sortOrder,
         createdBy: gate.currentUser.id,
         updatedBy: gate.currentUser.id,

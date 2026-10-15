@@ -122,28 +122,38 @@ describe("Módulo de Metas e Planejamento Estratégico", () => {
       assert.ok(tag.startsWith("🔗"));
     });
 
-    // Valida pares de KPI Primário e Secundário de referência
+    // Valida estrutura completa com 2º valor-alvo e comentários da planilha da Heloiza
     const referenceRow = {
-      meta: "Aumentar o volume de matrículas",
-      embasamento: "🔗 Demanda não capturada 🔗 Mercado em crescimento",
-      kpiPrimario: { nome: "Matrículas", alvo: "1.570" },
-      kpiSecundario: { nome: "Conversão", alvo: "≥ 2,4%" },
+      meta: "Ampliar a participação da MedCof GO no mercado",
+      embasamento: "🔗 1. Negócio e mercado 🔗 Demanda não capturada 🔗 Mercado em crescimento",
+      kpiPrimario: { nome: "Market share", alvo: "8,20%" },
+      kpiSecundario: { nome: "Número de alunos", alvo: "159 alunos" },
+      comentarios:
+        "potencial de mercado é que tenha crescimento estimado de 1.933 pessoas para o TEGO, nesse valor colocado teríamos crescimento estimado de 18,7%",
     };
 
-    assert.equal(referenceRow.kpiPrimario.nome, "Matrículas");
-    assert.equal(referenceRow.kpiSecundario.nome, "Conversão");
+    assert.equal(referenceRow.kpiPrimario.nome, "Market share");
+    assert.equal(referenceRow.kpiPrimario.alvo, "8,20%");
+    assert.equal(referenceRow.kpiSecundario.nome, "Número de alunos");
+    assert.equal(referenceRow.kpiSecundario.alvo, "159 alunos");
+    assert.ok(referenceRow.comentarios.includes("18,7%"));
   });
 
-  test("Diagnóstico 2.0: Os 5 Pilares Oficiais com Coluna E (gid=1451107508)", () => {
+  test("Diagnóstico 2.0: Os 5 Pilares Oficiais com Coluna E e Âncoras", () => {
     const FIVE_PILLARS = [
-      "negocio_mercado",
-      "cliente_marca",
-      "portfolio_oferta",
-      "funil_conversao",
-      "contexto_capacidade",
+      { key: "businessMarketDiagnosis", num: 1, title: "1. Negócio e mercado", anchor: "pilar-1" },
+      { key: "clientBrandDiagnosis", num: 2, title: "2. Cliente e marca", anchor: "pilar-2" },
+      { key: "portfolioOfferDiagnosis", num: 3, title: "3. Portfólio e oferta", anchor: "pilar-3" },
+      { key: "funnelConversionDiagnosis", num: 4, title: "4. Funil e conversão", anchor: "pilar-4" },
+      { key: "contextCapacityDiagnosis", num: 5, title: "5. Contexto e capacidade", anchor: "pilar-5" },
     ];
 
     assert.equal(FIVE_PILLARS.length, 5);
+    FIVE_PILLARS.forEach((p, idx) => {
+      assert.equal(p.num, idx + 1);
+      assert.equal(p.anchor, `pilar-${idx + 1}`);
+      assert.ok(p.title.startsWith(`${idx + 1}.`));
+    });
   });
 });
 

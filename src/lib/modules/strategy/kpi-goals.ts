@@ -30,6 +30,7 @@ export async function saveKpiGoal(data: {
   primaryKpiTarget?: string | null;
   secondaryKpiName?: string | null;
   secondaryKpiTarget?: string | null;
+  comments?: string | null;
   sortOrder?: number;
   userId?: string;
 }): Promise<StrategyKpiGoal> {
@@ -46,6 +47,7 @@ export async function saveKpiGoal(data: {
         primaryKpiTarget: data.primaryKpiTarget ?? null,
         secondaryKpiName: data.secondaryKpiName ?? null,
         secondaryKpiTarget: data.secondaryKpiTarget ?? null,
+        comments: data.comments ?? null,
         sortOrder: data.sortOrder ?? 0,
         updatedBy: data.userId ?? null,
         updatedAt: now,
@@ -76,6 +78,7 @@ export async function saveKpiGoal(data: {
     primaryKpiTarget: data.primaryKpiTarget ?? null,
     secondaryKpiName: data.secondaryKpiName ?? null,
     secondaryKpiTarget: data.secondaryKpiTarget ?? null,
+    comments: data.comments ?? null,
     sortOrder: data.sortOrder ?? 0,
     createdBy: data.userId ?? null,
     updatedBy: data.userId ?? null,

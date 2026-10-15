@@ -462,6 +462,7 @@ export function CyclesView({
                 initialCyclePeriod={initialCyclePeriod}
                 initialGoals={kpiGoals}
                 diagnosisInsights={diagnosisInsights}
+                activeRound={activeRound}
                 onSelectTab={setActiveTab}
               />
             </div>

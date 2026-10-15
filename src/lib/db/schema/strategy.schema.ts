@@ -428,6 +428,7 @@ export const strategyKpiGoal = sqliteTable(
     primaryKpiTarget: text("primary_kpi_target"),
     secondaryKpiName: text("secondary_kpi_name"),
     secondaryKpiTarget: text("secondary_kpi_target"),
+    comments: text("comments"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdBy: text("created_by"),
     updatedBy: text("updated_by"),
