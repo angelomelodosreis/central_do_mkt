@@ -27,6 +27,7 @@ import {
   FileText,
   Building2,
   ShieldCheck,
+  Scale,
 } from "lucide-react";
 import {
   AreaChart,
@@ -43,6 +44,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 import type { InsightsOverviewData } from "@/lib/modules/insights/queries";
+import { AbTestingView } from "./ab-testing-view";
 
 export function InsightsOverviewView({
   initialData,
@@ -53,7 +55,9 @@ export function InsightsOverviewView({
 }) {
   const router = useRouter();
   const [data, setData] = useState<InsightsOverviewData>(initialData);
-  const [activeSubTab, setActiveSubTab] = useState<"bus" | "desempenho" | "inspetor">("bus");
+  const [activeSubTab, setActiveSubTab] = useState<"bus" | "desempenho" | "ab-test" | "inspetor">("bus");
+  const [selectedAbPageA, setSelectedAbPageA] = useState<string>("");
+  const [selectedAbPageB, setSelectedAbPageB] = useState<string>("");
   const [period, setPeriod] = useState<number>(30);
   const [selectedBu, setSelectedBu] = useState<string>("all");
   const [viewport, setViewport] = useState<"all" | "desktop" | "mobile">("all");
@@ -236,6 +240,19 @@ export function InsightsOverviewView({
         >
           <TrendingUp className="size-4 text-emerald-600" />
           Desempenho das Landing Pages
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("ab-test")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-5 py-3 transition",
+            activeSubTab === "ab-test"
+              ? "border-brand-600 text-brand-600 font-bold"
+              : "border-transparent hover:text-slate-900"
+          )}
+        >
+          <Scale className="size-4 text-purple-600" />
+          Teste A/B (Comparar 2 LPs)
         </button>
         <button
           type="button"
@@ -904,13 +921,27 @@ export function InsightsOverviewView({
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        <Link
-                          href={`/insights/paginas/${page.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-500/20 transition hover:bg-amber-500/20"
-                        >
-                          <Flame className="size-3.5" />
-                          Heatmap
-                        </Link>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAbPageA(page.id);
+                              setActiveSubTab("ab-test");
+                            }}
+                            className="inline-flex items-center gap-1 rounded-xl bg-purple-500/10 px-2.5 py-1.5 text-xs font-semibold text-purple-700 ring-1 ring-purple-500/20 transition hover:bg-purple-500/20"
+                            title="Comparar esta página no Teste A/B"
+                          >
+                            <Scale className="size-3.5" />
+                            A/B
+                          </button>
+                          <Link
+                            href={`/insights/paginas/${page.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-500/20 transition hover:bg-amber-500/20"
+                          >
+                            <Flame className="size-3.5" />
+                            Heatmap
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -921,7 +952,24 @@ export function InsightsOverviewView({
         </div>
       )}
 
-      {/* ABA 3: INSPETOR & MAPA DE CALOR AO VIVO */}
+      {/* ABA 3: TESTE A/B E COMPARADOR DE 2 LANDING PAGES */}
+      {activeSubTab === "ab-test" && (
+        <AbTestingView
+          availablePages={(data.topPages || []).map((p) => ({
+            id: p.id,
+            name: p.name,
+            url: p.url,
+            buName: p.buName,
+            version: p.version,
+            visits: p.visits,
+            conversionRate: p.conversionRate,
+          }))}
+          initialPageAId={selectedAbPageA || data.topPages?.[0]?.id}
+          initialPageBId={selectedAbPageB || data.topPages?.[1]?.id}
+        />
+      )}
+
+      {/* ABA 4: INSPETOR & MAPA DE CALOR AO VIVO */}
       {activeSubTab === "inspetor" && (
         <div className="rounded-3xl border border-amber-200/80 bg-gradient-to-r from-amber-500/5 via-brand-500/5 to-purple-500/5 p-6 shadow-sm space-y-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">

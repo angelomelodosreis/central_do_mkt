@@ -917,3 +917,204 @@ export async function getPageUtmBreakdown(pageId: string, periodDays = 30) {
     }))
     .sort((a, b) => b.visits - a.visits);
 }
+
+export interface PageAbMetrics {
+  id: string;
+  name: string;
+  url: string;
+  buName: string;
+  version: string;
+  visits: number;
+  ctaClicks: number;
+  ctaClickRate: number;
+  formStarts: number;
+  formStartRate: number;
+  leads: number;
+  conversionRate: number;
+  avgScrollDepth: number;
+  topElements: { id: string; label: string; clicks: number; sharePercent: number }[];
+  funnel: {
+    visits: number;
+    ctaClicks: number;
+    formStarts: number;
+    leads: number;
+    stepPercentages: {
+      visitToCta: number;
+      ctaToForm: number;
+      formToLead: number;
+      overall: number;
+    };
+  };
+}
+
+export interface AbComparisonResult {
+  pageA: PageAbMetrics;
+  pageB: PageAbMetrics;
+  winner: "A" | "B" | "tie";
+  upliftPercent: number;
+  leadsDiff: number;
+  periodDays: number;
+  viewport: string;
+  summaryText: string;
+}
+
+/**
+ * Retorna análise comparativa detalhada de Teste A/B entre 2 Landing Pages
+ */
+export async function getAbComparisonData(
+  pageAId: string,
+  pageBId: string,
+  filters: { periodDays?: number; viewport?: string } = {}
+): Promise<AbComparisonResult | null> {
+  const db = await getDb();
+  const periodDays = filters.periodDays || 30;
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - periodDays);
+
+  async function computePageMetrics(pageId: string): Promise<PageAbMetrics | null> {
+    const page = await getInsightPageById(pageId);
+    if (!page) return null;
+
+    const conditions = [
+      eq(insightEvent.pageId, page.id),
+      gte(insightEvent.createdAt, startDate),
+    ];
+
+    if (filters.viewport && filters.viewport !== "all") {
+      conditions.push(eq(insightEvent.viewport, filters.viewport as InsightViewport));
+    }
+
+    const events = await db
+      .select({
+        eventType: insightEvent.eventType,
+        elementId: insightEvent.elementId,
+        elementLabel: insightEvent.elementLabel,
+        scrollPercent: insightEvent.scrollPercent,
+      })
+      .from(insightEvent)
+      .where(and(...conditions));
+
+    let visits = 0;
+    let ctaClicks = 0;
+    let formStarts = 0;
+    let leads = 0;
+    let scrollTotal = 0;
+    let scrollCount = 0;
+
+    const elementMap = new Map<string, { id: string; label: string; clicks: number }>();
+
+    for (const ev of events) {
+      if (ev.eventType === "page_view") visits += 1;
+      else if (ev.eventType === "cta_click") {
+        ctaClicks += 1;
+        if (ev.elementId) {
+          const existing = elementMap.get(ev.elementId) || {
+            id: ev.elementId,
+            label: ev.elementLabel || ev.elementId,
+            clicks: 0,
+          };
+          existing.clicks += 1;
+          elementMap.set(ev.elementId, existing);
+        }
+      } else if (ev.eventType === "form_start") formStarts += 1;
+      else if (ev.eventType === "form_submit") leads += 1;
+      else if (ev.eventType === "scroll_depth" && typeof ev.scrollPercent === "number") {
+        scrollTotal += ev.scrollPercent;
+        scrollCount += 1;
+      }
+    }
+
+    const ctaClickRate = visits > 0 ? Math.round((ctaClicks / visits) * 1000) / 10 : 0;
+    const formStartRate = visits > 0 ? Math.round((formStarts / visits) * 1000) / 10 : 0;
+    const conversionRate = visits > 0 ? Math.round((leads / visits) * 1000) / 10 : 0;
+    const avgScrollDepth = scrollCount > 0 ? Math.round(scrollTotal / scrollCount) : visits > 0 ? 55 : 0;
+
+    const topElements = Array.from(elementMap.values())
+      .map((el) => ({
+        ...el,
+        sharePercent: ctaClicks > 0 ? Math.round((el.clicks / ctaClicks) * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 5);
+
+    const funnel = {
+      visits,
+      ctaClicks,
+      formStarts,
+      leads,
+      stepPercentages: {
+        visitToCta: visits > 0 ? Math.round((ctaClicks / visits) * 1000) / 10 : 0,
+        ctaToForm: ctaClicks > 0 ? Math.round((formStarts / ctaClicks) * 1000) / 10 : 0,
+        formToLead: formStarts > 0 ? Math.round((leads / formStarts) * 1000) / 10 : 0,
+        overall: conversionRate,
+      },
+    };
+
+    return {
+      id: page.id,
+      name: page.name,
+      url: page.url,
+      buName: page.buName || "Sem BU",
+      version: page.version,
+      visits,
+      ctaClicks,
+      ctaClickRate,
+      formStarts,
+      formStartRate,
+      leads,
+      conversionRate,
+      avgScrollDepth,
+      topElements,
+      funnel,
+    };
+  }
+
+  const [pageA, pageB] = await Promise.all([
+    computePageMetrics(pageAId),
+    computePageMetrics(pageBId),
+  ]);
+
+  if (!pageA || !pageB) return null;
+
+  let winner: "A" | "B" | "tie" = "tie";
+  let upliftPercent = 0;
+  const leadsDiff = Math.abs(pageA.leads - pageB.leads);
+
+  if (pageA.conversionRate > pageB.conversionRate) {
+    winner = "A";
+    upliftPercent =
+      pageB.conversionRate > 0
+        ? Math.round(((pageA.conversionRate - pageB.conversionRate) / pageB.conversionRate) * 1000) / 10
+        : pageA.conversionRate > 0
+        ? 100
+        : 0;
+  } else if (pageB.conversionRate > pageA.conversionRate) {
+    winner = "B";
+    upliftPercent =
+      pageA.conversionRate > 0
+        ? Math.round(((pageB.conversionRate - pageA.conversionRate) / pageA.conversionRate) * 1000) / 10
+        : pageB.conversionRate > 0
+        ? 100
+        : 0;
+  }
+
+  let summaryText = "";
+  if (winner === "tie") {
+    summaryText = `Empate técnico: ambas as páginas apresentaram a mesma taxa de conversão de ${pageA.conversionRate}%.`;
+  } else {
+    const winningPage = winner === "A" ? pageA : pageB;
+    const losingPage = winner === "A" ? pageB : pageA;
+    summaryText = `A página "${winningPage.name}" venceu o teste com taxa de conversão de ${winningPage.conversionRate}% contra ${losingPage.conversionRate}%, gerando um uplift de +${upliftPercent}% (+${leadsDiff} leads).`;
+  }
+
+  return {
+    pageA,
+    pageB,
+    winner,
+    upliftPercent,
+    leadsDiff,
+    periodDays,
+    viewport: filters.viewport || "all",
+    summaryText,
+  };
+}
