@@ -56,6 +56,15 @@ export async function getPermissionsForRole(
     map.personas = { canView: true, canEdit: true };
   }
 
+  // Insights & Heatmap: acessível a todos os usuários autenticados da plataforma,
+  // com permissão de cadastro/edição para admin e leader
+  if (!map.insights.canView) {
+    map.insights = {
+      canView: true,
+      canEdit: role === "admin" || role === "leader",
+    };
+  }
+
   return map;
 }
 
