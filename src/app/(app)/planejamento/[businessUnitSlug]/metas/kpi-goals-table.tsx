@@ -108,7 +108,7 @@ const DEFAULT_ROWS_TEMPLATE: GoalRow[] = [
   {
     id: "temp-1",
     title: "Ampliar a participação da MedCof GO no mercado",
-    tags: ["1. Negócio e mercado", "Demanda não capturada", "Mercado em crescimento"],
+    tags: ["1. Negócio", "Demanda não capturada", "Mercado em crescimento"],
     primaryKpiName: "Market share",
     primaryKpiTarget: "8,20%",
     secondaryKpiName: "Número de alunos",
@@ -120,7 +120,7 @@ const DEFAULT_ROWS_TEMPLATE: GoalRow[] = [
   {
     id: "temp-2",
     title: "Diversificar as fontes de receita da BU",
-    tags: ["3. Portfólio e oferta", "Potencial de crescimento", "Crescimento da base"],
+    tags: ["3. Portfólio e oferta", "Potencial de crescimento do produto", "Crescimento da base"],
     primaryKpiName: "Participação dos produtos não TEGO no faturamento",
     primaryKpiTarget: "Mínimo de 15 alunos no GO Atualiza",
     secondaryKpiName: "Faturamento de produtos não TEGO",
@@ -135,7 +135,7 @@ const DEFAULT_ROWS_TEMPLATE: GoalRow[] = [
     primaryKpiName: "Taxa de conversão de leads em matrículas",
     primaryKpiTarget: "≥ 2,5%",
     secondaryKpiName: "CAC",
-    secondaryKpiTarget: "≤ R$ 1.331",
+    secondaryKpiTarget: "",
     comments: "",
     sortOrder: 30,
   },
@@ -327,33 +327,43 @@ export function KpiGoalsTable({
       lower.includes("1") ||
       lower.includes("negócio") ||
       lower.includes("negocio") ||
-      lower.includes("mercado")
+      lower.includes("mercado") ||
+      lower.includes("demanda")
     ) {
       pillarNum = 1;
     } else if (
       lower.includes("2") ||
       lower.includes("cliente") ||
-      lower.includes("marca")
+      lower.includes("marca") ||
+      lower.includes("persona")
     ) {
       pillarNum = 2;
     } else if (
       lower.includes("3") ||
       lower.includes("portfólio") ||
       lower.includes("portfolio") ||
-      lower.includes("oferta")
+      lower.includes("oferta") ||
+      lower.includes("produto") ||
+      lower.includes("receita")
     ) {
       pillarNum = 3;
     } else if (
       lower.includes("4") ||
       lower.includes("funil") ||
       lower.includes("conversão") ||
-      lower.includes("conversao")
+      lower.includes("conversao") ||
+      lower.includes("eficiência") ||
+      lower.includes("eficiencia") ||
+      lower.includes("leads")
     ) {
       pillarNum = 4;
     } else if (
       lower.includes("5") ||
       lower.includes("contexto") ||
-      lower.includes("capacidade")
+      lower.includes("capacidade") ||
+      lower.includes("operação") ||
+      lower.includes("operacao") ||
+      lower.includes("equipe")
     ) {
       pillarNum = 5;
     }
@@ -717,14 +727,14 @@ export function KpiGoalsTable({
                                             key={pillar.key}
                                             type="button"
                                             onClick={() => {
-                                              addTagToRow(row.id, pillar.title);
+                                              addTagToRow(row.id, pillar.shortTitle);
                                               setActivePickerRowId(null);
                                             }}
                                             className="group flex flex-col items-start rounded-xl p-1.5 text-left border border-slate-100 bg-slate-50/60 hover:bg-purple-50 hover:border-purple-200 transition cursor-pointer"
                                           >
                                             <div className="flex items-center justify-between w-full">
                                               <span className="text-[11px] font-bold text-slate-800 group-hover:text-purple-900">
-                                                🔗 {pillar.title}
+                                                🔗 {pillar.shortTitle}
                                               </span>
                                               {filledText ? (
                                                 <span className="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
