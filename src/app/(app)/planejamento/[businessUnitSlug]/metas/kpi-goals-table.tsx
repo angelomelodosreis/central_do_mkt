@@ -589,22 +589,22 @@ export function KpiGoalsTable({
                       <HelpCircle className="size-3 text-slate-400" />
                     </span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[140px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[240px]">
                     KPI Principal <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[110px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[120px]">
                     Valor-Alvo <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[140px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[220px]">
                     <span className="flex items-center gap-1">
                       KPI Secundário
                       <HelpCircle className="size-3 text-slate-400" />
                     </span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[110px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[120px]">
                     Valor-Alvo
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[200px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[220px]">
                     Comentários
                   </th>
                   {canEdit && (
@@ -838,13 +838,14 @@ export function KpiGoalsTable({
                       </td>
 
                       {/* KPI Principal * com Datalist/Sugestões */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5 min-w-[240px]">
                         <div className="relative">
                           <input
                             type="text"
                             list={`kpi-options-${row.id}`}
                             value={row.primaryKpiName}
                             disabled={!canEdit}
+                            title={row.primaryKpiName || undefined}
                             onChange={(e) =>
                               updateGoalRow(row.id, {
                                 primaryKpiName: e.target.value,
@@ -852,7 +853,7 @@ export function KpiGoalsTable({
                             }
                             placeholder="Ex.: Market share"
                             className={cn(
-                              "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                              "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs font-medium",
                               !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
                             )}
                           />
@@ -865,7 +866,7 @@ export function KpiGoalsTable({
                       </td>
 
                       {/* Valor-Alvo * */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5 min-w-[120px]">
                         <input
                           type="text"
                           value={row.primaryKpiTarget}
@@ -884,11 +885,12 @@ export function KpiGoalsTable({
                       </td>
 
                       {/* KPI Secundário */}
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-3.5 min-w-[220px]">
                         <input
                           type="text"
                           value={row.secondaryKpiName}
                           disabled={!canEdit}
+                          title={row.secondaryKpiName || undefined}
                           onChange={(e) =>
                             updateGoalRow(row.id, {
                               secondaryKpiName: e.target.value,
