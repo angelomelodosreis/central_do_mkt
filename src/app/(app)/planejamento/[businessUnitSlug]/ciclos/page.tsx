@@ -14,6 +14,10 @@ import {
   listCycles,
   pickDefaultCycle,
 } from "@/lib/modules/strategy/queries";
+import {
+  listDiagnosisCommentsAction,
+  type DiagnosisCommentItem,
+} from "../diagnostico/actions";
 
 export const metadata: Metadata = { title: "Ciclos da BU" };
 export const dynamic = "force-dynamic";
@@ -41,10 +45,10 @@ export default async function CyclesPage({
   searchParams,
 }: {
   params: Promise<{ businessUnitSlug: string }>;
-  searchParams: Promise<{ ciclo?: string; aba?: string; rodada?: string }>;
+  searchParams: Promise<{ ciclo?: string; aba?: string; rodada?: string; subaba?: string }>;
 }) {
   const { businessUnitSlug } = await params;
-  const { ciclo, aba, rodada } = (await searchParams) ?? {};
+  const { ciclo, aba, rodada, subaba } = (await searchParams) ?? {};
   const { unit, canEdit } = await requireStrategyBusinessUnit(businessUnitSlug);
 
   const rawCycles = await listCycles(unit.id);
@@ -256,6 +260,7 @@ export default async function CyclesPage({
   let initialCycleObjective = `Ser a principal referência nacional em educação médica para ${unit.label}.`;
   let initialCyclePeriod = "Jan - Dez/2027";
   const diagnosisInsights: string[] = [];
+  let diagnosisComments: DiagnosisCommentItem[] = [];
 
   if (selectedCycleObj) {
     const [fetchedRounds, fetchedKpiGoals, fetchedReviews] = await Promise.all([
@@ -274,6 +279,11 @@ export default async function CyclesPage({
     initialReview = reviews[0] ?? null;
 
     if (activeRound) {
+      const commentsRes = await listDiagnosisCommentsAction(activeRound.id);
+      if (commentsRes.ok) {
+        diagnosisComments = commentsRes.comments;
+      }
+
       if (activeRound.businessMarketDiagnosis) {
         diagnosisInsights.push("1. Negócio e mercado");
       }
@@ -327,6 +337,14 @@ export default async function CyclesPage({
     aba === "metas" || aba === "revisoes" ? aba : "diagnostico"
   ) as "diagnostico" | "metas" | "revisoes";
 
+  const initialDiagnosisSubTab = (
+    aba === "comentarios" || subaba === "comentarios"
+      ? "comentarios"
+      : subaba === "todos"
+        ? "todos"
+        : "diagnostico"
+  ) as "diagnostico" | "comentarios" | "todos";
+
   return (
     <CyclesView
       businessUnitId={unit.id}
@@ -345,6 +363,8 @@ export default async function CyclesPage({
       initialCycleObjective={initialCycleObjective}
       initialCyclePeriod={initialCyclePeriod}
       diagnosisInsights={diagnosisInsights}
+      initialDiagnosisComments={diagnosisComments}
+      initialDiagnosisSubTab={initialDiagnosisSubTab}
     />
   );
 }

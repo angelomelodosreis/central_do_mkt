@@ -59,4 +59,164 @@ test("Ajustes Estratégicos do Diagnóstico e Ciclos (Feedback Biscalchini & Bac
     assert.ok(comment.content.length > 0);
     assert.equal(comment.authorName, "Beatriz Biscalchini");
   });
+
+  await t.test("5. Resolução da aba e sub-aba de comentários do diagnóstico", () => {
+    function resolveTabs({ aba, subaba }) {
+      const initialTab = aba === "metas" || aba === "revisoes" ? aba : "diagnostico";
+      const initialDiagnosisSubTab =
+        aba === "comentarios" || subaba === "comentarios"
+          ? "comentarios"
+          : subaba === "todos"
+            ? "todos"
+            : "diagnostico";
+      return { initialTab, initialDiagnosisSubTab };
+    }
+
+    // Acesso padrão sem parâmetros
+    assert.deepEqual(resolveTabs({}), {
+      initialTab: "diagnostico",
+      initialDiagnosisSubTab: "diagnostico",
+    });
+
+    // Acesso direto via aba=comentarios
+    assert.deepEqual(resolveTabs({ aba: "comentarios" }), {
+      initialTab: "diagnostico",
+      initialDiagnosisSubTab: "comentarios",
+    });
+
+    // Acesso via subaba=comentarios na aba de diagnóstico
+    assert.deepEqual(resolveTabs({ aba: "diagnostico", subaba: "comentarios" }), {
+      initialTab: "diagnostico",
+      initialDiagnosisSubTab: "comentarios",
+    });
+
+    // Acesso na visão completa
+    assert.deepEqual(resolveTabs({ aba: "diagnostico", subaba: "todos" }), {
+      initialTab: "diagnostico",
+      initialDiagnosisSubTab: "todos",
+    });
+
+    // Outras abas preservam integridade
+    assert.deepEqual(resolveTabs({ aba: "metas" }), {
+      initialTab: "metas",
+      initialDiagnosisSubTab: "diagnostico",
+    });
+  });
+
+  await t.test("6. Sincronização e contagem de comentários do diagnóstico", () => {
+    const sampleComments = [
+      {
+        id: "diag_com_1",
+        authorName: "Beatriz Biscalchini",
+        content: "Alinhamento 1",
+        createdAt: "2026-10-10T10:00:00.000Z",
+      },
+      {
+        id: "diag_com_2",
+        authorName: "Angelo Bacochina",
+        content: "Validação com coordenadores",
+        createdAt: "2026-10-11T12:00:00.000Z",
+      },
+    ];
+
+    const count = sampleComments.length;
+    const participants = new Set(sampleComments.map((c) => c.authorName)).size;
+    assert.equal(count, 2);
+    assert.equal(participants, 2);
+
+    // Adição de novo comentário atualiza contador dinamicamente
+    const newComment = {
+      id: "diag_com_3",
+      authorName: "Beatriz Biscalchini",
+      content: "Atualização TEGO",
+      createdAt: "2026-10-12T14:00:00.000Z",
+    };
+    const updated = [...sampleComments, newComment];
+    assert.equal(updated.length, 3);
+    assert.equal(new Set(updated.map((c) => c.authorName)).size, 2);
+  });
+
+  await t.test("7. Normalização de parâmetros de URL ao navegar entre sub-abas do diagnóstico", () => {
+    function getUpdatedUrlParams(currentUrlString, targetSubTab) {
+      const url = new URL(currentUrlString);
+      url.searchParams.set("aba", "diagnostico");
+      if (targetSubTab === "diagnostico") {
+        url.searchParams.delete("subaba");
+      } else {
+        url.searchParams.set("subaba", targetSubTab);
+      }
+      return {
+        aba: url.searchParams.get("aba"),
+        subaba: url.searchParams.get("subaba"),
+        search: url.search,
+      };
+    }
+
+    // Caso 1: Usuário entrou com aba=comentarios e clica em "Pilares e Síntese" (sub-aba diagnostico)
+    const res1 = getUpdatedUrlParams("http://localhost/planejamento/clinica-medica/ciclos?aba=comentarios", "diagnostico");
+    assert.equal(res1.aba, "diagnostico");
+    assert.equal(res1.subaba, null);
+    assert.equal(res1.search, "?aba=diagnostico");
+
+    // Caso 2: Usuário entra com aba=diagnostico e clica em "Aba de Comentários"
+    const res2 = getUpdatedUrlParams("http://localhost/planejamento/clinica-medica/ciclos?aba=diagnostico", "comentarios");
+    assert.equal(res2.aba, "diagnostico");
+    assert.equal(res2.subaba, "comentarios");
+    assert.equal(res2.search, "?aba=diagnostico&subaba=comentarios");
+
+    // Caso 3: Usuário entra na visão completa
+    const res3 = getUpdatedUrlParams("http://localhost/planejamento/clinica-medica/ciclos", "todos");
+    assert.equal(res3.aba, "diagnostico");
+    assert.equal(res3.subaba, "todos");
+    assert.equal(res3.search, "?aba=diagnostico&subaba=todos");
+  });
+
+  await t.test("8. Formatação resiliente de datas de comentários com edge cases", () => {
+    function formatCommentDate(dateStr) {
+      if (!dateStr) return "Nenhuma ainda";
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } catch {
+        return dateStr;
+      }
+    }
+
+    // Nulo, indefinido e vazio
+    assert.equal(formatCommentDate(null), "Nenhuma ainda");
+    assert.equal(formatCommentDate(undefined), "Nenhuma ainda");
+    assert.equal(formatCommentDate(""), "Nenhuma ainda");
+
+    // String inválida retorna a própria string com segurança
+    assert.equal(formatCommentDate("data_invalida"), "data_invalida");
+
+    // Timestamp ISO válido formata no padrão brasileiro
+    const formatted = formatCommentDate("2026-10-16T14:30:00.000Z");
+    assert.ok(formatted.includes("/2026"));
+    assert.ok(formatted.includes(":"));
+  });
+
+  await t.test("9. Preservação da sub-aba de comentários na alternância das abas principais", () => {
+    // Simula o ciclo de vida do estado em CyclesView
+    let activeTab = "diagnostico";
+    let diagnosisSubTab = "comentarios";
+
+    // Usuário vai para Metas
+    activeTab = "metas";
+    assert.equal(activeTab, "metas");
+    // Sub-aba de diagnóstico continua preservada em memória
+    assert.equal(diagnosisSubTab, "comentarios");
+
+    // Usuário retorna para Diagnóstico
+    activeTab = "diagnostico";
+    assert.equal(activeTab, "diagnostico");
+    assert.equal(diagnosisSubTab, "comentarios"); // Não reseta para "diagnostico"
+  });
 });

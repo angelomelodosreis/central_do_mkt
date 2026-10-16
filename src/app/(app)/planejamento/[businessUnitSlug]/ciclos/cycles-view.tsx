@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -18,9 +18,14 @@ import {
   ArrowRight,
   Check,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { createCycleAction } from "../../actions";
-import { DiagnosisTableView } from "../diagnostico/diagnosis-table-view";
+import {
+  DiagnosisTableView,
+  type DiagnosisSubTab,
+} from "../diagnostico/diagnosis-table-view";
+import type { DiagnosisCommentItem } from "../diagnostico/actions";
 import { OpenRoundForm } from "../diagnostico/round-forms";
 import { KpiGoalsTable } from "../metas/kpi-goals-table";
 import { ReviewCycleView } from "../revisao-trimestral/review-cycle-view";
@@ -73,6 +78,8 @@ export function CyclesView({
   initialCycleObjective = "",
   initialCyclePeriod = "",
   diagnosisInsights = [],
+  initialDiagnosisComments = [],
+  initialDiagnosisSubTab = "diagnostico",
 }: {
   businessUnitId: string;
   businessUnitSlug: string;
@@ -90,6 +97,8 @@ export function CyclesView({
   initialCycleObjective?: string;
   initialCyclePeriod?: string;
   diagnosisInsights?: string[];
+  initialDiagnosisComments?: DiagnosisCommentItem[];
+  initialDiagnosisSubTab?: DiagnosisSubTab;
 }) {
   const [cycles] = useState<CycleDetailData[]>(initialCycles);
   const [selectedCycleId, setSelectedCycleId] = useState<string>(
@@ -98,6 +107,78 @@ export function CyclesView({
   const [activeTab, setActiveTab] = useState<
     "diagnostico" | "metas" | "revisoes"
   >(initialTab);
+  const [commentsCount, setCommentsCount] = useState<number>(
+    initialDiagnosisComments.length,
+  );
+  const [diagnosisSubTab, setDiagnosisSubTab] = useState<DiagnosisSubTab>(
+    initialDiagnosisSubTab,
+  );
+
+  // Sincronização com o histórico do navegador (botões Voltar/Avançar)
+  useEffect(() => {
+    function handlePopState() {
+      try {
+        const url = new URL(window.location.href);
+        const abaParam = url.searchParams.get("aba");
+        const subabaParam = url.searchParams.get("subaba");
+        if (abaParam === "metas" || abaParam === "revisoes") {
+          setActiveTab(abaParam);
+        } else {
+          setActiveTab("diagnostico");
+          if (abaParam === "comentarios" || subabaParam === "comentarios") {
+            setDiagnosisSubTab("comentarios");
+          } else if (subabaParam === "todos") {
+            setDiagnosisSubTab("todos");
+          } else {
+            setDiagnosisSubTab("diagnostico");
+          }
+        }
+      } catch {
+        // safe fallback
+      }
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  function handleMainTabSelect(tab: "diagnostico" | "metas" | "revisoes") {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set("aba", tab);
+        if (tab !== "diagnostico") {
+          url.searchParams.delete("subaba");
+        } else if (diagnosisSubTab && diagnosisSubTab !== "diagnostico") {
+          url.searchParams.set("subaba", diagnosisSubTab);
+        }
+        window.history.pushState(null, "", url.toString());
+      } catch {
+        // safe fallback
+      }
+    }
+  }
+
+  function handleSelectDiagnosisSubTab(subTab: DiagnosisSubTab) {
+    setActiveTab("diagnostico");
+    setDiagnosisSubTab(subTab);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set("aba", "diagnostico");
+        if (subTab === "diagnostico") {
+          url.searchParams.delete("subaba");
+        } else {
+          url.searchParams.set("subaba", subTab);
+        }
+        window.history.pushState(null, "", url.toString());
+      } catch {
+        // safe fallback
+      }
+    }
+  }
 
   // Modal para iniciar novo ciclo
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -315,7 +396,7 @@ export function CyclesView({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <button
               type="button"
-              onClick={() => setActiveTab("diagnostico")}
+              onClick={() => handleMainTabSelect("diagnostico")}
               className={cn(
                 "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs cursor-pointer",
                 activeTab === "diagnostico"
@@ -333,15 +414,39 @@ export function CyclesView({
               >
                 <FileText className="size-5" />
               </div>
-              <div>
-                <p className="text-sm sm:text-base font-bold text-slate-900">Diagnóstico</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-sm sm:text-base font-bold text-slate-900">Diagnóstico</p>
+                  {commentsCount > 0 && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectDiagnosisSubTab("comentarios");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleSelectDiagnosisSubTab("comentarios");
+                        }
+                      }}
+                      title="Abrir diretamente a aba de comentários do diagnóstico"
+                      className="inline-flex items-center gap-1 rounded-full bg-rose-100 hover:bg-rose-200 px-2 py-0.5 text-[11px] font-bold text-rose-700 border border-rose-200 transition cursor-pointer"
+                    >
+                      <MessageSquare className="size-3" />
+                      {commentsCount}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-slate-500 font-medium">Onde estamos?</p>
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab("metas")}
+              onClick={() => handleMainTabSelect("metas")}
               className={cn(
                 "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs cursor-pointer",
                 activeTab === "metas"
@@ -371,7 +476,7 @@ export function CyclesView({
 
             <button
               type="button"
-              onClick={() => setActiveTab("revisoes")}
+              onClick={() => handleMainTabSelect("revisoes")}
               className={cn(
                 "flex items-center gap-3.5 rounded-2xl border p-4 sm:p-5 text-left transition shadow-2xs cursor-pointer",
                 activeTab === "revisoes"
@@ -431,7 +536,11 @@ export function CyclesView({
                     canEdit={canEdit}
                     isOpen={activeRound.isOpen}
                     initialData={activeRound}
-                    onSelectTab={setActiveTab}
+                    initialComments={initialDiagnosisComments}
+                    initialSubTab={diagnosisSubTab}
+                    onSubTabChange={setDiagnosisSubTab}
+                    onCommentsCountChange={setCommentsCount}
+                    onSelectTab={handleMainTabSelect}
                   />
                 </>
               ) : (
@@ -463,7 +572,7 @@ export function CyclesView({
                 initialGoals={kpiGoals}
                 diagnosisInsights={diagnosisInsights}
                 activeRound={activeRound}
-                onSelectTab={setActiveTab}
+                onSelectTab={handleMainTabSelect}
               />
             </div>
           )}
@@ -482,7 +591,7 @@ export function CyclesView({
                 canEdit={canEdit}
                 initialReview={initialReview}
                 allReviews={reviews}
-                onSelectTab={setActiveTab}
+                onSelectTab={handleMainTabSelect}
               />
             </div>
           )}
