@@ -234,6 +234,8 @@ export function PageInsightsView({
               { id: "lp-hiit", label: "⚡ HIIT" },
               { id: "lp-concursus", label: "🏛️ Concursus" },
               { id: "lp-usa", label: "🇺🇸 MedCof USA" },
+              { id: "lp-enamed", label: "📋 Enamed" },
+              { id: "lp-internato", label: "🏥 Internato" },
               { id: "lp-lifehacks", label: "🩺 Lifehacks" },
             ].map((shortcut) => (
               <Link

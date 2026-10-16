@@ -31,11 +31,11 @@ const POPULAR_BU_URLS = [
   { label: "🫀 Cardio", url: "https://cardio.grupomedcof.com.br" },
   { label: "🔪 Cirurgia", url: "https://cirurgia.grupomedcof.com.br" },
   { label: "👂 Otorrino", url: "https://otorrino.grupomedcof.com.br" },
-  { label: "📚 Extensivo", url: "https://grupomedcof.com.br/extensivo-2025" },
-  { label: "⚡ HIIT", url: "https://hiit.grupomedcof.com" },
+  { label: "📚 Extensivo", url: "https://extensivo.grupomedcof.com.br" },
+  { label: "⚡ HIIT", url: "https://hiit.grupomedcof.com.br" },
   { label: "🧴 Derma", url: "https://medcofderma.com.br" },
   { label: "🧬 Endócrino", url: "https://medcofendocrino.com.br" },
-  { label: "🇧🇷 Revalida", url: "https://revaliday.grupomedcof.com.br" },
+  { label: "🇧🇷 Revalida", url: "https://revalida.grupomedcof.com.br" },
   { label: "🦴 Ortopedia", url: "https://ortopedia.grupomedcof.com.br" },
   { label: "👁️ Oftalmo", url: "https://oftalmo.grupomedcof.com.br" },
   { label: "👶 Pediatria", url: "https://pediatria.grupomedcof.com.br" },
@@ -59,8 +59,8 @@ const PRESET_COMPARISONS = [
   },
   {
     label: "📚 Extensivo vs ⚡ HIIT",
-    urlA: "https://grupomedcof.com.br/extensivo-2025",
-    urlB: "https://hiit.grupomedcof.com",
+    urlA: "https://extensivo.grupomedcof.com.br",
+    urlB: "https://hiit.grupomedcof.com.br",
   },
   {
     label: "🧴 Derma vs 🧬 Endócrino",
@@ -88,29 +88,32 @@ export function AbTestingView({
   initialPageAId,
   initialPageBId,
 }: AbTestingViewProps) {
-  const resolveInitialUrl = (idOrUrl?: string, fallbackUrl?: string) => {
-    if (!idOrUrl) return fallbackUrl || "";
+  const resolveInitialUrl = (idOrUrl?: string) => {
+    if (!idOrUrl) return "";
     if (idOrUrl.startsWith("http://") || idOrUrl.startsWith("https://")) return idOrUrl;
     const found = availablePages.find((p) => p.id === idOrUrl || p.url === idOrUrl);
-    return found?.url || fallbackUrl || idOrUrl;
+    return found?.url || idOrUrl;
   };
 
-  const defaultUrlA = availablePages[0]?.url || "https://clinicof.grupomedcof.com.br";
-  const defaultUrlB = availablePages[1]?.url || "https://cardio.grupomedcof.com.br";
-
-  const [urlA, setUrlA] = useState<string>(() => resolveInitialUrl(initialPageAId, defaultUrlA));
-  const [urlB, setUrlB] = useState<string>(() => resolveInitialUrl(initialPageBId, defaultUrlB));
+  const [urlA, setUrlA] = useState<string>(() => resolveInitialUrl(initialPageAId));
+  const [urlB, setUrlB] = useState<string>(() => resolveInitialUrl(initialPageBId));
   const [period, setPeriod] = useState<number>(30);
   const [viewport, setViewport] = useState<string>("all");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [comparison, setComparison] = useState<AbComparisonResult | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [hasRequestedComparison, setHasRequestedComparison] = useState<boolean>(
+    Boolean(initialPageAId && initialPageBId)
+  );
 
   const fetchComparison = useCallback(
     (targetA: string, targetB: string, p: number, vp: string) => {
       const cleanA = targetA.trim();
       const cleanB = targetB.trim();
-      if (!cleanA || !cleanB) return;
+      if (!cleanA || !cleanB) {
+        setFetchError("Informe as URLs da Página de Controle (A) e da Variante (B) para executar o confronto.");
+        return;
+      }
 
       setIsLoading(true);
       setFetchError(null);
@@ -142,13 +145,19 @@ export function AbTestingView({
     []
   );
 
+  // Executa apenas se veio parâmetro explícito via props
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (initialPageAId && initialPageBId && urlA && urlB) {
       fetchComparison(urlA, urlB, period, viewport);
-    }, 300);
+    }
+  }, []);
 
-    return () => clearTimeout(timer);
-  }, [urlA, urlB, period, viewport, fetchComparison]);
+  // Se o analista já disparou a comparação e alterou período ou viewport, re-executa para o novo filtro
+  useEffect(() => {
+    if (hasRequestedComparison && urlA.trim() && urlB.trim()) {
+      fetchComparison(urlA, urlB, period, viewport);
+    }
+  }, [period, viewport]);
 
   const pageA = comparison?.pageA;
   const pageB = comparison?.pageB;
@@ -398,20 +407,50 @@ export function AbTestingView({
           ))}
         </datalist>
 
-        {/* Botão de Ação Manual de Atualização */}
-        <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-          <span className="text-[11px] text-slate-400">
-            A comparação é recalculada automaticamente ao digitar ou selecionar uma página.
-          </span>
-          <button
-            type="button"
-            onClick={() => fetchComparison(urlA, urlB, period, viewport)}
-            disabled={isLoading || !urlA.trim() || !urlB.trim()}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition"
-          >
-            <RefreshCw className={cn("size-3.5", isLoading && "animate-spin")} />
-            <span>{isLoading ? "Processando..." : "Comparar URLs em Tempo Real"}</span>
-          </button>
+        {/* Botão de Ação Manual de Execução Sob Demanda */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-purple-500" />
+            <span>
+              {hasRequestedComparison
+                ? "Comparação ativa. Altere o período ou as URLs e reexecute quando desejar."
+                : "O Teste A/B só executa quando solicitado pelo analista. Digite as URLs e clique para comparar."}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {hasRequestedComparison && (
+              <button
+                type="button"
+                onClick={() => {
+                  setComparison(null);
+                  setHasRequestedComparison(false);
+                  setUrlA("");
+                  setUrlB("");
+                  setFetchError(null);
+                }}
+                className="rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+              >
+                Limpar
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (!urlA.trim() || !urlB.trim()) {
+                  setFetchError("Preencha as URLs de Controle (A) e Variante (B) para executar o teste A/B.");
+                  return;
+                }
+                setHasRequestedComparison(true);
+                fetchComparison(urlA, urlB, period, viewport);
+              }}
+              disabled={isLoading || !urlA.trim() || !urlB.trim()}
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-purple-700 disabled:opacity-50 transition"
+            >
+              <Scale className={cn("size-3.5", isLoading && "animate-spin")} />
+              <span>{isLoading ? "Processando..." : "Executar Teste A/B"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -424,7 +463,41 @@ export function AbTestingView({
         </div>
       )}
 
-      {!isLoading && (!comparison || !pageA || !pageB) && (
+      {!hasRequestedComparison && !isLoading && (
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center space-y-4 shadow-2xs">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 shadow-2xs ring-1 ring-purple-100">
+            <Scale className="size-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-slate-900">
+              Confronto A/B Sob Demanda
+            </h3>
+            <p className="mx-auto max-w-lg text-xs text-slate-500 leading-relaxed">
+              O teste A/B é executado exclusivamente quando solicitado pelo analista para casos específicos. Digite ou cole na mão as URLs da <strong>Página de Controle (A)</strong> e da <strong>Página Variante (B)</strong> acima e clique em <strong>Executar Teste A/B</strong> para confrontar a telemetria real.
+            </p>
+          </div>
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+            <span className="text-xs text-slate-400">Atalhos rápidos para análise:</span>
+            {PRESET_COMPARISONS.slice(0, 3).map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => {
+                  setUrlA(p.urlA);
+                  setUrlB(p.urlB);
+                  setHasRequestedComparison(true);
+                  fetchComparison(p.urlA, p.urlB, period, viewport);
+                }}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-white hover:border-purple-300 hover:text-purple-700 transition"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasRequestedComparison && !isLoading && (!comparison || !pageA || !pageB) && (
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center space-y-4">
           <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
             <Scale className="size-6 text-slate-400" />
@@ -439,16 +512,6 @@ export function AbTestingView({
                 : "Certifique-se de que as URLs de Controle (A) e Variante (B) estão preenchidas corretamente com 'https://' ou selecione um dos atalhos rápidos acima."}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setUrlA(defaultUrlA);
-              setUrlB(defaultUrlB);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-700 transition"
-          >
-            Restaurar Comparação Padrão (Clínica vs Cardio)
-          </button>
         </div>
       )}
 

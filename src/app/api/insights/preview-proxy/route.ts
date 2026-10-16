@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import dns from "node:dns";
 
 try {
@@ -9,19 +9,65 @@ try {
 export const runtime = "nodejs";
 
 /**
- * Proxy de renderização para iframe de Landing Pages no visualizador de Heatmap.
- * Remove cabeçalhos de bloqueio de frame, neutraliza scripts conflitantes/redirecionamentos
- * e reescreve todas as URLs raiz (CSS, imagens, fontes, SVGs) para o domínio original da página.
+ * Normaliza e resolve a URL canônica de qualquer frente ou subdomínio do Grupo MedCof.
+ * Corrige rotas antigas, typos em subdomínios legados e paths inexistentes para os domínios
+ * oficiais em produção que retornam HTTP 200 OK.
  */
 function normalizeMedcofUrl(rawUrl: string): string {
   try {
-    const parsed = new URL(rawUrl);
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return rawUrl;
+
+    const parsed = new URL(trimmed);
+    const host = parsed.hostname.toLowerCase();
     const path = parsed.pathname.toLowerCase().replace(/^\/|\/$/g, "");
 
-    // Se for rota sob grupomedcof.com.br que é subdomínio próprio no ecossistema
-    if (parsed.hostname.includes("grupomedcof.com.br")) {
+    // 1. Correções diretas de subdomínios com erros de digitação / DNS legado
+    if (host === "revaliday.grupomedcof.com.br") {
+      return "https://revalida.grupomedcof.com.br";
+    }
+    if (host === "hiit.grupomedcof.com") {
+      return "https://hiit.grupomedcof.com.br";
+    }
+    if (host === "lifehacks.grupomedcof.com.br") {
+      return "https://cursos.grupomedcof.com.br";
+    }
+    if (host === "aulaavcisquemico.grupomedcof.com.br" || host === "gastro.grupomedcof.com.br") {
+      return "https://grupomedcof.com.br";
+    }
+    if (host === "otorrinolaringologia.grupomedcof.com.br") {
+      return "https://otorrino.grupomedcof.com.br";
+    }
+    if (host === "cardiologia.grupomedcof.com.br") {
+      return "https://cardio.grupomedcof.com.br";
+    }
+    if (host === "clinica-medica.grupomedcof.com.br" || host === "clinica.grupomedcof.com.br") {
+      return "https://clinicof.grupomedcof.com.br";
+    }
+    if (host === "anestesiologia.grupomedcof.com.br") {
+      return "https://anestesio.grupomedcof.com.br";
+    }
+    if (host === "oftalmologia.grupomedcof.com.br") {
+      return "https://oftalmo.grupomedcof.com.br";
+    }
+    if (host === "radiologia.grupomedcof.com.br") {
+      return "https://radio.grupomedcof.com.br";
+    }
+    if (host === "urologia.grupomedcof.com.br") {
+      return "https://uro.grupomedcof.com.br";
+    }
+    if (host === "medicina-intensiva.grupomedcof.com.br") {
+      return "https://temi.grupomedcof.com.br";
+    }
+    if (host === "ginecologia.grupomedcof.com.br" || host === "ginecologia-e-obstetricia.grupomedcof.com.br") {
+      return "https://tego.grupomedcof.com.br";
+    }
+
+    // 2. Se for rota sob grupomedcof.com.br ou www.grupomedcof.com.br que possui subdomínio próprio
+    if (host === "grupomedcof.com.br" || host === "www.grupomedcof.com.br") {
       const pathToSubdomain: Record<string, string> = {
         otorrino: "https://otorrino.grupomedcof.com.br",
+        otorrinolaringologia: "https://otorrino.grupomedcof.com.br",
         cardio: "https://cardio.grupomedcof.com.br",
         cardiologia: "https://cardio.grupomedcof.com.br",
         cirurgia: "https://cirurgia.grupomedcof.com.br",
@@ -42,18 +88,22 @@ function normalizeMedcofUrl(rawUrl: string): string {
         "medicina-intensiva": "https://temi.grupomedcof.com.br",
         tego: "https://tego.grupomedcof.com.br",
         ginecologia: "https://tego.grupomedcof.com.br",
-        lifehacks: "https://lifehacks.grupomedcof.com.br",
+        "ginecologia-e-obstetricia": "https://tego.grupomedcof.com.br",
+        lifehacks: "https://cursos.grupomedcof.com.br",
         usa: "https://usa.grupomedcof.com.br",
-        revalida: "https://revaliday.grupomedcof.com.br",
-        revaliday: "https://revaliday.grupomedcof.com.br",
-        hiit: "https://hiit.grupomedcof.com",
-        "hiit-target": "https://hiit.grupomedcof.com",
+        revalida: "https://revalida.grupomedcof.com.br",
+        revaliday: "https://revalida.grupomedcof.com.br",
+        hiit: "https://hiit.grupomedcof.com.br",
+        "hiit-target": "https://hiit.grupomedcof.com.br",
         concursus: "https://concursus.grupomedcof.com.br",
-        gastro: "https://gastro.grupomedcof.com.br",
         derma: "https://medcofderma.com.br",
         dermatologia: "https://medcofderma.com.br",
         endocrino: "https://medcofendocrino.com.br",
         endocrinologia: "https://medcofendocrino.com.br",
+        "extensivo-2025": "https://extensivo.grupomedcof.com.br",
+        extensivo: "https://extensivo.grupomedcof.com.br",
+        enamed: "https://grupomedcof.com.br",
+        internato: "https://grupomedcof.com.br",
       };
 
       if (path && pathToSubdomain[path]) {
@@ -69,7 +119,10 @@ function normalizeMedcofUrl(rawUrl: string): string {
 
 export async function GET(request: Request) {
   try {
-    await requireUser();
+    const user = await getCurrentUser();
+    if (!user) {
+      return new NextResponse("Não autorizado", { status: 401 });
+    }
   } catch {
     return new NextResponse("Não autorizado", { status: 401 });
   }
@@ -98,6 +151,7 @@ export async function GET(request: Request) {
         "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
       },
       redirect: "follow",
+      signal: AbortSignal.timeout(12000),
     });
 
     if (response.status === 404) {
@@ -106,7 +160,7 @@ export async function GET(request: Request) {
           <div style="text-align:center;max-width:500px;background:#1e293b;padding:32px;border-radius:16px;border:1px solid #334155;">
             <h2 style="color:#ef4444;margin-top:0;">Página Não Encontrada (404)</h2>
             <p style="color:#94a3b8;font-size:14px;line-height:1.6;">A URL solicitada não existe no servidor de destino: <code>${targetUrl}</code></p>
-            <p style="color:#38bdf8;font-size:13px;">Se esta frente possui subdomínio próprio, acerte o cadastro no painel de LPs.</p>
+            <p style="color:#38bdf8;font-size:13px;">Se esta frente possui subdomínio próprio, verifique a URL no painel de LPs.</p>
           </div>
         </body></html>`,
         { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
@@ -138,30 +192,79 @@ export async function GET(request: Request) {
       html = `${baseTag}${html}`;
     }
 
-    // 2. Reescrever URLs relativas à raiz (começadas com "/") para URLs absolutas do domínio original
+    // 2. Reescrever URLs relativas à raiz para URLs absolutas do domínio original
+    // Preserva URLs relativas ao protocolo ("//..."), âncoras ("#..."), dados ("data:...") e javascript:
     html = html.replace(/(href|src|poster)=["']\/([^"']*)["']/gi, (match, attr, path) => {
       if (path.startsWith("#") || path.startsWith("javascript:") || path.startsWith("data:")) return match;
+      if (path.startsWith("/")) {
+        return `${attr}="https:${path}"`;
+      }
       return `${attr}="${origin}/${path}"`;
     });
 
     // 3. Reescrever srcset de imagens responsivas
-    html = html.replace(/srcset=["']\/([^"']*)["']/gi, (match, path) => {
-      return `srcset="${origin}/${path}"`;
+    html = html.replace(/srcset=["']([^"']*)["']/gi, (match, srcsetValue) => {
+      const rewritten = srcsetValue
+        .split(",")
+        .map((part: string) => {
+          const trimmed = part.trim();
+          if (trimmed.startsWith("/")) {
+            if (trimmed.startsWith("//")) {
+              return `https:${trimmed}`;
+            }
+            return `${origin}${trimmed}`;
+          }
+          return trimmed;
+        })
+        .join(", ");
+      return `srcset="${rewritten}"`;
     });
 
     // 4. Reescrever URLs em blocos de style e CSS inline
     html = html.replace(/url\(\s*["']?\/([^"')]+)["']?\s*\)/gi, (match, path) => {
       if (path.startsWith("data:") || path.startsWith("http")) return match;
+      if (path.startsWith("/")) {
+        return `url("https:${path}")`;
+      }
       return `url("${origin}/${path}")`;
     });
 
-    // 5. Neutralizar scripts que podem tentar frame busting ou redirecionar a página parent
-    html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs) => {
-      if (attrs.includes('type="application/ld+json"') || attrs.includes('type="application/json"')) {
-        return match;
-      }
-      return `<!-- disabled-script-for-preview -->`;
-    });
+    // 5. Injetar guardião de frame-busting (impede redirecionamento da janela mãe mantendo scripts SSR vivos)
+    const frameProtector = `
+      <script>
+        (function() {
+          try {
+            window.top = window.self;
+            window.parent = window.self;
+          } catch (e) {}
+
+          function reportHeight() {
+            try {
+              var h = Math.max(
+                document.body ? document.body.scrollHeight : 0,
+                document.documentElement ? document.documentElement.scrollHeight : 0,
+                document.body ? document.body.offsetHeight : 0,
+                document.documentElement ? document.documentElement.offsetHeight : 0
+              );
+              if (h > 300 && window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: "MEDCOF_PREVIEW_HEIGHT", height: h }, "*");
+              }
+            } catch (e) {}
+          }
+
+          if (document.readyState === "complete" || document.readyState === "interactive") {
+            reportHeight();
+          } else {
+            window.addEventListener("DOMContentLoaded", reportHeight);
+            window.addEventListener("load", reportHeight);
+          }
+          window.addEventListener("resize", reportHeight);
+          setTimeout(reportHeight, 500);
+          setTimeout(reportHeight, 1500);
+          setTimeout(reportHeight, 3000);
+        })();
+      </script>
+    `;
 
     // 6. Remover meta tags de Content-Security-Policy e X-Frame-Options
     html = html.replace(/<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
@@ -177,11 +280,10 @@ export async function GET(request: Request) {
         a {
           cursor: default !important;
         }
-        img, svg {
-          max-width: 100% !important;
-        }
       </style>
+      ${frameProtector}
     `;
+
     if (html.includes("</head>")) {
       html = html.replace("</head>", `${previewStyles}</head>`);
     } else {
@@ -192,16 +294,18 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=600",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": "frame-ancestors 'self'",
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
       },
     });
   } catch (err: any) {
     return new NextResponse(
-      `<html><body style="font-family:sans-serif;padding:3rem;color:#475569;text-align:center;background:#0f172a;">
+      `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:3rem;color:#475569;text-align:center;background:#0f172a;">
         <div style="max-width:480px;margin:0 auto;background:#1e293b;padding:2rem;border-radius:1rem;border:1px solid #334155;">
           <h3 style="color:#f8fafc;margin-bottom:0.5rem;">Prévia da Landing Page MedCof</h3>
           <p style="color:#94a3b8;font-size:0.875rem;">Não foi possível carregar a prévia direta de ${targetUrl}: ${err?.message || "Erro de conexão"}</p>
-          <a href="${targetUrl}" target="_blank" style="display:inline-block;margin-top:1rem;background:#0284c7;color:#fff;padding:0.5rem 1rem;border-radius:0.5rem;text-decoration:none;font-size:0.875rem;font-bold;">Abrir em nova aba</a>
+          <a href="${targetUrl}" target="_blank" style="display:inline-block;margin-top:1rem;background:#0284c7;color:#fff;padding:0.5rem 1rem;border-radius:0.5rem;text-decoration:none;font-size:0.875rem;font-weight:bold;">Abrir página em nova aba</a>
         </div>
       </body></html>`,
       {

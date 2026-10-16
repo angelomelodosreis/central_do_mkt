@@ -952,7 +952,7 @@ export function InsightsOverviewView({
         </div>
       )}
 
-      {/* ABA 3: TESTE A/B E COMPARADOR DE 2 LANDING PAGES */}
+      {/* ABA 3: TESTE A/B E COMPARADOR DE 2 LANDING PAGES (SOB DEMANDA) */}
       {activeSubTab === "ab-test" && (
         <AbTestingView
           availablePages={(data.topPages || []).map((p) => ({
@@ -964,8 +964,8 @@ export function InsightsOverviewView({
             visits: p.visits,
             conversionRate: p.conversionRate,
           }))}
-          initialPageAId={selectedAbPageA || data.topPages?.[0]?.id}
-          initialPageBId={selectedAbPageB || data.topPages?.[1]?.id}
+          initialPageAId={selectedAbPageA || undefined}
+          initialPageBId={selectedAbPageB || undefined}
         />
       )}
 
@@ -1027,8 +1027,8 @@ export function InsightsOverviewView({
               { label: "🧬 MedCof Endócrino", url: "https://medcofendocrino.com.br" },
               { label: "💻 App MedCof", url: "https://app.grupomedcof.com.br" },
               { label: "🎯 QBank Prime", url: "https://qbank.grupomedcof.com.br" },
-              { label: "🇧🇷 Revalida", url: "https://revaliday.grupomedcof.com.br" },
-              { label: "⚡ HIIT Target", url: "https://hiit.grupomedcof.com" },
+              { label: "🇧🇷 Revalida", url: "https://revalida.grupomedcof.com.br" },
+              { label: "⚡ HIIT Target", url: "https://hiit.grupomedcof.com.br" },
               { label: "🫀 Cardio", url: "https://cardio.grupomedcof.com.br" },
               { label: "🔪 Cirurgia", url: "https://cirurgia.grupomedcof.com.br" },
               { label: "👂 Otorrino", url: "https://otorrino.grupomedcof.com.br" },

@@ -8,6 +8,28 @@ import {
 } from "@/lib/db/schema";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
+export const PAGE_ID_ALIASES: Record<string, string> = {
+  "lp-otorrinolaringologia": "lp-otorrino",
+  "lp-cardiologia": "lp-cardio",
+  "lp-clinica-medica": "lp-clinicof",
+  "lp-clinica": "lp-clinicof",
+  "lp-anestesiologia": "lp-anestesio",
+  "lp-oftalmologia": "lp-oftalmo",
+  "lp-radiologia": "lp-radio",
+  "lp-urologia": "lp-uro",
+  "lp-medicina-intensiva": "lp-temi",
+  "lp-ginecologia-e-obstetricia": "lp-tego",
+  "lp-ginecologia": "lp-tego",
+  "lp-dermatologia": "lp-medcofderma",
+  "lp-endocrinologia": "lp-medcofendocrino",
+  "lp-endocrinologia-pediatrica": "lp-medcofendocrino",
+  "lp-revalida": "lp-revaliday",
+  "lp-hiit-target": "lp-hiit",
+  "lp-ps": "lp-lifehacks",
+  "lp-medicina-de-emergencia": "lp-aulaavcisquemico",
+  "lp-residencia": "lp-grupomedcof",
+};
+
 export const VALID_PAGE_IDS = new Set([
   "lp-grupomedcof",
   "lp-extensivo-2025",
@@ -29,6 +51,8 @@ export const VALID_PAGE_IDS = new Set([
   "lp-revaliday",
   "lp-concursus",
   "lp-usa",
+  "lp-enamed",
+  "lp-internato",
   "lp-lifehacks",
   "lp-aulaavcisquemico",
   "lp-gastro",
@@ -37,6 +61,7 @@ export const VALID_PAGE_IDS = new Set([
   "lp-eventos",
   "lp-handson",
   "lp-raioxdabanca",
+  ...Object.keys(PAGE_ID_ALIASES),
 ]);
 
 /**
@@ -375,6 +400,34 @@ export async function getInsightsOverview(
       const cr = buVisits > 0 ? (buLeads / buVisits) * 100 : 0;
       const ctr = buVisits > 0 ? (buClicks / buVisits) * 100 : 0;
 
+      const buToPageId: Record<string, string> = {
+        otorrinolaringologia: "lp-otorrino",
+        cardiologia: "lp-cardio",
+        clinica_medica: "lp-clinicof",
+        anestesiologia: "lp-anestesio",
+        oftalmologia: "lp-oftalmo",
+        radiologia: "lp-radio",
+        urologia: "lp-uro",
+        medicina_intensiva: "lp-temi",
+        ginecologia_e_obstetricia: "lp-tego",
+        dermatologia: "lp-medcofderma",
+        endocrinologia: "lp-medcofendocrino",
+        endocrinologia_pediatrica: "lp-medcofendocrino",
+        revalida: "lp-revaliday",
+        hiit: "lp-hiit",
+        concursus: "lp-concursus",
+        cirurgia: "lp-cirurgia",
+        pediatria: "lp-pediatria",
+        ortopedia: "lp-ortopedia",
+        usa: "lp-usa",
+        enamed: "lp-enamed",
+        internato: "lp-internato",
+        ps: "lp-lifehacks",
+        lifehacks: "lp-lifehacks",
+        medicina_de_emergencia: "lp-aulaavcisquemico",
+        residencia: "lp-grupomedcof",
+      };
+
       let canonicalUrl = `https://${bu.slug.replace(/_/g, "")}.grupomedcof.com.br`;
       if (bu.slug === "anestesiologia") canonicalUrl = "https://anestesio.grupomedcof.com.br";
       else if (bu.slug === "cardiologia") canonicalUrl = "https://cardio.grupomedcof.com.br";
@@ -382,12 +435,11 @@ export async function getInsightsOverview(
       else if (bu.slug === "clinica_medica") canonicalUrl = "https://clinicof.grupomedcof.com.br";
       else if (bu.slug === "concursus") canonicalUrl = "https://concursus.grupomedcof.com.br";
       else if (bu.slug === "dermatologia") canonicalUrl = "https://medcofderma.com.br";
-      else if (bu.slug === "endocrinologia") canonicalUrl = "https://medcofendocrino.com.br";
-      else if (bu.slug === "endocrinologia_pediatrica")
+      else if (bu.slug === "endocrinologia" || bu.slug === "endocrinologia_pediatrica")
         canonicalUrl = "https://medcofendocrino.com.br";
       else if (bu.slug === "ginecologia_e_obstetricia") canonicalUrl = "https://tego.grupomedcof.com.br";
-      else if (bu.slug === "ps" || bu.slug === "lifehacks") canonicalUrl = "https://lifehacks.grupomedcof.com.br";
-      else if (bu.slug === "medicina_de_emergencia") canonicalUrl = "https://aulaavcisquemico.grupomedcof.com.br";
+      else if (bu.slug === "ps" || bu.slug === "lifehacks") canonicalUrl = "https://cursos.grupomedcof.com.br";
+      else if (bu.slug === "medicina_de_emergencia") canonicalUrl = "https://grupomedcof.com.br";
       else if (bu.slug === "medicina_intensiva") canonicalUrl = "https://temi.grupomedcof.com.br";
       else if (bu.slug === "oftalmologia") canonicalUrl = "https://oftalmo.grupomedcof.com.br";
       else if (bu.slug === "ortopedia") canonicalUrl = "https://ortopedia.grupomedcof.com.br";
@@ -395,7 +447,7 @@ export async function getInsightsOverview(
       else if (bu.slug === "pediatria") canonicalUrl = "https://pediatria.grupomedcof.com.br";
       else if (bu.slug === "radiologia") canonicalUrl = "https://radio.grupomedcof.com.br";
       else if (bu.slug === "residencia") canonicalUrl = "https://grupomedcof.com.br";
-      else if (bu.slug === "revalida") canonicalUrl = "https://revaliday.grupomedcof.com.br";
+      else if (bu.slug === "revalida") canonicalUrl = "https://revalida.grupomedcof.com.br";
       else if (bu.slug === "urologia") canonicalUrl = "https://uro.grupomedcof.com.br";
       else if (bu.slug === "usa") canonicalUrl = "https://usa.grupomedcof.com.br";
       else if (bu.slug === "enamed") canonicalUrl = "https://grupomedcof.com.br";
@@ -418,7 +470,7 @@ export async function getInsightsOverview(
         leads: buLeads,
         conversionRate: Math.round(cr * 10) / 10,
         cloudflareStatus: "proxied" as const,
-        topPageId: topPage ? topPage.id : `lp-${bu.slug.replace(/_/g, "-")}`,
+        topPageId: topPage ? topPage.id : (buToPageId[bu.slug] || `lp-${bu.slug.replace(/_/g, "-")}`),
       };
     })
     .sort((a, b) => b.totalVisits - a.totalVisits);
@@ -455,6 +507,8 @@ function emptyOverview(): InsightsOverviewData {
  */
 export async function getInsightPageById(pageId: string) {
   const db = await getDb();
+  const resolvedId = PAGE_ID_ALIASES[pageId] || pageId;
+
   const page = await db
     .select({
       id: insightPage.id,
@@ -473,7 +527,7 @@ export async function getInsightPageById(pageId: string) {
     })
     .from(insightPage)
     .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id))
-    .where(eq(insightPage.id, pageId))
+    .where(sql`${insightPage.id} = ${pageId} OR ${insightPage.id} = ${resolvedId}`)
     .get();
 
   if (page) return page;
@@ -605,6 +659,7 @@ export async function getInsightPageById(pageId: string) {
 
   const SUBDOMAIN_MAP: Record<string, string> = {
     otorrino: "https://otorrino.grupomedcof.com.br",
+    otorrinolaringologia: "https://otorrino.grupomedcof.com.br",
     cardio: "https://cardio.grupomedcof.com.br",
     cardiologia: "https://cardio.grupomedcof.com.br",
     cirurgia: "https://cirurgia.grupomedcof.com.br",
@@ -622,27 +677,41 @@ export async function getInsightPageById(pageId: string) {
     uro: "https://uro.grupomedcof.com.br",
     urologia: "https://uro.grupomedcof.com.br",
     temi: "https://temi.grupomedcof.com.br",
+    "medicina-intensiva": "https://temi.grupomedcof.com.br",
     tego: "https://tego.grupomedcof.com.br",
     ginecologia: "https://tego.grupomedcof.com.br",
-    lifehacks: "https://lifehacks.grupomedcof.com.br",
+    "ginecologia-e-obstetricia": "https://tego.grupomedcof.com.br",
+    lifehacks: "https://cursos.grupomedcof.com.br",
+    ps: "https://cursos.grupomedcof.com.br",
     usa: "https://usa.grupomedcof.com.br",
-    revalida: "https://revaliday.grupomedcof.com.br",
-    revaliday: "https://revaliday.grupomedcof.com.br",
-    hiit: "https://hiit.grupomedcof.com",
+    revalida: "https://revalida.grupomedcof.com.br",
+    revaliday: "https://revalida.grupomedcof.com.br",
+    hiit: "https://hiit.grupomedcof.com.br",
+    "hiit-target": "https://hiit.grupomedcof.com.br",
     concursus: "https://concursus.grupomedcof.com.br",
-    gastro: "https://gastro.grupomedcof.com.br",
     derma: "https://medcofderma.com.br",
     dermatologia: "https://medcofderma.com.br",
     medcofderma: "https://medcofderma.com.br",
     endocrino: "https://medcofendocrino.com.br",
     endocrinologia: "https://medcofendocrino.com.br",
+    "endocrinologia-pediatrica": "https://medcofendocrino.com.br",
     medcofendocrino: "https://medcofendocrino.com.br",
     app: "https://app.grupomedcof.com.br",
     qbank: "https://qbank.grupomedcof.com.br",
     materiais: "https://materiais.grupomedcof.com.br",
     blog: "https://blog.grupomedcof.com.br",
     grupomedcof: "https://grupomedcof.com.br",
-    "extensivo-2025": "https://grupomedcof.com.br/extensivo-2025",
+    "extensivo-2025": "https://extensivo.grupomedcof.com.br",
+    extensivo: "https://extensivo.grupomedcof.com.br",
+    enamed: "https://grupomedcof.com.br",
+    internato: "https://grupomedcof.com.br",
+    institucional: "https://institucional.grupomedcof.com.br",
+    mentoria: "https://mentoria.grupomedcof.com.br",
+    eventos: "https://eventos.grupomedcof.com.br",
+    handson: "https://handson.grupomedcof.com.br",
+    raioxdabanca: "https://raioxdabanca.grupomedcof.com.br",
+    gastro: "https://grupomedcof.com.br",
+    aulaavcisquemico: "https://grupomedcof.com.br",
   };
 
   let inferredUrl = SUBDOMAIN_MAP[clean.toLowerCase()];
@@ -651,11 +720,24 @@ export async function getInsightPageById(pageId: string) {
     else if (pageId.includes("endocrino")) inferredUrl = "https://medcofendocrino.com.br";
     else if (pageId.includes("app")) inferredUrl = "https://app.grupomedcof.com.br";
     else if (pageId.includes("qbank")) inferredUrl = "https://qbank.grupomedcof.com.br";
-    else if (pageId.includes("revalida")) inferredUrl = "https://revaliday.grupomedcof.com.br";
+    else if (pageId.includes("revalida")) inferredUrl = "https://revalida.grupomedcof.com.br";
+    else if (pageId.includes("hiit")) inferredUrl = "https://hiit.grupomedcof.com.br";
     else if (pageId.includes("concursus")) inferredUrl = "https://concursus.grupomedcof.com.br";
     else if (pageId.includes("materiais")) inferredUrl = "https://materiais.grupomedcof.com.br";
     else if (pageId.includes("blog")) inferredUrl = "https://blog.grupomedcof.com.br";
-    else inferredUrl = `https://${clean}.grupomedcof.com.br`;
+    else if (pageId.includes("extensivo")) inferredUrl = "https://extensivo.grupomedcof.com.br";
+    else if (pageId.includes("otorrino")) inferredUrl = "https://otorrino.grupomedcof.com.br";
+    else if (pageId.includes("cardio")) inferredUrl = "https://cardio.grupomedcof.com.br";
+    else if (pageId.includes("clinica")) inferredUrl = "https://clinicof.grupomedcof.com.br";
+    else if (pageId.includes("anestesio")) inferredUrl = "https://anestesio.grupomedcof.com.br";
+    else if (pageId.includes("pediatria")) inferredUrl = "https://pediatria.grupomedcof.com.br";
+    else if (pageId.includes("ortopedia")) inferredUrl = "https://ortopedia.grupomedcof.com.br";
+    else if (pageId.includes("oftalmo")) inferredUrl = "https://oftalmo.grupomedcof.com.br";
+    else if (pageId.includes("radio")) inferredUrl = "https://radio.grupomedcof.com.br";
+    else if (pageId.includes("uro")) inferredUrl = "https://uro.grupomedcof.com.br";
+    else if (pageId.includes("temi")) inferredUrl = "https://temi.grupomedcof.com.br";
+    else if (pageId.includes("tego")) inferredUrl = "https://tego.grupomedcof.com.br";
+    else inferredUrl = "https://grupomedcof.com.br";
   }
 
   try {

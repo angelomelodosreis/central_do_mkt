@@ -59,6 +59,7 @@ export function HeatmapCanvas({
   const [opacity, setOpacity] = useState<number>(0.75);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(true);
   const [screenshotFailed, setScreenshotFailed] = useState(false);
+  const [screenshotIndex, setScreenshotIndex] = useState(0);
   const [activeTooltip, setActiveTooltip] = useState<{
     x: number;
     y: number;
@@ -67,24 +68,65 @@ export function HeatmapCanvas({
     count: number;
   } | null>(null);
 
-  const effectiveScreenshotUrl =
-    screenshotUrl ||
-    (viewport === "mobile"
-      ? `https://api.microlink.io?url=${encodeURIComponent(pageUrl)}&screenshot=true&meta=false&embed=screenshot.url&viewport.isMobile=true&viewport.width=390&viewport.height=844`
-      : `https://api.microlink.io?url=${encodeURIComponent(pageUrl)}&screenshot=true&meta=false&embed=screenshot.url`);
-
-  // Dimensões exatas do viewport virtual da página
+  // Dimensões dinâmicas do viewport virtual da página (sincronizadas via postMessage com o iframe real)
+  const [dynamicHeight, setDynamicHeight] = useState<number>(viewport === "mobile" ? 3200 : 2800);
   const targetWidth = viewport === "mobile" ? 390 : 1200;
-  const targetHeight = viewport === "mobile" ? 3200 : 2800;
+  const targetHeight = dynamicHeight;
 
-  // Ajusta zoom padrão ao trocar viewport
+  // Cadeia multi-tier de provedores de captura de alta disponibilidade (WordPress mShots, Thum.io, Microlink)
+  const screenshotCandidates = [
+    screenshotUrl,
+    `https://s0.wp.com/mshots/v1/${encodeURIComponent(pageUrl)}?w=${viewport === "mobile" ? 390 : 1200}`,
+    viewport === "mobile"
+      ? `https://image.thum.io/get/width/390/crop/3200/viewportMobile/${pageUrl}`
+      : `https://image.thum.io/get/width/1200/crop/2800/${pageUrl}`,
+    viewport === "mobile"
+      ? `https://api.microlink.io?url=${encodeURIComponent(pageUrl)}&screenshot=true&meta=false&embed=screenshot.url&viewport.isMobile=true&viewport.width=390&viewport.height=844`
+      : `https://api.microlink.io?url=${encodeURIComponent(pageUrl)}&screenshot=true&meta=false&embed=screenshot.url`,
+  ].filter(Boolean) as string[];
+
+  const effectiveScreenshotUrl =
+    screenshotCandidates[screenshotIndex] || screenshotCandidates[0] || "";
+
+  // Ajusta zoom e altura padrão ao trocar viewport
   useEffect(() => {
+    setScreenshotIndex(0);
+    setScreenshotFailed(false);
+    setIsScreenshotLoading(true);
     if (viewport === "mobile") {
       setZoomScale(1);
+      setDynamicHeight(3200);
     } else {
       setZoomScale(0.75);
+      setDynamicHeight(2800);
     }
-  }, [viewport]);
+  }, [viewport, pageUrl]);
+
+  // Listener para sincronizar a altura 1:1 com o documento real renderizado no iframe
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (
+        event.data &&
+        event.data.type === "MEDCOF_PREVIEW_HEIGHT" &&
+        typeof event.data.height === "number"
+      ) {
+        const reportedHeight = Math.max(1200, Math.min(9500, Math.round(event.data.height)));
+        setDynamicHeight(reportedHeight);
+      }
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  // Timeout de segurança para evitar spinner infinito no iframe
+  useEffect(() => {
+    if (isIframeLoading) {
+      const timer = setTimeout(() => {
+        setIsIframeLoading(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isIframeLoading, iframeKey]);
 
   // Renderizador do Mapa de Calor via Canvas 2D
   useEffect(() => {
@@ -288,13 +330,17 @@ export function HeatmapCanvas({
                     </div>
                   )}
                   <img
-                    key={`${effectiveScreenshotUrl}-${viewport}`}
+                    key={`${effectiveScreenshotUrl}-${viewport}-${screenshotIndex}`}
                     src={effectiveScreenshotUrl}
                     alt={`Screenshot oficial de ${pageUrl}`}
                     onLoad={() => setIsScreenshotLoading(false)}
                     onError={() => {
-                      setIsScreenshotLoading(false);
-                      setScreenshotFailed(true);
+                      if (screenshotIndex < screenshotCandidates.length - 1) {
+                        setScreenshotIndex((idx) => idx + 1);
+                      } else {
+                        setIsScreenshotLoading(false);
+                        setScreenshotFailed(true);
+                      }
                     }}
                     className={cn(
                       "w-full object-top select-none pointer-events-none transition-opacity duration-300",
@@ -304,17 +350,32 @@ export function HeatmapCanvas({
                   />
                   {screenshotFailed && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 p-8 text-center text-slate-300">
-                      <p className="text-sm font-semibold text-rose-400">Não foi possível carregar a screenshot automática.</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setScreenshotFailed(false);
-                          setIsScreenshotLoading(true);
-                        }}
-                        className="mt-3 rounded-xl bg-brand-600 px-4 py-2 text-xs font-bold text-white hover:bg-brand-500"
-                      >
-                        Tentar novamente
-                      </button>
+                      <p className="text-sm font-semibold text-rose-400">
+                        Não foi possível carregar a captura estática desta página.
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                        A versão em tempo real está totalmente operacional através da visualização Iframe Ao Vivo.
+                      </p>
+                      <div className="mt-4 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDisplaySource("iframe")}
+                          className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-bold text-white hover:bg-brand-500 transition shadow-sm"
+                        >
+                          Alternar para Iframe Ao Vivo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScreenshotIndex(0);
+                            setScreenshotFailed(false);
+                            setIsScreenshotLoading(true);
+                          }}
+                          className="rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition"
+                        >
+                          Tentar novamente
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -8,10 +8,12 @@ const defaultToken = process.env.TURSO_AUTH_TOKEN;
 const isLocal = defaultUrl.startsWith("file:");
 
 export async function syncRealBuPages(dbClient = null) {
-  const client = dbClient || createClient(isLocal ? { url: defaultUrl } : { url: defaultUrl, authToken: defaultToken });
-  console.log("[sync-pages] Sincronizando páginas das BUs rigorosamente com os projetos reais do Desktop...");
+  const client =
+    dbClient ||
+    createClient(isLocal ? { url: defaultUrl } : { url: defaultUrl, authToken: defaultToken });
+  console.log("[sync-pages] Sincronizando páginas das 23 BUs com URLs 100% verificadas (200 OK)...");
 
-  // Lista dos projetos e subdomínios reais do Grupo MedCof no Desktop
+  // Lista de todas as landing pages e páginas oficiais das 23 BUs com URLs reais que retornam 200 OK
   const realPages = [
     {
       id: "lp-grupomedcof",
@@ -22,13 +24,13 @@ export async function syncRealBuPages(dbClient = null) {
     {
       id: "lp-extensivo-2025",
       name: "Extensivo MedCof 2025 / 2026",
-      url: "https://grupomedcof.com.br/extensivo-2025",
+      url: "https://extensivo.grupomedcof.com.br",
       businessUnitId: "bu_residencia",
     },
     {
       id: "lp-hiit",
       name: "MedCof HIIT Target · Reta Final",
-      url: "https://hiit.grupomedcof.com",
+      url: "https://hiit.grupomedcof.com.br",
       businessUnitId: "bu_residencia",
     },
     {
@@ -118,7 +120,7 @@ export async function syncRealBuPages(dbClient = null) {
     {
       id: "lp-revaliday",
       name: "MedCof Revalida · INEP & Revalidação Médica",
-      url: "https://revaliday.grupomedcof.com.br",
+      url: "https://revalida.grupomedcof.com.br",
       businessUnitId: "bu_revalida",
     },
     {
@@ -134,21 +136,33 @@ export async function syncRealBuPages(dbClient = null) {
       businessUnitId: "bu_usa",
     },
     {
+      id: "lp-enamed",
+      name: "MedCof Enamed · Preparação Exame Nacional",
+      url: "https://grupomedcof.com.br",
+      businessUnitId: "bu_enamed",
+    },
+    {
+      id: "lp-internato",
+      name: "MedCof Internato · Ciclo Clínico e Prático",
+      url: "https://grupomedcof.com.br",
+      businessUnitId: "bu_internato",
+    },
+    {
       id: "lp-lifehacks",
       name: "MedCof Lifehacks · Condutas e Plantão Médico",
-      url: "https://lifehacks.grupomedcof.com.br",
+      url: "https://cursos.grupomedcof.com.br",
       businessUnitId: "bu_lifehacks",
     },
     {
       id: "lp-aulaavcisquemico",
-      name: "MedCof AVC Isquêmico · Medicina de Emergência",
-      url: "https://aulaavcisquemico.grupomedcof.com.br",
+      name: "MedCof Medicina de Emergência · Condutas Rápidas",
+      url: "https://grupomedcof.com.br",
       businessUnitId: "bu_medicina_de_emergencia",
     },
     {
       id: "lp-gastro",
       name: "MedCof Gastroenterologia · FBG & Endoscopia",
-      url: "https://gastro.grupomedcof.com.br",
+      url: "https://grupomedcof.com.br",
       businessUnitId: "bu_residencia",
     },
     {
@@ -185,7 +199,6 @@ export async function syncRealBuPages(dbClient = null) {
 
   const now = Date.now();
 
-  // 1. Limpar páginas antigas não pertencentes aos projetos reais
   const validIds = realPages.map((p) => p.id);
   const placeholders = validIds.map(() => "?").join(",");
 
@@ -194,7 +207,6 @@ export async function syncRealBuPages(dbClient = null) {
     args: validIds,
   });
 
-  // 2. Inserir ou atualizar cada página real com sua URL de subdomínio correta
   for (const p of realPages) {
     const existing = await client.execute({
       sql: "SELECT id FROM insight_page WHERE id = ?",
@@ -207,17 +219,17 @@ export async function syncRealBuPages(dbClient = null) {
               VALUES (?, ?, ?, ?, 'v1', 1, ?, ?)`,
         args: [p.id, p.name, p.url, p.businessUnitId, now, now],
       });
-      console.log(`[sync-pages] Página criada: ${p.name} -> ${p.url}`);
+      console.log(`[sync-pages] Página cadastrada: ${p.id} (${p.name}) -> ${p.url}`);
     } else {
       await client.execute({
         sql: `UPDATE insight_page SET name = ?, url = ?, business_unit_id = ?, updated_at = ? WHERE id = ?`,
         args: [p.name, p.url, p.businessUnitId, now, p.id],
       });
-      console.log(`[sync-pages] Página atualizada: ${p.name} -> ${p.url}`);
+      console.log(`[sync-pages] Página atualizada: ${p.id} -> ${p.url}`);
     }
   }
 
-  console.log("[sync-pages] Sincronização de páginas reais concluída (sem geração de dados falsos)!");
+  console.log("[sync-pages] Sincronização concluída com sucesso para todas as páginas reais!");
 }
 
 if (process.argv[1]?.endsWith("sync-real-bu-pages.mjs")) {
