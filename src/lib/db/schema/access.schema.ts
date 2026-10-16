@@ -36,7 +36,6 @@ export const MODULE_KEYS = [
   "tasks",
   "parameters",
   "admin",
-  "insights",
 ] as const;
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 
@@ -53,7 +52,6 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   // ele monta — a única coisa que aquele menu de fato controlava.
   parameters: "Modelos de nomenclatura",
   admin: "Administração",
-  insights: "Insights & Heatmap",
 };
 
 export const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
@@ -66,8 +64,6 @@ export const MODULE_DESCRIPTIONS: Record<ModuleKey, string> = {
   tasks: "Delegar tarefas. Executar as próprias não depende desta permissão.",
   parameters: "Criar e editar os modelos que o Gerador de Nomes monta.",
   admin: "Usuários, acessos, bases oficiais e auditoria.",
-  insights:
-    "Comportamento das LPs, cliques em CTAs, funil de conversão e mapa de calor.",
 };
 
 /**

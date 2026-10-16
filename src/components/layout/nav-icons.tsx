@@ -10,7 +10,6 @@ import {
   Network,
   Shield,
   TrendingUp,
-  Flame,
 } from "lucide-react";
 
 export const NAV_ICON_KEYS = [
@@ -24,7 +23,6 @@ export const NAV_ICON_KEYS = [
   "tasks",
   "org",
   "admin",
-  "insights",
 ] as const;
 
 export type NavIconKey = (typeof NAV_ICON_KEYS)[number];
@@ -40,7 +38,6 @@ const ICONS: Record<NavIconKey, typeof LayoutDashboard> = {
   tasks: CheckSquare,
   org: Network,
   admin: Shield,
-  insights: Flame,
 };
 
 export function NavIcon({

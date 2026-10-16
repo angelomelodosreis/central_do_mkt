@@ -94,6 +94,17 @@ const nextConfig: NextConfig = {
         destination: "/admin/bases/business-units",
         permanent: false,
       },
+      // Módulo de insights descontinuado
+      {
+        source: "/insights",
+        destination: "/painel",
+        permanent: false,
+      },
+      {
+        source: "/insights/:path*",
+        destination: "/painel",
+        permanent: false,
+      },
     ];
   },
 };

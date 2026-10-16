@@ -107,15 +107,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     },
   ];
 
-  if (can(currentUser, "insights")) {
-    items.push({
-      href: "/insights",
-      label: "Insights",
-      description: "Comportamento das LPs & Heatmap",
-      icon: "insights",
-    });
-  }
-
   if (can(currentUser, "name_generator")) {
     items.push({
       href: "/gerador-de-nomes",
