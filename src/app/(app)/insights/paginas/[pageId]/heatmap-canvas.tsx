@@ -57,6 +57,8 @@ export function HeatmapCanvas({
 
   const [radius, setRadius] = useState<number>(viewport === "mobile" ? 24 : 34);
   const [opacity, setOpacity] = useState<number>(0.75);
+  const [isScreenshotLoading, setIsScreenshotLoading] = useState(true);
+  const [screenshotFailed, setScreenshotFailed] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<{
     x: number;
     y: number;
@@ -64,6 +66,12 @@ export function HeatmapCanvas({
     subtitle: string;
     count: number;
   } | null>(null);
+
+  const effectiveScreenshotUrl =
+    screenshotUrl ||
+    (viewport === "mobile"
+      ? `https://api.microlink.io?url=${encodeURIComponent(pageUrl)}&screenshot=true&meta=false&embed=screenshot.url&viewport.isMobile=true&viewport.width=390&viewport.height=844`
+      : `https://api.microlink.io?url=${encodeURIComponent(pageUrl)}&screenshot=true&meta=false&embed=screenshot.url`);
 
   // Dimensões exatas do viewport virtual da página
   const targetWidth = viewport === "mobile" ? 390 : 1200;
@@ -270,40 +278,45 @@ export function HeatmapCanvas({
                     className="w-full h-full bg-white select-none pointer-events-none"
                   />
                 </>
-              ) : screenshotUrl ? (
-                <img
-                  src={screenshotUrl}
-                  alt="Screenshot da Landing Page"
-                  className="w-full object-top select-none pointer-events-none"
-                  style={{ width: targetWidth, minHeight: targetHeight }}
-                />
               ) : (
-                /* Mockup Ilustrativo MedCof */
-                <div
-                  style={{ width: targetWidth, height: targetHeight }}
-                  className="relative w-full bg-radial from-slate-900 via-slate-950 to-black p-8 text-slate-300"
-                >
-                  <div className="space-y-16 opacity-90">
-                    <div className="rounded-3xl border border-slate-800/80 bg-slate-900/60 p-10 text-center space-y-4">
-                      <div className="inline-block rounded-full bg-brand-500/10 px-4 py-1 text-xs font-semibold text-brand-400">
-                        MedCof Oficial · Preparatório & Residência
-                      </div>
-                      <h1 className="text-3xl font-extrabold tracking-tight text-white max-w-xl mx-auto">
-                        A sua aprovação na residência médica começa aqui.
-                      </h1>
-                      <p className="text-sm text-slate-400 max-w-md mx-auto">
-                        Mais de 8.000 médicos aprovados nas instituições mais concorridas do país.
-                      </p>
-                      <div className="pt-4 flex justify-center gap-3">
-                        <span className="rounded-xl bg-brand-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-brand-500/20">
-                          Quero me matricular
-                        </span>
-                        <span className="rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-semibold text-slate-300">
-                          Conhecer metodologia
-                        </span>
-                      </div>
+                <div className="relative w-full" style={{ width: targetWidth, minHeight: targetHeight }}>
+                  {isScreenshotLoading && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/85 text-white backdrop-blur-xs">
+                      <div className="size-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mb-3" />
+                      <span className="text-xs font-semibold">Carregando Screenshot da Landing Page...</span>
+                      <span className="text-[11px] text-slate-400 mt-1 font-mono">{pageUrl}</span>
                     </div>
-                  </div>
+                  )}
+                  <img
+                    key={`${effectiveScreenshotUrl}-${viewport}`}
+                    src={effectiveScreenshotUrl}
+                    alt={`Screenshot oficial de ${pageUrl}`}
+                    onLoad={() => setIsScreenshotLoading(false)}
+                    onError={() => {
+                      setIsScreenshotLoading(false);
+                      setScreenshotFailed(true);
+                    }}
+                    className={cn(
+                      "w-full object-top select-none pointer-events-none transition-opacity duration-300",
+                      isScreenshotLoading ? "opacity-0" : "opacity-100"
+                    )}
+                    style={{ width: targetWidth, minHeight: targetHeight }}
+                  />
+                  {screenshotFailed && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 p-8 text-center text-slate-300">
+                      <p className="text-sm font-semibold text-rose-400">Não foi possível carregar a screenshot automática.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScreenshotFailed(false);
+                          setIsScreenshotLoading(true);
+                        }}
+                        className="mt-3 rounded-xl bg-brand-600 px-4 py-2 text-xs font-bold text-white hover:bg-brand-500"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

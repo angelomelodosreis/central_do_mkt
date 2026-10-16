@@ -6,7 +6,38 @@ import {
   type InsightPage,
   type InsightViewport,
 } from "@/lib/db/schema";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+
+export const VALID_PAGE_IDS = new Set([
+  "lp-grupomedcof",
+  "lp-extensivo-2025",
+  "lp-hiit",
+  "lp-medcofderma",
+  "lp-medcofendocrino",
+  "lp-cardio",
+  "lp-cirurgia",
+  "lp-clinicof",
+  "lp-anestesio",
+  "lp-pediatria",
+  "lp-tego",
+  "lp-ortopedia",
+  "lp-oftalmo",
+  "lp-otorrino",
+  "lp-radio",
+  "lp-uro",
+  "lp-temi",
+  "lp-revaliday",
+  "lp-concursus",
+  "lp-usa",
+  "lp-lifehacks",
+  "lp-aulaavcisquemico",
+  "lp-gastro",
+  "lp-institucional",
+  "lp-mentoria",
+  "lp-eventos",
+  "lp-handson",
+  "lp-raioxdabanca",
+]);
 
 export type InsightsOverviewFilter = {
   buId?: string;
@@ -77,8 +108,8 @@ export async function getInsightsOverview(
   startDate.setDate(startDate.getDate() - periodDays);
   startDate.setHours(0, 0, 0, 0);
 
-  // 1. Buscar todas as páginas com BU
-  const pages = await db
+  // 1. Buscar todas as páginas com BU (filtradas rigorosamente pelas frentes reais)
+  const rawPages = await db
     .select({
       id: insightPage.id,
       name: insightPage.name,
@@ -90,11 +121,20 @@ export async function getInsightsOverview(
     .from(insightPage)
     .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id));
 
+  const pages = rawPages.filter((p) => VALID_PAGE_IDS.has(p.id));
+
   const pageMap = new Map<string, typeof pages[0]>();
   pages.forEach((p) => pageMap.set(p.id, p));
 
-  // 2. Montar condições para os eventos
-  const conditions = [gte(insightEvent.createdAt, startDate)];
+  // 2. Montar condições para os eventos (descartando dados mock / sintéticos gerados por script)
+  const validIdsArray = Array.from(VALID_PAGE_IDS);
+  const conditions = [
+    gte(insightEvent.createdAt, startDate),
+    sql`${insightEvent.id} NOT LIKE 'ev_%'`,
+    sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,
+    sql`(${insightEvent.utmCampaign} IS NULL OR ${insightEvent.utmCampaign} != 'campanha-conversao-2026')`,
+    inArray(insightEvent.pageId, validIdsArray),
+  ];
 
   if (filters.viewport && filters.viewport !== "all") {
     conditions.push(eq(insightEvent.viewport, filters.viewport));
@@ -317,7 +357,7 @@ export async function getInsightsOverview(
       else if (bu.slug === "dermatologia") canonicalUrl = "https://medcofderma.com.br";
       else if (bu.slug === "endocrinologia") canonicalUrl = "https://medcofendocrino.com.br";
       else if (bu.slug === "endocrinologia_pediatrica")
-        canonicalUrl = "https://medcofendocrino.com.br/pediatrica";
+        canonicalUrl = "https://medcofendocrino.com.br";
       else if (bu.slug === "ginecologia_e_obstetricia") canonicalUrl = "https://tego.grupomedcof.com.br";
       else if (bu.slug === "ps" || bu.slug === "lifehacks") canonicalUrl = "https://lifehacks.grupomedcof.com.br";
       else if (bu.slug === "medicina_de_emergencia") canonicalUrl = "https://aulaavcisquemico.grupomedcof.com.br";
@@ -331,8 +371,8 @@ export async function getInsightsOverview(
       else if (bu.slug === "revalida") canonicalUrl = "https://revaliday.grupomedcof.com.br";
       else if (bu.slug === "urologia") canonicalUrl = "https://uro.grupomedcof.com.br";
       else if (bu.slug === "usa") canonicalUrl = "https://usa.grupomedcof.com.br";
-      else if (bu.slug === "enamed") canonicalUrl = "https://enamed.grupomedcof.com.br";
-      else if (bu.slug === "internato") canonicalUrl = "https://internato.grupomedcof.com.br";
+      else if (bu.slug === "enamed") canonicalUrl = "https://grupomedcof.com.br";
+      else if (bu.slug === "internato") canonicalUrl = "https://grupomedcof.com.br";
 
       const topPage = buPages[0];
 
@@ -537,7 +577,7 @@ export async function getInsightPageById(pageId: string) {
  */
 export async function listAllInsightPages() {
   const db = await getDb();
-  return db
+  const all = await db
     .select({
       id: insightPage.id,
       name: insightPage.name,
@@ -555,6 +595,8 @@ export async function listAllInsightPages() {
     .from(insightPage)
     .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id))
     .orderBy(desc(insightPage.createdAt));
+
+  return all.filter((p) => VALID_PAGE_IDS.has(p.id));
 }
 
 export type HeatmapFilter = {
@@ -600,6 +642,9 @@ export async function getPageHeatmapData(pageId: string, filters: HeatmapFilter 
   const conditions = [
     eq(insightEvent.pageId, pageId),
     gte(insightEvent.createdAt, startDate),
+    sql`${insightEvent.id} NOT LIKE 'ev_%'`,
+    sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,
+    sql`(${insightEvent.utmCampaign} IS NULL OR ${insightEvent.utmCampaign} != 'campanha-conversao-2026')`,
   ];
 
   if (filters.viewport) {
@@ -1023,6 +1068,9 @@ export async function getAbComparisonData(
     const conditions = [
       eq(insightEvent.pageId, page.id),
       gte(insightEvent.createdAt, startDate),
+      sql`${insightEvent.id} NOT LIKE 'ev_%'`,
+      sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,
+      sql`(${insightEvent.utmCampaign} IS NULL OR ${insightEvent.utmCampaign} != 'campanha-conversao-2026')`,
     ];
 
     if (filters.viewport && filters.viewport !== "all") {

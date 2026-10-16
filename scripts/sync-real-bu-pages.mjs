@@ -3,14 +3,13 @@ import { config as loadEnv } from "dotenv";
 
 loadEnv({ path: ".env.local", quiet: true });
 
-const url = process.env.TURSO_DATABASE_URL ?? "file:./.data/local.db";
-const authToken = process.env.TURSO_AUTH_TOKEN;
-const isLocalFile = url.startsWith("file:");
+const defaultUrl = process.env.TURSO_DATABASE_URL ?? "file:./.data/local.db";
+const defaultToken = process.env.TURSO_AUTH_TOKEN;
+const isLocal = defaultUrl.startsWith("file:");
 
-const client = createClient(isLocalFile ? { url } : { url, authToken });
-
-export async function syncRealBuPages() {
-  console.log("Sincronizando páginas das BUs rigorosamente com os projetos reais do Desktop...");
+export async function syncRealBuPages(dbClient = null) {
+  const client = dbClient || createClient(isLocal ? { url: defaultUrl } : { url: defaultUrl, authToken: defaultToken });
+  console.log("[sync-pages] Sincronizando páginas das BUs rigorosamente com os projetos reais do Desktop...");
 
   // Lista dos projetos e subdomínios reais do Grupo MedCof no Desktop
   const realPages = [
@@ -216,62 +215,9 @@ export async function syncRealBuPages() {
       });
       console.log(`[sync-pages] Página atualizada: ${p.name} -> ${p.url}`);
     }
-
-    // Garante que há eventos de telemetria para a página
-    const evCount = await client.execute({
-      sql: "SELECT count(*) as total FROM insight_event WHERE page_id = ?",
-      args: [p.id],
-    });
-
-    if (Number(evCount.rows[0].total || 0) === 0) {
-      const ctas = [
-        { id: "hero-primary-cta", label: "Quero me matricular agora", section: "hero", x: 500, y: 180, clicks: 80 },
-        { id: "hero-secondary-cta", label: "Conhecer metodologia", section: "hero", x: 620, y: 180, clicks: 40 },
-        { id: "lead-form-submit", label: "Enviar formulário de contato", section: "formulario", x: 500, y: 820, clicks: 35 },
-        { id: "whatsapp-floating-btn", label: "Falar com consultor no WhatsApp", section: "global", x: 940, y: 920, clicks: 30 },
-      ];
-
-      for (let i = 0; i < 220; i++) {
-        const timeAgo = now - Math.floor(Math.random() * 20 * 86400000);
-        const vp = i % 3 === 0 ? "mobile" : "desktop";
-        const sId = `session_${p.id}_${i}`;
-
-        await client.execute({
-          sql: `INSERT INTO insight_event (id, page_id, event_type, page_url, page_path, viewport, created_at)
-                VALUES (?, ?, 'page_view', ?, '/', ?, ?)`,
-          args: [`ev_${p.id}_pv_${i}`, p.id, p.url, vp, timeAgo],
-        });
-
-        if (i % 2 === 0) {
-          const cta = ctas[i % ctas.length];
-          await client.execute({
-            sql: `INSERT INTO insight_event (id, page_id, event_type, page_url, page_path, element_id, element_label, section_id, x, y, viewport, created_at)
-                  VALUES (?, ?, 'cta_click', ?, '/', ?, ?, ?, ?, ?, ?, ?)`,
-            args: [`ev_${p.id}_cta_${i}`, p.id, p.url, cta.id, cta.label, cta.section, cta.x, cta.y, vp, timeAgo + 10000],
-          });
-        }
-
-        if (i % 5 === 0) {
-          await client.execute({
-            sql: `INSERT INTO insight_event (id, page_id, event_type, page_url, page_path, element_id, element_label, section_id, viewport, created_at)
-                  VALUES (?, ?, 'form_start', ?, '/', 'lead-form', 'Formulário de Inscrição', 'formulario', ?, ?)`,
-            args: [`ev_${p.id}_fs_${i}`, p.id, p.url, vp, timeAgo + 30000],
-          });
-        }
-
-        if (i % 8 === 0) {
-          await client.execute({
-            sql: `INSERT INTO insight_event (id, page_id, event_type, page_url, page_path, element_id, element_label, section_id, viewport, created_at)
-                  VALUES (?, ?, 'form_submit', ?, '/', 'lead-form', 'Formulário Enviado com Sucesso', 'formulario', ?, ?)`,
-            args: [`ev_${p.id}_sub_${i}`, p.id, p.url, vp, timeAgo + 60000],
-          });
-        }
-      }
-      console.log(`[sync-pages] Telemetria gerada para ${p.id}`);
-    }
   }
 
-  console.log("Sincronização concluída com sucesso!");
+  console.log("[sync-pages] Sincronização de páginas reais concluída (sem geração de dados falsos)!");
 }
 
 if (process.argv[1]?.endsWith("sync-real-bu-pages.mjs")) {

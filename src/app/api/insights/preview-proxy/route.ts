@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/session";
+import dns from "node:dns";
+
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
 
 export const runtime = "nodejs";
 
@@ -22,6 +27,7 @@ function normalizeMedcofUrl(rawUrl: string): string {
         cirurgia: "https://cirurgia.grupomedcof.com.br",
         clinica: "https://clinicof.grupomedcof.com.br",
         "clinica-medica": "https://clinicof.grupomedcof.com.br",
+        clinicof: "https://clinicof.grupomedcof.com.br",
         anestesio: "https://anestesio.grupomedcof.com.br",
         anestesiologia: "https://anestesio.grupomedcof.com.br",
         pediatria: "https://pediatria.grupomedcof.com.br",
@@ -39,6 +45,7 @@ function normalizeMedcofUrl(rawUrl: string): string {
         lifehacks: "https://lifehacks.grupomedcof.com.br",
         usa: "https://usa.grupomedcof.com.br",
         revalida: "https://revaliday.grupomedcof.com.br",
+        revaliday: "https://revaliday.grupomedcof.com.br",
         hiit: "https://hiit.grupomedcof.com",
         "hiit-target": "https://hiit.grupomedcof.com",
         concursus: "https://concursus.grupomedcof.com.br",
@@ -63,7 +70,7 @@ function normalizeMedcofUrl(rawUrl: string): string {
 export async function GET(request: Request) {
   try {
     await requireUser();
-  } catch (authError) {
+  } catch {
     return new NextResponse("Não autorizado", { status: 401 });
   }
 
@@ -79,7 +86,6 @@ export async function GET(request: Request) {
   try {
     const parsedTarget = new URL(targetUrl);
 
-    // Validação de segurança: apenas domínios HTTP/HTTPS
     if (parsedTarget.protocol !== "http:" && parsedTarget.protocol !== "https:") {
       return new NextResponse("Protocolo inválido", { status: 400 });
     }
@@ -117,10 +123,13 @@ export async function GET(request: Request) {
     }
 
     let html = await response.text();
-    const origin = parsedTarget.origin;
+    const finalUrl = response.url || targetUrl;
+    const parsedFinal = new URL(finalUrl);
+    const origin = parsedFinal.origin;
 
-    // 1. Injetar <base href="..."> no <head>
-    const baseTag = `<base href="${origin}${parsedTarget.pathname}" />`;
+    // 1. Injetar <base href="..."> no <head> com a URL final pós-redirecionamento
+    const basePath = parsedFinal.pathname.endsWith("/") ? parsedFinal.pathname : `${parsedFinal.pathname}/`;
+    const baseTag = `<base href="${origin}${basePath}" />`;
     if (html.includes("<head>")) {
       html = html.replace("<head>", `<head>${baseTag}`);
     } else if (html.includes("<HEAD>")) {
@@ -130,7 +139,6 @@ export async function GET(request: Request) {
     }
 
     // 2. Reescrever URLs relativas à raiz (começadas com "/") para URLs absolutas do domínio original
-    // Isso garante que todo o CSS, imagens WebP/PNG/SVG, fontes e mídias carreguem com 100% de sucesso
     html = html.replace(/(href|src|poster)=["']\/([^"']*)["']/gi, (match, attr, path) => {
       if (path.startsWith("#") || path.startsWith("javascript:") || path.startsWith("data:")) return match;
       return `${attr}="${origin}/${path}"`;
@@ -148,17 +156,16 @@ export async function GET(request: Request) {
     });
 
     // 5. Neutralizar scripts que podem tentar frame busting ou redirecionar a página parent
-    // Mantemos apenas JSON-LD / dados estruturados; os scripts de hidratação Next.js/React são desativados
-    // para preservar o DOM estático sem hydration errors ou popups que atrapalhem o heatmap
-    html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs, content) => {
+    html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (match, attrs) => {
       if (attrs.includes('type="application/ld+json"') || attrs.includes('type="application/json"')) {
         return match;
       }
       return `<!-- disabled-script-for-preview -->`;
     });
 
-    // 6. Remover meta tags de Content-Security-Policy que bloqueariam carregamento de CSS remoto
+    // 6. Remover meta tags de Content-Security-Policy e X-Frame-Options
     html = html.replace(/<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
+    html = html.replace(/<meta\s+http-equiv=["']X-Frame-Options["'][^>]*>/gi, "");
 
     // 7. Injetar estilos de compatibilidade para visualização do heatmap
     const previewStyles = `
@@ -167,11 +174,9 @@ export async function GET(request: Request) {
           overflow-x: hidden !important;
           max-width: 100vw !important;
         }
-        /* Desativa comportamento de links dentro do preview para evitar navegações acidentais */
         a {
           cursor: default !important;
         }
-        /* Garante visibilidade e contraste dos elementos */
         img, svg {
           max-width: 100% !important;
         }
@@ -187,7 +192,6 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "X-Frame-Options": "SAMEORIGIN",
         "Cache-Control": "public, max-age=600",
       },
     });
@@ -197,7 +201,7 @@ export async function GET(request: Request) {
         <div style="max-width:480px;margin:0 auto;background:#1e293b;padding:2rem;border-radius:1rem;border:1px solid #334155;">
           <h3 style="color:#f8fafc;margin-bottom:0.5rem;">Prévia da Landing Page MedCof</h3>
           <p style="color:#94a3b8;font-size:0.875rem;">Não foi possível carregar a prévia direta de ${targetUrl}: ${err?.message || "Erro de conexão"}</p>
-          <a href="${targetUrl}" target="_blank" style="display:inline-block;margin-top:1rem;background:#0284c7;color:#fff;padding:0.5rem 1rem;border-radius:0.5rem;text-decoration:none;font-size:0.875rem;font-weight:600;">Abrir em nova aba</a>
+          <a href="${targetUrl}" target="_blank" style="display:inline-block;margin-top:1rem;background:#0284c7;color:#fff;padding:0.5rem 1rem;border-radius:0.5rem;text-decoration:none;font-size:0.875rem;font-bold;">Abrir em nova aba</a>
         </div>
       </body></html>`,
       {

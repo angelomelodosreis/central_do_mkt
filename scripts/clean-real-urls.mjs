@@ -3,115 +3,102 @@ import { config as loadEnv } from "dotenv";
 
 loadEnv({ path: ".env.local", quiet: true });
 
-const url = process.env.TURSO_DATABASE_URL ?? "file:./.data/local.db";
-const authToken = process.env.TURSO_AUTH_TOKEN;
-const isLocalFile = url.startsWith("file:");
+const defaultUrl = process.env.TURSO_DATABASE_URL ?? "file:./.data/local.db";
+const defaultToken = process.env.TURSO_AUTH_TOKEN;
+const isLocal = defaultUrl.startsWith("file:");
 
-const client = createClient(isLocalFile ? { url } : { url, authToken });
+export async function cleanRealUrls(dbClient = null) {
+  const client = dbClient || createClient(isLocal ? { url: defaultUrl } : { url: defaultUrl, authToken: defaultToken });
+  console.log("[clean-urls] Iniciando limpeza rigorosa de dados sintéticos/mock e URLs falsas...");
 
-export async function cleanRealUrls() {
-  console.log("Removendo URLs falsas/inexistentes e normalizando para subdomínios reais...");
-
-  // 1. Mapeamento de URLs antigas/fictícias para URLs reais dos projetos do Desktop
-  const urlFixes = [
-    { from: "https://grupomedcof.com.br/otorrino", to: "https://otorrino.grupomedcof.com.br", pageId: "lp-otorrino" },
-    { from: "https://www.grupomedcof.com.br/otorrino", to: "https://otorrino.grupomedcof.com.br", pageId: "lp-otorrino" },
-    { from: "https://grupomedcof.com.br/cardiologia", to: "https://cardio.grupomedcof.com.br", pageId: "lp-cardio" },
-    { from: "https://grupomedcof.com.br/cirurgia", to: "https://cirurgia.grupomedcof.com.br", pageId: "lp-cirurgia" },
-    { from: "https://grupomedcof.com.br/clinica-medica", to: "https://clinicof.grupomedcof.com.br", pageId: "lp-clinicof" },
-    { from: "https://grupomedcof.com.br/anestesiologia", to: "https://anestesio.grupomedcof.com.br", pageId: "lp-anestesio" },
-    { from: "https://grupomedcof.com.br/pediatria", to: "https://pediatria.grupomedcof.com.br", pageId: "lp-pediatria" },
-    { from: "https://grupomedcof.com.br/ortopedia", to: "https://ortopedia.grupomedcof.com.br", pageId: "lp-ortopedia" },
-    { from: "https://grupomedcof.com.br/oftalmologia", to: "https://oftalmo.grupomedcof.com.br", pageId: "lp-oftalmo" },
-    { from: "https://grupomedcof.com.br/radiologia", to: "https://radio.grupomedcof.com.br", pageId: "lp-radio" },
-    { from: "https://grupomedcof.com.br/urologia", to: "https://uro.grupomedcof.com.br", pageId: "lp-uro" },
-    { from: "https://grupomedcof.com.br/medicina-intensiva", to: "https://temi.grupomedcof.com.br", pageId: "lp-temi" },
-    { from: "https://grupomedcof.com.br/ginecologia", to: "https://tego.grupomedcof.com.br", pageId: "lp-tego" },
-    { from: "https://grupomedcof.com.br/lifehacks", to: "https://lifehacks.grupomedcof.com.br", pageId: "lp-lifehacks" },
-    { from: "https://grupomedcof.com.br/usa", to: "https://usa.grupomedcof.com.br", pageId: "lp-usa" },
-    { from: "https://grupomedcof.com.br/revalida", to: "https://revaliday.grupomedcof.com.br", pageId: "lp-revaliday" },
-    { from: "https://revalida.grupomedcof.com.br", to: "https://revaliday.grupomedcof.com.br", pageId: "lp-revaliday" },
-    { from: "https://grupomedcof.com.br/hiit-target", to: "https://hiit.grupomedcof.com", pageId: "lp-hiit" },
-    { from: "https://grupomedcof.com.br/ps", to: "https://lifehacks.grupomedcof.com.br", pageId: "lp-lifehacks" },
+  const validPages = [
+    { id: "lp-grupomedcof", url: "https://grupomedcof.com.br" },
+    { id: "lp-extensivo-2025", url: "https://grupomedcof.com.br/extensivo-2025" },
+    { id: "lp-hiit", url: "https://hiit.grupomedcof.com" },
+    { id: "lp-medcofderma", url: "https://medcofderma.com.br" },
+    { id: "lp-medcofendocrino", url: "https://medcofendocrino.com.br" },
+    { id: "lp-cardio", url: "https://cardio.grupomedcof.com.br" },
+    { id: "lp-cirurgia", url: "https://cirurgia.grupomedcof.com.br" },
+    { id: "lp-clinicof", url: "https://clinicof.grupomedcof.com.br" },
+    { id: "lp-anestesio", url: "https://anestesio.grupomedcof.com.br" },
+    { id: "lp-pediatria", url: "https://pediatria.grupomedcof.com.br" },
+    { id: "lp-tego", url: "https://tego.grupomedcof.com.br" },
+    { id: "lp-ortopedia", url: "https://ortopedia.grupomedcof.com.br" },
+    { id: "lp-oftalmo", url: "https://oftalmo.grupomedcof.com.br" },
+    { id: "lp-otorrino", url: "https://otorrino.grupomedcof.com.br" },
+    { id: "lp-radio", url: "https://radio.grupomedcof.com.br" },
+    { id: "lp-uro", url: "https://uro.grupomedcof.com.br" },
+    { id: "lp-temi", url: "https://temi.grupomedcof.com.br" },
+    { id: "lp-revaliday", url: "https://revaliday.grupomedcof.com.br" },
+    { id: "lp-concursus", url: "https://concursus.grupomedcof.com.br" },
+    { id: "lp-usa", url: "https://usa.grupomedcof.com.br" },
+    { id: "lp-lifehacks", url: "https://lifehacks.grupomedcof.com.br" },
+    { id: "lp-aulaavcisquemico", url: "https://aulaavcisquemico.grupomedcof.com.br" },
+    { id: "lp-gastro", url: "https://gastro.grupomedcof.com.br" },
+    { id: "lp-institucional", url: "https://institucional.grupomedcof.com.br" },
+    { id: "lp-mentoria", url: "https://mentoria.grupomedcof.com.br" },
+    { id: "lp-eventos", url: "https://eventos.grupomedcof.com.br" },
+    { id: "lp-handson", url: "https://handson.grupomedcof.com.br" },
+    { id: "lp-raioxdabanca", url: "https://raioxdabanca.grupomedcof.com.br" },
   ];
 
-  for (const fix of urlFixes) {
-    const res = await client.execute({
-      sql: "UPDATE insight_event SET page_url = ?, page_id = ? WHERE page_url = ?",
-      args: [fix.to, fix.pageId, fix.from],
+  const validIds = validPages.map((p) => p.id);
+  const validUrls = validPages.map((p) => p.url);
+
+  // 1. Apagar TODOS os eventos sintéticos / gerados por script mock (com id 'ev_%' ou session_id 'session_%' ou campanha 'campanha-conversao-2026')
+  try {
+    const delMock = await client.execute({
+      sql: `DELETE FROM insight_event WHERE id LIKE 'ev_%' OR session_id LIKE 'session_%' OR utm_campaign = 'campanha-conversao-2026'`,
+      args: [],
     });
-    if (res.rowsAffected > 0) {
-      console.log(`[clean-urls] Atualizados ${res.rowsAffected} eventos de ${fix.from} -> ${fix.to}`);
+    if (delMock.rowsAffected > 0) {
+      console.log(`[clean-urls] Purgados ${delMock.rowsAffected} eventos sintéticos/mock de telemetria.`);
+    }
+  } catch (err) {
+    console.warn("[clean-urls] Erro ao purgar eventos sintéticos:", err.message);
+  }
+
+  // 2. Apagar eventos de páginas que não estão na lista de URLs reais
+  try {
+    const placeholdersUrls = validUrls.map(() => "?").join(",");
+    const delOrphanEvents = await client.execute({
+      sql: `DELETE FROM insight_event WHERE page_url NOT IN (${placeholdersUrls})`,
+      args: validUrls,
+    });
+    if (delOrphanEvents.rowsAffected > 0) {
+      console.log(`[clean-urls] Purgados ${delOrphanEvents.rowsAffected} eventos com URLs inválidas/inexistentes.`);
+    }
+  } catch (err) {
+    console.warn("[clean-urls] Erro ao limpar eventos órfãos:", err.message);
+  }
+
+  // 3. Apagar páginas fictícias que não existem nos projetos reais (como lp-enamed, lp-internato, lp-endocrino-pediatrica, lp-pronto-socorro, etc.)
+  try {
+    const placeholdersIds = validIds.map(() => "?").join(",");
+    const delFakePages = await client.execute({
+      sql: `DELETE FROM insight_page WHERE id NOT IN (${placeholdersIds})`,
+      args: validIds,
+    });
+    if (delFakePages.rowsAffected > 0) {
+      console.log(`[clean-urls] Removidas ${delFakePages.rowsAffected} páginas inexistentes de insight_page.`);
+    }
+  } catch (err) {
+    console.warn("[clean-urls] Erro ao remover páginas fictícias:", err.message);
+  }
+
+  // 4. Garantir que todas as páginas válidas tenham a URL correta de subdomínio
+  for (const page of validPages) {
+    try {
+      await client.execute({
+        sql: `UPDATE insight_page SET url = ? WHERE id = ?`,
+        args: [page.url, page.id],
+      });
+    } catch {
+      // Ignorar se a página ainda não foi inserida
     }
   }
 
-  // 2. Apagar eventos de URLs que não existem em projetos
-  const deleteUrls = [
-    "https://grupomedcof.com.br/enamed",
-    "https://grupomedcof.com.br/internato",
-    "https://medcofendocrino.com.br/pediatrica",
-  ];
-
-  for (const d of deleteUrls) {
-    const res = await client.execute({
-      sql: "DELETE FROM insight_event WHERE page_url = ?",
-      args: [d],
-    });
-    if (res.rowsAffected > 0) {
-      console.log(`[clean-urls] Removidos ${res.rowsAffected} eventos inválidos de ${d}`);
-    }
-  }
-
-  // 3. Atualizar páginas da tabela insight_page se houver URL errada
-  for (const fix of urlFixes) {
-    await client.execute({
-      sql: "UPDATE insight_page SET url = ? WHERE url = ? OR id = ?",
-      args: [fix.to, fix.from, fix.pageId],
-    });
-  }
-
-  // 4. Remover qualquer página órfã que não seja dos projetos reais
-  const realDomains = [
-    "https://grupomedcof.com.br",
-    "https://grupomedcof.com.br/extensivo-2025",
-    "https://hiit.grupomedcof.com",
-    "https://medcofderma.com.br",
-    "https://medcofendocrino.com.br",
-    "https://cardio.grupomedcof.com.br",
-    "https://cirurgia.grupomedcof.com.br",
-    "https://clinicof.grupomedcof.com.br",
-    "https://anestesio.grupomedcof.com.br",
-    "https://pediatria.grupomedcof.com.br",
-    "https://tego.grupomedcof.com.br",
-    "https://ortopedia.grupomedcof.com.br",
-    "https://oftalmo.grupomedcof.com.br",
-    "https://otorrino.grupomedcof.com.br",
-    "https://radio.grupomedcof.com.br",
-    "https://uro.grupomedcof.com.br",
-    "https://temi.grupomedcof.com.br",
-    "https://revaliday.grupomedcof.com.br",
-    "https://concursus.grupomedcof.com.br",
-    "https://usa.grupomedcof.com.br",
-    "https://lifehacks.grupomedcof.com.br",
-    "https://aulaavcisquemico.grupomedcof.com.br",
-    "https://gastro.grupomedcof.com.br",
-    "https://institucional.grupomedcof.com.br",
-    "https://mentoria.grupomedcof.com.br",
-    "https://eventos.grupomedcof.com.br",
-    "https://handson.grupomedcof.com.br",
-    "https://raioxdabanca.grupomedcof.com.br",
-  ];
-
-  const placeholders = realDomains.map(() => "?").join(",");
-  const delPages = await client.execute({
-    sql: `DELETE FROM insight_page WHERE url NOT IN (${placeholders})`,
-    args: realDomains,
-  });
-  if (delPages.rowsAffected > 0) {
-    console.log(`[clean-urls] Removidas ${delPages.rowsAffected} páginas inválidas do banco.`);
-  }
-
-  console.log("Limpeza de URLs concluída!");
+  console.log("[clean-urls] Limpeza de dados sintéticos e normalização concluídas com sucesso!");
 }
 
 if (process.argv[1]?.endsWith("clean-real-urls.mjs")) {
