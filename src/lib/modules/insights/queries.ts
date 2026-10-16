@@ -451,7 +451,102 @@ export async function getInsightPageById(pageId: string) {
 
   if (page) return page;
 
-  // 1. Tenta buscar por URL aproximada
+  const trimmed = pageId.trim();
+
+  // Se for URL completa, busca diretamente por URL (com ou sem barra no final)
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    const cleanUrl = trimmed.replace(/\/$/, "");
+    const byExactUrl = await db
+      .select({
+        id: insightPage.id,
+        name: insightPage.name,
+        url: insightPage.url,
+        businessUnitId: insightPage.businessUnitId,
+        buName: businessUnit.label,
+        isActive: insightPage.isActive,
+        version: insightPage.version,
+        screenshotUrlDesktop: insightPage.screenshotUrlDesktop,
+        screenshotUrlMobile: insightPage.screenshotUrlMobile,
+        screenshotUpdatedAt: insightPage.screenshotUpdatedAt,
+        trackedElements: insightPage.trackedElements,
+        createdAt: insightPage.createdAt,
+        updatedAt: insightPage.updatedAt,
+      })
+      .from(insightPage)
+      .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id))
+      .where(sql`${insightPage.url} = ${cleanUrl} OR ${insightPage.url} = ${cleanUrl + '/'}`)
+      .get();
+
+    if (byExactUrl) return byExactUrl;
+
+    // Se for URL e não foi encontrada, auto-provisiona com ID limpo
+    try {
+      const parsedUrl = new URL(trimmed);
+      const host = parsedUrl.hostname.toLowerCase();
+      const path = parsedUrl.pathname.replace(/\/$/, "");
+      const generatedId = `lp-${host.replace(/\.grupomedcof\.com\.br$/, "").replace(/\.com\.br$/, "").replace(/\./g, "-")}${path && path !== "/" ? "-" + path.replace(/^\//, "").replace(/\//g, "-") : ""}`.toLowerCase();
+
+      const existingById = await db
+        .select({
+          id: insightPage.id,
+          name: insightPage.name,
+          url: insightPage.url,
+          businessUnitId: insightPage.businessUnitId,
+          buName: businessUnit.label,
+          isActive: insightPage.isActive,
+          version: insightPage.version,
+          screenshotUrlDesktop: insightPage.screenshotUrlDesktop,
+          screenshotUrlMobile: insightPage.screenshotUrlMobile,
+          screenshotUpdatedAt: insightPage.screenshotUpdatedAt,
+          trackedElements: insightPage.trackedElements,
+          createdAt: insightPage.createdAt,
+          updatedAt: insightPage.updatedAt,
+        })
+        .from(insightPage)
+        .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id))
+        .where(eq(insightPage.id, generatedId))
+        .get();
+
+      if (existingById) return existingById;
+
+      const formattedName = (host.replace(/\.grupomedcof\.com\.br$/, "").replace(/\.com\.br$/, "") + (path && path !== "/" ? ` ${path}` : ""))
+        .replace(/[-_]/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+      await db.insert(insightPage).values({
+        id: generatedId,
+        name: formattedName || host,
+        url: cleanUrl,
+        version: "v1",
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      return await db
+        .select({
+          id: insightPage.id,
+          name: insightPage.name,
+          url: insightPage.url,
+          businessUnitId: insightPage.businessUnitId,
+          buName: businessUnit.label,
+          isActive: insightPage.isActive,
+          version: insightPage.version,
+          screenshotUrlDesktop: insightPage.screenshotUrlDesktop,
+          screenshotUrlMobile: insightPage.screenshotUrlMobile,
+          screenshotUpdatedAt: insightPage.screenshotUpdatedAt,
+          trackedElements: insightPage.trackedElements,
+          createdAt: insightPage.createdAt,
+          updatedAt: insightPage.updatedAt,
+        })
+        .from(insightPage)
+        .leftJoin(businessUnit, eq(insightPage.businessUnitId, businessUnit.id))
+        .where(eq(insightPage.id, generatedId))
+        .get();
+    } catch {
+      // Ignora erro de parse de URL inválida
+    }
+  }
   const byUrl = await db
     .select({
       id: insightPage.id,
@@ -1066,7 +1161,7 @@ export async function getAbComparisonData(
     if (!page) return null;
 
     const conditions = [
-      eq(insightEvent.pageId, page.id),
+      sql`(${insightEvent.pageId} = ${page.id} OR ${insightEvent.pageUrl} = ${page.url} OR ${insightEvent.pageUrl} = ${page.url + '/'})`,
       gte(insightEvent.createdAt, startDate),
       sql`${insightEvent.id} NOT LIKE 'ev_%'`,
       sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,

@@ -925,7 +925,7 @@ export function InsightsOverviewView({
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedAbPageA(page.id);
+                              setSelectedAbPageA(page.url);
                               setActiveSubTab("ab-test");
                             }}
                             className="inline-flex items-center gap-1 rounded-xl bg-purple-500/10 px-2.5 py-1.5 text-xs font-semibold text-purple-700 ring-1 ring-purple-500/20 transition hover:bg-purple-500/20"

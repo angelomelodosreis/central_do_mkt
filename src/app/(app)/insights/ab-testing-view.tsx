@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Trophy,
@@ -18,10 +18,56 @@ import {
   Smartphone,
   ChevronRight,
   Scale,
+  Globe,
+  ArrowLeftRight,
+  RefreshCw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/cn";
 import type { AbComparisonResult } from "@/lib/modules/insights/queries";
+
+const POPULAR_BU_URLS = [
+  { label: "🩺 Clínica", url: "https://clinicof.grupomedcof.com.br" },
+  { label: "🫀 Cardio", url: "https://cardio.grupomedcof.com.br" },
+  { label: "🔪 Cirurgia", url: "https://cirurgia.grupomedcof.com.br" },
+  { label: "👂 Otorrino", url: "https://otorrino.grupomedcof.com.br" },
+  { label: "📚 Extensivo", url: "https://grupomedcof.com.br/extensivo-2025" },
+  { label: "⚡ HIIT", url: "https://hiit.grupomedcof.com" },
+  { label: "🧴 Derma", url: "https://medcofderma.com.br" },
+  { label: "🧬 Endócrino", url: "https://medcofendocrino.com.br" },
+  { label: "🇧🇷 Revalida", url: "https://revaliday.grupomedcof.com.br" },
+  { label: "🦴 Ortopedia", url: "https://ortopedia.grupomedcof.com.br" },
+  { label: "👁️ Oftalmo", url: "https://oftalmo.grupomedcof.com.br" },
+  { label: "👶 Pediatria", url: "https://pediatria.grupomedcof.com.br" },
+];
+
+const PRESET_COMPARISONS = [
+  {
+    label: "🩺 Clínica vs 🫀 Cardio",
+    urlA: "https://clinicof.grupomedcof.com.br",
+    urlB: "https://cardio.grupomedcof.com.br",
+  },
+  {
+    label: "🩺 Clínica vs 🔪 Cirurgia",
+    urlA: "https://clinicof.grupomedcof.com.br",
+    urlB: "https://cirurgia.grupomedcof.com.br",
+  },
+  {
+    label: "👂 Otorrino vs 🦴 Ortopedia",
+    urlA: "https://otorrino.grupomedcof.com.br",
+    urlB: "https://ortopedia.grupomedcof.com.br",
+  },
+  {
+    label: "📚 Extensivo vs ⚡ HIIT",
+    urlA: "https://grupomedcof.com.br/extensivo-2025",
+    urlB: "https://hiit.grupomedcof.com",
+  },
+  {
+    label: "🧴 Derma vs 🧬 Endócrino",
+    urlA: "https://medcofderma.com.br",
+    urlB: "https://medcofendocrino.com.br",
+  },
+];
 
 interface AbTestingViewProps {
   availablePages: {
@@ -42,43 +88,67 @@ export function AbTestingView({
   initialPageAId,
   initialPageBId,
 }: AbTestingViewProps) {
-  const [pageAId, setPageAId] = useState<string>(
-    initialPageAId || availablePages[0]?.id || ""
-  );
-  const [pageBId, setPageBId] = useState<string>(
-    initialPageBId || availablePages[1]?.id || availablePages[0]?.id || ""
-  );
+  const resolveInitialUrl = (idOrUrl?: string, fallbackUrl?: string) => {
+    if (!idOrUrl) return fallbackUrl || "";
+    if (idOrUrl.startsWith("http://") || idOrUrl.startsWith("https://")) return idOrUrl;
+    const found = availablePages.find((p) => p.id === idOrUrl || p.url === idOrUrl);
+    return found?.url || fallbackUrl || idOrUrl;
+  };
+
+  const defaultUrlA = availablePages[0]?.url || "https://clinicof.grupomedcof.com.br";
+  const defaultUrlB = availablePages[1]?.url || "https://cardio.grupomedcof.com.br";
+
+  const [urlA, setUrlA] = useState<string>(() => resolveInitialUrl(initialPageAId, defaultUrlA));
+  const [urlB, setUrlB] = useState<string>(() => resolveInitialUrl(initialPageBId, defaultUrlB));
   const [period, setPeriod] = useState<number>(30);
   const [viewport, setViewport] = useState<string>("all");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [comparison, setComparison] = useState<AbComparisonResult | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchComparison = useCallback(
+    (targetA: string, targetB: string, p: number, vp: string) => {
+      const cleanA = targetA.trim();
+      const cleanB = targetB.trim();
+      if (!cleanA || !cleanB) return;
+
+      setIsLoading(true);
+      setFetchError(null);
+
+      fetch(
+        `/api/insights/ab-test?pageA=${encodeURIComponent(cleanA)}&pageB=${encodeURIComponent(
+          cleanB
+        )}&period=${p}&viewport=${vp}`
+      )
+        .then(async (res) => {
+          if (!res.ok) {
+            const err = await res.json().catch(() => null);
+            throw new Error(err?.error || "Falha ao comparar páginas");
+          }
+          return res.json();
+        })
+        .then((data: AbComparisonResult) => {
+          setComparison(data);
+        })
+        .catch((err: any) => {
+          console.error("Erro no teste A/B:", err);
+          setFetchError(err.message || "Erro ao consultar telemetria");
+          setComparison(null);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    },
+    []
+  );
 
   useEffect(() => {
-    if (!pageAId || !pageBId) return;
+    const timer = setTimeout(() => {
+      fetchComparison(urlA, urlB, period, viewport);
+    }, 300);
 
-    let isMounted = true;
-    setIsLoading(true);
-
-    fetch(
-      `/api/insights/ab-test?pageA=${encodeURIComponent(pageAId)}&pageB=${encodeURIComponent(
-        pageBId
-      )}&period=${period}&viewport=${viewport}`
-    )
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: AbComparisonResult | null) => {
-        if (isMounted && data) {
-          setComparison(data);
-        }
-      })
-      .catch((err) => console.error("Erro ao carregar teste A/B:", err))
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [pageAId, pageBId, period, viewport]);
+    return () => clearTimeout(timer);
+  }, [urlA, urlB, period, viewport, fetchComparison]);
 
   const pageA = comparison?.pageA;
   const pageB = comparison?.pageB;
@@ -86,7 +156,7 @@ export function AbTestingView({
 
   return (
     <div className="space-y-6">
-      {/* Barra de Configuração e Seletores A/B */}
+      {/* Barra de Configuração e Comparador por URL */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2">
@@ -95,10 +165,10 @@ export function AbTestingView({
             </span>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Comparador de Desempenho e Teste A/B
+                Comparador de Desempenho e Teste A/B por URL
               </h2>
               <p className="text-xs text-slate-500">
-                Selecione duas páginas para confrontar conversão, engajamento e funil em tempo real.
+                Digite ou cole diretamente as URLs de Controle (A) e Variante (B) para confrontar conversão, engajamento e funil em tempo real.
               </p>
             </div>
           </div>
@@ -167,10 +237,36 @@ export function AbTestingView({
           </div>
         </div>
 
-        {/* Seletores Visuais de Página A e Página B */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr,auto,1fr] gap-4 items-center">
-          {/* Seletor Página A */}
-          <div className="rounded-xl border border-blue-200 bg-blue-50/30 p-3.5 space-y-2">
+        {/* Preset de Pares Rápidos de Teste A/B */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
+          <span className="text-xs font-semibold text-slate-500 mr-1 flex items-center gap-1">
+            <Sparkles className="size-3.5 text-amber-500" />
+            Comparações Populares:
+          </span>
+          {PRESET_COMPARISONS.map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => {
+                setUrlA(preset.urlA);
+                setUrlB(preset.urlB);
+              }}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                urlA === preset.urlA && urlB === preset.urlB
+                  ? "border-purple-300 bg-purple-50 text-purple-700 font-semibold shadow-2xs"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+              )}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Inputs de URLs A e B com Quick Chips */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto,1fr] gap-4 items-start">
+          {/* Campo Página A (Controle) */}
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/20 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-700 flex items-center gap-1.5">
                 <span className="flex size-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-black text-white">
@@ -179,33 +275,68 @@ export function AbTestingView({
                 Página de Controle (A)
               </span>
               {pageA && (
-                <span className="text-[11px] text-slate-500 font-mono truncate max-w-[180px]">
-                  {pageA.url}
+                <span className="text-[11px] font-semibold text-blue-600 bg-blue-100/60 px-2 py-0.5 rounded-full truncate max-w-[200px]">
+                  {pageA.name} ({pageA.conversionRate}% conv.)
                 </span>
               )}
             </div>
-            <select
-              value={pageAId}
-              onChange={(e) => setPageAId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-none"
+
+            <div className="relative">
+              <Globe className="absolute left-3 top-2.5 size-4 text-blue-500" />
+              <input
+                type="text"
+                value={urlA}
+                onChange={(e) => setUrlA(e.target.value)}
+                list="registered-urls-list"
+                placeholder="Cole a URL de Controle (ex: https://clinicof.grupomedcof.com.br)"
+                className="w-full rounded-xl border border-blue-200 bg-white pl-9 pr-3 py-2 text-xs font-medium text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+
+            {/* Quick Chips para Página A */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Atalhos rápidos para A:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {POPULAR_BU_URLS.map((bu) => (
+                  <button
+                    key={`quick-a-${bu.url}`}
+                    type="button"
+                    onClick={() => setUrlA(bu.url)}
+                    className={cn(
+                      "rounded-lg border px-2 py-0.5 text-[11px] font-medium transition",
+                      urlA === bu.url
+                        ? "border-blue-500 bg-blue-600 text-white font-bold shadow-2xs"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/50"
+                    )}
+                  >
+                    {bu.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Botão Swap Inverter A e B */}
+          <div className="flex lg:flex-col justify-center items-center py-2 lg:pt-10">
+            <button
+              type="button"
+              onClick={() => {
+                const temp = urlA;
+                setUrlA(urlB);
+                setUrlB(temp);
+              }}
+              title="Inverter Página A e B"
+              className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 transition"
             >
-              {availablePages.map((p) => (
-                <option key={`a-${p.id}`} value={p.id}>
-                  {p.name} ({p.buName}) · {p.conversionRate}% conv.
-                </option>
-              ))}
-            </select>
+              <ArrowLeftRight className="size-3.5 text-purple-600" />
+              <span>Inverter</span>
+            </button>
           </div>
 
-          {/* Divisor VS */}
-          <div className="flex justify-center">
-            <span className="flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-black text-slate-600 shadow-2xs">
-              VS
-            </span>
-          </div>
-
-          {/* Seletor Página B */}
-          <div className="rounded-xl border border-purple-200 bg-purple-50/30 p-3.5 space-y-2">
+          {/* Campo Página B (Variante) */}
+          <div className="rounded-2xl border border-purple-200 bg-purple-50/20 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-purple-700 flex items-center gap-1.5">
                 <span className="flex size-5 items-center justify-center rounded-full bg-purple-600 text-[10px] font-black text-white">
@@ -214,23 +345,73 @@ export function AbTestingView({
                 Página Variante (B)
               </span>
               {pageB && (
-                <span className="text-[11px] text-slate-500 font-mono truncate max-w-[180px]">
-                  {pageB.url}
+                <span className="text-[11px] font-semibold text-purple-600 bg-purple-100/60 px-2 py-0.5 rounded-full truncate max-w-[200px]">
+                  {pageB.name} ({pageB.conversionRate}% conv.)
                 </span>
               )}
             </div>
-            <select
-              value={pageBId}
-              onChange={(e) => setPageBId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-2xs focus:border-purple-500 focus:outline-none"
-            >
-              {availablePages.map((p) => (
-                <option key={`b-${p.id}`} value={p.id}>
-                  {p.name} ({p.buName}) · {p.conversionRate}% conv.
-                </option>
-              ))}
-            </select>
+
+            <div className="relative">
+              <Globe className="absolute left-3 top-2.5 size-4 text-purple-500" />
+              <input
+                type="text"
+                value={urlB}
+                onChange={(e) => setUrlB(e.target.value)}
+                list="registered-urls-list"
+                placeholder="Cole a URL Variante (ex: https://cardio.grupomedcof.com.br)"
+                className="w-full rounded-xl border border-purple-200 bg-white pl-9 pr-3 py-2 text-xs font-medium text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              />
+            </div>
+
+            {/* Quick Chips para Página B */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Atalhos rápidos para B:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {POPULAR_BU_URLS.map((bu) => (
+                  <button
+                    key={`quick-b-${bu.url}`}
+                    type="button"
+                    onClick={() => setUrlB(bu.url)}
+                    className={cn(
+                      "rounded-lg border px-2 py-0.5 text-[11px] font-medium transition",
+                      urlB === bu.url
+                        ? "border-purple-500 bg-purple-600 text-white font-bold shadow-2xs"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-purple-300 hover:bg-purple-50/50"
+                    )}
+                  >
+                    {bu.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Datalist com todas as Landing Pages cadastradas para auto-complete */}
+        <datalist id="registered-urls-list">
+          {availablePages.map((p) => (
+            <option key={p.url} value={p.url}>
+              {p.name} ({p.buName}) · {p.conversionRate}% conv.
+            </option>
+          ))}
+        </datalist>
+
+        {/* Botão de Ação Manual de Atualização */}
+        <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+          <span className="text-[11px] text-slate-400">
+            A comparação é recalculada automaticamente ao digitar ou selecionar uma página.
+          </span>
+          <button
+            type="button"
+            onClick={() => fetchComparison(urlA, urlB, period, viewport)}
+            disabled={isLoading || !urlA.trim() || !urlB.trim()}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition"
+          >
+            <RefreshCw className={cn("size-3.5", isLoading && "animate-spin")} />
+            <span>{isLoading ? "Processando..." : "Comparar URLs em Tempo Real"}</span>
+          </button>
         </div>
       </div>
 
@@ -240,6 +421,34 @@ export function AbTestingView({
             <span className="size-2 rounded-full bg-brand-500 animate-ping" />
             Processando telemetria comparativa do LibSQL...
           </div>
+        </div>
+      )}
+
+      {!isLoading && (!comparison || !pageA || !pageB) && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center space-y-4">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+            <Scale className="size-6 text-slate-400" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-slate-900">
+              {fetchError ? "Falha ao comparar as páginas informadas" : "Nenhuma telemetria encontrada para estas URLs"}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              {fetchError
+                ? fetchError
+                : "Certifique-se de que as URLs de Controle (A) e Variante (B) estão preenchidas corretamente com 'https://' ou selecione um dos atalhos rápidos acima."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setUrlA(defaultUrlA);
+              setUrlB(defaultUrlB);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-700 transition"
+          >
+            Restaurar Comparação Padrão (Clínica vs Cardio)
+          </button>
         </div>
       )}
 
