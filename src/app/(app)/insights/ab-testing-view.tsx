@@ -470,27 +470,35 @@ export function AbTestingView({
                 <span
                   className={cn(
                     "flex size-12 shrink-0 items-center justify-center rounded-2xl text-xl font-bold shadow-xs",
-                    winner === "tie"
+                    pageA.visits === 0 && pageB.visits === 0
+                      ? "bg-slate-100 text-slate-600"
+                      : winner === "tie"
                       ? "bg-slate-200 text-slate-700"
                       : "bg-amber-400 text-amber-950"
                   )}
                 >
-                  {winner === "tie" ? "⚖️" : "🏆"}
+                  {pageA.visits === 0 && pageB.visits === 0 ? "📊" : winner === "tie" ? "⚖️" : "🏆"}
                 </span>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                       Resultado do Teste A/B
                     </span>
-                    {winner !== "tie" && (
+                    {pageA.visits === 0 && pageB.visits === 0 ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                        0 acessos no período
+                      </span>
+                    ) : winner !== "tie" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-600/20">
                         <TrendingUp className="size-3" />
                         +{comparison.upliftPercent}% de Uplift
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   <h3 className="text-lg font-black text-slate-900 mt-1">
-                    {winner === "tie"
+                    {pageA.visits === 0 && pageB.visits === 0
+                      ? "Aguardando Primeiros Dados de Tráfego"
+                      : winner === "tie"
                       ? "Empate Técnico de Conversão"
                       : winner === "A"
                       ? `Página A Venceu: "${pageA.name}"`
@@ -503,16 +511,18 @@ export function AbTestingView({
               </div>
 
               {/* Botão de Ação para Inspecionar o Heatmap da Vencedora */}
-              <div className="shrink-0 flex items-center gap-2">
-                <Link
-                  href={`/insights/paginas/${winner === "B" ? pageB.id : pageA.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition"
-                >
-                  <Flame className="size-3.5 text-amber-300" />
-                  Ver Heatmap da Vencedora
-                  <ArrowRight className="size-3.5 ml-0.5" />
-                </Link>
-              </div>
+              {winner !== "tie" && (
+                <div className="shrink-0 flex items-center gap-2">
+                  <Link
+                    href={`/insights/paginas/${winner === "B" ? pageB.id : pageA.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition"
+                  >
+                    <Flame className="size-3.5 text-amber-300" />
+                    Ver Heatmap da Vencedora
+                    <ArrowRight className="size-3.5 ml-0.5" />
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 

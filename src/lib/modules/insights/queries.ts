@@ -39,6 +39,34 @@ export const VALID_PAGE_IDS = new Set([
   "lp-raioxdabanca",
 ]);
 
+/**
+ * Condições estritas para descartar qualquer resquício de eventos sintéticos / de mock
+ */
+export const MOCK_EXCLUSION_CONDITIONS = [
+  sql`${insightEvent.id} NOT LIKE 'ev_%'`,
+  sql`${insightEvent.id} NOT LIKE 'ev-%'`,
+  sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,
+  sql`(${insightEvent.utmCampaign} IS NULL OR ${insightEvent.utmCampaign} != 'campanha-conversao-2026')`,
+  sql`(${insightEvent.elementId} IS NULL OR ${insightEvent.elementId} NOT IN ('hero-primary-cta', 'lead-form-submit', 'hero-secondary-cta', 'qbank-demo-cta', 'pricing-plan-annual', 'pricing-plan-rplus', 'whatsapp-floating-btn'))`,
+];
+
+let hasCleanedTursoMock = false;
+/**
+ * Purgador atômico: garante que bancos remotos (Turso) purguem dados de seeds antigos em runtime
+ */
+export async function purgeTursoMockDataOnce() {
+  if (hasCleanedTursoMock) return;
+  hasCleanedTursoMock = true;
+  try {
+    const db = await getDb();
+    await db.run(
+      sql`DELETE FROM insight_event WHERE id LIKE 'ev_%' OR id LIKE 'ev-%' OR session_id LIKE 'session_%' OR utm_campaign = 'campanha-conversao-2026' OR element_id IN ('hero-primary-cta', 'lead-form-submit', 'hero-secondary-cta', 'qbank-demo-cta', 'pricing-plan-annual', 'pricing-plan-rplus', 'whatsapp-floating-btn')`
+    );
+  } catch (err) {
+    // Silencioso se já executado ou não houver registros
+  }
+}
+
 export type InsightsOverviewFilter = {
   buId?: string;
   periodDays?: number; // 1, 7, 30, 90
@@ -102,6 +130,7 @@ export type InsightsOverviewData = {
 export async function getInsightsOverview(
   filters: InsightsOverviewFilter = {}
 ): Promise<InsightsOverviewData> {
+  await purgeTursoMockDataOnce();
   const db = await getDb();
   const periodDays = filters.periodDays || 30;
   const startDate = new Date();
@@ -130,10 +159,8 @@ export async function getInsightsOverview(
   const validIdsArray = Array.from(VALID_PAGE_IDS);
   const conditions = [
     gte(insightEvent.createdAt, startDate),
-    sql`${insightEvent.id} NOT LIKE 'ev_%'`,
-    sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,
-    sql`(${insightEvent.utmCampaign} IS NULL OR ${insightEvent.utmCampaign} != 'campanha-conversao-2026')`,
     inArray(insightEvent.pageId, validIdsArray),
+    ...MOCK_EXCLUSION_CONDITIONS,
   ];
 
   if (filters.viewport && filters.viewport !== "all") {
@@ -729,6 +756,7 @@ export type ScrollDepthData = {
  * - Profundidade de scroll (Scrollmap)
  */
 export async function getPageHeatmapData(pageId: string, filters: HeatmapFilter = {}) {
+  await purgeTursoMockDataOnce();
   const db = await getDb();
   const periodDays = filters.periodDays || 30;
   const startDate = new Date();
@@ -737,9 +765,7 @@ export async function getPageHeatmapData(pageId: string, filters: HeatmapFilter 
   const conditions = [
     eq(insightEvent.pageId, pageId),
     gte(insightEvent.createdAt, startDate),
-    sql`${insightEvent.id} NOT LIKE 'ev_%'`,
-    sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,
-    sql`(${insightEvent.utmCampaign} IS NULL OR ${insightEvent.utmCampaign} != 'campanha-conversao-2026')`,
+    ...MOCK_EXCLUSION_CONDITIONS,
   ];
 
   if (filters.viewport) {
@@ -903,6 +929,7 @@ export async function getPageHeatmapData(pageId: string, filters: HeatmapFilter 
  * Retorna dados do funil de conversão passo a passo da página
  */
 export async function getPageFunnelData(pageId: string, filters: HeatmapFilter = {}) {
+  await purgeTursoMockDataOnce();
   const db = await getDb();
   const periodDays = filters.periodDays || 30;
   const startDate = new Date();
@@ -911,6 +938,7 @@ export async function getPageFunnelData(pageId: string, filters: HeatmapFilter =
   const conditions = [
     eq(insightEvent.pageId, pageId),
     gte(insightEvent.createdAt, startDate),
+    ...MOCK_EXCLUSION_CONDITIONS,
   ];
 
   if (filters.viewport) conditions.push(eq(insightEvent.viewport, filters.viewport));
@@ -938,7 +966,7 @@ export async function getPageFunnelData(pageId: string, filters: HeatmapFilter =
     if (ev.eventType === "form_submit") submitSessions.add(sId);
   }
 
-  const visits = Math.max(visitSessions.size, 1);
+  const visits = visitSessions.size;
   const cta = ctaSessions.size;
   const start = formStartSessions.size;
   const submit = submitSessions.size;
@@ -949,7 +977,7 @@ export async function getPageFunnelData(pageId: string, filters: HeatmapFilter =
       name: "Visualização da Página",
       description: "Visitantes únicos que carregaram a landing page",
       count: visits,
-      rateFromTotal: 100,
+      rateFromTotal: visits > 0 ? 100 : 0,
       dropOffRate: 0,
     },
     {
@@ -957,15 +985,15 @@ export async function getPageFunnelData(pageId: string, filters: HeatmapFilter =
       name: "Clique em CTA",
       description: "Usuários que interagiram com botão de conversão",
       count: cta,
-      rateFromTotal: Math.round((cta / visits) * 100),
-      dropOffRate: Math.max(0, 100 - Math.round((cta / visits) * 100)),
+      rateFromTotal: visits > 0 ? Math.round((cta / visits) * 100) : 0,
+      dropOffRate: visits > 0 ? Math.max(0, 100 - Math.round((cta / visits) * 100)) : 0,
     },
     {
       step: 3,
       name: "Início do Formulário",
-      description: "Interação inicial com campos de cadastro ou HubSpot",
+      description: "Interação inicial com campos de cadastro ou formulário",
       count: start,
-      rateFromTotal: Math.round((start / visits) * 100),
+      rateFromTotal: visits > 0 ? Math.round((start / visits) * 100) : 0,
       dropOffRate: cta > 0 ? Math.max(0, 100 - Math.round((start / cta) * 100)) : 0,
     },
     {
@@ -973,7 +1001,7 @@ export async function getPageFunnelData(pageId: string, filters: HeatmapFilter =
       name: "Envio Confirmado (Lead)",
       description: "Formulário enviado com sucesso e conversão registrada",
       count: submit,
-      rateFromTotal: Math.round((submit / visits) * 100),
+      rateFromTotal: visits > 0 ? Math.round((submit / visits) * 100) : 0,
       dropOffRate: start > 0 ? Math.max(0, 100 - Math.round((submit / start) * 100)) : 0,
     },
   ];
@@ -983,6 +1011,7 @@ export async function getPageFunnelData(pageId: string, filters: HeatmapFilter =
  * Retorna ranking detalhado dos elementos mais clicados
  */
 export async function getPageElementsRanking(pageId: string, filters: HeatmapFilter = {}) {
+  await purgeTursoMockDataOnce();
   const db = await getDb();
   const periodDays = filters.periodDays || 30;
   const startDate = new Date();
@@ -991,6 +1020,7 @@ export async function getPageElementsRanking(pageId: string, filters: HeatmapFil
   const conditions = [
     eq(insightEvent.pageId, pageId),
     gte(insightEvent.createdAt, startDate),
+    ...MOCK_EXCLUSION_CONDITIONS,
   ];
 
   if (filters.viewport) conditions.push(eq(insightEvent.viewport, filters.viewport));
@@ -1052,6 +1082,7 @@ export async function getPageElementsRanking(pageId: string, filters: HeatmapFil
  * Retorna performance dividida por campanhas e UTMs
  */
 export async function getPageUtmBreakdown(pageId: string, periodDays = 30) {
+  await purgeTursoMockDataOnce();
   const db = await getDb();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - periodDays);
@@ -1064,7 +1095,13 @@ export async function getPageUtmBreakdown(pageId: string, periodDays = 30) {
       utmCampaign: insightEvent.utmCampaign,
     })
     .from(insightEvent)
-    .where(and(eq(insightEvent.pageId, pageId), gte(insightEvent.createdAt, startDate)));
+    .where(
+      and(
+        eq(insightEvent.pageId, pageId),
+        gte(insightEvent.createdAt, startDate),
+        ...MOCK_EXCLUSION_CONDITIONS
+      )
+    );
 
   const map = new Map<
     string,
@@ -1151,6 +1188,7 @@ export async function getAbComparisonData(
   pageBId: string,
   filters: { periodDays?: number; viewport?: string } = {}
 ): Promise<AbComparisonResult | null> {
+  await purgeTursoMockDataOnce();
   const db = await getDb();
   const periodDays = filters.periodDays || 30;
   const startDate = new Date();
@@ -1163,9 +1201,7 @@ export async function getAbComparisonData(
     const conditions = [
       sql`(${insightEvent.pageId} = ${page.id} OR ${insightEvent.pageUrl} = ${page.url} OR ${insightEvent.pageUrl} = ${page.url + '/'})`,
       gte(insightEvent.createdAt, startDate),
-      sql`${insightEvent.id} NOT LIKE 'ev_%'`,
-      sql`(${insightEvent.sessionId} IS NULL OR ${insightEvent.sessionId} NOT LIKE 'session_%')`,
-      sql`(${insightEvent.utmCampaign} IS NULL OR ${insightEvent.utmCampaign} != 'campanha-conversao-2026')`,
+      ...MOCK_EXCLUSION_CONDITIONS,
     ];
 
     if (filters.viewport && filters.viewport !== "all") {
@@ -1287,7 +1323,9 @@ export async function getAbComparisonData(
   }
 
   let summaryText = "";
-  if (winner === "tie") {
+  if (pageA.visits === 0 && pageB.visits === 0) {
+    summaryText = "Ainda não há dados reais de telemetria registrados para estas páginas no período selecionado. Quando o tráfego começar a ser coletado, a comparação e o cálculo de uplift serão exibidos aqui.";
+  } else if (winner === "tie") {
     summaryText = `Empate técnico: ambas as páginas apresentaram a mesma taxa de conversão de ${pageA.conversionRate}%.`;
   } else {
     const winningPage = winner === "A" ? pageA : pageB;

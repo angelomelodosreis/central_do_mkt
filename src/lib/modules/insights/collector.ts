@@ -144,7 +144,7 @@ export function sanitizeAndValidateEvent(raw: any): NewInsightEvent | null {
   const timestamp = typeof raw.timestamp === "number" && raw.timestamp > 0 ? new Date(raw.timestamp) : new Date();
 
   return {
-    id: `ev_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    id: `live_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     pageId,
     pageUrl: pageUrl || "https://grupomedcof.com.br",
     pagePath,
