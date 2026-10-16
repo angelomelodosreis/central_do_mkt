@@ -348,3 +348,34 @@ export const strategyQuarterlyReview = sqliteTable(
 
 export type StrategyQuarterlyReview =
   typeof strategyQuarterlyReview.$inferSelect;
+
+/**
+ * Comentários e alinhamento colaborativo do Diagnóstico da BU
+ */
+export const strategyDiagnosisComment = sqliteTable(
+  "strategy_diagnosis_comment",
+  {
+    id: text("id").primaryKey(),
+    roundId: text("round_id")
+      .notNull()
+      .references(() => strategyRound.id, { onDelete: "cascade" }),
+    businessUnitId: text("business_unit_id").references(
+      () => businessUnit.id,
+      { onDelete: "cascade" },
+    ),
+    authorName: text("author_name").notNull(),
+    authorEmail: text("author_email"),
+    authorAvatar: text("author_avatar"),
+    authorRole: text("author_role"),
+    content: text("content").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("strategy_diagnosis_comment_round_idx").on(table.roundId),
+    index("strategy_diagnosis_comment_bu_idx").on(table.businessUnitId),
+  ],
+);
+
+export type StrategyDiagnosisComment =
+  typeof strategyDiagnosisComment.$inferSelect;
+

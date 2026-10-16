@@ -52,9 +52,10 @@ export default async function CyclesPage({
 
   const formattedCycles: CycleDetailData[] = await Promise.all(
     rawCycles.map(async (c, index) => {
-      const [rounds, goals] = await Promise.all([
+      const [rounds, goals, cycleReviews] = await Promise.all([
         listRounds(c.id),
         listKpiGoals(unit.id, c.id),
+        listQuarterlyReviews(unit.id, c.id),
       ]);
       const round = pickDefaultRound(rounds);
 
@@ -65,37 +66,55 @@ export default async function CyclesPage({
       let status: CycleDetailData["status"] = "in_progress";
       let statusLabel = "Em andamento";
       let statusTone: CycleDetailData["statusTone"] = "emerald";
-      let progressPercent = 0;
 
       if (now < startTime) {
         status = index === 1 ? "planning" : "not_started";
         statusLabel = index === 1 ? "Planejamento" : "Não iniciado";
         statusTone = index === 1 ? "purple" : "slate";
-        progressPercent = 0;
       } else if (now > endTime) {
         status = "completed";
         statusLabel = "Concluído";
         statusTone = "blue";
-        progressPercent = 100;
       } else {
         status = "in_progress";
         statusLabel = "Em andamento";
         statusTone = "emerald";
-        progressPercent =
-          totalDuration > 0
-            ? Math.min(
-                100,
-                Math.max(
-                  5,
-                  Math.round(((now - startTime) / totalDuration) * 100),
-                ),
-              )
-            : 50;
       }
 
-      if (c.isCurrent && progressPercent === 0) {
-        progressPercent = 68;
+      const reviewsCompleted = cycleReviews.filter(
+        (r) => r.status === "completed",
+      ).length;
+      const reviewsTotal = 2;
+
+      // Cálculo automático de progresso do ciclo (0 a 100%):
+      // 1. Diagnóstico da BU: até 25% (5% por pilar preenchido dos 5 pilares)
+      // 2. Metas estratégicas definidas: até 25% (se houver metas cadastradas)
+      // 3. Revisões realizadas: até 50% (25% para cada revisão concluída no ciclo)
+      let progressPercent = 0;
+      if (status === "completed") {
+        progressPercent = 100;
+      } else {
+        const filledPillars = [
+          round?.businessMarketDiagnosis,
+          round?.clientBrandDiagnosis,
+          round?.portfolioOfferDiagnosis,
+          round?.funnelConversionDiagnosis,
+          round?.contextCapacityDiagnosis,
+        ].filter((val) => typeof val === "string" && val.trim().length > 0).length;
+
+        const diagnosisProgress = filledPillars * 5; // 0 a 25%
+        const goalsProgress = goals.length > 0 ? 25 : 0; // 0 ou 25%
+        const reviewsProgress = Math.min(50, reviewsCompleted * 25); // 0, 25% ou 50%
+
+        progressPercent = Math.min(100, diagnosisProgress + goalsProgress + reviewsProgress);
+
+        if (progressPercent === 0 && status === "in_progress" && totalDuration > 0) {
+          const timeElapsed = Math.round(((now - startTime) / totalDuration) * 100);
+          progressPercent = Math.max(0, Math.min(100, timeElapsed));
+        }
       }
+
+      const periodLabel = round?.cyclePeriod || "Jan - Dez/2027";
 
       const pillars = [
         {
@@ -162,16 +181,16 @@ export default async function CyclesPage({
         startsAt: c.startsAt.toISOString(),
         endsAt: c.endsAt.toISOString(),
         isCurrent: c.isCurrent,
-        periodLabel: round?.cyclePeriod || formatPeriod(c.startsAt, c.endsAt),
+        periodLabel,
         status,
         statusLabel,
         statusTone,
         objective:
           round?.cycleObjective ||
           `Ser a principal referência nacional em educação médica para ${unit.label}.`,
-        goalsCount: goals.length > 0 ? goals.length : 3,
-        reviewsCompleted: rounds.length > 1 ? 1 : 1,
-        reviewsTotal: 2,
+        goalsCount: goals.length,
+        reviewsCompleted,
+        reviewsTotal,
         progressPercent,
         pillars,
       };
@@ -235,7 +254,7 @@ export default async function CyclesPage({
   let reviews: Awaited<ReturnType<typeof listQuarterlyReviews>> = [];
   let initialReview: (typeof reviews)[number] | null = null;
   let initialCycleObjective = `Ser a principal referência nacional em educação médica para ${unit.label}.`;
-  let initialCyclePeriod = "Jan - Dez/2026";
+  let initialCyclePeriod = "Jan - Dez/2027";
   const diagnosisInsights: string[] = [];
 
   if (selectedCycleObj) {

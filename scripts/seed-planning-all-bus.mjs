@@ -4,6 +4,28 @@ import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local", quiet: true });
 
 export async function seedPlanningAllBus(client) {
+  // Garantir tabela de comentários do diagnóstico
+  try {
+    await client.execute(
+      `CREATE TABLE IF NOT EXISTS strategy_diagnosis_comment (
+        id TEXT PRIMARY KEY,
+        round_id TEXT NOT NULL,
+        business_unit_id TEXT,
+        author_name TEXT NOT NULL,
+        author_email TEXT,
+        author_avatar TEXT,
+        author_role TEXT,
+        content TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )`
+    );
+    await client.execute(
+      "UPDATE strategy_round SET cycle_period = 'Jan - Dez/2027' WHERE cycle_period = 'Jan - Jun/2027' OR cycle_period IS NULL"
+    );
+  } catch (err) {
+    // Silencioso se tabela ou coluna já configurada
+  }
+
   // 1. Obter todas as BUs ativas
   const resBus = await client.execute("SELECT id, slug, label FROM business_unit WHERE is_active = 1");
   const bus = resBus.rows;
@@ -55,7 +77,7 @@ export async function seedPlanningAllBus(client) {
       const now = Date.now();
       await client.execute({
         sql: `INSERT INTO strategy_round (id, cycle_id, sequence, reference_date, is_open, summary, cycle_period, created_at, updated_at)
-              VALUES (?, ?, 1, ?, 1, '1ª Rodada de Diagnóstico Semestral (Leitura dos 5 Pilares)', 'Jan - Jun/2027', ?, ?)`,
+              VALUES (?, ?, 1, ?, 1, '1ª Rodada de Diagnóstico Semestral (Leitura dos 5 Pilares)', 'Jan - Dez/2027', ?, ?)`,
         args: [roundId, cycleId, now, now, now],
       });
       roundsCreated++;

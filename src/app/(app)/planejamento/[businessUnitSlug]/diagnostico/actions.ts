@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, max } from "drizzle-orm";
+import { and, asc, eq, max } from "drizzle-orm";
 
 import type { StrategyFormState } from "../../form-state";
-import { requirePermission } from "@/lib/auth/session";
+import { requirePermission, requireUser } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
 import {
   businessUnit,
@@ -13,6 +13,7 @@ import {
   strategyGoalFinding,
   strategyMeasurement,
   strategyRound,
+  strategyDiagnosisComment,
   DIAGNOSIS_LENSES,
   FINDING_KINDS,
   isGoalMetric,
@@ -660,4 +661,101 @@ export async function saveFullDiagnosisAction(data: {
   revalidateStrategy(gate.unit.slug);
   return { ok: true };
 }
+
+export type DiagnosisCommentItem = {
+  id: string;
+  roundId: string;
+  businessUnitId: string | null;
+  authorName: string;
+  authorEmail: string | null;
+  authorAvatar: string | null;
+  authorRole: string | null;
+  content: string;
+  createdAt: string;
+};
+
+export async function listDiagnosisCommentsAction(
+  roundId: string,
+): Promise<{ ok: boolean; comments: DiagnosisCommentItem[]; error?: string }> {
+  try {
+    const db = await getDb();
+    const rows = await db
+      .select()
+      .from(strategyDiagnosisComment)
+      .where(eq(strategyDiagnosisComment.roundId, roundId))
+      .orderBy(asc(strategyDiagnosisComment.createdAt));
+
+    return {
+      ok: true,
+      comments: rows.map((r) => ({
+        ...r,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    };
+  } catch (err: any) {
+    return { ok: false, comments: [], error: err?.message || "Erro ao carregar comentários." };
+  }
+}
+
+export async function addDiagnosisCommentAction(data: {
+  roundId: string;
+  businessUnitId: string;
+  content: string;
+}): Promise<{ ok: boolean; comment?: DiagnosisCommentItem; error?: string }> {
+  try {
+    const currentUser = await requireUser();
+    if (!data.content.trim()) {
+      return { ok: false, error: "O comentário não pode ser vazio." };
+    }
+
+    const db = await getDb();
+    const commentId = newId("diag_com");
+    const now = new Date();
+
+    const newComment = {
+      id: commentId,
+      roundId: data.roundId,
+      businessUnitId: data.businessUnitId,
+      authorName: currentUser.name || "Colaborador",
+      authorEmail: currentUser.email || null,
+      authorAvatar: currentUser.image || null,
+      authorRole: currentUser.jobTitleName || "Marketing MedCof",
+      content: data.content.trim(),
+      createdAt: now,
+    };
+
+    await db.insert(strategyDiagnosisComment).values(newComment);
+
+    const bu = await db
+      .select({ slug: businessUnit.slug, label: businessUnit.label })
+      .from(businessUnit)
+      .where(eq(businessUnit.id, data.businessUnitId))
+      .get();
+
+    await writeAuditLog({
+      actorUserId: currentUser.id,
+      actorEmail: currentUser.email,
+      action: "strategy_round.update",
+      entityType: "strategy_round",
+      entityId: data.roundId,
+      summary: `Comentou no diagnóstico de ${bu?.label ?? ""}`,
+      afterData: { commentId, preview: data.content.slice(0, 80) },
+    });
+
+    if (bu?.slug) {
+      revalidateStrategy(bu.slug);
+    }
+
+    return {
+      ok: true,
+      comment: {
+        ...newComment,
+        createdAt: now.toISOString(),
+      },
+    };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Erro ao salvar comentário." };
+  }
+}
+
 

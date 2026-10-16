@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import {
   BarChart2,
@@ -15,8 +15,17 @@ import {
   Check,
   Save,
   Compass,
+  Pencil,
+  Target,
+  MessageSquare,
+  Send,
 } from "lucide-react";
-import { saveFullDiagnosisAction } from "./actions";
+import {
+  saveFullDiagnosisAction,
+  listDiagnosisCommentsAction,
+  addDiagnosisCommentAction,
+  type DiagnosisCommentItem,
+} from "./actions";
 import { cn } from "@/lib/utils/cn";
 import { DiagnosticRadar3DIllustration } from "@/components/ui/cycle-3d-illustrations";
 import { CycleStepper } from "@/components/ui/cycle-stepper";
@@ -151,6 +160,21 @@ const PILLARS: DiagnosisPillarDef[] = [
   },
 ];
 
+function formatCommentDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 export function DiagnosisTableView({
   businessUnitId,
   businessUnitSlug,
@@ -188,6 +212,54 @@ export function DiagnosisTableView({
     mainOpportunity: initialData.mainOpportunity ?? "",
   });
 
+  // Pergunta unificada (Item 4)
+  const initialUnified =
+    initialData.mainChallenge?.trim() ||
+    initialData.mainOpportunity?.trim() ||
+    "";
+  const [unifiedQuestion, setUnifiedQuestion] = useState(initialUnified);
+  const [editingUnified, setEditingUnified] = useState(!initialUnified);
+
+  // Modo de visualização completa vs edição dos 5 pilares (Item 2)
+  const [editingPillars, setEditingPillars] = useState<Record<string, boolean>>({});
+
+  // Comentários colaborativos do diagnóstico (Item 2 - parte B)
+  const [comments, setComments] = useState<DiagnosisCommentItem[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadComments() {
+      const res = await listDiagnosisCommentsAction(roundId);
+      if (isMounted && res.ok) {
+        setComments(res.comments);
+      }
+    }
+    loadComments();
+    return () => {
+      isMounted = false;
+    };
+  }, [roundId]);
+
+  async function handleAddComment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!commentText.trim() || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    const res = await addDiagnosisCommentAction({
+      roundId,
+      businessUnitId,
+      content: commentText.trim(),
+    });
+    setIsSubmittingComment(false);
+
+    if (res.ok && res.comment) {
+      setComments((prev) => [...prev, res.comment!]);
+      setCommentText("");
+    }
+  }
+
   const [isPending, startTransition] = useTransition();
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
@@ -209,6 +281,8 @@ export function DiagnosisTableView({
         roundId,
         businessUnitId,
         ...data,
+        mainChallenge: unifiedQuestion.trim() || null,
+        mainOpportunity: unifiedQuestion.trim() || null,
       });
 
       if (res.ok) {
@@ -376,27 +450,72 @@ export function DiagnosisTableView({
                         </div>
                       </td>
 
-                      {/* Coluna 5: Diagnóstico da BU */}
-                      <td className="px-4 py-4">
-                        <div className="relative">
-                          <textarea
-                            value={value}
-                            disabled={!editable}
-                            maxLength={500}
-                            onChange={(e) =>
-                              handleChange(pillar.key, e.target.value)
-                            }
-                            placeholder="Escreva aqui o diagnóstico deste pilar..."
-                            rows={4}
-                            className={cn(
-                              "w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100 transition resize-none shadow-2xs",
-                              !editable && "bg-slate-100/60 text-slate-600 cursor-not-allowed",
-                            )}
-                          />
-                          <span className="absolute bottom-2 right-2.5 text-xs tabular-nums font-mono text-slate-400">
-                            {charCount}/500
-                          </span>
-                        </div>
+                      {/* Coluna 5: Diagnóstico da BU (Item 2: Texto completo visível + Botão Editar) */}
+                      <td className="px-4 py-4 min-w-[320px]">
+                        {value && !editingPillars[pillar.key] ? (
+                          <div className="group relative rounded-xl border border-slate-200/90 bg-slate-50/60 p-4 shadow-2xs transition hover:border-pink-200 hover:bg-white">
+                            <div className="text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">
+                              {value}
+                            </div>
+                            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
+                              <span className="text-[11px] font-mono tabular-nums text-slate-400">
+                                {charCount}/500 caracteres
+                              </span>
+                              {editable && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setEditingPillars((prev) => ({
+                                      ...prev,
+                                      [pillar.key]: true,
+                                    }))
+                                  }
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-pink-50 px-2.5 py-1 text-xs font-semibold text-pink-700 border border-pink-200/80 hover:bg-pink-100 transition cursor-pointer"
+                                >
+                                  <Pencil className="size-3 text-pink-600" />
+                                  Editar
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative space-y-2">
+                            <textarea
+                              value={value}
+                              disabled={!editable}
+                              maxLength={500}
+                              onChange={(e) =>
+                                handleChange(pillar.key, e.target.value)
+                              }
+                              placeholder="Escreva aqui o diagnóstico deste pilar..."
+                              rows={5}
+                              className={cn(
+                                "w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-y min-h-[110px]",
+                                !editable && "bg-slate-100/60 text-slate-600 cursor-not-allowed",
+                              )}
+                            />
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-xs tabular-nums font-mono text-slate-400">
+                                {charCount}/500
+                              </span>
+                              {value && editable && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setEditingPillars((prev) => ({
+                                      ...prev,
+                                      [pillar.key]: false,
+                                    }))
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                                >
+                                  <Check className="size-3 text-emerald-600" />
+                                  Concluir edição
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -407,7 +526,7 @@ export function DiagnosisTableView({
         </div>
       </div>
 
-      {/* ── PARTE 2: Síntese do Diagnóstico (Exatamente como a imagem de referência) ── */}
+      {/* ── PARTE 2: Síntese do Diagnóstico (Item 4: Unificado em pergunta única) ── */}
       <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs space-y-6">
         <div>
           <span className="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#cf1730] bg-[#fef2f3] border border-rose-200">
@@ -417,131 +536,134 @@ export function DiagnosisTableView({
             Síntese do diagnóstico
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Com base na análise dos 5 pilares, registre o principal desafio e a principal oportunidade da BU.
+            Com base na análise dos 5 pilares, sintetize o principal desafio ou oportunidade da BU em uma visão clara para o ciclo.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card: Principal Desafio (Fundo Rosa Pastel Diferenciado) */}
-          <div className="rounded-2xl border border-rose-200 bg-[#fef2f3] p-6 shadow-2xs flex flex-col justify-between space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3.5">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[#e2263c] border border-rose-200 shadow-2xs">
-                  <AlertTriangle className="size-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
-                    PRINCIPAL DESAFIO
-                  </span>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
-                    Qual é o principal <span className="text-[#e2263c]">desafio</span> da BU hoje?
-                  </h3>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    O problema ou gargalo que mais limita o crescimento neste momento.
-                  </p>
-                </div>
+        {/* Card Único Unificado: Qual é o principal desafio ou oportunidade da BU hoje? */}
+        <div className="rounded-2xl border border-rose-200/90 bg-gradient-to-br from-[#fef2f3] via-white to-purple-50/30 p-6 sm:p-7 shadow-2xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-100 to-purple-100 text-[#e2263c] border border-rose-200/80 shadow-2xs">
+                <Target className="size-5.5" />
               </div>
-
-              {/* Box de Exemplos Interno */}
-              <div className="rounded-xl bg-rose-100/60 border border-rose-200/70 p-3.5 text-xs text-rose-950 space-y-1">
-                <p className="font-bold text-rose-900 mb-1">Exemplos:</p>
-                <p className="flex items-start gap-1.5 leading-relaxed">
-                  <span className="text-[#e2263c] font-bold">•</span>
-                  <span>Baixa conversão de leads no produto X.</span>
-                </p>
-                <p className="flex items-start gap-1.5 leading-relaxed">
-                  <span className="text-[#e2263c] font-bold">•</span>
-                  <span>Perda de relevância no mercado.</span>
-                </p>
-                <p className="flex items-start gap-1.5 leading-relaxed">
-                  <span className="text-[#e2263c] font-bold">•</span>
-                  <span>Falta de diferenciação em relação aos concorrentes.</span>
-                </p>
-              </div>
-
-              {/* Textarea Branco em contraste */}
-              <div className="relative">
-                <textarea
-                  value={data.mainChallenge}
-                  disabled={!editable}
-                  maxLength={500}
-                  onChange={(e) => handleChange("mainChallenge", e.target.value)}
-                  placeholder="Descreva aqui o principal desafio da BU..."
-                  rows={4}
-                  className={cn(
-                    "w-full rounded-xl border border-rose-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition resize-none shadow-2xs",
-                    !editable && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                  )}
-                />
-                <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
-                  {data.mainChallenge.length}/500
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600">
+                  DESAFIO OU OPORTUNIDADE ESTRATÉGICA
                 </span>
+                <h3 className="text-base sm:text-xl font-bold text-slate-900 leading-snug mt-0.5">
+                  Qual é o principal <span className="text-[#e2263c]">desafio</span> ou <span className="text-purple-600">oportunidade</span> da BU hoje?
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
+                  O problema ou gargalo que mais limita o crescimento, ou a oportunidade com maior potencial de impacto para a BU neste ciclo.
+                </p>
               </div>
+            </div>
+
+            {unifiedQuestion && !editingUnified && editable && (
+              <button
+                type="button"
+                onClick={() => setEditingUnified(true)}
+                className="self-start inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+              >
+                <Pencil className="size-3.5 text-rose-600" />
+                Editar síntese
+              </button>
+            )}
+          </div>
+
+          {/* Grid de Exemplos (Desafios & Oportunidades Integrados) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div className="rounded-xl bg-rose-50/70 border border-rose-100 p-3.5 text-xs text-rose-950 space-y-1">
+              <p className="font-bold text-rose-900 mb-1 flex items-center gap-1.5">
+                <AlertTriangle className="size-3.5 text-rose-600" />
+                Exemplos de Desafios:
+              </p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="text-[#e2263c] font-bold">•</span>
+                <span>Baixa conversão de leads no produto principal.</span>
+              </p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="text-[#e2263c] font-bold">•</span>
+                <span>Perda de relevância no mercado ou avanço da concorrência.</span>
+              </p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="text-[#e2263c] font-bold">•</span>
+                <span>Falta de diferenciação ou dependência de uma única oferta.</span>
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-purple-50/70 border border-purple-100 p-3.5 text-xs text-purple-950 space-y-1">
+              <p className="font-bold text-purple-900 mb-1 flex items-center gap-1.5">
+                <Lightbulb className="size-3.5 text-purple-600" />
+                Exemplos de Oportunidades:
+              </p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="text-purple-600 font-bold">•</span>
+                <span>Expansão da base de leads qualificados em novos canais.</span>
+              </p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="text-purple-600 font-bold">•</span>
+                <span>Reposicionamento de produto ou novo formato de entrega.</span>
+              </p>
+              <p className="flex items-start gap-1.5 leading-relaxed">
+                <span className="text-purple-600 font-bold">•</span>
+                <span>Crescimento em uma nova sub-especialidade ou público.</span>
+              </p>
             </div>
           </div>
 
-          {/* Card: Principal Oportunidade (Fundo Roxo Pastel Diferenciado) */}
-          <div className="rounded-2xl border border-purple-200 bg-[#faf5ff] p-6 shadow-2xs flex flex-col justify-between space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3.5">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-600 border border-purple-200 shadow-2xs">
-                  <Lightbulb className="size-5" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600">
-                    PRINCIPAL OPORTUNIDADE
-                  </span>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
-                    Onde está a principal <span className="text-purple-600">oportunidade</span> de crescimento?
-                  </h3>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    A oportunidade com maior potencial de impacto para a BU neste ciclo.
-                  </p>
-                </div>
+          {/* Campo de Texto (Modo Leitura Completa vs Edição) */}
+          {unifiedQuestion && !editingUnified ? (
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-2xs space-y-2">
+              <div className="text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">
+                {unifiedQuestion}
               </div>
-
-              {/* Box de Exemplos Interno */}
-              <div className="rounded-xl bg-purple-100/60 border border-purple-200/70 p-3.5 text-xs text-purple-950 space-y-1">
-                <p className="font-bold text-purple-900 mb-1">Exemplos:</p>
-                <p className="flex items-start gap-1.5 leading-relaxed">
-                  <span className="text-purple-600 font-bold">•</span>
-                  <span>Expansão da base de leads qualificados.</span>
-                </p>
-                <p className="flex items-start gap-1.5 leading-relaxed">
-                  <span className="text-purple-600 font-bold">•</span>
-                  <span>Reposicionamento de um produto.</span>
-                </p>
-                <p className="flex items-start gap-1.5 leading-relaxed">
-                  <span className="text-purple-600 font-bold">•</span>
-                  <span>Crescimento em uma nova região ou segmento.</span>
-                </p>
-              </div>
-
-              {/* Textarea Branco em contraste */}
-              <div className="relative">
-                <textarea
-                  value={data.mainOpportunity}
-                  disabled={!editable}
-                  maxLength={500}
-                  onChange={(e) =>
-                    handleChange("mainOpportunity", e.target.value)
-                  }
-                  placeholder="Descreva aqui a principal oportunidade da BU..."
-                  rows={4}
-                  className={cn(
-                    "w-full rounded-xl border border-purple-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100 transition resize-none shadow-2xs",
-                    !editable && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                  )}
-                />
-                <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
-                  {data.mainOpportunity.length}/500
+              <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                <span className="font-mono">{unifiedQuestion.length}/1000 caracteres</span>
+                <span className="text-emerald-600 font-medium flex items-center gap-1">
+                  <Check className="size-3.5" /> Registrado no ciclo
                 </span>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                value={unifiedQuestion}
+                disabled={!editable}
+                maxLength={1000}
+                onChange={(e) => {
+                  setUnifiedQuestion(e.target.value);
+                  setHasChanges(true);
+                  setStatusMessage(null);
+                }}
+                placeholder="Descreva aqui o principal desafio ou oportunidade da BU para este ciclo estratégico..."
+                rows={4}
+                className={cn(
+                  "w-full rounded-2xl border border-rose-200 bg-white p-4 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition shadow-2xs resize-y min-h-[120px]",
+                  !editable && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                )}
+              />
+              <div className="flex items-center justify-between text-xs">
+                <span className="tabular-nums font-mono text-slate-400">
+                  {unifiedQuestion.length}/1000 caracteres
+                </span>
+                {unifiedQuestion && editable && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingUnified(false)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                  >
+                    <Check className="size-3 text-emerald-600" />
+                    Concluir edição
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── Barra de Rodapé com Botões em Pílula ── */}
+        {/* ── Barra de Ações: Salvar Diagnóstico e Navegação ── */}
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-2xs">
           <div className="flex items-center gap-3">
             {editable && (
@@ -601,6 +723,116 @@ export function DiagnosisTableView({
               Continuar para Objetivo e Metas
               <ArrowRight className="size-4" />
             </Link>
+          )}
+        </div>
+      </div>
+
+      {/* ── PARTE 3: Comentários do Diagnóstico (Item 2 - parte B) ── */}
+      <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 border border-pink-200">
+              <MessageSquare className="size-5" />
+            </div>
+            <div>
+              <h3 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2">
+                Comentários do Diagnóstico
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">
+                  {comments.length}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                Alinhamento e notas colaborativas da liderança e do time sobre o diagnóstico desta BU.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Formulário para novo comentário */}
+        <form onSubmit={handleAddComment} className="space-y-3">
+          <div className="relative">
+            <textarea
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Escreva um comentário, reflexão ou sugestão sobre o diagnóstico da BU..."
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400">
+              Pressione Enviar para registrar o comentário no histórico da rodada.
+            </span>
+            <button
+              type="submit"
+              disabled={isSubmittingComment || !commentText.trim()}
+              style={{ borderRadius: "9999px" }}
+              className={cn(
+                "inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white shadow-2xs transition cursor-pointer",
+                commentText.trim()
+                  ? "bg-pink-600 hover:bg-pink-700"
+                  : "bg-slate-300 cursor-not-allowed",
+              )}
+            >
+              {isSubmittingComment ? (
+                <>
+                  <div className="size-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Enviando…
+                </>
+              ) : (
+                <>
+                  <Send className="size-3.5" />
+                  Enviar comentário
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        {/* Lista de Comentários */}
+        <div className="space-y-3 pt-2">
+          {comments.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/40">
+              <MessageSquare className="mx-auto size-8 text-slate-300 mb-2" />
+              <p className="text-sm font-semibold text-slate-700">
+                Nenhum comentário registrado ainda
+              </p>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Use este espaço para discutir os pilares, validar hipóteses ou registrar decisões de alinhamento com o time.
+              </p>
+            </div>
+          ) : (
+            comments.map((comment) => (
+              <div
+                key={comment.id}
+                className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs flex items-start gap-3.5 transition hover:border-slate-300"
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-600 text-white font-bold text-xs shadow-2xs">
+                  {comment.authorName.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900">
+                        {comment.authorName}
+                      </span>
+                      {comment.authorRole && (
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 border border-slate-200/60">
+                          {comment.authorRole}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-400 font-mono">
+                      {formatCommentDate(comment.createdAt)}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {comment.content}
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>

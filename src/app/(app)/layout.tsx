@@ -201,8 +201,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             ),
           }}
         />
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-          <div className="mx-auto max-w-5xl">{children}</div>
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1536px]">{children}</div>
         </main>
       </div>
       <CommandPalette />
