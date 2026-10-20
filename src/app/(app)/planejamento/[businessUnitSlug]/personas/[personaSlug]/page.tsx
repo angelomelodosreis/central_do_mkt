@@ -86,6 +86,11 @@ export default async function PersonaDetailPage({
                   {found.targetExam}
                 </span>
               ) : null}
+              {found.specialtyTitle ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                  Título: {found.specialtyTitle}
+                </span>
+              ) : null}
               {openPains.length > 0 ? (
                 <Badge tone="warning">
                   {openPains.length}{" "}
@@ -159,13 +164,21 @@ export default async function PersonaDetailPage({
             <CardBody className="px-0 py-0">
               <DataList
                 items={[
-                  ["Prova-alvo", found.targetExam],
-                  ["Momento de carreira", found.careerStage],
-                  ["Tentativa", found.attempt],
-                  ["Rotina de estudo", found.studyRoutine],
-                  ["Onde trabalha", found.workplace],
-                  ["Cargo ou ocupação", found.currentRole],
-                  ["Objetivo profissional", found.careerGoal],
+                  ["Prova-alvo", found.targetExam ?? null],
+                  [
+                    "Momento de carreira",
+                    found.careerStage === "Titulado" && found.specialtyTitle
+                      ? `${found.careerStage} (${found.specialtyTitle})`
+                      : (found.careerStage ?? null),
+                  ],
+                  ...(found.specialtyTitle
+                    ? ([["Título de especialista", found.specialtyTitle]] as [string, string | null][])
+                    : []),
+                  ["Tentativa", found.attempt ?? null],
+                  ["Rotina de estudo", found.studyRoutine ?? null],
+                  ["Onde trabalha", found.workplace ?? null],
+                  ["Cargo ou ocupação", found.currentRole ?? null],
+                  ["Objetivo profissional", found.careerGoal ?? null],
                 ]}
               />
             </CardBody>

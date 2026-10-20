@@ -125,6 +125,11 @@ export default async function BusinessUnitPersonasPage({
                                 {item.targetExam}
                               </span>
                             ) : null}
+                            {item.specialtyTitle ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                {item.specialtyTitle}
+                              </span>
+                            ) : null}
                             {item.openPainCount > 0 ? (
                               <Badge tone="warning">
                                 {item.openPainCount} sem solução

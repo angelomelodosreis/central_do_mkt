@@ -62,6 +62,8 @@ export const persona = sqliteTable(
 
     // Carreira ----------------------------------------------------------------
     careerStage: text("career_stage"),
+    /** Título de especialista que a pessoa possui quando é titulada (ex.: TEGO, TEC, TED...). */
+    specialtyTitle: text("specialty_title"),
     currentRole: text("current_role"),
     workplace: text("workplace"),
     careerGoal: text("career_goal"),

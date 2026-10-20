@@ -23,6 +23,7 @@ export type PersonaListItem = Pick<
   | "owner"
   | "status"
   | "tags"
+  | "specialtyTitle"
 > & {
   businessUnitId: string;
   painCount: number;
@@ -67,6 +68,7 @@ export async function listPersonasByBusinessUnit(): Promise<
       owner: persona.owner,
       status: persona.status,
       tags: persona.tags,
+      specialtyTitle: persona.specialtyTitle,
     })
     .from(persona)
     .orderBy(asc(persona.name));
@@ -113,6 +115,7 @@ export async function listPersonasOfBusinessUnit(
       owner: persona.owner,
       status: persona.status,
       tags: persona.tags,
+      specialtyTitle: persona.specialtyTitle,
     })
     .from(persona)
     .where(eq(persona.businessUnitId, businessUnitId))

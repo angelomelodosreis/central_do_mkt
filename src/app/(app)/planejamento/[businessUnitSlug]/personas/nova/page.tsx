@@ -54,6 +54,7 @@ export default async function NewPersonaPage({
           income: "5 a 15 mil",
           education: "",
           careerStage: "Recém-formado (R0)",
+          specialtyTitle: "",
           currentRole: "",
           workplace: "Hospital público",
           careerGoal: "",

@@ -20,6 +20,7 @@ export type PersonaSearchInput = {
   income?: string | null;
   education?: string | null;
   careerStage?: string | null;
+  specialtyTitle?: string | null;
   currentRole?: string | null;
   workplace?: string | null;
   careerGoal?: string | null;
@@ -54,6 +55,7 @@ export function buildPersonaSearchText(
     input.income,
     input.education,
     input.careerStage,
+    input.specialtyTitle,
     input.currentRole,
     input.workplace,
     input.careerGoal,

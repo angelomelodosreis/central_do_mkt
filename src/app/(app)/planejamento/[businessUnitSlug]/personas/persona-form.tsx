@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { ChevronDown, AlertCircle, Sparkles } from "lucide-react";
+import { ChevronDown, AlertCircle, Sparkles, Award } from "lucide-react";
 
 import { createPersona, updatePersona } from "./actions";
 import { INITIAL_PERSONA_STATE, type PersonaFormState } from "./form-state";
@@ -32,6 +32,7 @@ export type PersonaFormValues = {
   income: string;
   education: string;
   careerStage: string;
+  specialtyTitle?: string | null;
   currentRole: string;
   workplace: string;
   careerGoal: string;
@@ -72,7 +73,8 @@ const EXAM_OPTIONS: ComboboxOption[] = [
   // Internacional
   { group: "Internacional", value: "USMLE Step 1", label: "USMLE Step 1", tags: "usmle step 1 usa estados unidos" },
   { group: "Internacional", value: "USMLE Step 2 CK", label: "USMLE Step 2 CK", tags: "usmle step 2 ck usa estados unidos" },
-  { group: "Internacional", value: "Nenhuma — já titulado", label: "Nenhuma — já titulado", tags: "nenhuma ja titulado especialista" },
+  // Outras
+  { group: "Outras", value: "Nenhuma — já titulado", label: "Nenhuma — já titulado", tags: "nenhuma ja titulado especialista" },
 ];
 
 // Onde ela trabalha
@@ -97,6 +99,25 @@ const CAREER_STAGES = [
   "Sem título",
   "Titulado",
   "Formado fora do Brasil",
+];
+
+const SPECIALTY_TITLES_SUGGESTIONS = [
+  { sigla: "TEGO", label: "TEGO — Ginecologia e Obstetrícia" },
+  { sigla: "TEC", label: "TEC — Cardiologia" },
+  { sigla: "TED", label: "TED — Dermatologia" },
+  { sigla: "TSA", label: "TSA — Anestesiologia" },
+  { sigla: "CBC", label: "CBC — Cirurgia Geral" },
+  { sigla: "TECM", label: "TECM — Clínica Médica" },
+  { sigla: "TEEM", label: "TEEM — Endocrinologia" },
+  { sigla: "EndócrinoPED", label: "EndócrinoPED — Endocrinologia Pediátrica" },
+  { sigla: "TEME", label: "TEME — Medicina de Emergência" },
+  { sigla: "TEMI", label: "TEMI — Medicina Intensiva" },
+  { sigla: "CBO", label: "CBO — Oftalmologia" },
+  { sigla: "TEOT", label: "TEOT — Ortopedia e Traumatologia" },
+  { sigla: "TEP", label: "TEP — Pediatria" },
+  { sigla: "CBR", label: "CBR — Radiologia" },
+  { sigla: "TISBU", label: "TISBU — Urologia" },
+  { sigla: "RQE", label: "RQE — Especialista Registrado" },
 ];
 
 const ATTEMPT_OPTIONS = ["Primeira", "Retentativa", "Não se aplica"];
@@ -162,6 +183,7 @@ export function PersonaForm({
   // Estados dos seletores em chips
   const [status, setStatus] = useState(values.status || "active");
   const [careerStage, setCareerStage] = useState(values.careerStage || "Recém-formado (R0)");
+  const [specialtyTitle, setSpecialtyTitle] = useState(values.specialtyTitle || "");
   const [attempt, setAttempt] = useState(values.attempt || "Primeira");
   const [studyRoutine, setStudyRoutine] = useState(values.studyRoutine || "Plantonista");
   const [ageRange, setAgeRange] = useState(values.ageRange || "26–30");
@@ -209,6 +231,7 @@ export function PersonaForm({
       {/* Hidden inputs para sincronizar chips */}
       <input type="hidden" name="status" value={status} />
       <input type="hidden" name="careerStage" value={careerStage} />
+      <input type="hidden" name="specialtyTitle" value={careerStage === "Titulado" ? specialtyTitle : ""} />
       <input type="hidden" name="attempt" value={attempt} />
       <input type="hidden" name="studyRoutine" value={studyRoutine} />
       <input type="hidden" name="ageRange" value={ageRange} />
@@ -509,6 +532,66 @@ export function PersonaForm({
               })}
             </div>
           </div>
+
+          {/* Qual título essa pessoa tem? (Aparece quando "Titulado" está selecionado) */}
+          {careerStage === "Titulado" && (
+            <div className="rounded-xl border border-rose-200/90 bg-rose-50/50 p-3.5 sm:p-4 space-y-3 transition-all animate-in fade-in slide-in-from-top-1">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="specialty-title-input"
+                  className="text-xs font-semibold text-slate-800 flex items-center gap-1.5"
+                >
+                  <Award className="size-4 text-[#e2263c]" />
+                  <span>
+                    Qual título essa pessoa tem? <span className="text-red-500">*</span>
+                  </span>
+                </label>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Selecione uma sigla ou digite
+                </span>
+              </div>
+
+              <div>
+                <input
+                  id="specialty-title-input"
+                  type="text"
+                  value={specialtyTitle}
+                  onChange={(e) => setSpecialtyTitle(e.target.value)}
+                  placeholder="Ex.: TEGO — Ginecologia e Obstetrícia, TEC, TED, TSA..."
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-1 focus:ring-[#e2263c] shadow-2xs"
+                />
+              </div>
+
+              {/* Sugestões de títulos médicos */}
+              <div className="space-y-1 pt-0.5">
+                <span className="text-[10px] text-slate-500 font-medium block">
+                  Títulos frequentes das especialidades:
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {SPECIALTY_TITLES_SUGGESTIONS.map((t) => {
+                    const isCurrent =
+                      specialtyTitle === t.label ||
+                      specialtyTitle.toLowerCase() === t.sigla.toLowerCase();
+                    return (
+                      <button
+                        key={t.sigla}
+                        type="button"
+                        onClick={() => setSpecialtyTitle(t.label)}
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-medium border transition cursor-pointer ${
+                          isCurrent
+                            ? "bg-[#e2263c] border-[#e2263c] text-white font-semibold shadow-2xs"
+                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                        title={t.label}
+                      >
+                        {t.sigla}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tentativa (Chips) */}
           <div className="space-y-1.5">

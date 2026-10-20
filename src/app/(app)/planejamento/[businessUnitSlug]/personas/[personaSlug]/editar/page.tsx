@@ -71,6 +71,7 @@ export default async function EditPersonaPage({ params }: { params: Params }) {
           income: found.income ?? "",
           education: found.education ?? "",
           careerStage: found.careerStage ?? "",
+          specialtyTitle: found.specialtyTitle ?? "",
           currentRole: found.currentRole ?? "",
           workplace: found.workplace ?? "",
           careerGoal: found.careerGoal ?? "",

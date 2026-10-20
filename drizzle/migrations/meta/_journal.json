@@ -239,8 +239,13 @@
       "when": 1788500011000,
       "tag": "0033_medcof_insights_pages_and_events",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1788500012000,
+      "tag": "0034_persona_specialty_title",
+      "breakpoints": true
     }
   ]
 }
-
-
