@@ -29,6 +29,8 @@ import {
 } from "@/lib/db/schema";
 import { writeAuditLog } from "@/lib/modules/audit/log";
 import { newId } from "@/lib/utils/id";
+import { grantRequestedBuAccess } from "@/lib/modules/access/bu-requests";
+import { snapshotAccess } from "../actions";
 
 function field(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
@@ -535,4 +537,58 @@ export async function resetTwoFactor(formData: FormData): Promise<void> {
   });
 
   revalidatePath(`/admin/usuarios/${userId}`);
+}
+
+/**
+ * Salva a ficha inteira da pessoa E aprova o acesso dela no banco.
+ * Garante que administradores consigam salvar alterações e liberar o acesso numa só ação.
+ */
+export async function saveAndApproveUser(formData: FormData): Promise<void> {
+  const admin = await requireUserManagementAccess();
+  const userId = field(formData, "userId");
+  if (!userId) return;
+
+  // 1. Grava as alterações de cargo, time, papel e squads
+  await saveUserFile(formData);
+
+  // 2. Aprova o acesso
+  const db = await getDb();
+  const before = await snapshotAccess(userId);
+
+  const target = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .get();
+
+  await db
+    .update(user)
+    .set({
+      status: "active",
+      approvedBy: admin.id,
+      approvedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(user.id, userId));
+
+  // 3. Concede acesso automático às BUs solicitadas no onboarding
+  await grantRequestedBuAccess(userId, admin.id);
+
+  await writeAuditLog({
+    actorUserId: admin.id,
+    actorEmail: admin.email,
+    action: "user.approve",
+    entityType: "user",
+    entityId: userId,
+    summary: `Aprovou o acesso e atualizou a ficha de ${target?.email ?? userId}`,
+    beforeData: before,
+    afterData: { ...before, status: "active", approvedBy: admin.id },
+  });
+
+  revalidateTudo();
+  revalidatePath("/admin/usuarios", "layout");
+  revalidatePath(`/admin/usuarios/${userId}`, "layout");
+  revalidatePath("/aguardando-aprovacao");
+  revalidatePath("/painel");
+  revalidatePath("/", "layout");
 }

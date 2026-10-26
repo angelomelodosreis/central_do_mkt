@@ -5,10 +5,12 @@ import { useMemo, useState } from "react";
 
 import { Avatar } from "@/components/org/person-card";
 import { Badge, RoleBadge, StatusBadge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardBody, EmptyState } from "@/components/ui/card";
 import { Input, FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PillTabs } from "@/components/ui/tabs";
+import { approveUser } from "./actions";
 import {
   USER_ROLES,
   USER_ROLE_LABELS,
@@ -181,14 +183,16 @@ export function UsersPanel({
           ) : (
             <ul className="divide-y divide-slate-100">
               {visiveis.map((person) => (
-                <li key={person.id}>
+                <li
+                  key={person.id}
+                  className={cn(
+                    "flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-slate-50",
+                    person.status !== "active" && "bg-slate-50/60",
+                  )}
+                >
                   <Link
                     href={`/admin/usuarios/${person.id}`}
-                    className={cn(
-                      "flex items-center gap-3 px-5 py-3 transition-colors hover:bg-slate-50",
-                      "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600",
-                      person.status !== "active" && "bg-slate-50/60",
-                    )}
+                    className="flex min-w-0 flex-1 items-center gap-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600"
                   >
                     <Avatar name={person.name} image={person.image} />
 
@@ -231,14 +235,30 @@ export function UsersPanel({
                         {resumoDeAlcance(person)}
                       </p>
                     </div>
+                  </Link>
 
-                    <div className="hidden shrink-0 sm:block">
+                  <div className="flex shrink-0 items-center gap-3">
+                    <div className="hidden sm:block">
                       <RoleBadge role={person.role} />
                     </div>
-                    <span aria-hidden className="shrink-0 text-slate-300">
+
+                    {person.status === "pending" && (
+                      <form action={approveUser} className="inline-flex">
+                        <input type="hidden" name="userId" value={person.id} />
+                        <Button type="submit" size="sm" variant="primary">
+                          Aprovar acesso
+                        </Button>
+                      </form>
+                    )}
+
+                    <Link
+                      href={`/admin/usuarios/${person.id}`}
+                      aria-label={`Ver detalhes de ${person.name}`}
+                      className="text-slate-300 hover:text-slate-500"
+                    >
                       →
-                    </span>
-                  </Link>
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>

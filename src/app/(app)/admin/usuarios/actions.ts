@@ -13,7 +13,7 @@ import { grantRequestedBuAccess } from "@/lib/modules/access/bu-requests";
  * Snapshot dos campos de acesso de um usuário. É o que gravamos em `beforeData`
  * na auditoria, e é exatamente o que o "desfazer" restaura.
  */
-async function snapshotAccess(userId: string) {
+export async function snapshotAccess(userId: string) {
   const db = await getDb();
   return db
     .select({
@@ -74,7 +74,10 @@ export async function approveUser(formData: FormData): Promise<void> {
   });
 
   revalidatePath("/admin/usuarios", "layout");
+  revalidatePath(`/admin/usuarios/${targetId}`, "layout");
+  revalidatePath("/aguardando-aprovacao");
   revalidatePath("/painel");
+  revalidatePath("/", "layout");
 }
 
 /**

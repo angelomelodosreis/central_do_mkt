@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
 
-import { deleteUser, resetTwoFactor, saveUserFile } from "./actions";
+import { deleteUser, resetTwoFactor, saveUserFile, saveAndApproveUser } from "./actions";
 import { approveUser, reactivateUser, suspendUser } from "../actions";
 import { Avatar } from "@/components/org/person-card";
 import { StatusBadge } from "@/components/ui/badge";
@@ -694,10 +694,8 @@ function Cabecalho({
         {person.status === "pending" ? (
           <Button
             type="submit"
-            formAction={approveUser}
+            formAction={saveAndApproveUser}
             variant="primary"
-            disabled={alterado}
-            title={espera}
           >
             Aprovar acesso
           </Button>
@@ -826,9 +824,19 @@ function Rodape({
               <Button type="button" variant="ghost" onClick={aoDescartar}>
                 Descartar
               </Button>
-              <Button type="submit" variant="primary">
-                Salvar alterações
-              </Button>
+              {person.status === "pending" ? (
+                <Button
+                  type="submit"
+                  formAction={saveAndApproveUser}
+                  variant="primary"
+                >
+                  Salvar e aprovar acesso
+                </Button>
+              ) : (
+                <Button type="submit" variant="primary">
+                  Salvar alterações
+                </Button>
+              )}
             </>
           ) : isSelf ? null : (
             <Button
