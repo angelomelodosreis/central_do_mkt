@@ -236,11 +236,13 @@ export function UsersPanel({
                       <p className="mt-0.5 truncate text-xs text-slate-500">
                         {resumoDeAlcance(person)}
                       </p>
-                      {person.requestedNote && person.requestedNote.trim().length > 0 && (
-                        <p className="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200/60 rounded-md px-2 py-0.5 inline-block font-medium">
-                          📝 Mensagem no onboarding: &ldquo;{person.requestedNote.trim()}&rdquo;
-                        </p>
-                      )}
+                      {person.status === "pending" &&
+                        person.requestedNote &&
+                        person.requestedNote.trim().length > 0 && (
+                          <p className="mt-1 inline-block rounded-md border border-amber-200/60 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            📝 Mensagem no onboarding: &ldquo;{person.requestedNote.trim()}&rdquo;
+                          </p>
+                        )}
                     </div>
                   </Link>
 
@@ -317,18 +319,30 @@ function ApproveUserButton({
 /** Uma linha dizendo o alcance — escopo primeiro, participação depois. */
 function resumoDeAlcance(person: PersonRow): string {
   if (isFullAccessMaster({ email: person.email, name: person.name })) {
-    return "Acesso Total Master · Todas as 23 BUs oficiais";
+    return "Acesso Total Master · Todas as BUs oficiais";
   }
 
   const partes: string[] = [];
 
   const buScopes = person.scopes.filter((s) => s.type === "business_unit");
-  const otherScopes = person.scopes.filter((s) => s.type !== "business_unit" && s.type !== "organization");
+  const otherScopes = person.scopes.filter(
+    (s) => s.type !== "business_unit" && s.type !== "organization",
+  );
 
   if (buScopes.length > 0) {
-    partes.push(
-      `${buScopes.length} ${plural(buScopes.length, "BU autorizada", "BUs autorizadas")} (${buScopes.map((s) => s.name).join(", ")})`,
-    );
+    if (buScopes.length >= 20) {
+      partes.push(`Todas as ${buScopes.length} BUs oficiais`);
+    } else if (buScopes.length > 3) {
+      const amostra = buScopes.slice(0, 3).map((s) => s.name).join(", ");
+      const restantes = buScopes.length - 3;
+      partes.push(
+        `${plural(buScopes.length, "BU autorizada", "BUs autorizadas")} (${amostra} +${restantes})`,
+      );
+    } else {
+      partes.push(
+        `${plural(buScopes.length, "BU autorizada", "BUs autorizadas")} (${buScopes.map((s) => s.name).join(", ")})`,
+      );
+    }
   }
 
   if (otherScopes.length > 0) {

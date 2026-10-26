@@ -282,10 +282,10 @@ export async function getPendingBuRequestsSummary(): Promise<
     if (row.status === "pending") {
       existing.count += 1;
       existing.buLabels.push(row.buLabel);
-    }
-    const cleanNote = row.note ? sanitizePlainText(row.note) : null;
-    if (!existing.note && cleanNote) {
-      existing.note = cleanNote;
+      const cleanNote = row.note ? sanitizePlainText(row.note) : null;
+      if (!existing.note && cleanNote) {
+        existing.note = cleanNote;
+      }
     }
     map.set(row.userId, existing);
   }

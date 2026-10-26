@@ -89,18 +89,39 @@ export function sortByName<T>(itens: T[], nome: (item: T) => string): T[] {
 
 /**
  * Higieniza textos livres e mensagens de onboarding para remover tags HTML, scripts,
- * payloads maliciosos (ex.: <img src=x onerror=...>, <script>), protocolos perigosos
- * e caracteres de controle, garantindo apenas texto puro seguro.
+ * entidades codificadas (&lt;...&gt;), payloads maliciosos (ex.: <img src=x onerror=...>, <script>),
+ * manipuladores de eventos (onerror, onload, onclick...), protocolos perigosos e caracteres de controle,
+ * garantindo apenas texto puro seguro.
  */
 export function sanitizePlainText(
   input: string | null | undefined,
   maxLength = 500,
 ): string {
   if (!input) return "";
+
+  // 1. Decodifica entidades HTML comuns para barrar evasões com &lt;script&gt; ou &lt;img...&gt;
   let clean = input
-    // Remove tags HTML (<...>)
-    .replace(/<[^>]*>?/gm, "")
-    // Remove caracteres de controle ASCII perigosos
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, "&");
+
+  // 2. Remove recursivamente tags HTML e formatos <...>
+  let previous = "";
+  while (clean !== previous) {
+    previous = clean;
+    clean = clean.replace(/<[^>]*>?/gm, "");
+  }
+
+  // 3. Remove event handlers residuais e esquemas URI perigosos
+  clean = clean
+    .replace(/\b(onerror|onload|onclick|onmouseover|onfocus|onblur)\s*=[^ ]*/gi, "")
+    .replace(/\bjavascript:[^ ]*/gi, "")
+    .replace(/\bdata:\s*text\/html[^ ]*/gi, "");
+
+  // 4. Remove caracteres de controle ASCII perigosos
+  clean = clean
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
     .trim();
 

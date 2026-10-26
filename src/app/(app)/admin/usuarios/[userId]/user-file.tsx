@@ -28,6 +28,7 @@ import type { ResolvedGrant } from "@/lib/modules/access/explain";
 import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { cn } from "@/lib/utils/cn";
 import { formatDate } from "@/lib/utils/format";
+import { sanitizePlainText } from "@/lib/utils/text";
 
 export type OrgUnitOption = {
   id: string;
@@ -774,6 +775,13 @@ function Cabecalho({
   const espera = alterado
     ? "Salve ou descarte as alterações primeiro"
     : undefined;
+
+  const rawNote = person.requestedBUs?.find(
+    (bu) => bu.note && bu.note.trim().length > 0,
+  )?.note;
+  const cleanNote = rawNote ? sanitizePlainText(rawNote) : null;
+  const isPendingUser = person.status === "pending";
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
       <div className="flex min-w-0 items-center gap-3">
@@ -787,49 +795,63 @@ function Cabecalho({
         </div>
       </div>
 
-      {person.requestedBUs && person.requestedBUs.length > 0 && (
-        <div
-          className={cn(
-            "w-full rounded-xl border p-3.5 text-xs",
-            person.status === "pending"
-              ? "border-brand-200 bg-brand-50/60 text-brand-950"
-              : "border-slate-200 bg-slate-50/70 text-slate-700",
-          )}
-        >
+      {isPendingUser && person.requestedBUs && person.requestedBUs.length > 0 ? (
+        <div className="w-full rounded-xl border border-brand-200 bg-brand-50/60 p-3.5 text-xs text-brand-950">
           <div className="flex items-center gap-1.5 font-semibold">
             <span>
-              {person.status === "pending"
-                ? `✨ BUs solicitadas no onboarding (${person.requestedBUs.length}):`
-                : `📋 BUs solicitadas no onboarding (${person.requestedBUs.length}):`}
+              ✨ BUs solicitadas no onboarding ({person.requestedBUs.length}):
             </span>
           </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {person.requestedBUs.map((bu) => (
-              <span
-                key={bu.businessUnitId}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs"
-              >
-                <span>{bu.label}</span>
-                <code className="font-mono text-[10px] text-brand-700">
-                  {bu.code ?? `MEDCOF_${bu.businessUnitId}`}
-                </code>
+
+          {person.requestedBUs.length >= 20 ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-brand-300 bg-white px-3 py-1 text-xs font-semibold text-brand-900 shadow-2xs">
+                Todas as {person.requestedBUs.length} Business Units oficiais
               </span>
-            ))}
-          </div>
-          {person.requestedBUs.find((bu) => bu.note && bu.note.trim().length > 0)?.note && (
-            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-900 font-medium">
-              📝 <strong>Mensagem no onboarding:</strong> &ldquo;{person.requestedBUs.find((bu) => bu.note && bu.note.trim().length > 0)?.note}&rdquo;
+              <span className="text-[11px] text-slate-500">
+                (todas as BUs do ecossistema MedCof)
+              </span>
+            </div>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {person.requestedBUs.map((bu) => (
+                <span
+                  key={bu.businessUnitId}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs"
+                >
+                  <span>{bu.label}</span>
+                  <code className="font-mono text-[10px] text-brand-700">
+                    {bu.code ?? `MEDCOF_${bu.businessUnitId}`}
+                  </code>
+                </span>
+              ))}
             </div>
           )}
-          {person.status === "pending" && (
-            <p className="mt-2 text-[11px] text-brand-700 font-medium">
-              💡 Ao aprovar este cadastro, o acesso a essas{" "}
-              {person.requestedBUs.length} Business Units será concedido
-              automaticamente.
-            </p>
-          )}
+
+          {cleanNote ? (
+            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs font-medium text-amber-900">
+              📝 <strong>Mensagem no onboarding:</strong> &ldquo;{cleanNote}&rdquo;
+            </div>
+          ) : null}
+
+          <p className="mt-2 text-[11px] font-medium text-brand-700">
+            💡 Ao aprovar este cadastro, o acesso a essas{" "}
+            {person.requestedBUs.length} Business Units será concedido
+            automaticamente.
+          </p>
         </div>
-      )}
+      ) : !isPendingUser && cleanNote ? (
+        <details className="w-full rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-xs text-slate-600">
+          <summary className="cursor-pointer font-medium text-slate-700 hover:text-slate-900">
+            📋 Histórico de mensagem no onboarding
+          </summary>
+          <div className="mt-2 border-t border-slate-200/60 pt-2">
+            <p className="font-medium text-slate-700">
+              📝 <strong>Mensagem deixada:</strong> &ldquo;{cleanNote}&rdquo;
+            </p>
+          </div>
+        </details>
+      ) : null}
 
       {/* Aprovar, reativar e suspender são decisões sobre a CONTA */}
       <div className="flex shrink-0 flex-wrap gap-2">
