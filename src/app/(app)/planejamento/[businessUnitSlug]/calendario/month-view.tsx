@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { moveTimelineItem } from "../../actions";
 import type { CalendarItem } from "./calendar-types";
+import type { MonthlyCampaign } from "./campaign-types";
 import {
   WEEKDAYS_SHORT,
   addDays,
@@ -28,14 +29,18 @@ export function MonthView({
   anchor,
   items,
   canEdit,
+  activeCampaigns = [],
   onOpen,
   onCreate,
+  onOpenCampaign,
 }: {
   anchor: Date;
   items: CalendarItem[];
   canEdit: boolean;
+  activeCampaigns?: MonthlyCampaign[];
   onOpen: (id: string) => void;
   onCreate: (day: Date) => void;
+  onOpenCampaign?: (campaign: MonthlyCampaign) => void;
 }) {
   const router = useRouter();
   const month = startOfMonth(anchor);
@@ -153,6 +158,41 @@ export function MonthView({
                       >
                         {day.getDate()}
                       </span>
+
+                      {/* No Dia 1 do mês: bolinhas das campanhas ativas conforme solicitado pela Beatriz */}
+                      {day.getDate() === 1 &&
+                        !foraDoMes &&
+                        activeCampaigns &&
+                        activeCampaigns.length > 0 && (
+                          <div
+                            className="flex items-center gap-1 bg-slate-100/90 px-1.5 py-0.5 rounded-full border border-slate-200/60 shadow-2xs"
+                            title={`Campanhas do Mês: ${activeCampaigns.map((c) => `${c.type === "vendas" ? "Vendas" : c.type === "captacao" ? "Captação" : "Awareness"}: ${c.title}`).join(" | ")}`}
+                          >
+                            <span className="text-[9px] font-bold text-slate-500 uppercase">
+                              Foco:
+                            </span>
+                            {activeCampaigns.map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenCampaign?.(c);
+                                }}
+                                title={`Campanha de ${c.type === "vendas" ? "Vendas" : c.type === "captacao" ? "Captação" : "Awareness"}: ${c.title}`}
+                                className={cn(
+                                  "size-2 rounded-full cursor-pointer transition-transform hover:scale-130 shadow-2xs",
+                                  c.type === "vendas"
+                                    ? "bg-emerald-500 ring-1 ring-emerald-300"
+                                    : c.type === "captacao"
+                                      ? "bg-sky-500 ring-1 ring-sky-300"
+                                      : "bg-purple-500 ring-1 ring-purple-300",
+                                )}
+                              />
+                            ))}
+                          </div>
+                        )}
+
                       {canEdit && !foraDoMes ? (
                         <button
                           type="button"

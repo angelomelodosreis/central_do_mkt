@@ -8,6 +8,12 @@ import { ItemPanel } from "./item-panel";
 import { LaneView } from "./lane-view";
 import { MonthView } from "./month-view";
 import { WeekView } from "./week-view";
+import { MonthlyCampaignsBar, CampaignModal } from "./monthly-campaigns-bar";
+import type {
+  MonthlyCampaign,
+  MonthlyCampaignType,
+  CampaignPersonaOption,
+} from "./campaign-types";
 import { Button } from "@/components/ui/button";
 import { FIELD_WIDTHS } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
@@ -44,6 +50,7 @@ export function CalendarWorkspace({
   anchorIso,
   canEdit,
   products,
+  personas = [],
   items,
 }: {
   unit: { slug: string };
@@ -59,6 +66,7 @@ export function CalendarWorkspace({
   anchorIso: string;
   canEdit: boolean;
   products: ClientProduct[];
+  personas?: CampaignPersonaOption[];
   items: ClientItem[];
 }) {
   const router = useRouter();
@@ -82,8 +90,57 @@ export function CalendarWorkspace({
   const [productFilter, setProductFilter] = useState<string>("");
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [creatingOn, setCreatingOn] = useState<Date | null>(null);
+  const [modalCampaignToOpen, setModalCampaignToOpen] =
+    useState<MonthlyCampaign | null>(null);
 
-  const hydrated = useMemo(() => items.map(hydrate), [items]);
+  // Filtra itens regulares da grade para não poluir o calendário com barras de 30 dias
+  const regularItems = useMemo(
+    () => items.filter((item) => item.details?.isMonthlyCampaign !== "true"),
+    [items],
+  );
+
+  const initialCampaigns = useMemo(() => {
+    return items
+      .filter((item) => item.details?.isMonthlyCampaign === "true")
+      .map((item): MonthlyCampaign => {
+        const type =
+          (item.details?.campaignType as MonthlyCampaignType) || "vendas";
+        const prod = products.find((p) => p.id === item.productId);
+        return {
+          id: item.id,
+          cycleId: cycle.id,
+          type,
+          title: item.title,
+          monthYearKey:
+            item.details?.monthYearKey || item.startsAt.slice(0, 7),
+          productId: item.productId,
+          productName: prod?.name || null,
+          leadMagnet: item.details?.leadMagnet || null,
+          leadsCount: item.details?.leadsCount || null,
+          personaId: item.details?.personaId || null,
+          personaName: item.details?.personaName || null,
+          offerDetails: item.details?.offerDetails || null,
+          salesGoal: item.details?.salesGoal || null,
+          channels: item.details?.channels || null,
+          notes: item.details?.notes || null,
+        };
+      });
+  }, [items, products, cycle.id]);
+
+  const [campaignsState, setCampaignsState] =
+    useState<MonthlyCampaign[]>(initialCampaigns);
+
+  useEffect(() => {
+    setCampaignsState(initialCampaigns);
+  }, [initialCampaigns]);
+
+  const activeMonthKey = `${currentAnchor.getFullYear()}-${String(currentAnchor.getMonth() + 1).padStart(2, "0")}`;
+  const activeMonthCampaigns = useMemo(
+    () => campaignsState.filter((c) => c.monthYearKey === activeMonthKey),
+    [campaignsState, activeMonthKey],
+  );
+
+  const hydrated = useMemo(() => regularItems.map(hydrate), [regularItems]);
 
   const visible = useMemo(
     () =>
@@ -329,6 +386,19 @@ export function CalendarWorkspace({
         ) : null}
       </div>
 
+      {zoom === "mes" && (
+        <MonthlyCampaignsBar
+          businessUnitSlug={unit.slug}
+          cycleId={cycle.id}
+          monthAnchor={currentAnchor}
+          campaigns={campaignsState}
+          products={products}
+          personas={personas}
+          canEdit={canEdit}
+          onCampaignsChange={setCampaignsState}
+        />
+      )}
+
       {zoom === "semana" ? (
         <WeekView
           anchor={currentAnchor}
@@ -342,8 +412,10 @@ export function CalendarWorkspace({
           anchor={currentAnchor}
           items={visible}
           canEdit={canEdit}
+          activeCampaigns={activeMonthCampaigns}
           onOpen={setOpenItemId}
           onCreate={setCreatingOn}
+          onOpenCampaign={(camp) => setModalCampaignToOpen(camp)}
         />
       ) : (
         <LaneView
@@ -352,6 +424,31 @@ export function CalendarWorkspace({
           items={visible}
           products={products}
           onOpen={setOpenItemId}
+        />
+      )}
+
+      {modalCampaignToOpen && (
+        <CampaignModal
+          businessUnitSlug={unit.slug}
+          cycleId={cycle.id}
+          monthYearKey={activeMonthKey}
+          monthLabel={`${monthName(currentAnchor.getMonth())} de ${currentAnchor.getFullYear()}`}
+          initialType={modalCampaignToOpen.type}
+          campaign={modalCampaignToOpen}
+          products={products}
+          personas={personas}
+          canEdit={canEdit}
+          onClose={() => setModalCampaignToOpen(null)}
+          onSaved={(saved) => {
+            setModalCampaignToOpen(null);
+            setCampaignsState((prev) =>
+              prev.map((c) => (c.id === saved.id ? saved : c)),
+            );
+          }}
+          onDeleted={(deletedId) => {
+            setModalCampaignToOpen(null);
+            setCampaignsState((prev) => prev.filter((c) => c.id !== deletedId));
+          }}
         />
       )}
 

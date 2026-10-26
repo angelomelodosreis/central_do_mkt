@@ -18,6 +18,7 @@ import {
   listTimelineItems,
   pickDefaultCycle,
 } from "@/lib/modules/strategy/queries";
+import { listPersonasOfBusinessUnit } from "@/lib/modules/personas/queries";
 import {
   fromDateInput,
   parseCalendarDate,
@@ -125,9 +126,10 @@ export default async function StrategyCalendarPage({
     (cycleStartsAt.getTime() > now.getTime() ? cycleStartsAt : now);
 
   const janela = windowFor(zoom, anchor);
-  const [items, products] = await Promise.all([
+  const [items, products, personas] = await Promise.all([
     listTimelineItems(cycle.id, janela),
     listProducts(unit.id),
+    listPersonasOfBusinessUnit(unit.id),
   ]);
 
   const sanitizedItems = items.map((item) => {
@@ -171,6 +173,12 @@ export default async function StrategyCalendarPage({
         id: product.id,
         name: product.name,
         cadence: product.cadence,
+      }))}
+      personas={personas.map((persona) => ({
+        id: persona.id,
+        name: persona.name,
+        avatar: persona.avatar,
+        specialtyTitle: persona.specialtyTitle,
       }))}
       items={sanitizedItems}
     />
