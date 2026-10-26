@@ -327,7 +327,7 @@ function MiniPerson({
         )}
       >
         <span className="flex items-center gap-2">
-          <Avatar name={person.name} size="sm" />
+          <Avatar name={person.name} image={person.image} size="sm" />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5">
               <span className="truncate text-xs font-medium text-slate-900">

@@ -31,6 +31,7 @@ import {
 
 export type DiagnosisSubTab = "diagnostico" | "comentarios" | "todos";
 import { cn } from "@/lib/utils/cn";
+import { Avatar, initials } from "@/components/org/person-card";
 import { DiagnosticRadar3DIllustration } from "@/components/ui/cycle-3d-illustrations";
 import { CycleStepper } from "@/components/ui/cycle-stepper";
 
@@ -181,6 +182,57 @@ function formatCommentDate(dateStr: string | null | undefined): string {
   }
 }
 
+function renderCommentWithMentions(
+  content: string,
+  users: Array<{ name: string; image?: string | null }>,
+) {
+  if (!content) return null;
+  const knownNames = users
+    .map((u) => u.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+
+  const pattern =
+    knownNames.length > 0
+      ? new RegExp(
+          `(${knownNames.map((n) => `@${n}`).join("|")}|@[A-Za-zÀ-ÖØ-öø-ÿ0-9_.-]+)`,
+          "gi",
+        )
+      : /(@[A-Za-zÀ-ÖØ-öø-ÿ0-9_.-]+)/gi;
+
+  return content.split(pattern).map((part, idx) => {
+    if (part && part.startsWith("@")) {
+      const rawName = part.slice(1).trim().toLowerCase();
+      const matched = users.find(
+        (u) =>
+          u.name.toLowerCase() === rawName ||
+          u.name.toLowerCase().startsWith(rawName) ||
+          rawName.startsWith(u.name.toLowerCase()),
+      );
+      return (
+        <span
+          key={idx}
+          className="inline-flex items-center gap-1 rounded-full bg-pink-100/90 border border-pink-200/60 pl-1 pr-2 py-0.5 text-[11px] font-bold text-pink-800 shadow-2xs mx-0.5"
+        >
+          {matched?.image ? (
+            <img
+              src={matched.image}
+              alt={matched.name}
+              className="size-3.5 rounded-full object-cover shrink-0 ring-1 ring-pink-300"
+            />
+          ) : (
+            <span className="flex size-3.5 items-center justify-center rounded-full bg-pink-200 text-[8px] font-bold text-pink-800 shrink-0">
+              {matched ? initials(matched.name) : "@"}
+            </span>
+          )}
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 export function DiagnosisTableView({
   businessUnitId,
   businessUnitSlug,
@@ -191,6 +243,7 @@ export function DiagnosisTableView({
   initialData,
   initialComments = [],
   initialSubTab = "diagnostico",
+  mentionUsers = [],
   onSubTabChange,
   onCommentsCountChange,
   onSelectTab,
@@ -212,6 +265,7 @@ export function DiagnosisTableView({
   };
   initialComments?: DiagnosisCommentItem[];
   initialSubTab?: DiagnosisSubTab;
+  mentionUsers?: Array<{ id?: string; name: string; image?: string | null }>;
   onSubTabChange?: (tab: DiagnosisSubTab) => void;
   onCommentsCountChange?: (count: number) => void;
   onSelectTab?: (tab: "diagnostico" | "metas" | "revisoes") => void;
@@ -461,9 +515,11 @@ export function DiagnosisTableView({
                 key={comment.id}
                 className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs flex items-start gap-3.5 transition hover:border-slate-300"
               >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-600 text-white font-bold text-xs shadow-2xs">
-                  {comment.authorName.slice(0, 2).toUpperCase()}
-                </div>
+                <Avatar
+                  name={comment.authorName}
+                  image={comment.authorAvatar}
+                  size="md"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <div className="flex items-center gap-2">
@@ -481,7 +537,13 @@ export function DiagnosisTableView({
                     </span>
                   </div>
                   <div className="mt-2 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                    {comment.content}
+                    {renderCommentWithMentions(comment.content, [
+                      ...mentionUsers,
+                      ...comments.map((c) => ({
+                        name: c.authorName,
+                        image: c.authorAvatar,
+                      })),
+                    ])}
                   </div>
                 </div>
               </div>

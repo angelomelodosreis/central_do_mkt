@@ -41,6 +41,7 @@ export type UserFileData = {
   id: string;
   name: string;
   email: string;
+  image?: string | null;
   status: UserStatus;
   role: UserRole;
   isSuperAdmin: boolean;
@@ -641,7 +642,7 @@ function Cabecalho({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
       <div className="flex min-w-0 items-center gap-3">
-        <Avatar name={person.name} />
+        <Avatar name={person.name} image={person.image} size="lg" />
         <div className="min-w-0">
           <h1 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-slate-900">
             {person.name}

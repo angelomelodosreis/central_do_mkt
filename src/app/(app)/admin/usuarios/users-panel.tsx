@@ -24,6 +24,7 @@ type PersonRow = {
   id: string;
   name: string;
   email: string;
+  image?: string | null;
   status: UserStatus;
   role: UserRole;
   isSuperAdmin: boolean;
@@ -189,7 +190,7 @@ export function UsersPanel({
                       person.status !== "active" && "bg-slate-50/60",
                     )}
                   >
-                    <Avatar name={person.name} />
+                    <Avatar name={person.name} image={person.image} />
 
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-2">

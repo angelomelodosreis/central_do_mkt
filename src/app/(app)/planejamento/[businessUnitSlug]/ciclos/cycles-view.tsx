@@ -80,6 +80,7 @@ export function CyclesView({
   diagnosisInsights = [],
   initialDiagnosisComments = [],
   initialDiagnosisSubTab = "diagnostico",
+  mentionUsers = [],
 }: {
   businessUnitId: string;
   businessUnitSlug: string;
@@ -99,6 +100,7 @@ export function CyclesView({
   diagnosisInsights?: string[];
   initialDiagnosisComments?: DiagnosisCommentItem[];
   initialDiagnosisSubTab?: DiagnosisSubTab;
+  mentionUsers?: Array<{ id: string; name: string; image?: string | null }>;
 }) {
   const [cycles] = useState<CycleDetailData[]>(initialCycles);
   const [selectedCycleId, setSelectedCycleId] = useState<string>(
@@ -538,6 +540,7 @@ export function CyclesView({
                     initialData={activeRound}
                     initialComments={initialDiagnosisComments}
                     initialSubTab={diagnosisSubTab}
+                    mentionUsers={mentionUsers}
                     onSubTabChange={setDiagnosisSubTab}
                     onCommentsCountChange={setCommentsCount}
                     onSelectTab={handleMainTabSelect}

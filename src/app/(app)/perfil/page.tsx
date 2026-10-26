@@ -61,6 +61,7 @@ export default async function ProfilePage() {
     id: currentUser.id,
     name: currentUser.name,
     email: currentUser.email,
+    image: currentUser.image ?? null,
     emailDomain: currentUser.emailDomain,
     role,
     roleLabel: USER_ROLE_LABELS[role] ?? role,

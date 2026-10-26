@@ -20,6 +20,7 @@ export type OrgPerson = {
   userId: string;
   name: string;
   email: string;
+  image?: string | null;
   role: UserRole;
   /** Cargo — um só, e da pessoa. */
   jobTitleId: string | null;

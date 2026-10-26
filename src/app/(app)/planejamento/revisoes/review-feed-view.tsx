@@ -33,6 +33,7 @@ import {
   type PlanningReviewStatus,
 } from "@/lib/db/schema";
 import type { PlanningReviewWithComments } from "@/lib/modules/review/feed-queries";
+import { Avatar, initials } from "@/components/org/person-card";
 import {
   createPlanningReviewItemAction,
   updatePlanningReviewItemAction,
@@ -51,6 +52,7 @@ export interface AssignableUserOption {
   id: string;
   name: string;
   email?: string | null;
+  image?: string | null;
   jobTitleName?: string | null;
 }
 
@@ -58,6 +60,7 @@ interface ReviewFeedViewProps {
   initialItems: PlanningReviewWithComments[];
   businessUnits: BuOption[];
   currentCoordinator?: string;
+  currentUserImage?: string | null;
   preselectedBuSlug?: string;
   assignableUsers?: AssignableUserOption[];
   currentUserId?: string;
@@ -115,10 +118,62 @@ function isOverdue(dateInput: Date | string | number | null | undefined): boolea
   return d.getTime() < now.getTime();
 }
 
+function renderCommentContent(
+  content: string,
+  users: AssignableUserOption[],
+) {
+  if (!content) return null;
+  const knownNames = users
+    .map((u) => u.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+
+  const pattern =
+    knownNames.length > 0
+      ? new RegExp(
+          `(${knownNames.map((n) => `@${n}`).join("|")}|@[A-Za-zÀ-ÖØ-öø-ÿ0-9_.-]+)`,
+          "gi",
+        )
+      : /(@[A-Za-zÀ-ÖØ-öø-ÿ0-9_.-]+)/gi;
+
+  return content.split(pattern).map((part, idx) => {
+    if (part && part.startsWith("@")) {
+      const rawName = part.slice(1).trim().toLowerCase();
+      const matched = users.find(
+        (u) =>
+          u.name.toLowerCase() === rawName ||
+          u.name.toLowerCase().startsWith(rawName) ||
+          rawName.startsWith(u.name.toLowerCase()),
+      );
+      return (
+        <span
+          key={idx}
+          className="inline-flex items-center gap-1 rounded-full bg-purple-100/90 border border-purple-200/60 pl-1 pr-2 py-0.5 text-[11px] font-bold text-purple-800 shadow-2xs mx-0.5"
+        >
+          {matched?.image ? (
+            <img
+              src={matched.image}
+              alt={matched.name}
+              className="size-3.5 rounded-full object-cover shrink-0 ring-1 ring-purple-300"
+            />
+          ) : (
+            <span className="flex size-3.5 items-center justify-center rounded-full bg-purple-200 text-[8px] font-bold text-purple-800 shrink-0">
+              {matched ? initials(matched.name) : "@"}
+            </span>
+          )}
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 export function ReviewFeedView({
   initialItems,
   businessUnits,
   currentCoordinator = "Ingrid Silva",
+  currentUserImage,
   preselectedBuSlug,
   assignableUsers = [],
   currentUserId,
@@ -434,7 +489,7 @@ export function ReviewFeedView({
       reviewItemId: activeThreadItem.id,
       authorName: currentCoordinator || "Você",
       authorEmail: currentUserEmail || null,
-      authorAvatar: null,
+      authorAvatar: currentUserImage || null,
       authorRole: "Coordenação",
       content,
       createdAt: new Date(),
@@ -947,14 +1002,11 @@ export function ReviewFeedView({
                       {/* Destinatário */}
                       <td className="py-3.5 px-3 align-top whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="flex size-6 items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700">
-                            {item.assigneeName
-                              .split(" ")
-                              .map((n) => n[0])
-                              .slice(0, 2)
-                              .join("")
-                              .toUpperCase()}
-                          </div>
+                          <Avatar
+                            name={item.assigneeName}
+                            image={item.assigneeAvatar}
+                            size="xs"
+                          />
                           <span className="text-xs font-medium text-slate-800">
                             {item.assigneeName}
                           </span>
@@ -1117,14 +1169,11 @@ export function ReviewFeedView({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <div className="flex size-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">
-                        {item.assigneeName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase()}
-                      </div>
+                      <Avatar
+                        name={item.assigneeName}
+                        image={item.assigneeAvatar}
+                        size="xs"
+                      />
                       <span className="font-medium text-slate-700">
                         {item.assigneeName}
                       </span>
@@ -1256,9 +1305,7 @@ export function ReviewFeedView({
                     key={comment.id}
                     className="flex gap-3 text-sm"
                   >
-                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700">
-                      {comment.authorName[0]?.toUpperCase() || "U"}
-                    </div>
+                    <Avatar name={comment.authorName} image={comment.authorAvatar} size="sm" />
                     <div className="flex-1 space-y-1">
                       <div className="flex items-baseline gap-2">
                         <span className="font-semibold text-slate-900 text-xs">
@@ -1277,21 +1324,7 @@ export function ReviewFeedView({
                         </span>
                       </div>
                       <div className="rounded-xl rounded-tl-none bg-slate-100 px-3.5 py-2.5 text-slate-800 text-xs leading-relaxed whitespace-pre-line">
-                        {comment.content
-                          .split(/(@[A-Za-zÀ-ÖØ-öø-ÿ0-9_.\s]+?)(?=[.,!?;:]?(\s|$))/g)
-                          .map((part, idx) => {
-                            if (part && part.startsWith("@")) {
-                              return (
-                                <span
-                                  key={idx}
-                                  className="inline-flex items-center rounded bg-purple-100 px-1 py-0.2 text-[11px] font-bold text-purple-700 mx-0.5"
-                                >
-                                  {part}
-                                </span>
-                              );
-                            }
-                            return part;
-                          })}
+                        {renderCommentContent(comment.content, assignableUsers)}
                       </div>
                     </div>
                   </div>
@@ -1338,9 +1371,7 @@ export function ReviewFeedView({
                           onClick={() => handleInsertMention(u)}
                           className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-purple-100 rounded-md transition"
                         >
-                          <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-purple-200 text-[10px] font-bold text-purple-800">
-                            {u.name.slice(0, 2).toUpperCase()}
-                          </div>
+                          <Avatar name={u.name} image={u.image} size="xs" />
                           <span className="font-semibold text-slate-900 truncate">{u.name}</span>
                           {u.jobTitleName && (
                             <span className="text-[10px] text-slate-400 ml-auto truncate max-w-[140px]">{u.jobTitleName}</span>

@@ -623,7 +623,7 @@ function PersonNode({
         isMatch && "ring-3 ring-amber-400 border-amber-500 bg-amber-50/40",
       )}
     >
-      <Avatar name={person.name} size="sm" />
+      <Avatar name={person.name} image={person.image} size="sm" />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1">
           <span className="block truncate text-xs font-bold text-slate-900 group-hover:text-brand-700 transition-colors">

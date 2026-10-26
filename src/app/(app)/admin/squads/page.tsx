@@ -32,6 +32,7 @@ export default async function SquadsPage() {
             membershipId: member.membershipId,
             userId: member.userId,
             name: member.name,
+            image: member.image,
             jobTitleName: member.jobTitleName,
             isLead: member.isLead,
             teams: member.positions.map((position) => position.teamName),

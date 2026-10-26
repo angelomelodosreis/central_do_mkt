@@ -8,6 +8,7 @@ import { Search, User } from "lucide-react";
 import { Logo } from "./logo";
 import { NavIcon, type NavIconKey } from "./nav-icons";
 import { SignOutButton } from "./sign-out-button";
+import { Avatar } from "@/components/org/person-card";
 import { cn } from "@/lib/utils/cn";
 
 export type NavItem = {
@@ -36,6 +37,7 @@ export function Nav({
   user: {
     name: string;
     email: string;
+    image?: string | null;
     roleLabel: string;
     /** Cargo no organograma, quando definido. Diferente do papel de acesso. */
     jobTitle: string | null;
@@ -129,17 +131,20 @@ export function Nav({
       <Link
         href="/perfil"
         onClick={() => setIsOpen(false)}
-        className="group -mx-1 block rounded-lg p-1.5 transition-colors hover:bg-slate-50"
+        className="group -mx-1 flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-slate-50"
         title="Ver e editar meu perfil"
       >
-        <p className="truncate text-sm font-medium text-slate-900 group-hover:text-brand-600">
-          {user.name}
-        </p>
-        <p className="truncate text-xs text-slate-500">{user.email}</p>
-        <p className="mt-1 text-xs text-slate-500">
-          {user.jobTitle ? `${user.jobTitle} · ` : ""}
-          {user.roleLabel}
-        </p>
+        <Avatar name={user.name} image={user.image} size="md" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-slate-900 group-hover:text-brand-600">
+            {user.name}
+          </p>
+          <p className="truncate text-xs text-slate-500">{user.email}</p>
+          <p className="mt-0.5 truncate text-[11px] text-slate-400">
+            {user.jobTitle ? `${user.jobTitle} · ` : ""}
+            {user.roleLabel}
+          </p>
+        </div>
       </Link>
       <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2 text-xs">
         <Link
@@ -260,13 +265,13 @@ export function Nav({
           </div>
 
           {isCollapsed ? (
-            <div className="mt-4 flex flex-col items-center gap-1.5 border-t border-slate-200 pt-3">
+            <div className="mt-4 flex flex-col items-center gap-2 border-t border-slate-200 pt-3">
               <Link
                 href="/perfil"
                 title={`Meu Perfil (${user.name})`}
-                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-full transition-transform hover:scale-105"
               >
-                <User className="size-4" />
+                <Avatar name={user.name} image={user.image} size="sm" />
               </Link>
               <SignOutButton
                 compact

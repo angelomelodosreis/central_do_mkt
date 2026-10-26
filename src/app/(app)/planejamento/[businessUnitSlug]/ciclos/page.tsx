@@ -18,6 +18,9 @@ import {
   listDiagnosisCommentsAction,
   type DiagnosisCommentItem,
 } from "../diagnostico/actions";
+import { getDb } from "@/lib/db/client";
+import { user } from "@/lib/db/schema";
+import { asc, eq } from "drizzle-orm";
 
 export const metadata: Metadata = { title: "Ciclos da BU" };
 export const dynamic = "force-dynamic";
@@ -345,6 +348,17 @@ export default async function CyclesPage({
         : "diagnostico"
   ) as "diagnostico" | "comentarios" | "todos";
 
+  const db = await getDb();
+  const activeUsers = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      image: user.image,
+    })
+    .from(user)
+    .where(eq(user.status, "active"))
+    .orderBy(asc(user.name));
+
   return (
     <CyclesView
       businessUnitId={unit.id}
@@ -365,6 +379,7 @@ export default async function CyclesPage({
       diagnosisInsights={diagnosisInsights}
       initialDiagnosisComments={diagnosisComments}
       initialDiagnosisSubTab={initialDiagnosisSubTab}
+      mentionUsers={activeUsers}
     />
   );
 }

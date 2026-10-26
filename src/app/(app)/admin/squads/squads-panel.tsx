@@ -23,6 +23,7 @@ type SquadMemberRow = {
   membershipId: string;
   userId: string;
   name: string;
+  image?: string | null;
   jobTitleName: string | null;
   isLead: boolean;
   teams: string[];
@@ -200,7 +201,7 @@ function SquadCard({
                   key={member.membershipId}
                   className="flex items-center gap-2.5 rounded-lg px-1 py-1"
                 >
-                  <Avatar name={member.name} size="sm" />
+                  <Avatar name={member.name} image={member.image} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-1.5 text-sm">
                       <span className="font-medium text-slate-900">

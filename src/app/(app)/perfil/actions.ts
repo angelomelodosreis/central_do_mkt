@@ -403,3 +403,58 @@ export async function updateUserJobTitleAction(
   }
 }
 
+/**
+ * Atualiza ou remove a foto de perfil do usuário.
+ * Salva a URL ou imagem em base64 no banco de dados e revalida os layouts da aplicação.
+ */
+export async function updateProfilePhotoAction(
+  imageUrl: string | null,
+): Promise<{ success: boolean; message: string; imageUrl: string | null }> {
+  const currentUser = await requireUser();
+  const db = await getDb();
+
+  const formattedUrl = imageUrl?.trim() ? imageUrl.trim() : null;
+
+  const before = await db
+    .select({ image: user.image })
+    .from(user)
+    .where(eq(user.id, currentUser.id))
+    .get();
+
+  await db
+    .update(user)
+    .set({
+      image: formattedUrl,
+      updatedAt: new Date(),
+    })
+    .where(eq(user.id, currentUser.id));
+
+  await writeAuditLog({
+    actorUserId: currentUser.id,
+    actorEmail: currentUser.email,
+    action: "user.org_change",
+    entityType: "user",
+    entityId: currentUser.id,
+    summary: formattedUrl
+      ? "Atualizou a foto de perfil"
+      : "Removeu a foto de perfil",
+    beforeData: before,
+    afterData: { image: formattedUrl },
+  });
+
+  revalidatePath("/", "layout");
+  revalidatePath("/perfil");
+  revalidatePath("/organograma", "layout");
+  revalidatePath("/admin/usuarios", "layout");
+  revalidatePath("/planejamento", "layout");
+
+  return {
+    success: true,
+    message: formattedUrl
+      ? "Foto de perfil atualizada com sucesso!"
+      : "Foto removida com sucesso. Suas siglas serão exibidas.",
+    imageUrl: formattedUrl,
+  };
+}
+
+

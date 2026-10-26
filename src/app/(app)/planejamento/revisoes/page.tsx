@@ -43,6 +43,7 @@ export default async function PlanningReviewsPage({
     id: p.id,
     name: p.name,
     email: p.email,
+    image: p.image ?? null,
     jobTitleName: p.jobTitleName,
   }));
 
@@ -64,6 +65,7 @@ export default async function PlanningReviewsPage({
         businessUnits={buOptions}
         assignableUsers={assignableUsers}
         currentCoordinator={currentUser.name || "Ingrid Silva"}
+        currentUserImage={currentUser.image ?? null}
         preselectedBuSlug={params.bu}
         currentUserId={currentUser.id}
         currentUserEmail={currentUser.email}

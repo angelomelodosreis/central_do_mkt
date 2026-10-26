@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowRight,
   BookOpen,
   Briefcase,
   Building2,
+  Camera,
   Check,
   CheckCircle2,
   Clock,
@@ -20,6 +22,8 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
+  Trash2,
+  Upload,
   User,
   Users,
 } from "lucide-react";
@@ -30,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import {
   updateProfileNameAction,
+  updateProfilePhotoAction,
   updateUserPrimaryTeamAction,
   updateUserJobTitleAction,
   selfAssignReaderBUsAction,
@@ -74,6 +79,7 @@ export type ProfileData = {
   id: string;
   name: string;
   email: string;
+  image?: string | null;
   emailDomain: string;
   role: UserRole;
   roleLabel: string;
@@ -92,6 +98,13 @@ export type ProfileData = {
 };
 
 export function ProfileEditor({ data }: { data: ProfileData }) {
+  const router = useRouter();
+
+  // ── ESTADO: Foto de Perfil ──
+  const [photo, setPhoto] = useState<string | null>(data.image ?? null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // ── ESTADO: Nome ──
   const [name, setName] = useState(data.name);
   const [isPendingName, startNameTransition] = useTransition();
@@ -122,6 +135,94 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
   const leadBuIds = new Set(
     data.accessibleUnits.filter((u) => u.isLead).map((u) => u.id),
   );
+
+  // ── Handlers de Foto ──
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP).");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("A imagem selecionada deve ter no máximo 10 MB.");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+
+    try {
+      // Redimensionamento no Canvas para 256x256 centralizado, leve e nítido
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = async () => {
+          try {
+            const canvas = document.createElement("canvas");
+            const minSide = Math.min(img.width, img.height);
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              const sx = (img.width - minSide) / 2;
+              const sy = (img.height - minSide) / 2;
+              ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, 256, 256);
+              const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
+
+              // Atualização otimista imediata
+              setPhoto(dataUrl);
+
+              const res = await updateProfilePhotoAction(dataUrl);
+              if (res.success) {
+                toast.success(res.message);
+                router.refresh();
+              } else {
+                toast.error(res.message);
+              }
+            }
+          } catch {
+            toast.error("Erro ao processar imagem.");
+          } finally {
+            setIsUploadingPhoto(false);
+          }
+        };
+        img.onerror = () => {
+          toast.error("Não foi possível carregar o arquivo de imagem.");
+          setIsUploadingPhoto(false);
+        };
+        img.src = ev.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Erro ao ler o arquivo selecionado.");
+      setIsUploadingPhoto(false);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemovePhoto() {
+    if (!confirm("Deseja remover sua foto de perfil e voltar a exibir somente as siglas?")) {
+      return;
+    }
+    setIsUploadingPhoto(true);
+    try {
+      setPhoto(null);
+      const res = await updateProfilePhotoAction(null);
+      if (res.success) {
+        toast.success(res.message);
+        router.refresh();
+      } else {
+        toast.error(res.message);
+      }
+    } catch {
+      toast.error("Erro ao remover foto.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }
 
   // ── Handlers ──
   function handleSaveName(e: React.FormEvent) {
@@ -239,12 +340,39 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
     <div className="space-y-8">
       {/* ── SEÇÃO 1: Dados Pessoais & Cadastrais ── */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex shrink-0 items-center justify-center">
-              <Avatar name={data.name} size="md" />
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            {/* Foto de Perfil com Avatar grande e botão de upload */}
+            <div className="relative group shrink-0">
+              <div className="size-20 rounded-full ring-4 ring-slate-100 shadow-sm overflow-hidden flex items-center justify-center bg-slate-50">
+                <Avatar name={data.name} image={photo} size="xl" />
+              </div>
+
+              {/* Botão de câmera sobreposto */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingPhoto}
+                title="Alterar foto de perfil"
+                className="absolute bottom-0 right-0 flex size-7 items-center justify-center rounded-full bg-brand-600 text-white shadow-md transition hover:bg-brand-700 hover:scale-105 cursor-pointer ring-2 ring-white"
+              >
+                {isUploadingPhoto ? (
+                  <Clock className="size-3.5 animate-spin" />
+                ) : (
+                  <Camera className="size-3.5" />
+                )}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </div>
-            <div>
+
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl font-bold tracking-tight text-slate-900">
                   {data.name}
@@ -263,10 +391,39 @@ export function ProfileEditor({ data }: { data: ProfileData }) {
                   </span>
                 )}
               </p>
+
+              {/* Ações de foto: Adicionar/Trocar foto ou Remover foto */}
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  disabled={isUploadingPhoto}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-medium text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer"
+                >
+                  <Camera className="size-3.5 text-slate-400" />
+                  {photo ? "Trocar foto" : "Adicionar foto"}
+                </button>
+                {photo && (
+                  <button
+                    type="button"
+                    disabled={isUploadingPhoto}
+                    onClick={handleRemovePhoto}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/60 px-2.5 py-1 font-medium text-red-700 hover:bg-red-100 hover:text-red-800 transition cursor-pointer"
+                  >
+                    <Trash2 className="size-3.5 text-red-500" />
+                    Remover foto
+                  </button>
+                )}
+                <span className="text-[11px] text-slate-400">
+                  {photo
+                    ? "Esta foto aparecerá quando alguém te citar (@), nos comentários e no perfil."
+                    : "Sem foto cadastrada: suas siglas são exibidas ao te citar."}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:self-start">
             <SignOutButton className="text-xs" />
           </div>
         </div>

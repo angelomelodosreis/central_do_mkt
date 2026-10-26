@@ -64,6 +64,7 @@ export default async function OrganogramaPage() {
       userId: person.id,
       name: person.name,
       email: person.email,
+      image: person.image,
       role: person.role,
       jobTitleId: person.jobTitleId,
       jobTitleName: person.jobTitleName,

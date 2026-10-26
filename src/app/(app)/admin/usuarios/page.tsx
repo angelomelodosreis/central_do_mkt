@@ -34,6 +34,7 @@ export default async function UsersPage() {
     id: person.id,
     name: person.name,
     email: person.email,
+    image: person.image,
     status: person.status,
     role: person.role,
     isSuperAdmin: person.isSuperAdmin,

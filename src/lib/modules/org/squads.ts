@@ -18,6 +18,7 @@ export type SquadPerson = {
   userId: string;
   name: string;
   email: string;
+  image: string | null;
   role: UserRole;
   jobTitleName: string | null;
   jobTitleOrder: number;
@@ -85,6 +86,7 @@ export async function listSquads(): Promise<SquadOverview[]> {
         isLead: squadMember.isLead,
         name: user.name,
         email: user.email,
+        image: user.image,
         role: user.role,
         jobTitleName: jobTitle.name,
         jobTitleOrder: jobTitle.sortOrder,
@@ -105,6 +107,7 @@ export async function listSquads(): Promise<SquadOverview[]> {
       userId: linha.userId,
       name: linha.name,
       email: linha.email,
+      image: linha.image,
       role: linha.role,
       jobTitleName: linha.jobTitleName,
       jobTitleOrder: linha.jobTitleOrder ?? 999,

@@ -185,6 +185,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           user={{
             name: currentUser.name,
             email: currentUser.email,
+            image: currentUser.image,
             roleLabel: ROLE_LABELS[currentUser.role],
             jobTitle: describePositions(
               currentUser.positions,

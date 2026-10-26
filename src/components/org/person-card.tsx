@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +11,7 @@ import { cn } from "@/lib/utils/cn";
 export type PersonCardData = {
   userId: string;
   name: string;
+  image?: string | null;
   email?: string;
   role?: UserRole;
   /** Cargo da pessoa — um só, e da pessoa, não do vínculo com o time. */
@@ -18,13 +22,13 @@ export type PersonCardData = {
 };
 
 /**
- * Iniciais como avatar.
+ * Iniciais como avatar / sigla do usuário.
  *
- * A plataforma tem a foto do Google em `user.image`, mas ela falha em silêncio
- * quando a pessoa troca a foto ou revoga o acesso — e um quadrado quebrado no
- * meio do organograma é pior que uma inicial. As iniciais sempre existem.
+ * Utilizado como fallback quando o usuário não tiver foto cadastrada
+ * ou quando a imagem falhar ao carregar.
  */
-function initials(name: string): string {
+export function initials(name: string): string {
+  if (!name || !name.trim()) return "U";
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
@@ -52,20 +56,52 @@ export function toneFor(name: string): string {
   return TONES[soma % TONES.length];
 }
 
+const AVATAR_SIZES = {
+  xs: "size-5 text-[9px]",
+  sm: "size-7 text-[10px]",
+  md: "size-9 text-xs",
+  lg: "size-12 text-sm",
+  xl: "size-20 text-xl font-bold",
+};
+
 export function Avatar({
   name,
+  image,
   size = "md",
+  className,
 }: {
   name: string;
-  size?: "sm" | "md";
+  image?: string | null;
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  className?: string;
 }) {
+  const [hasError, setHasError] = useState(false);
+
+  // Se tiver imagem e não tiver falhado, exibe a foto do perfil
+  if (image && !hasError) {
+    return (
+      <img
+        src={image}
+        alt={name}
+        onError={() => setHasError(true)}
+        className={cn(
+          "shrink-0 rounded-full object-cover shadow-2xs ring-1 ring-black/5",
+          AVATAR_SIZES[size].split(" ")[0],
+          className,
+        )}
+      />
+    );
+  }
+
+  // Caso não tenha foto (ou a foto falhe), exibe as siglas/iniciais
   return (
     <span
       aria-hidden
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-semibold",
+        "flex shrink-0 items-center justify-center rounded-full font-semibold select-none",
         toneFor(name),
-        size === "sm" ? "size-7 text-[10px]" : "size-9 text-xs",
+        AVATAR_SIZES[size],
+        className,
       )}
     >
       {initials(name)}
@@ -113,7 +149,11 @@ export function PersonCard({
 
   const corpo = (
     <>
-      <Avatar name={person.name} size={compact ? "sm" : "md"} />
+      <Avatar
+        name={person.name}
+        image={person.image}
+        size={compact ? "sm" : "md"}
+      />
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-1.5">
           <span

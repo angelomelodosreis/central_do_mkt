@@ -49,6 +49,19 @@ export async function createPlanningReviewItemAction(data: {
   const meetingDateObj = new Date(`${data.meetingDate}T12:00:00Z`);
   const followUpDateObj = new Date(`${data.followUpDate}T12:00:00Z`);
 
+  // Localiza o usuário destinatário pelo e-mail ou nome (case-insensitive) para obter avatar e ID
+  const targetEmail = data.assigneeEmail?.trim().toLowerCase();
+  const targetName = data.assigneeName.trim().toLowerCase();
+
+  const allUsers = await db.select({ id: user.id, name: user.name, email: user.email, image: user.image }).from(user);
+  const targetUser = allUsers.find(
+    (u) =>
+      (targetEmail && u.email.toLowerCase() === targetEmail) ||
+      u.name.toLowerCase() === targetName ||
+      u.name.toLowerCase().includes(targetName) ||
+      targetName.includes(u.name.toLowerCase()),
+  );
+
   await db.insert(planningReviewItem).values({
     id,
     businessUnitId: data.businessUnitId,
@@ -59,6 +72,7 @@ export async function createPlanningReviewItemAction(data: {
     details: data.details.trim(),
     assigneeName: data.assigneeName.trim(),
     assigneeEmail: data.assigneeEmail?.trim() || null,
+    assigneeAvatar: targetUser?.image || null,
     status: data.status || "novo",
     priority: data.priority || "normal",
     tags: data.tags && data.tags.length > 0 ? JSON.stringify(data.tags) : null,
@@ -82,19 +96,6 @@ export async function createPlanningReviewItemAction(data: {
     entityId: data.businessUnitId,
     summary: `Criou item de revisão para BU ${bu?.label || data.businessUnitId}`,
   });
-
-  // Localiza o usuário destinatário pelo e-mail ou nome (case-insensitive)
-  const targetEmail = data.assigneeEmail?.trim().toLowerCase();
-  const targetName = data.assigneeName.trim().toLowerCase();
-
-  const allUsers = await db.select({ id: user.id, name: user.name, email: user.email }).from(user);
-  const targetUser = allUsers.find(
-    (u) =>
-      (targetEmail && u.email.toLowerCase() === targetEmail) ||
-      u.name.toLowerCase() === targetName ||
-      u.name.toLowerCase().includes(targetName) ||
-      targetName.includes(u.name.toLowerCase()),
-  );
 
   if (targetUser) {
     // 1. Gera notificação no sistema para subir no contador de Tarefas da pessoa
@@ -189,6 +190,17 @@ export async function updatePlanningReviewItemAction(data: {
   const meetingDateObj = new Date(`${data.meetingDate}T12:00:00Z`);
   const followUpDateObj = new Date(`${data.followUpDate}T12:00:00Z`);
 
+  const targetEmail = data.assigneeEmail?.trim().toLowerCase();
+  const targetName = data.assigneeName.trim().toLowerCase();
+  const allUsers = await db.select({ id: user.id, name: user.name, email: user.email, image: user.image }).from(user);
+  const targetUser = allUsers.find(
+    (u) =>
+      (targetEmail && u.email.toLowerCase() === targetEmail) ||
+      u.name.toLowerCase() === targetName ||
+      u.name.toLowerCase().includes(targetName) ||
+      targetName.includes(u.name.toLowerCase()),
+  );
+
   await db
     .update(planningReviewItem)
     .set({
@@ -200,6 +212,7 @@ export async function updatePlanningReviewItemAction(data: {
       details: data.details.trim(),
       assigneeName: data.assigneeName.trim(),
       assigneeEmail: data.assigneeEmail?.trim() || null,
+      assigneeAvatar: targetUser?.image || null,
       status: data.status,
       priority: data.priority || "normal",
       tags: data.tags && data.tags.length > 0 ? JSON.stringify(data.tags) : null,
