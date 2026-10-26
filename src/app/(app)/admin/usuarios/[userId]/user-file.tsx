@@ -224,20 +224,11 @@ export function UserFile({
   );
 
   /**
-   * Os cargos que existem nos times da pessoa.
-   *
-   * Cargo sem nenhum time vinculado vale em qualquer um — é o padrão, e é o
-   * que "Estagiário" deve continuar sendo. Pessoa sem time nenhum vê a lista
-   * inteira, porque filtrar por um vínculo que não existe esconderia tudo.
+   * Os cargos disponíveis na plataforma.
+   * Todos os cargos ativos do sistema ficam disponíveis para seleção, garantindo que
+   * administradores possam atribuir qualquer função a qualquer membro sem bloqueio.
    */
-  const cargosDisponiveis =
-    rascunho.teamIds.length === 0
-      ? jobTitles
-      : jobTitles.filter(
-          (title) =>
-            title.teamIds.length === 0 ||
-            title.teamIds.some((id) => rascunho.teamIds.includes(id)),
-        );
+  const cargosDisponiveis = jobTitles;
 
   // Um cargo que deixou de valer nos times atuais continua visível enquanto
   // for o cargo da pessoa: sumir com ele faria o seletor mentir sobre o que
@@ -273,11 +264,7 @@ export function UserFile({
 
         <Row
           label="Cargo"
-          hint={
-            rascunho.teamIds.length > 0
-              ? "Só os cargos que existem nos times acima."
-              : undefined
-          }
+          hint="Selecione o cargo oficial da pessoa na MedCof."
         >
           <div className="max-w-sm">
             <Select
@@ -652,40 +639,49 @@ function Cabecalho({
         </div>
       </div>
 
-      {person.requestedBUs &&
-        person.requestedBUs.length > 0 &&
-        person.status === "pending" && (
-          <div className="w-full rounded-xl border border-brand-200 bg-brand-50/60 p-3.5 text-xs text-brand-950">
-            <div className="flex items-center gap-1.5 font-semibold text-brand-900">
-              <span>
-                ✨ BUs solicitadas no onboarding ({person.requestedBUs.length}):
+      {person.requestedBUs && person.requestedBUs.length > 0 && (
+        <div
+          className={cn(
+            "w-full rounded-xl border p-3.5 text-xs",
+            person.status === "pending"
+              ? "border-brand-200 bg-brand-50/60 text-brand-950"
+              : "border-slate-200 bg-slate-50/70 text-slate-700",
+          )}
+        >
+          <div className="flex items-center gap-1.5 font-semibold">
+            <span>
+              {person.status === "pending"
+                ? `✨ BUs solicitadas no onboarding (${person.requestedBUs.length}):`
+                : `📋 BUs solicitadas no onboarding (${person.requestedBUs.length}):`}
+            </span>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {person.requestedBUs.map((bu) => (
+              <span
+                key={bu.businessUnitId}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200/90 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs"
+              >
+                <span>{bu.label}</span>
+                <code className="font-mono text-[10px] text-brand-700">
+                  {bu.code ?? `MEDCOF_${bu.businessUnitId}`}
+                </code>
               </span>
+            ))}
+          </div>
+          {person.requestedBUs.find((bu) => bu.note)?.note && (
+            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-900 font-medium">
+              📝 <strong>Mensagem no onboarding:</strong> &ldquo;{person.requestedBUs.find((bu) => bu.note)?.note}&rdquo;
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {person.requestedBUs.map((bu) => (
-                <span
-                  key={bu.businessUnitId}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200/80 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs"
-                >
-                  <span>{bu.label}</span>
-                  <code className="font-mono text-[10px] text-brand-700">
-                    {bu.code ?? `MEDCOF_${bu.businessUnitId}`}
-                  </code>
-                </span>
-              ))}
-            </div>
-            {person.requestedBUs[0]?.note && (
-              <p className="mt-2 text-slate-600 italic">
-                &ldquo;{person.requestedBUs[0].note}&rdquo;
-              </p>
-            )}
+          )}
+          {person.status === "pending" && (
             <p className="mt-2 text-[11px] text-brand-700 font-medium">
               💡 Ao aprovar este cadastro, o acesso a essas{" "}
               {person.requestedBUs.length} Business Units será concedido
               automaticamente.
             </p>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
       {/* Aprovar, reativar e suspender são decisões sobre a CONTA, não
           atributos dela: valem no clique e não esperam o "Salvar". Por isso

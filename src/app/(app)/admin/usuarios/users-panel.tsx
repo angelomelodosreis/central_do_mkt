@@ -36,6 +36,7 @@ type PersonRow = {
   squads: Array<{ id: string; label: string; isLead: boolean }>;
   scopes: Array<{ type: ScopeType; name: string }>;
   requestedBUs?: string[];
+  requestedNote?: string | null;
 };
 
 type Aba = "todos" | "pending" | "sem_escopo";
@@ -235,6 +236,11 @@ export function UsersPanel({
                       <p className="mt-0.5 truncate text-xs text-slate-500">
                         {resumoDeAlcance(person)}
                       </p>
+                      {person.requestedNote && (
+                        <p className="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200/60 rounded-md px-2 py-0.5 inline-block font-medium">
+                          📝 Mensagem no onboarding: &ldquo;{person.requestedNote}&rdquo;
+                        </p>
+                      )}
                     </div>
                   </Link>
 

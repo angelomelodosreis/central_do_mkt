@@ -254,13 +254,14 @@ export async function getPendingBuRequestsSummary(): Promise<
       userId: buAccessRequest.userId,
       buLabel: businessUnit.label,
       note: buAccessRequest.note,
+      status: buAccessRequest.status,
     })
     .from(buAccessRequest)
     .innerJoin(
       businessUnit,
       eq(buAccessRequest.businessUnitId, businessUnit.id),
     )
-    .where(eq(buAccessRequest.status, "pending"));
+    .orderBy(desc(buAccessRequest.requestedAt));
 
   const map = new Map<
     string,
@@ -271,11 +272,15 @@ export async function getPendingBuRequestsSummary(): Promise<
     const existing = map.get(row.userId) ?? {
       count: 0,
       buLabels: [],
-      note: row.note,
+      note: null,
     };
-    existing.count += 1;
-    existing.buLabels.push(row.buLabel);
-    if (!existing.note && row.note) existing.note = row.note;
+    if (row.status === "pending") {
+      existing.count += 1;
+      existing.buLabels.push(row.buLabel);
+    }
+    if (!existing.note && row.note) {
+      existing.note = row.note;
+    }
     map.set(row.userId, existing);
   }
 

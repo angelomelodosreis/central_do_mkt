@@ -53,6 +53,7 @@ export default async function UsersPage() {
       name: grant.targetName,
     })),
     requestedBUs: pendingBuMap.get(person.id)?.buLabels ?? [],
+    requestedNote: pendingBuMap.get(person.id)?.note ?? null,
   }));
 
   const formattedUnits = units.map((unit) => ({
