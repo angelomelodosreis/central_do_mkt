@@ -162,17 +162,34 @@ export async function listTimelineItems(
 ): Promise<TimelineItem[]> {
   const db = await getDb();
 
-  const filters = [eq(timelineItem.cycleId, cycleId)];
-  if (window) {
-    filters.push(lte(timelineItem.startsAt, window.to));
-    filters.push(gte(timelineItem.endsAt, window.from));
-  }
-
-  return db
+  const allItems = await db
     .select()
     .from(timelineItem)
-    .where(and(...filters))
+    .where(eq(timelineItem.cycleId, cycleId))
     .orderBy(asc(timelineItem.startsAt), asc(timelineItem.title));
+
+  // Normalização defensiva caso itens tenham sido gravados com timestamps em milissegundos
+  const normalized = allItems.map((item) => ({
+    ...item,
+    startsAt:
+      item.startsAt.getFullYear() > 2100
+        ? new Date(Math.floor(item.startsAt.getTime() / 1000))
+        : item.startsAt,
+    endsAt:
+      item.endsAt.getFullYear() > 2100
+        ? new Date(Math.floor(item.endsAt.getTime() / 1000))
+        : item.endsAt,
+  }));
+
+  if (!window) return normalized;
+
+  const windowFrom = window.from.getTime();
+  const windowTo = window.to.getTime();
+
+  return normalized.filter(
+    (item) =>
+      item.startsAt.getTime() <= windowTo && item.endsAt.getTime() >= windowFrom,
+  );
 }
 
 export async function getTimelineItem(

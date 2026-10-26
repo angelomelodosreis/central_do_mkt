@@ -104,12 +104,21 @@ export const strategyProduct = sqliteTable(
  * `src/lib/modules/strategy/timeline-kinds.ts`.
  */
 export const TIMELINE_KINDS = [
-  "milestone",
-  "seasonality",
-  "launch",
   "event",
-  "product_window",
+  "theoretical_exam",
+  "practical_exam",
+  "dinner",
+  "launch",
   "communication",
+  "seasonality",
+  "other",
+  // Aliases e compatibilidade retroativa
+  "milestone",
+  "product_window",
+  "prova_teorica",
+  "prova_pratica",
+  "jantar",
+  "outros",
 ] as const;
 export type TimelineKind = (typeof TIMELINE_KINDS)[number];
 

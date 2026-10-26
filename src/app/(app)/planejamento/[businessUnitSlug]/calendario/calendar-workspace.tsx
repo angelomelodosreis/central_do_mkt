@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { hydrate, type ClientItem, type ClientProduct } from "./calendar-types";
 import { ItemPanel } from "./item-panel";
@@ -17,6 +17,7 @@ import {
   addMonths,
   formatDayMonth,
   monthName,
+  parseCalendarDate,
   startOfQuarter,
   toDateInput,
 } from "@/lib/modules/strategy/dates";
@@ -62,11 +63,22 @@ export function CalendarWorkspace({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const anchor = useMemo(() => new Date(anchorIso), [anchorIso]);
+  const [isNavigating, startTransition] = useTransition();
 
-  // Camadas escondidas — o padrão é tudo visível. Guardar as escondidas (e não
-  // as visíveis) faz uma camada nova nascer aparecendo.
-  const [hiddenKinds, setHiddenKinds] = useState<Set<TimelineKind>>(new Set());
+  const initialAnchor = useMemo(
+    () => parseCalendarDate(anchorIso),
+    [anchorIso],
+  );
+  const [currentAnchor, setCurrentAnchor] = useState<Date>(initialAnchor);
+
+  useEffect(() => {
+    setCurrentAnchor(parseCalendarDate(anchorIso));
+  }, [anchorIso]);
+
+  // Tags selecionadas — null significa todas as tags visíveis
+  const [selectedKinds, setSelectedKinds] = useState<Set<TimelineKind> | null>(
+    null,
+  );
   const [productFilter, setProductFilter] = useState<string>("");
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [creatingOn, setCreatingOn] = useState<Date | null>(null);
@@ -77,44 +89,63 @@ export function CalendarWorkspace({
     () =>
       hydrated.filter(
         (item) =>
-          !hiddenKinds.has(item.kind) &&
+          (!selectedKinds || selectedKinds.has(item.kind)) &&
           (!productFilter || item.productId === productFilter),
       ),
-    [hydrated, hiddenKinds, productFilter],
+    [hydrated, selectedKinds, productFilter],
   );
 
   const openItem = hydrated.find((item) => item.id === openItemId) ?? null;
 
   /** Navegação e zoom viajam na URL: a visão fica compartilhável e recarregável. */
   function push(next: Partial<{ zoom: Zoom; em: Date; ciclo: string }>) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (next.zoom) params.set("zoom", next.zoom);
-    if (next.em) params.set("em", toDateInput(next.em));
-    if (next.ciclo) {
-      params.set("ciclo", next.ciclo);
-      params.delete("em");
+    if (next.em) {
+      setCurrentAnchor(next.em);
     }
-    router.push(`/planejamento/${unit.slug}/calendario?${params.toString()}`);
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (next.zoom) params.set("zoom", next.zoom);
+      if (next.em) params.set("em", toDateInput(next.em));
+      if (next.ciclo) {
+        params.set("ciclo", next.ciclo);
+        params.delete("em");
+      }
+      router.push(`/planejamento/${unit.slug}/calendario?${params.toString()}`, {
+        scroll: false,
+      });
+    });
   }
 
   function shift(direction: -1 | 1) {
-    if (zoom === "semana") return push({ em: addDays(anchor, 7 * direction) });
-    if (zoom === "mes") return push({ em: addMonths(anchor, direction) });
+    if (zoom === "semana")
+      return push({ em: addDays(currentAnchor, 7 * direction) });
+    if (zoom === "mes")
+      return push({ em: addMonths(currentAnchor, direction) });
     if (zoom === "trimestre")
-      return push({ em: addMonths(anchor, 3 * direction) });
-    return push({ em: addMonths(anchor, 12 * direction) });
+      return push({ em: addMonths(currentAnchor, 3 * direction) });
+    return push({ em: addMonths(currentAnchor, 12 * direction) });
   }
 
   function toggleKind(kind: TimelineKind) {
-    setHiddenKinds((current) => {
+    setSelectedKinds((current) => {
+      if (!current) {
+        return new Set([kind]);
+      }
+      if (current.has(kind) && current.size === 1) {
+        return null;
+      }
       const next = new Set(current);
-      if (next.has(kind)) next.delete(kind);
-      else next.add(kind);
+      if (next.has(kind)) {
+        next.delete(kind);
+        if (next.size === 0) return null;
+      } else {
+        next.add(kind);
+      }
       return next;
     });
   }
 
-  const periodLabel = describePeriod(zoom, anchor);
+  const periodLabel = describePeriod(zoom, currentAnchor);
   const countByKind = useMemo(() => {
     const map = new Map<TimelineKind, number>();
     for (const item of hydrated) {
@@ -150,7 +181,7 @@ export function CalendarWorkspace({
           ) : null}
 
           {canEdit ? (
-            <Button size="sm" onClick={() => setCreatingOn(anchor)}>
+            <Button size="sm" onClick={() => setCreatingOn(currentAnchor)}>
               Novo item
             </Button>
           ) : null}
@@ -169,13 +200,18 @@ export function CalendarWorkspace({
           <button
             type="button"
             onClick={() => push({ em: new Date() })}
-            className="ml-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            className="ml-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
           >
             Hoje
           </button>
           <span className="ml-2 font-display text-base font-semibold text-slate-900">
             {periodLabel}
           </span>
+          {isNavigating && (
+            <span className="ml-2 text-xs text-brand-600 font-medium animate-pulse">
+              Carregando...
+            </span>
+          )}
         </div>
 
         <div className="flex rounded-xl border border-slate-200 bg-white p-0.5 shadow-sm">
@@ -186,7 +222,7 @@ export function CalendarWorkspace({
               onClick={() => push({ zoom: option })}
               aria-pressed={zoom === option}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer",
                 zoom === option
                   ? "bg-brand-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100",
@@ -198,51 +234,59 @@ export function CalendarWorkspace({
         </div>
       </div>
 
-      {/* Camadas: o controle principal do calendário. Desligar é o que impede
-          a poluição — o analista escolhe o que quer enxergar. */}
+      {/* Tags: o controle principal do calendário. Clicar filtra os itens por tag. */}
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mr-1 hidden sm:inline">
-          Camadas:
+          Tags:
         </span>
-        {TIMELINE_KIND_ORDER.map((kind, idx) => {
+        <button
+          type="button"
+          onClick={() => setSelectedKinds(null)}
+          aria-pressed={selectedKinds === null}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-all cursor-pointer",
+            selectedKinds === null
+              ? "bg-slate-900 text-white ring-slate-900 shadow-2xs font-semibold"
+              : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50",
+          )}
+        >
+          Todas
+          <span className="tabular-nums opacity-75">{hydrated.length}</span>
+        </button>
+        {TIMELINE_KIND_ORDER.map((kind) => {
           const config = kindConfig(kind);
-          const hidden = hiddenKinds.has(kind);
+          const isSelected = selectedKinds ? selectedKinds.has(kind) : false;
+          const isAllSelected = selectedKinds === null;
           const total = countByKind.get(kind) ?? 0;
-          const isDividerAfter = kind === "seasonality";
 
           return (
-            <div key={kind} className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => toggleKind(kind)}
-                aria-pressed={!hidden}
-                title={config.description}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-all",
-                  hidden
-                    ? "bg-white text-slate-500 ring-slate-200 opacity-60"
-                    : config.chip,
-                )}
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "size-2 rounded-full",
-                    hidden ? "bg-slate-300" : config.dot,
-                  )}
-                />
-                {config.label}
-                {total > 0 ? (
-                  <span className="tabular-nums opacity-60">{total}</span>
-                ) : null}
-              </button>
-              {isDividerAfter && (
-                <div
-                  aria-hidden
-                  className="mx-1 hidden h-4 w-px bg-slate-200 sm:block"
-                />
+            <button
+              key={kind}
+              type="button"
+              onClick={() => toggleKind(kind)}
+              aria-pressed={isSelected || isAllSelected}
+              title={config.description}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-all cursor-pointer",
+                isSelected
+                  ? cn(config.chip, "ring-2 font-semibold shadow-xs")
+                  : isAllSelected
+                    ? config.chip
+                    : "bg-white text-slate-400 ring-slate-200 opacity-60 hover:opacity-100",
               )}
-            </div>
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  "size-2 rounded-full",
+                  isSelected || isAllSelected ? config.dot : "bg-slate-300",
+                )}
+              />
+              {config.label}
+              {total > 0 ? (
+                <span className="tabular-nums opacity-75">{total}</span>
+              ) : null}
+            </button>
           );
         })}
 
@@ -268,7 +312,7 @@ export function CalendarWorkspace({
 
       {zoom === "semana" ? (
         <WeekView
-          anchor={anchor}
+          anchor={currentAnchor}
           items={visible}
           canEdit={canEdit}
           onOpen={setOpenItemId}
@@ -276,7 +320,7 @@ export function CalendarWorkspace({
         />
       ) : zoom === "mes" ? (
         <MonthView
-          anchor={anchor}
+          anchor={currentAnchor}
           items={visible}
           canEdit={canEdit}
           onOpen={setOpenItemId}
@@ -285,7 +329,7 @@ export function CalendarWorkspace({
       ) : (
         <LaneView
           zoom={zoom}
-          anchor={anchor}
+          anchor={currentAnchor}
           items={visible}
           products={products}
           onOpen={setOpenItemId}
@@ -344,7 +388,7 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex size-8 items-center justify-center rounded-lg text-lg leading-none text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+      className="flex size-8 items-center justify-center rounded-lg text-lg leading-none text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 cursor-pointer select-none"
     >
       {children}
     </button>

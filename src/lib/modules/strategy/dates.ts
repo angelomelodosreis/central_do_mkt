@@ -186,3 +186,37 @@ export function fromDateInput(value: string): Date | null {
   const date = new Date(Number(year), Number(month) - 1, Number(day));
   return Number.isNaN(date.getTime()) ? null : startOfDay(date);
 }
+
+/**
+ * Converte com segurança strings de data (YYYY-MM-DD ou ISO) ou objetos Date
+ * para Date local à meia-noite, imune a desvios de fuso horário (ex.: UTC-3 no Brasil)
+ * e sanitizado contra timestamps em milissegundos (> 2100).
+ */
+export function parseCalendarDate(
+  value: string | Date | null | undefined,
+): Date {
+  if (!value) return startOfDay(new Date());
+  if (value instanceof Date) {
+    if (value.getFullYear() > 2100) {
+      return startOfDay(new Date(Math.floor(value.getTime() / 1000)));
+    }
+    return startOfDay(value);
+  }
+  const str = String(value).trim();
+  // Se for formato de data civil YYYY-MM-DD (com ou sem horário posterior)
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(str);
+  if (match) {
+    const [, year, month, day] = match;
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    if (!Number.isNaN(date.getTime())) return startOfDay(date);
+  }
+  const parsed = new Date(str);
+  if (!Number.isNaN(parsed.getTime())) {
+    if (parsed.getFullYear() > 2100) {
+      return startOfDay(new Date(Math.floor(parsed.getTime() / 1000)));
+    }
+    return startOfDay(parsed);
+  }
+  return startOfDay(new Date());
+}
+

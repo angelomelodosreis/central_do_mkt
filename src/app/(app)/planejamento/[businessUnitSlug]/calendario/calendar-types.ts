@@ -1,10 +1,11 @@
 import type { TimelineKind, TimelineStatus } from "@/lib/db/schema";
+import { parseCalendarDate } from "@/lib/modules/strategy/dates";
 
 /**
  * Item já serializado para o cliente.
  *
- * As datas viajam como texto ISO porque o limite servidor→cliente não carrega
- * `Date`; são reidratadas uma vez, na entrada do componente.
+ * As datas viajam como texto ISO ou YYYY-MM-DD; são reidratadas de forma
+ * segura para a meia-noite local, preservando o dia civil no Brasil (UTC-3).
  */
 export type ClientItem = {
   id: string;
@@ -34,7 +35,7 @@ export type CalendarItem = Omit<ClientItem, "startsAt" | "endsAt"> & {
 export function hydrate(item: ClientItem): CalendarItem {
   return {
     ...item,
-    startsAt: new Date(item.startsAt),
-    endsAt: new Date(item.endsAt),
+    startsAt: parseCalendarDate(item.startsAt),
+    endsAt: parseCalendarDate(item.endsAt),
   };
 }

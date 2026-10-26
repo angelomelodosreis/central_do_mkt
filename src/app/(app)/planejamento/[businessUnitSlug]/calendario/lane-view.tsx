@@ -108,7 +108,7 @@ export function LaneView({
         <div className="flex rounded-lg border border-slate-200 bg-white p-0.5">
           {(
             [
-              ["kind", "Camada"],
+              ["kind", "Tag"],
               ["product", "Produto"],
             ] as const
           ).map(([value, label]) => (

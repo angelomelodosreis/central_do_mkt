@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   deleteTimelineItem,
@@ -16,12 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import {
-  TIMELINE_KINDS,
   TIMELINE_STATUSES,
   type TimelineKind,
 } from "@/lib/db/schema";
 import { toDateInput } from "@/lib/modules/strategy/dates";
 import {
+  TIMELINE_KIND_ORDER,
   TIMELINE_STATUS_LABELS,
   kindConfig,
 } from "@/lib/modules/strategy/timeline-kinds";
@@ -50,18 +51,22 @@ export function ItemPanel({
   createOn: Date | null;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [state, formAction, isPending] = useActionState<
     StrategyFormState,
     FormData
   >(saveTimelineItem, INITIAL_STRATEGY_STATE);
 
-  const [kind, setKind] = useState<TimelineKind>(item?.kind ?? "milestone");
+  const [kind, setKind] = useState<TimelineKind>(item?.kind ?? "event");
   const config = kindConfig(kind);
 
-  // Salvou: fecha o painel. A lista já foi revalidada pelo servidor.
+  // Salvou: fecha o painel e atualiza a rota. A lista foi revalidada pelo servidor.
   useEffect(() => {
-    if (state.status === "success") onClose();
-  }, [state, onClose]);
+    if (state.status === "success") {
+      router.refresh();
+      onClose();
+    }
+  }, [state, onClose, router]);
 
   // Esc fecha, como em qualquer painel.
   useEffect(() => {
@@ -119,13 +124,13 @@ export function ItemPanel({
             </div>
           ) : null}
 
-          {/* A categoria é a primeira escolha: é ela que define os campos. */}
+          {/* A tag é a primeira escolha: define a cor e os campos do item. */}
           <div>
             <p className="mb-1.5 text-sm font-medium text-slate-800">
-              Categoria
+              Tag / Categoria
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {TIMELINE_KINDS.map((option) => {
+              {TIMELINE_KIND_ORDER.map((option) => {
                 const optionConfig = kindConfig(option);
                 const active = kind === option;
                 return (
@@ -138,7 +143,7 @@ export function ItemPanel({
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-all disabled:cursor-not-allowed",
                       active
-                        ? optionConfig.chip
+                        ? cn(optionConfig.chip, "ring-2 font-semibold shadow-xs")
                         : "bg-white text-slate-500 ring-slate-200 hover:bg-slate-50",
                     )}
                   >
@@ -307,13 +312,26 @@ export function ItemPanel({
             ações, e aninhar formulários não é permitido em HTML. */}
         {canEdit && item ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 px-5 py-4">
-            <form action={duplicateTimelineItem}>
+            <form
+              action={async (formData) => {
+                await duplicateTimelineItem(formData);
+                router.refresh();
+                onClose();
+              }}
+            >
               <input type="hidden" name="itemId" value={item.id} />
               <Button type="submit" size="sm" variant="secondary">
                 Duplicar
               </Button>
             </form>
-            <DeleteItem itemId={item.id} title={item.title} />
+            <DeleteItem
+              itemId={item.id}
+              title={item.title}
+              onDeleted={() => {
+                router.refresh();
+                onClose();
+              }}
+            />
           </div>
         ) : null}
       </div>
@@ -322,7 +340,15 @@ export function ItemPanel({
 }
 
 /** Exclusão em duas etapas, como no resto da plataforma. */
-function DeleteItem({ itemId, title }: { itemId: string; title: string }) {
+function DeleteItem({
+  itemId,
+  title,
+  onDeleted,
+}: {
+  itemId: string;
+  title: string;
+  onDeleted: () => void;
+}) {
   const [confirming, setConfirming] = useState(false);
 
   if (!confirming) {
@@ -339,7 +365,13 @@ function DeleteItem({ itemId, title }: { itemId: string; title: string }) {
   }
 
   return (
-    <form action={deleteTimelineItem} className="flex items-center gap-2">
+    <form
+      action={async (formData) => {
+        await deleteTimelineItem(formData);
+        onDeleted();
+      }}
+      className="flex items-center gap-2"
+    >
       <input type="hidden" name="itemId" value={itemId} />
       <span className="text-xs text-slate-600">Excluir “{title}”?</span>
       <Button type="submit" size="sm" variant="danger">

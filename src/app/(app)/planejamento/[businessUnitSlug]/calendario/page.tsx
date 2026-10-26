@@ -18,7 +18,11 @@ import {
   listTimelineItems,
   pickDefaultCycle,
 } from "@/lib/modules/strategy/queries";
-import { fromDateInput } from "@/lib/modules/strategy/dates";
+import {
+  fromDateInput,
+  parseCalendarDate,
+  toDateInput,
+} from "@/lib/modules/strategy/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +120,7 @@ export default async function StrategyCalendarPage({
       : cycle.endsAt;
 
   const anchor =
-    (em ? fromDateInput(em) : null) ??
+    (em ? parseCalendarDate(em) : null) ??
     (cycleStartsAt.getTime() > now.getTime() ? cycleStartsAt : now);
 
   const janela = windowFor(zoom, anchor);
@@ -124,6 +128,29 @@ export default async function StrategyCalendarPage({
     listTimelineItems(cycle.id, janela),
     listProducts(unit.id),
   ]);
+
+  const sanitizedItems = items.map((item) => {
+    const s =
+      item.startsAt.getFullYear() > 2100
+        ? new Date(Math.floor(item.startsAt.getTime() / 1000))
+        : item.startsAt;
+    const e =
+      item.endsAt.getFullYear() > 2100
+        ? new Date(Math.floor(item.endsAt.getTime() / 1000))
+        : item.endsAt;
+    return {
+      id: item.id,
+      kind: item.kind,
+      title: item.title,
+      summary: item.summary,
+      startsAt: toDateInput(s),
+      endsAt: toDateInput(e),
+      productId: item.productId,
+      owner: item.owner,
+      status: item.status,
+      details: item.details ?? {},
+    };
+  });
 
   return (
     <CalendarWorkspace
@@ -137,25 +164,14 @@ export default async function StrategyCalendarPage({
         endsAt: cycleEndsAt.toISOString(),
       }}
       zoom={zoom}
-      anchorIso={anchor.toISOString()}
+      anchorIso={toDateInput(anchor)}
       canEdit={canEdit}
       products={products.map((product) => ({
         id: product.id,
         name: product.name,
         cadence: product.cadence,
       }))}
-      items={items.map((item) => ({
-        id: item.id,
-        kind: item.kind,
-        title: item.title,
-        summary: item.summary,
-        startsAt: item.startsAt.toISOString(),
-        endsAt: item.endsAt.toISOString(),
-        productId: item.productId,
-        owner: item.owner,
-        status: item.status,
-        details: item.details ?? {},
-      }))}
+      items={sanitizedItems}
     />
   );
 }

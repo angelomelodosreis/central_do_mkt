@@ -48,6 +48,7 @@ function field(formData: FormData, key: string): string {
 
 function revalidateStrategy(businessUnitSlug: string) {
   revalidatePath(`/planejamento/${businessUnitSlug}`, "layout");
+  revalidatePath(`/planejamento/${businessUnitSlug}/calendario`);
   revalidatePath("/planejamento");
 }
 
@@ -89,6 +90,17 @@ function isKind(value: string): value is TimelineKind {
   return (TIMELINE_KINDS as readonly string[]).includes(value);
 }
 
+function normalizeKind(value: string): TimelineKind | null {
+  const aliases: Record<string, TimelineKind> = {
+    prova_teorica: "theoretical_exam",
+    prova_pratica: "practical_exam",
+    jantar: "dinner",
+    outros: "other",
+  };
+  const resolved = aliases[value] || value;
+  return isKind(resolved) ? (resolved as TimelineKind) : null;
+}
+
 function isStatus(value: string): value is TimelineStatus {
   return (TIMELINE_STATUSES as readonly string[]).includes(value);
 }
@@ -116,11 +128,12 @@ export async function saveTimelineItem(
   const itemId = field(formData, "itemId");
   const cycleId = field(formData, "cycleId");
   const title = field(formData, "title");
-  const kindValue = field(formData, "kind");
+  const rawKind = field(formData, "kind");
+  const kindValue = normalizeKind(rawKind);
 
   if (!title) return { status: "error", message: "Informe o título do item." };
-  if (!isKind(kindValue)) {
-    return { status: "error", message: "Escolha a categoria do item." };
+  if (!kindValue) {
+    return { status: "error", message: "Escolha a tag/categoria do item." };
   }
 
   const startsAt = fromDateInput(field(formData, "startsAt"));

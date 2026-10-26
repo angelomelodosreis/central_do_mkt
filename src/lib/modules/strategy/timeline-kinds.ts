@@ -35,88 +35,10 @@ export type KindConfig = {
 };
 
 export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
-  milestone: {
-    label: "Marco",
-    plural: "Marcos",
-    description:
-      "Datas do mundo lá fora que o time não controla: edital, prova, resultado.",
-    chip: "bg-amber-100 text-amber-900 ring-amber-200",
-    dot: "bg-amber-500",
-    lane: "bg-amber-500",
-    linksToProduct: false,
-    fields: [
-      {
-        key: "source",
-        label: "Fonte",
-        type: "text",
-        placeholder: "Ex.: edital publicado no site da instituição",
-        hint: "Onde essa data foi confirmada. Marco sem fonte vira boato.",
-      },
-      {
-        key: "impact",
-        label: "Impacto no plano",
-        type: "long",
-        placeholder: "O que essa data obriga o time a fazer antes ou depois.",
-      },
-    ],
-  },
-  seasonality: {
-    label: "Sazonalidade de Mercado",
-    plural: "Sazonalidades de Mercado",
-    description:
-      "Períodos externos do mercado e calendário médico: provas de residência, datas comemorativas, férias.",
-    chip: "bg-violet-100 text-violet-900 ring-violet-200",
-    dot: "bg-violet-500",
-    lane: "bg-violet-500",
-    linksToProduct: false,
-    fields: [
-      {
-        key: "expectedEffect",
-        label: "Efeito esperado",
-        type: "text",
-        placeholder: "Ex.: pico de tráfego, queda de conversão",
-      },
-      {
-        key: "playbook",
-        label: "Como agimos",
-        type: "long",
-        placeholder: "O que o time faz nesse período.",
-      },
-    ],
-  },
-  launch: {
-    label: "Lançamento",
-    plural: "Lançamentos",
-    description: "Abertura de vendas de um produto, com suas fases.",
-    chip: "bg-brand-100 text-brand-800 ring-brand-200",
-    dot: "bg-brand-600",
-    lane: "bg-brand-600",
-    linksToProduct: true,
-    fields: [
-      {
-        key: "phase",
-        label: "Fase",
-        type: "text",
-        placeholder: "Ex.: pré-lançamento, carrinho aberto, última chamada",
-      },
-      {
-        key: "offer",
-        label: "Oferta",
-        type: "text",
-        placeholder: "Ex.: 12x sem juros, lote promocional",
-      },
-      {
-        key: "goal",
-        label: "Meta do lançamento",
-        type: "text",
-        placeholder: "Ex.: 400 matrículas",
-      },
-    ],
-  },
   event: {
     label: "Evento",
     plural: "Eventos",
-    description: "Acontecimentos presenciais ou ao vivo: congressos, jantares.",
+    description: "Acontecimentos presenciais ou ao vivo: congressos, simpósios, encontros.",
     chip: "bg-sky-100 text-sky-900 ring-sky-200",
     dot: "bg-sky-500",
     lane: "bg-sky-500",
@@ -142,28 +64,103 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
       },
     ],
   },
-  product_window: {
-    label: "Janela de Produto (MedCof)",
-    plural: "Janelas de Produtos (MedCof)",
+  theoretical_exam: {
+    label: "Prova teórica",
+    plural: "Provas teóricas",
     description:
-      "Período comercial ou acadêmico de um curso MedCof: turma em andamento, período de matrículas abertas ou reoferta.",
-    chip: "bg-emerald-100 text-emerald-900 ring-emerald-200",
-    dot: "bg-emerald-500",
-    lane: "bg-emerald-500",
+      "Datas e períodos de provas teóricas de residência médica e concursos.",
+    chip: "bg-amber-100 text-amber-900 ring-amber-200",
+    dot: "bg-amber-500",
+    lane: "bg-amber-500",
+    linksToProduct: false,
+    fields: [
+      {
+        key: "institution",
+        label: "Instituição / Concurso",
+        type: "text",
+        placeholder: "Ex.: USP, UNIFESP, ENARE, SUS-SP",
+      },
+      {
+        key: "phase",
+        label: "Fase / Detalhes",
+        type: "text",
+        placeholder: "Ex.: 1ª fase teórica, publicação do gabarito",
+      },
+    ],
+  },
+  practical_exam: {
+    label: "Prova prática",
+    plural: "Provas práticas",
+    description:
+      "Datas de provas práticas, habilidades e multimídia de residência.",
+    chip: "bg-indigo-100 text-indigo-900 ring-indigo-200",
+    dot: "bg-indigo-500",
+    lane: "bg-indigo-500",
+    linksToProduct: false,
+    fields: [
+      {
+        key: "institution",
+        label: "Instituição / Concurso",
+        type: "text",
+        placeholder: "Ex.: USP, UNIFESP, IAMSPE",
+      },
+      {
+        key: "phase",
+        label: "Fase / Formato",
+        type: "text",
+        placeholder: "Ex.: 2ª fase prática de estações clínicas",
+      },
+    ],
+  },
+  dinner: {
+    label: "Jantar",
+    plural: "Jantares",
+    description: "Jantares de confraternização, premiação e recepção de alunos.",
+    chip: "bg-rose-100 text-rose-900 ring-rose-200",
+    dot: "bg-rose-500",
+    lane: "bg-rose-500",
     linksToProduct: true,
     fields: [
       {
-        key: "window",
-        label: "Tipo de janela",
+        key: "location",
+        label: "Local",
         type: "text",
-        placeholder: "Ex.: turma em andamento, período de venda, reoferta",
+        placeholder: "Ex.: Restaurante Fogo de Chão, SP",
       },
       {
-        key: "capacity",
-        label: "Vagas",
+        key: "audience",
+        label: "Capacidade / Público",
         type: "text",
-        placeholder: "Ex.: 300",
-        hint: "Quando o produto tem limite de ocupação.",
+        placeholder: "Ex.: 80 convidados (aprovados R1)",
+      },
+    ],
+  },
+  launch: {
+    label: "Lançamento",
+    plural: "Lançamentos",
+    description: "Abertura de vendas de um produto, com suas fases.",
+    chip: "bg-red-100 text-red-900 ring-red-200",
+    dot: "bg-red-600",
+    lane: "bg-red-600",
+    linksToProduct: true,
+    fields: [
+      {
+        key: "phase",
+        label: "Fase",
+        type: "text",
+        placeholder: "Ex.: pré-lançamento, carrinho aberto, última chamada",
+      },
+      {
+        key: "offer",
+        label: "Oferta",
+        type: "text",
+        placeholder: "Ex.: 12x sem juros, lote promocional",
+      },
+      {
+        key: "goal",
+        label: "Meta do lançamento",
+        type: "text",
+        placeholder: "Ex.: 400 matrículas",
       },
     ],
   },
@@ -196,16 +193,98 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
       },
     ],
   },
+  seasonality: {
+    label: "Sazonalidade de mercado",
+    plural: "Sazonalidades de mercado",
+    description:
+      "Períodos externos do mercado e calendário médico: datas comemorativas, férias.",
+    chip: "bg-violet-100 text-violet-900 ring-violet-200",
+    dot: "bg-violet-500",
+    lane: "bg-violet-500",
+    linksToProduct: false,
+    fields: [
+      {
+        key: "expectedEffect",
+        label: "Efeito esperado",
+        type: "text",
+        placeholder: "Ex.: pico de tráfego, queda de conversão",
+      },
+      {
+        key: "playbook",
+        label: "Como agimos",
+        type: "long",
+        placeholder: "O que o time faz nesse período.",
+      },
+    ],
+  },
+  other: {
+    label: "Outros",
+    plural: "Outros",
+    description: "Demais compromissos, reuniões, lembretes e momentos estratégicos.",
+    chip: "bg-emerald-100 text-emerald-900 ring-emerald-200",
+    dot: "bg-emerald-500",
+    lane: "bg-emerald-500",
+    linksToProduct: false,
+    fields: [
+      {
+        key: "notes",
+        label: "Observações",
+        type: "long",
+        placeholder: "Detalhes adicionais sobre este item.",
+      },
+    ],
+  },
+  // Aliases e suporte legado
+  milestone: {
+    label: "Marco",
+    plural: "Marcos",
+    description:
+      "Datas do mundo lá fora que o time não controla: edital, prova, resultado.",
+    chip: "bg-amber-100 text-amber-900 ring-amber-200",
+    dot: "bg-amber-500",
+    lane: "bg-amber-500",
+    linksToProduct: false,
+    fields: [
+      {
+        key: "source",
+        label: "Fonte",
+        type: "text",
+        placeholder: "Ex.: edital publicado no site da instituição",
+      },
+    ],
+  },
+  product_window: {
+    label: "Janela de Produto (MedCof)",
+    plural: "Janelas de Produtos (MedCof)",
+    description: "Período comercial ou acadêmico de um curso MedCof.",
+    chip: "bg-emerald-100 text-emerald-900 ring-emerald-200",
+    dot: "bg-emerald-500",
+    lane: "bg-emerald-500",
+    linksToProduct: true,
+    fields: [],
+  },
+  prova_teorica: null as any,
+  prova_pratica: null as any,
+  jantar: null as any,
+  outros: null as any,
 };
 
-/** Ordem em que as camadas aparecem nos controles e nas faixas do ano. */
+// Vinculação de aliases para compartilharem a mesma configuração exata
+TIMELINE_KIND_CONFIG.prova_teorica = TIMELINE_KIND_CONFIG.theoretical_exam;
+TIMELINE_KIND_CONFIG.prova_pratica = TIMELINE_KIND_CONFIG.practical_exam;
+TIMELINE_KIND_CONFIG.jantar = TIMELINE_KIND_CONFIG.dinner;
+TIMELINE_KIND_CONFIG.outros = TIMELINE_KIND_CONFIG.other;
+
+/** Ordem em que as tags aparecem nos controles, filtros e nas faixas do ano. */
 export const TIMELINE_KIND_ORDER: TimelineKind[] = [
-  "milestone",
-  "seasonality",
-  "launch",
   "event",
-  "product_window",
+  "theoretical_exam",
+  "practical_exam",
+  "dinner",
+  "launch",
   "communication",
+  "seasonality",
+  "other",
 ];
 
 export const TIMELINE_STATUS_LABELS: Record<TimelineStatus, string> = {
@@ -232,5 +311,5 @@ export const TIMELINE_STATUS_SIGNAL: Partial<
 };
 
 export function kindConfig(kind: TimelineKind): KindConfig {
-  return TIMELINE_KIND_CONFIG[kind] ?? TIMELINE_KIND_CONFIG.milestone;
+  return TIMELINE_KIND_CONFIG[kind] ?? TIMELINE_KIND_CONFIG.event;
 }
