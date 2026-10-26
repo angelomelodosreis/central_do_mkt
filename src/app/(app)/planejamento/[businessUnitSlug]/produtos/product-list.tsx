@@ -16,7 +16,7 @@ import {
   EmptyState,
   Section,
 } from "@/components/ui/card";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, Textarea } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
 import { PRODUCT_CADENCE_LABELS, type ProductCadence } from "@/lib/db/schema";
 
@@ -28,6 +28,7 @@ export type ProductRow = {
   isActive: boolean;
   /** Quantas janelas este produto ocupa no calendário do ciclo aberto. */
   janelas: number;
+  details?: Record<string, string> | null;
 };
 
 /**
@@ -161,50 +162,93 @@ function ProductItem({
     );
   }
 
+  const details = product.details ?? {};
+  const hasMeta =
+    details.tempoAcesso ||
+    details.valorBase ||
+    details.entregaveis ||
+    details.materiaisExtras ||
+    details.historicoNotas;
+
   return (
     <li
-      className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3 ${
+      className={`px-5 py-3.5 ${
         product.isActive ? "" : "bg-slate-50/60"
       }`}
     >
-      <div className="min-w-0">
-        <p className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-slate-900">{product.name}</span>
-          {product.family ? (
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
-              {product.family}
-            </span>
-          ) : null}
-          {product.isActive ? null : <Badge tone="neutral">Inativo</Badge>}
-        </p>
-        <p className="mt-0.5 text-xs text-slate-500">
-          {product.janelas === 0
-            ? "Nenhuma data no calendário do ciclo atual"
-            : `${product.janelas} ${
-                product.janelas === 1 ? "data" : "datas"
-              } no calendário do ciclo atual`}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center gap-2">
+            <span className="font-medium text-slate-900">{product.name}</span>
+            {product.family ? (
+              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+                {product.family}
+              </span>
+            ) : null}
+            {details.tempoAcesso ? (
+              <span className="rounded bg-sky-50 px-1.5 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-200">
+                Acesso: {details.tempoAcesso}
+              </span>
+            ) : null}
+            {details.valorBase ? (
+              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                Ticket: {details.valorBase}
+              </span>
+            ) : null}
+            {product.isActive ? null : <Badge tone="neutral">Inativo</Badge>}
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {product.janelas === 0
+              ? "Nenhuma data no calendário do ciclo atual"
+              : `${product.janelas} ${
+                  product.janelas === 1 ? "data" : "datas"
+                } no calendário do ciclo atual`}
+          </p>
+        </div>
+
+        {canEdit ? (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setIsEditing(true)}
+            >
+              Editar
+            </Button>
+            <form action={toggleProduct}>
+              <input type="hidden" name="productId" value={product.id} />
+              <Button
+                type="submit"
+                size="sm"
+                variant={product.isActive ? "ghost" : "secondary"}
+              >
+                {product.isActive ? "Desativar" : "Reativar"}
+              </Button>
+            </form>
+          </div>
+        ) : null}
       </div>
 
-      {canEdit ? (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setIsEditing(true)}
-          >
-            Editar
-          </Button>
-          <form action={toggleProduct}>
-            <input type="hidden" name="productId" value={product.id} />
-            <Button
-              type="submit"
-              size="sm"
-              variant={product.isActive ? "ghost" : "secondary"}
-            >
-              {product.isActive ? "Desativar" : "Reativar"}
-            </Button>
-          </form>
+      {hasMeta ? (
+        <div className="mt-3 space-y-1.5 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs text-slate-600">
+          {details.entregaveis ? (
+            <p>
+              <strong className="font-semibold text-slate-800">Entregáveis:</strong>{" "}
+              {details.entregaveis}
+            </p>
+          ) : null}
+          {details.materiaisExtras ? (
+            <p>
+              <strong className="font-semibold text-slate-800">Materiais Extras:</strong>{" "}
+              {details.materiaisExtras}
+            </p>
+          ) : null}
+          {details.historicoNotas ? (
+            <p className="text-slate-500">
+              <strong className="font-semibold text-slate-700">Histórico / Observações:</strong>{" "}
+              {details.historicoNotas}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </li>
@@ -233,6 +277,8 @@ function ProductForm({
   useEffect(() => {
     if (state.status === "success") onDone();
   }, [state, onDone]);
+
+  const details = product?.details ?? {};
 
   return (
     <form action={formAction} className="space-y-4">
@@ -300,6 +346,78 @@ function ProductForm({
           />
         </Field>
       </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          label="Tempo de Acesso"
+          htmlFor={`tempoAcesso-${product?.id ?? "novo"}`}
+          hint="Ex.: 12 meses, até a prova R3/Sub, acesso vitalício."
+        >
+          <Input
+            id={`tempoAcesso-${product?.id ?? "novo"}`}
+            name="tempoAcesso"
+            defaultValue={details.tempoAcesso ?? ""}
+            maxLength={60}
+            placeholder="Ex.: 12 meses"
+          />
+        </Field>
+
+        <Field
+          label="Valor de Referência / Ticket"
+          htmlFor={`valorBase-${product?.id ?? "novo"}`}
+          hint="Preço base ou faixa esperada de matrícula."
+        >
+          <Input
+            id={`valorBase-${product?.id ?? "novo"}`}
+            name="valorBase"
+            defaultValue={details.valorBase ?? ""}
+            maxLength={60}
+            placeholder="Ex.: R$ 4.890"
+          />
+        </Field>
+      </div>
+
+      <Field
+        label="Entregáveis do Produto"
+        htmlFor={`entregaveis-${product?.id ?? "novo"}`}
+        hint="Cursos, banco de questões, mentorias, simulados inclusos."
+      >
+        <Textarea
+          id={`entregaveis-${product?.id ?? "novo"}`}
+          name="entregaveis"
+          defaultValue={details.entregaveis ?? ""}
+          rows={2}
+          placeholder="Ex.: Banco com 80.000 questões comentadas, mentorias semanais, cronograma adaptativo por IA."
+        />
+      </Field>
+
+      <Field
+        label="Materiais Extras"
+        htmlFor={`materiaisExtras-${product?.id ?? "novo"}`}
+        hint="Apostilas físicas, resumos em PDF, flashcards, kits."
+      >
+        <Input
+          id={`materiaisExtras-${product?.id ?? "novo"}`}
+          name="materiaisExtras"
+          defaultValue={details.materiaisExtras ?? ""}
+          maxLength={120}
+          placeholder="Ex.: Apostilas físicas entregues em domicílio + deck Anki"
+        />
+      </Field>
+
+      <Field
+        label="Histórico & Observações"
+        htmlFor={`historicoNotas-${product?.id ?? "novo"}`}
+        hint="Contexto histórico, mudanças de lote ou notas para o time."
+      >
+        <Textarea
+          id={`historicoNotas-${product?.id ?? "novo"}`}
+          name="historicoNotas"
+          defaultValue={details.historicoNotas ?? ""}
+          rows={2}
+          placeholder="Ex.: Produto reformulado em 2026 com acréscimo de tutoria ao vivo e nova esteira de simulação."
+        />
+      </Field>
 
       <div className="flex gap-2">
         <Button type="submit" size="sm" variant="primary" disabled={isPending}>

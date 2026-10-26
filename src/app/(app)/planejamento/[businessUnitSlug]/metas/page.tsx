@@ -1,18 +1,10 @@
 import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function GoalsPage({
+export default async function MetasRedirectPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ businessUnitSlug: string }>;
-  searchParams: Promise<{ ciclo?: string }>;
 }) {
   const { businessUnitSlug } = await params;
-  const { ciclo } = (await searchParams) ?? {};
-  const query = new URLSearchParams();
-  if (ciclo) query.set("ciclo", ciclo);
-  query.set("aba", "metas");
-  redirect(`/planejamento/${businessUnitSlug}/ciclos?${query.toString()}`);
+  redirect(`/planejamento/${businessUnitSlug}/ciclos?aba=metas`);
 }

@@ -188,10 +188,15 @@ export async function saveFullQuarterlyReviewAction(data: {
   const reviewDate = data.reviewDate ? new Date(data.reviewDate) : new Date();
 
   try {
+    const sanitizedCycleId =
+      data.cycleId && !data.cycleId.startsWith("virtual_")
+        ? data.cycleId
+        : null;
+
     const id = await saveQuarterlyReview({
       id: data.id,
       businessUnitId: data.businessUnitId,
-      cycleId: data.cycleId ?? null,
+      cycleId: sanitizedCycleId,
       quarter: data.quarter,
       reviewDate,
       diagnosticValid: data.diagnosticValid ?? null,

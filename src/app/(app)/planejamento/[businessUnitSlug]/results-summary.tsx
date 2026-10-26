@@ -143,10 +143,56 @@ export function ResultsSummary({
         </Section>
       ) : null}
 
+      {/* Visão de Funil de Conversão Integrado (Lead → Venda → Receita) */}
+      <Section title="Funil de Conversão do Período" divider>
+        <div className="grid grid-cols-1 gap-2 px-5 pb-4 pt-1 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              1. Topo: Leads Captados
+            </span>
+            <p className="mt-1 font-display text-lg font-bold text-slate-900 tabular-nums">
+              {formatarIndicador("leads", recente.leads)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {recente.cpl !== null ? `CPL: ${formatarIndicador("cpl", recente.cpl)}` : "Mídia de aquisição"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-brand-100 bg-brand-50/50 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+                2. Conversão (Lead → Aluno)
+              </span>
+              <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-700">
+                {recente.sales_conversion !== null ? `${recente.sales_conversion.toFixed(2)}%` : "—"}
+              </span>
+            </div>
+            <p className="mt-1 font-display text-lg font-bold text-slate-900 tabular-nums">
+              {formatarIndicador("sales", recente.sales)}
+            </p>
+            <p className="mt-0.5 text-xs text-brand-700">
+              {recente.cac !== null ? `CAC: ${formatarIndicador("cac", recente.cac)}` : "Matrículas concluídas"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              3. Fundo: Faturamento
+            </span>
+            <p className="mt-1 font-display text-lg font-bold text-emerald-700 tabular-nums">
+              {formatarIndicador("revenue", recente.revenue)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {recente.average_ticket !== null ? `Ticket: ${formatarIndicador("average_ticket", recente.average_ticket)}` : "Receita total"}
+            </p>
+          </div>
+        </div>
+      </Section>
+
       {/* Meta × realizado só aparece quando existe meta com número. Barra sem
           régua não diz nada, e inventar uma régua seria pior. */}
       {resumo.metas.length > 0 ? (
-        <Section title="Meta do ciclo × realizado" divider>
+        <Section title="Realizado vs Meta do ciclo" divider>
           <ul className="space-y-2.5 px-5 pb-4 pt-1">
             {resumo.metas.map(({ metric, alvo }) => {
               const feito = noCiclo[metric];
@@ -154,6 +200,14 @@ export function ResultsSummary({
                 feito === null || alvo === 0
                   ? null
                   : Math.max((feito / alvo) * 100, 0);
+
+              const sentido = SENTIDO[metric];
+              // Para métricas de custo (CAC, CPL):
+              // menor ou igual à meta é VERDE (sucesso); superior à meta é VERMELHO (alerta).
+              const isGood =
+                sentido === "desce"
+                  ? pct !== null && pct <= 100
+                  : pct !== null && pct >= 100;
 
               return (
                 <li key={metric}>
@@ -173,10 +227,12 @@ export function ResultsSummary({
                     <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className={cn(
-                          "h-full rounded-full",
-                          pct !== null && pct >= 100
+                          "h-full rounded-full transition-all",
+                          isGood
                             ? "bg-emerald-500"
-                            : "bg-brand-500",
+                            : sentido === "desce"
+                              ? "bg-rose-500"
+                              : "bg-brand-500",
                         )}
                         style={{ width: `${Math.min(pct ?? 0, 100)}%` }}
                       />
@@ -194,7 +250,7 @@ export function ResultsSummary({
           <p className="px-5 pb-4 text-xs text-slate-500">
             Realizado somado desde o início do ciclo.{" "}
             <Link
-              href={`${base}/metas`}
+              href={`${base}/ciclos?aba=metas`}
               className="underline decoration-slate-300 underline-offset-2 hover:text-slate-600"
             >
               Ver as metas

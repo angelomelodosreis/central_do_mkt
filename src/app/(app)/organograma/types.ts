@@ -65,16 +65,16 @@ export type OrgView = (typeof ORG_VIEWS)[number];
 export const ORG_VIEW_LABELS: Record<OrgView, string> = {
   squads: "Squads por BU",
   times: "Áreas, subáreas e times",
-  marketing: "Marketing inteiro",
+  marketing: "Estrutura do Marketing",
 };
 
 export const ORG_VIEW_DESCRIPTIONS: Record<OrgView, string> = {
   squads:
-    "Quem atende cada Business Unit. Squad não é time: reúne gente de vários times — inclusive de fora do marketing.",
+    "Quem atende cada Business Unit. Squad não é time: reúne integrantes alocados por BU para execução das metas.",
   times:
     "Cada área, subárea e time com quem responde por ele e a equipe, na ordem de senioridade dos cargos.",
   marketing:
-    "Área → subárea → time, de cima para baixo, seguindo a hierarquia cadastrada.",
+    "Organograma hierárquico oficial do Marketing MedCof, com visualização em canvas navegável estilo Figma.",
 };
 
 /**

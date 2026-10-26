@@ -60,6 +60,7 @@ export default async function ProductsPage({
     family: product.family,
     isActive: product.isActive,
     janelas: janelas.get(product.id) ?? 0,
+    details: product.details,
   }));
 
   return (

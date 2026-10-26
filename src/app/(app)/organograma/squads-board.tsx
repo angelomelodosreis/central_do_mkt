@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { moveSquadMember } from "./actions";
 import { readDrag, writeDrag } from "./drag";
@@ -33,6 +33,20 @@ export function SquadsBoard({
 }) {
   const [sobre, setSobre] = useState<string | null>(null);
   const [movendo, iniciarMovimento] = useTransition();
+  const [divisaoFiltrada, setDivisaoFiltrada] = useState<string>("");
+
+  const divisoes = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of squads) {
+      if (s.divisionName) set.add(s.divisionName);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [squads]);
+
+  const squadsFiltrados = useMemo(() => {
+    if (!divisaoFiltrada) return squads;
+    return squads.filter((s) => s.divisionName === divisaoFiltrada);
+  }, [squads, divisaoFiltrada]);
 
   /**
    * Chama a action com um `FormData` montado na mão.
@@ -57,6 +71,44 @@ export function SquadsBoard({
 
   return (
     <>
+      {divisoes.length > 1 && (
+        <div className="mb-4 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-semibold text-slate-500 mr-1">
+            Divisão de Negócio:
+          </span>
+          <button
+            type="button"
+            onClick={() => setDivisaoFiltrada("")}
+            className={cn(
+              "rounded-lg px-2.5 py-1 text-xs font-medium transition border",
+              divisaoFiltrada === ""
+                ? "bg-brand-600 text-white border-brand-600 font-bold shadow-2xs"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50",
+            )}
+          >
+            Todas as Divisões ({squads.length})
+          </button>
+          {divisoes.map((div) => {
+            const count = squads.filter((s) => s.divisionName === div).length;
+            return (
+              <button
+                key={div}
+                type="button"
+                onClick={() => setDivisaoFiltrada(div)}
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-xs font-medium transition border",
+                  divisaoFiltrada === div
+                    ? "bg-brand-600 text-white border-brand-600 font-bold shadow-2xs"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50",
+                )}
+              >
+                {div} <span className="opacity-70">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div
         className={cn(
           "-mx-4 overflow-x-auto px-4 pb-2 transition-opacity sm:mx-0 sm:px-0",
@@ -64,7 +116,7 @@ export function SquadsBoard({
         )}
       >
         <div className="flex w-max gap-3">
-          {squads.map((unit) => {
+          {squadsFiltrados.map((unit) => {
             const doSquad = people.filter((person) =>
               person.squadIds.includes(unit.id),
             );

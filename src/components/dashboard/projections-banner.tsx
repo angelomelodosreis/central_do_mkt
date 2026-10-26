@@ -71,11 +71,11 @@ export function ProjectionsBanner({
               </h2>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200/80">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Run-Rate Ativo
+                Referência de Run-Rate
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              Extrapolação estatística diária baseada no comportamento de compra da base MedCof
+              Balizadores de pacing e tendência linear de compras para suporte à decisão (sujeito a janelas de lançamento)
             </p>
           </div>
         </div>
@@ -97,26 +97,26 @@ export function ProjectionsBanner({
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1 min-w-0">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 truncate">
-                  Projetado Mês
+                  Estimativa Run-Rate
                 </span>
                 <MetricHelpTooltip
-                  title="Fechamento Projetado (Run-Rate)"
-                  explanation="Extrapola o faturamento final do mês dividindo a receita já realizada pelos dias decorridos e multiplicando pelo total de dias do mês (31 dias em Outubro)."
+                  title="Estimativa Linear de Fechamento (Run-Rate)"
+                  explanation="Extrapolação puramente matemática: divide a receita realizada pelos dias decorridos e multiplica pelo total de dias do mês. Serve como balizador de ritmo de base, não considerando aberturas concentradas de carrinhos."
                   formula="(Receita Atual ÷ Dias Decorridos) × Total Dias"
                 />
               </div>
               <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-                Run-Rate
+                Linear
               </span>
             </div>
             <p
               className="mt-2 font-display text-2xl font-bold tracking-tight text-slate-900 tabular-nums"
-              title={`Projeção completa: ${formatCurrency(projections.projectedMonthEndRevenue)}`}
+              title={`Projeção linear completa: ${formatCurrency(projections.projectedMonthEndRevenue)}`}
             >
               {formatCompactCurrency(projections.projectedMonthEndRevenue)}
             </p>
             <p className="mt-1 text-xs text-slate-500 truncate">
-              Realizado: <strong className="text-slate-700 font-semibold">{formatCurrency(projections.currentRevenue)}</strong>
+              Realizado até agora: <strong className="text-slate-800 font-semibold">{formatCurrency(projections.currentRevenue)}</strong>
             </p>
           </div>
 
@@ -270,6 +270,14 @@ export function ProjectionsBanner({
             </strong>
           </div>
         </div>
+      </div>
+
+      {/* Nota de contexto sobre dinâmica de produtos e lançamentos */}
+      <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-slate-50 px-3.5 py-2.5 text-xs text-slate-500 border border-slate-100">
+        <span className="font-semibold text-slate-700 shrink-0">Nota sobre Projeções:</span>
+        <p className="leading-relaxed">
+          O cálculo linear de run-rate funciona como balizador aritmético de pacing. A dinâmica real de cada Business Unit varia conforme a janela de lançamento de turmas, sazonalidade do calendário médico e intensidade das campanhas.
+        </p>
       </div>
     </div>
   );

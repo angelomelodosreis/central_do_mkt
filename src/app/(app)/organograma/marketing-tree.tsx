@@ -60,7 +60,12 @@ export function MarketingTree({
   // Estados de visualização
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hideEmpty, setHideEmpty] = useState(false);
-  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(() => {
+    const mkt = units.find(
+      (u) => !u.parentOrgUnitId && u.name.toLowerCase().includes("marketing"),
+    );
+    return mkt ? mkt.id : null;
+  });
 
   // Contagem de pessoas por time e área (incluindo subtimes)
   const teamMemberCounts = useMemo(() => {
@@ -241,22 +246,12 @@ export function MarketingTree({
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
             <Compass className="size-3.5 text-brand-600" />
-            <span>Foco:</span>
+            <span>Divisão:</span>
           </span>
-          <button
-            type="button"
-            onClick={() => setSelectedAreaId(null)}
-            className={cn(
-              "rounded-lg px-2.5 py-1 text-xs font-semibold transition shadow-2xs border",
-              selectedAreaId === null
-                ? "bg-brand-600 text-white border-brand-600 shadow-brand-100"
-                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-            )}
-          >
-            Todas as Áreas ({people.length})
-          </button>
           {raizes.map((raiz) => {
             const count = getSubtreeCount(raiz.id);
+            const isSelected = selectedAreaId === raiz.id;
+            const isMarketing = raiz.name.toLowerCase().includes("marketing");
             return (
               <button
                 key={raiz.id}
@@ -264,18 +259,32 @@ export function MarketingTree({
                 onClick={() => setSelectedAreaId(raiz.id)}
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-xs font-medium transition shadow-2xs border",
-                  selectedAreaId === raiz.id
-                    ? "bg-brand-600 text-white border-brand-600"
+                  isSelected
+                    ? "bg-brand-600 text-white border-brand-600 font-bold shadow-brand-100"
                     : count > 0
                       ? "bg-white text-slate-800 border-slate-200 hover:bg-slate-50 font-semibold"
                       : "bg-slate-100/70 text-slate-400 border-slate-200/60 hover:bg-slate-100",
                 )}
               >
                 {raiz.name}
+                {isMarketing ? " (Padrão)" : ""}
                 <span className="ml-1 opacity-70">({count})</span>
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() => setSelectedAreaId(null)}
+            className={cn(
+              "rounded-lg px-2.5 py-1 text-xs font-medium transition shadow-2xs border",
+              selectedAreaId === null
+                ? "bg-slate-800 text-white border-slate-800 font-bold shadow-sm"
+                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
+            )}
+            title="Exibir todas as divisões da empresa simultaneamente no canvas"
+          >
+            Todas as Áreas ({people.length})
+          </button>
         </div>
 
         {/* Dica Figma & Alternador de Vazios */}

@@ -144,7 +144,7 @@ export function OverviewChart({
             }`}
           >
             <ShoppingBag className="size-3" />
-            <span>Volume</span>
+            <span>Volume de Vendas</span>
           </button>
         </div>
       </div>
@@ -173,20 +173,58 @@ export function OverviewChart({
                 if (active && payload && payload.length) {
                   const item = payload[0].payload as MonthlyPoint;
                   return (
-                    <div className="rounded-xl border border-white/20 bg-slate-900/95 px-3.5 py-2 text-xs text-white shadow-xl backdrop-blur-md">
-                      <p className="font-bold text-white mb-1">{item.month}</p>
-                      <p className="flex items-center gap-1.5 font-medium text-emerald-300">
-                        <span>Faturamento:</span>
-                        <strong>{formatCurrency(item.revenue)}</strong>
+                    <div className="rounded-xl border border-white/20 bg-slate-900/95 px-3.5 py-2.5 text-xs text-white shadow-xl backdrop-blur-md min-w-[210px]">
+                      <p className="font-bold text-white mb-1.5 border-b border-white/10 pb-1 flex items-center justify-between">
+                        <span>{item.month}</span>
+                        {metricMode === "sales" ? (
+                          <span className="rounded bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-sky-300">
+                            Volume de Vendas
+                          </span>
+                        ) : (
+                          <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                            Faturamento
+                          </span>
+                        )}
                       </p>
-                      <p className="flex items-center gap-1.5 text-slate-300 text-[11px] mt-0.5">
-                        <span>Vendas:</span>
-                        <strong>{item.sales} matrículas</strong>
-                      </p>
-                      <p className="flex items-center gap-1.5 text-slate-300 text-[11px]">
-                        <span>Ticket Médio:</span>
-                        <strong>{formatCurrency(item.avgTicket)}</strong>
-                      </p>
+                      {metricMode === "sales" ? (
+                        <>
+                          <div className="rounded-lg bg-sky-500/20 p-2 ring-1 ring-sky-400/40">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-sky-200">Volume de Vendas</span>
+                            <p className="text-base font-bold text-sky-300 tabular-nums">
+                              {item.sales.toLocaleString("pt-BR")} <span className="text-xs font-normal text-sky-100">matrículas</span>
+                            </p>
+                          </div>
+                          <div className="mt-2 space-y-1 text-slate-300 text-[11px]">
+                            <p className="flex items-center justify-between gap-2">
+                              <span>Faturamento:</span>
+                              <strong className="text-white">{formatCurrency(item.revenue)}</strong>
+                            </p>
+                            <p className="flex items-center justify-between gap-2">
+                              <span>Ticket Médio:</span>
+                              <strong className="text-white">{formatCurrency(item.avgTicket)}</strong>
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="rounded-lg bg-emerald-500/20 p-2 ring-1 ring-emerald-400/40">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-200">Faturamento</span>
+                            <p className="text-base font-bold text-emerald-300 tabular-nums">
+                              {formatCurrency(item.revenue)}
+                            </p>
+                          </div>
+                          <div className="mt-2 space-y-1 text-slate-300 text-[11px]">
+                            <p className="flex items-center justify-between gap-2">
+                              <span>Volume de Vendas:</span>
+                              <strong className="text-white">{item.sales.toLocaleString("pt-BR")} matrículas</strong>
+                            </p>
+                            <p className="flex items-center justify-between gap-2">
+                              <span>Ticket Médio:</span>
+                              <strong className="text-white">{formatCurrency(item.avgTicket)}</strong>
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 }

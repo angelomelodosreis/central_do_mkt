@@ -603,17 +603,25 @@ export function ReviewCycleView({
             />
           </div>
 
-          {/* Botões de Ação em Pílula */}
-          {canEdit && (
+          {/* Status Message Alert */}
+          {statusMessage && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-medium text-emerald-800 flex items-center gap-2">
+              <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+              <span>{statusMessage}</span>
+            </div>
+          )}
+
+          {/* Botões de Ação em Pílula ou Aviso de Somente Leitura */}
+          {canEdit ? (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-6">
               <button
                 type="button"
                 onClick={() => handleSave("in_progress")}
                 disabled={isPending}
                 style={{ borderRadius: "9999px" }}
-                className="border border-slate-200 bg-white px-6 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+                className="border border-slate-200 bg-white px-6 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer disabled:opacity-50"
               >
-                Salvar como rascunho
+                {isPending ? "Salvando…" : "Salvar como rascunho"}
               </button>
 
               <button
@@ -621,17 +629,12 @@ export function ReviewCycleView({
                 onClick={() => handleSave("completed")}
                 disabled={isPending}
                 style={{ borderRadius: "9999px" }}
-                className="inline-flex items-center gap-2 bg-[#e2263c] hover:bg-[#cf1730] px-7 py-2.5 text-xs font-bold text-white transition shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-2 bg-[#e2263c] hover:bg-[#cf1730] px-7 py-2.5 text-xs font-bold text-white transition shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {isPending ? (
                   <>
                     <div className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     Salvando revisão…
-                  </>
-                ) : statusMessage ? (
-                  <>
-                    <Check className="size-3.5 text-white" />
-                    {statusMessage}
                   </>
                 ) : (
                   <>
@@ -641,6 +644,15 @@ export function ReviewCycleView({
                   </>
                 )}
               </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs text-amber-900 border-t border-slate-100 mt-4">
+              <div className="flex items-center gap-2.5">
+                <Info className="size-4 text-amber-600 shrink-0" />
+                <span>
+                  <strong>Modo somente leitura:</strong> Você está visualizando o planejamento desta BU. Para preencher ou salvar revisões, solicite permissão de edição ao gestor da BU.
+                </span>
+              </div>
             </div>
           )}
         </div>

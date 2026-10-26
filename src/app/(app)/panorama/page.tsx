@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { PanoramaView } from "./panorama-view";
 import { PageHeader, EmptyState } from "@/components/ui/card";
-import { requirePermission } from "@/lib/auth/session";
+import { can, requireUser } from "@/lib/auth/session";
 import { isFullAccessMaster } from "@/lib/modules/access/scope";
 import { TIMELINE_KINDS } from "@/lib/db/schema";
 import { listAccessibleBusinessUnits, seesAllBusinessUnits } from "@/lib/modules/org/scope";
@@ -31,7 +31,19 @@ const SEMANAS_CARREGADAS = 26;
 const DIAS_DE_AGENDA = 90;
 
 export default async function PanoramaPage() {
-  const currentUser = await requirePermission("panorama", "view");
+  const currentUser = await requireUser();
+
+  if (!can(currentUser, "panorama", "view")) {
+    return (
+      <>
+        <PageHeader title="Panorama" />
+        <EmptyState
+          title="Módulo Panorama Restrito"
+          description="Você ainda não tem permissão para visualizar o Cockpit do Panorama. Peça a um administrador da plataforma para liberar o acesso ao módulo."
+        />
+      </>
+    );
+  }
 
   const unidades = await listAccessibleBusinessUnits(currentUser);
   const ativas = unidades.filter((unidade) => unidade.isActive);

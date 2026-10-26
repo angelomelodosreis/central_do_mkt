@@ -72,7 +72,7 @@ export default async function NameGeneratorPage() {
     <>
       <PageHeader
         title="Gerador de Nomes"
-        description="Escolha o que você quer nomear, preencha os campos e copie o nome já padronizado."
+        description="Escolha o tipo de item (Campanha Meta Ads, Lista ActiveCampaign, Tag ou Link com UTMs), preencha os campos e copie o nome padronizado."
         action={
           <div className="flex flex-wrap gap-2">
             {/* Sem endereço resolvido (página excluída ou restrita), o botão não

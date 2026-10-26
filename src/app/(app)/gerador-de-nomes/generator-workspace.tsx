@@ -49,22 +49,47 @@ export function GeneratorWorkspace({
 
   if (template) {
     return (
-      <Card>
-        <CardHeader
-          title={template.name}
-          description={template.description ?? undefined}
-          action={
-            templates.length > 1 ? (
-              <Button variant="ghost" onClick={() => setEscolhido(null)}>
-                Trocar de modelo
-              </Button>
-            ) : null
-          }
-        />
-        <CardBody>
-          <NameGeneratorForm template={template} baseOptions={baseOptions} />
-        </CardBody>
-      </Card>
+      <div className="space-y-4">
+        {templates.length > 1 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 mr-1">
+              Modelo ativo:
+            </span>
+            {templates.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setEscolhido(t.id)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-medium transition-all",
+                  t.id === template.id
+                    ? "bg-brand-600 text-white shadow-sm ring-1 ring-brand-700"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                )}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <Card>
+          <CardHeader
+            title={template.name}
+            description={template.description ?? undefined}
+            action={
+              templates.length > 1 ? (
+                <Button variant="ghost" onClick={() => setEscolhido(null)}>
+                  Ver todos os modelos
+                </Button>
+              ) : null
+            }
+          />
+          <CardBody>
+            <NameGeneratorForm template={template} baseOptions={baseOptions} />
+          </CardBody>
+        </Card>
+      </div>
     );
   }
 

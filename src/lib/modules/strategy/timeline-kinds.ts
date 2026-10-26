@@ -61,10 +61,10 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
     ],
   },
   seasonality: {
-    label: "Sazonalidade",
-    plural: "Sazonalidades",
+    label: "Sazonalidade de Mercado",
+    plural: "Sazonalidades de Mercado",
     description:
-      "Períodos que mexem com a demanda: Black Friday, Natal, férias.",
+      "Períodos externos do mercado e calendário médico: provas de residência, datas comemorativas, férias.",
     chip: "bg-violet-100 text-violet-900 ring-violet-200",
     dot: "bg-violet-500",
     lane: "bg-violet-500",
@@ -143,10 +143,10 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
     ],
   },
   product_window: {
-    label: "Janela de produto",
-    plural: "Esteira de produtos",
+    label: "Janela de Produto (MedCof)",
+    plural: "Janelas de Produtos (MedCof)",
     description:
-      "Quando um produto está em campo: turma rodando, período de venda.",
+      "Período comercial ou acadêmico de um curso MedCof: turma em andamento, período de matrículas abertas ou reoferta.",
     chip: "bg-emerald-100 text-emerald-900 ring-emerald-200",
     dot: "bg-emerald-500",
     lane: "bg-emerald-500",

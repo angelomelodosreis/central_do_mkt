@@ -52,8 +52,10 @@ export async function getPermissionsForRole(
   }
 
   // Membros e editores possuem autorização para criar e editar personas nas BUs que acessam
+  // e acesso de visualização ao Panorama Executivo para acompanhamento do time
   if (role === "member" || role === "editor") {
     map.personas = { canView: true, canEdit: true };
+    map.panorama = { canView: true, canEdit: false };
   }
 
   return map;

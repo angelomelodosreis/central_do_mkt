@@ -74,6 +74,14 @@ export function WeeklyPanel({
     return inicial;
   });
 
+  const [ocultarFuturas, setOcultarFuturas] = useState(true);
+
+  const agora = Date.now();
+  const semanasFiltradas = useMemo(() => {
+    if (!ocultarFuturas) return semanas;
+    return semanas.filter((s) => s.epoch <= agora || s.emCurso);
+  }, [semanas, ocultarFuturas, agora]);
+
   const original = useMemo(() => {
     const base: Record<string, string> = {};
     for (const semana of semanas) {
@@ -121,9 +129,21 @@ export function WeeklyPanel({
         <CardHeader
           title="Fechamento semanal"
           action={
-            <span className="text-xs text-slate-500">
-              {preenchidas} de {semanas.length} semanas lançadas
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={ocultarFuturas}
+                  onChange={(e) => setOcultarFuturas(e.target.checked)}
+                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span>Ocultar semanas futuras</span>
+              </label>
+              <span className="text-xs text-slate-300">|</span>
+              <span className="text-xs text-slate-500">
+                {preenchidas} preenchidas ({semanasFiltradas.length} exibidas)
+              </span>
+            </div>
           }
         />
 
@@ -148,7 +168,7 @@ export function WeeklyPanel({
               </tr>
             </thead>
             <tbody>
-              {semanas.map((semana) => (
+              {semanasFiltradas.map((semana) => (
                 <tr
                   key={semana.epoch}
                   className={cn(
@@ -222,6 +242,60 @@ export function WeeklyPanel({
             />
           ))}
         </StatGrid>
+
+        {/* Visão de Funil de Conversão do Período */}
+        <div className="border-t border-slate-100 bg-slate-50/50 p-4 sm:p-5">
+          <div className="mb-2.5 flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Visão de Funil · Conversão do Período
+            </span>
+            <span className="text-xs text-slate-400">
+              Leads captados → Matrículas realizadas
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                1. Topo: Leads Captados
+              </span>
+              <p className="mt-1 font-display text-lg font-bold text-slate-900 tabular-nums">
+                {formatarIndicador("leads", total.leads)}
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {indicadores.cpl !== null ? `CPL: ${formatarIndicador("cpl", indicadores.cpl)}` : "Mídia de aquisição"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-3 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">
+                  2. Conversão (Lead → Matrícula)
+                </span>
+                <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-700">
+                  {indicadores.sales_conversion !== null ? `${indicadores.sales_conversion.toFixed(2)}%` : "—"}
+                </span>
+              </div>
+              <p className="mt-1 font-display text-lg font-bold text-slate-900 tabular-nums">
+                {formatarIndicador("sales", total.sales)}
+              </p>
+              <p className="mt-0.5 text-xs text-brand-700">
+                {indicadores.cac !== null ? `CAC: ${formatarIndicador("cac", indicadores.cac)}` : "Matrículas concluídas"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                3. Fundo: Faturamento Gerado
+              </span>
+              <p className="mt-1 font-display text-lg font-bold text-emerald-700 tabular-nums">
+                {formatarIndicador("revenue", total.revenue)}
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {indicadores.average_ticket !== null ? `Ticket: ${formatarIndicador("average_ticket", indicadores.average_ticket)}` : "Receita total"}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {canEdit ? (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-3">

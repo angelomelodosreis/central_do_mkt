@@ -201,36 +201,48 @@ export function CalendarWorkspace({
       {/* Camadas: o controle principal do calendário. Desligar é o que impede
           a poluição — o analista escolhe o que quer enxergar. */}
       <div className="mb-4 flex flex-wrap items-center gap-1.5">
-        {TIMELINE_KIND_ORDER.map((kind) => {
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mr-1 hidden sm:inline">
+          Camadas:
+        </span>
+        {TIMELINE_KIND_ORDER.map((kind, idx) => {
           const config = kindConfig(kind);
           const hidden = hiddenKinds.has(kind);
           const total = countByKind.get(kind) ?? 0;
+          const isDividerAfter = kind === "seasonality";
+
           return (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => toggleKind(kind)}
-              aria-pressed={!hidden}
-              title={config.description}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-all",
-                hidden
-                  ? "bg-white text-slate-500 ring-slate-200 opacity-60"
-                  : config.chip,
-              )}
-            >
-              <span
-                aria-hidden
+            <div key={kind} className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => toggleKind(kind)}
+                aria-pressed={!hidden}
+                title={config.description}
                 className={cn(
-                  "size-2 rounded-full",
-                  hidden ? "bg-slate-300" : config.dot,
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset transition-all",
+                  hidden
+                    ? "bg-white text-slate-500 ring-slate-200 opacity-60"
+                    : config.chip,
                 )}
-              />
-              {config.label}
-              {total > 0 ? (
-                <span className="tabular-nums opacity-60">{total}</span>
-              ) : null}
-            </button>
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-2 rounded-full",
+                    hidden ? "bg-slate-300" : config.dot,
+                  )}
+                />
+                {config.label}
+                {total > 0 ? (
+                  <span className="tabular-nums opacity-60">{total}</span>
+                ) : null}
+              </button>
+              {isDividerAfter && (
+                <div
+                  aria-hidden
+                  className="mx-1 hidden h-4 w-px bg-slate-200 sm:block"
+                />
+              )}
+            </div>
           );
         })}
 

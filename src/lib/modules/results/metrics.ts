@@ -121,7 +121,7 @@ const CURTO: Record<Indicador | typeof INVESTIMENTO, string> = {
   sales: "Vendas",
   average_ticket: "Ticket médio",
   leads: "Leads",
-  sales_conversion: "Conversão",
+  sales_conversion: "Conversão (Lead → Venda)",
   cpl: "CPL",
   cac: "CAC",
   roas: "ROAS",

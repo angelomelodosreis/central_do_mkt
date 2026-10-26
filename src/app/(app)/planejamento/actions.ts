@@ -493,6 +493,20 @@ export async function createProduct(
   const name = field(formData, "name");
   const cadenceValue = field(formData, "cadence");
   const family = field(formData, "family") || null;
+  const entregaveis = field(formData, "entregaveis");
+  const tempoAcesso = field(formData, "tempoAcesso");
+  const materiaisExtras = field(formData, "materiaisExtras");
+  const valorBase = field(formData, "valorBase");
+  const historicoNotas = field(formData, "historicoNotas");
+
+  const details: Record<string, string> = {
+    ...(entregaveis ? { entregaveis } : {}),
+    ...(tempoAcesso ? { tempoAcesso } : {}),
+    ...(materiaisExtras ? { materiaisExtras } : {}),
+    ...(valorBase ? { valorBase } : {}),
+    ...(historicoNotas ? { historicoNotas } : {}),
+  };
+  const hasDetails = Object.keys(details).length > 0;
 
   if (!name) return { status: "error", message: "Informe o nome do produto." };
   if (!isCadence(cadenceValue)) {
@@ -524,7 +538,7 @@ export async function createProduct(
     name,
     cadence: cadenceValue,
     family,
-    details: null,
+    details: hasDetails ? details : null,
     isActive: true,
     sortOrder: 100,
     createdBy: gate.currentUser.id,
@@ -556,6 +570,20 @@ export async function updateProduct(
   const name = field(formData, "name");
   const cadenceValue = field(formData, "cadence");
   const family = field(formData, "family") || null;
+  const entregaveis = field(formData, "entregaveis");
+  const tempoAcesso = field(formData, "tempoAcesso");
+  const materiaisExtras = field(formData, "materiaisExtras");
+  const valorBase = field(formData, "valorBase");
+  const historicoNotas = field(formData, "historicoNotas");
+
+  const details: Record<string, string> = {
+    ...(entregaveis ? { entregaveis } : {}),
+    ...(tempoAcesso ? { tempoAcesso } : {}),
+    ...(materiaisExtras ? { materiaisExtras } : {}),
+    ...(valorBase ? { valorBase } : {}),
+    ...(historicoNotas ? { historicoNotas } : {}),
+  };
+  const hasDetails = Object.keys(details).length > 0;
 
   if (!productId)
     return { status: "error", message: "Produto não identificado." };
@@ -609,6 +637,7 @@ export async function updateProduct(
       slug,
       cadence: cadenceValue,
       family,
+      details: hasDetails ? details : null,
       updatedBy: gate.currentUser.id,
       updatedAt: new Date(),
     })
