@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 
 import { getDb } from "@/lib/db/client";
 import {
@@ -142,61 +142,74 @@ export async function grantRequestedBuAccess(
 
   // Encontra ou assegura squads para cada BU
   for (const buId of buIds) {
-    let targetSquad = await db
-      .select({ id: squad.id })
-      .from(squad)
-      .where(eq(squad.businessUnitId, buId))
-      .get();
-
-    if (!targetSquad) {
-      // Cria squad caso ainda não existisse
+    try {
       const bu = await db
-        .select({ slug: businessUnit.slug, label: businessUnit.label })
+        .select({ id: businessUnit.id, slug: businessUnit.slug, label: businessUnit.label })
         .from(businessUnit)
         .where(eq(businessUnit.id, buId))
         .get();
 
-      if (bu) {
-        const squadId = newId("sqd");
-        await db.insert(squad).values({
-          id: squadId,
-          businessUnitId: buId,
-          slug: bu.slug,
-          name: `Squad ${bu.label}`,
-          isActive: true,
-          createdBy: adminId,
-          createdAt: now,
-          updatedAt: now,
-        });
-        targetSquad = { id: squadId };
-      }
-    }
-
-    if (targetSquad) {
-      // Vincula o usuário ao squad da BU
-      const existingMember = await db
-        .select({ id: squadMember.id })
-        .from(squadMember)
+      let targetSquad = await db
+        .select({ id: squad.id })
+        .from(squad)
         .where(
-          and(
-            eq(squadMember.squadId, targetSquad.id),
-            eq(squadMember.userId, userId),
-          ),
+          bu
+            ? or(eq(squad.businessUnitId, buId), eq(squad.slug, bu.slug))
+            : eq(squad.businessUnitId, buId),
         )
         .get();
 
-      if (!existingMember) {
-        await db.insert(squadMember).values({
-          id: newId("sqm"),
-          squadId: targetSquad.id,
-          userId,
-          isLead: false,
-          createdBy: adminId,
-          createdAt: now,
-        });
+      if (!targetSquad && bu) {
+        // Cria squad caso ainda não existisse
+        const squadId = newId("sqd");
+        try {
+          await db.insert(squad).values({
+            id: squadId,
+            businessUnitId: buId,
+            slug: bu.slug,
+            name: `Squad ${bu.label}`,
+            isActive: true,
+            createdBy: adminId,
+            createdAt: now,
+            updatedAt: now,
+          });
+          targetSquad = { id: squadId };
+        } catch {
+          // Se já existia por slug, localiza o squad existente
+          targetSquad = await db
+            .select({ id: squad.id })
+            .from(squad)
+            .where(eq(squad.slug, bu.slug))
+            .get();
+        }
       }
-    } else {
-      // Fallback: concede accessGrant direto
+
+      if (targetSquad) {
+        // Vincula o usuário ao squad da BU
+        const existingMember = await db
+          .select({ id: squadMember.id })
+          .from(squadMember)
+          .where(
+            and(
+              eq(squadMember.squadId, targetSquad.id),
+              eq(squadMember.userId, userId),
+            ),
+          )
+          .get();
+
+        if (!existingMember) {
+          await db.insert(squadMember).values({
+            id: newId("sqm"),
+            squadId: targetSquad.id,
+            userId,
+            isLead: false,
+            createdBy: adminId,
+            createdAt: now,
+          });
+        }
+      }
+
+      // Concede accessGrant direto também como garantia
       const existingGrant = await db
         .select({ id: accessGrant.id })
         .from(accessGrant)
@@ -220,6 +233,8 @@ export async function grantRequestedBuAccess(
           createdAt: now,
         });
       }
+    } catch (err) {
+      console.error(`[grantRequestedBuAccess] Erro ao conceder BU ${buId}:`, err);
     }
   }
 

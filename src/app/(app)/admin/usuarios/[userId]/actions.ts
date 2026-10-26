@@ -572,18 +572,26 @@ export async function saveAndApproveUser(formData: FormData): Promise<void> {
     .where(eq(user.id, userId));
 
   // 3. Concede acesso automático às BUs solicitadas no onboarding
-  await grantRequestedBuAccess(userId, admin.id);
+  try {
+    await grantRequestedBuAccess(userId, admin.id);
+  } catch (err) {
+    console.error("[saveAndApproveUser] Erro ao conceder BUs automáticas:", err);
+  }
 
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "user.approve",
-    entityType: "user",
-    entityId: userId,
-    summary: `Aprovou o acesso e atualizou a ficha de ${target?.email ?? userId}`,
-    beforeData: before,
-    afterData: { ...before, status: "active", approvedBy: admin.id },
-  });
+  try {
+    await writeAuditLog({
+      actorUserId: admin.id,
+      actorEmail: admin.email,
+      action: "user.approve",
+      entityType: "user",
+      entityId: userId,
+      summary: `Aprovou o acesso e atualizou a ficha de ${target?.email ?? userId}`,
+      beforeData: before,
+      afterData: { ...before, status: "active", approvedBy: admin.id },
+    });
+  } catch (err) {
+    console.error("[saveAndApproveUser] Erro ao gravar auditoria:", err);
+  }
 
   revalidateTudo();
   revalidatePath("/admin/usuarios", "layout");

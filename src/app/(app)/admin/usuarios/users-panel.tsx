@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { Avatar } from "@/components/org/person-card";
 import { Badge, RoleBadge, StatusBadge } from "@/components/ui/badge";
@@ -243,12 +244,10 @@ export function UsersPanel({
                     </div>
 
                     {person.status === "pending" && (
-                      <form action={approveUser} className="inline-flex">
-                        <input type="hidden" name="userId" value={person.id} />
-                        <Button type="submit" size="sm" variant="primary">
-                          Aprovar acesso
-                        </Button>
-                      </form>
+                      <ApproveUserButton
+                        userId={person.id}
+                        userName={person.name}
+                      />
                     )}
 
                     <Link
@@ -266,6 +265,46 @@ export function UsersPanel({
         </CardBody>
       </Card>
     </div>
+  );
+}
+
+function ApproveUserButton({
+  userId,
+  userName,
+}: {
+  userId: string;
+  userName: string;
+}) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleApprove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", userId);
+        await approveUser(fd);
+        toast.success(`Acesso de ${userName} liberado com sucesso!`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Erro ao liberar acesso. Tente novamente.");
+      }
+    });
+  };
+
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="primary"
+      loading={isPending}
+      disabled={isPending}
+      onClick={handleApprove}
+    >
+      Aprovar acesso
+    </Button>
   );
 }
 

@@ -60,18 +60,26 @@ export async function approveUser(formData: FormData): Promise<void> {
     .where(eq(user.id, targetId));
 
   // Concede acesso automático às BUs que o usuário solicitou durante o onboarding
-  const buCount = await grantRequestedBuAccess(targetId, admin.id);
+  try {
+    await grantRequestedBuAccess(targetId, admin.id);
+  } catch (err) {
+    console.error("[approveUser] Erro ao conceder BUs automáticas:", err);
+  }
 
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "user.approve",
-    entityType: "user",
-    entityId: targetId,
-    summary: `Aprovou o acesso de ${target?.email ?? targetId}`,
-    beforeData: before,
-    afterData: { ...before, status: "active", approvedBy: admin.id },
-  });
+  try {
+    await writeAuditLog({
+      actorUserId: admin.id,
+      actorEmail: admin.email,
+      action: "user.approve",
+      entityType: "user",
+      entityId: targetId,
+      summary: `Aprovou o acesso de ${target?.email ?? targetId}`,
+      beforeData: before,
+      afterData: { ...before, status: "active", approvedBy: admin.id },
+    });
+  } catch (err) {
+    console.error("[approveUser] Erro ao gravar log de auditoria:", err);
+  }
 
   revalidatePath("/admin/usuarios", "layout");
   revalidatePath(`/admin/usuarios/${targetId}`, "layout");
