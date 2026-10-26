@@ -10,12 +10,14 @@ import {
   Network,
   Shield,
   TrendingUp,
+  Calculator,
 } from "lucide-react";
 
 export const NAV_ICON_KEYS = [
   "dashboard",
   "sales",
   "generator",
+  "calculator",
   "docs",
   "personas",
   "strategy",
@@ -31,6 +33,7 @@ const ICONS: Record<NavIconKey, typeof LayoutDashboard> = {
   dashboard: LayoutDashboard,
   sales: TrendingUp,
   generator: Wand2,
+  calculator: Calculator,
   docs: BookOpen,
   personas: UserCheck,
   strategy: Calendar,

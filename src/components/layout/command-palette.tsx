@@ -16,6 +16,7 @@ import {
   Users,
   User,
   TrendingUp,
+  Calculator,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
@@ -62,6 +63,14 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     category: "Navegação",
     href: "/gerador-de-nomes",
     icon: Wand2,
+  },
+  {
+    id: "nav_calculadora",
+    title: "Calculadora de Parcelas",
+    subtitle: "Juros simples, parcelas e texto para criativos/peças",
+    category: "Navegação",
+    href: "/calculadora-de-parcelas",
+    icon: Calculator,
   },
   {
     id: "nav_docs",

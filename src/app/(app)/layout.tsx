@@ -116,6 +116,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     });
   }
 
+  items.push({
+    href: "/calculadora-de-parcelas",
+    label: "Calculadora de Parcelas",
+    description: "Juros e texto da oferta",
+    icon: "calculator",
+  });
+
   if (can(currentUser, "documentation")) {
     items.push({
       href: "/documentacao",
