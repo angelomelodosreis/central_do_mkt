@@ -13,9 +13,12 @@ import {
 import {
   TIMELINE_KIND_CONFIG,
   TIMELINE_KIND_ORDER,
+  KIND_ALIASES,
+  canonicalKind,
   kindConfig,
 } from "../src/lib/modules/strategy/timeline-kinds.ts";
 import { TIMELINE_KINDS } from "../src/lib/db/schema/strategy.schema.ts";
+import { hydrate } from "../src/app/(app)/planejamento/[businessUnitSlug]/calendario/calendar-types.ts";
 
 test("1. parseCalendarDate preserva dia civil e previne recuo de fuso (UTC-3)", () => {
   // Teste de data civil formato YYYY-MM-DD
@@ -40,6 +43,12 @@ test("1. parseCalendarDate preserva dia civil e previne recuo de fuso (UTC-3)", 
   const sanitized = parseCalendarDate(msTimestampDate);
   assert.ok(sanitized.getFullYear() <= 2100, "Deve sanitizar datas com ano > 2100");
   assert.ok(sanitized.getFullYear() === 2025 || sanitized.getFullYear() === 2026);
+  assert.ok(
+    toDateInput(msTimestampDate) === "2025-12-31" ||
+      toDateInput(msTimestampDate) === "2026-01-01",
+    "Deve sanitizar o ano sem quebrar a data",
+  );
+  assert.equal(toDateInput(parseCalendarDate("2026-01-01")), "2026-01-01");
 });
 
 test("2. Navegação de meses avança e retrocede sem travar em Outubro", () => {
@@ -117,22 +126,34 @@ test("3. Catálogo oficial das 8 tags solicitadas pela Beatriz", () => {
   assert.equal(dots.size, 8, "As 8 tags devem ter cores de dot distintas");
 });
 
-test("4. Resolução de aliases e compatibilidade retroativa", () => {
-  // Aliases em português
+test("4. Resolução de aliases, canonicalKind e compatibilidade retroativa", () => {
+  // Aliases em português mapeados para tags canônicas
+  assert.equal(canonicalKind("prova_teorica"), "theoretical_exam");
+  assert.equal(canonicalKind("prova_pratica"), "practical_exam");
+  assert.equal(canonicalKind("jantar"), "dinner");
+  assert.equal(canonicalKind("outros"), "other");
+
+  // Legado mapeado para tags canônicas
+  assert.equal(canonicalKind("milestone"), "theoretical_exam");
+  assert.equal(canonicalKind("product_window"), "launch");
+
+  // Tags canônicas preservadas
+  for (const tag of TIMELINE_KIND_ORDER) {
+    assert.equal(canonicalKind(tag), tag);
+  }
+
+  // Fallback para desconhecido
+  assert.equal(canonicalKind("desconhecido"), "event");
+  assert.equal(canonicalKind(null), "event");
+
+  // kindConfig resolve aliases corretamente
   assert.equal(kindConfig("prova_teorica").label, "Prova teórica");
   assert.equal(kindConfig("prova_pratica").label, "Prova prática");
   assert.equal(kindConfig("jantar").label, "Jantar");
   assert.equal(kindConfig("outros").label, "Outros");
-
-  // Legado
-  assert.equal(kindConfig("milestone").label, "Marco");
-  assert.equal(kindConfig("product_window").label, "Janela de Produto (MedCof)");
-
-  // Fallback para tipo desconhecido
-  assert.equal(kindConfig("desconhecido").label, "Evento");
 });
 
-test("5. Lógica de filtro por tag (isolamento e reset para todas)", () => {
+test("5. Lógica de filtro por tag: clique simples isola/alterna e modifier multi-seleciona", () => {
   const items = [
     { id: "1", kind: "event", title: "Congresso Paulista" },
     { id: "2", kind: "theoretical_exam", title: "Prova USP" },
@@ -140,31 +161,76 @@ test("5. Lógica de filtro por tag (isolamento e reset para todas)", () => {
     { id: "4", kind: "dinner", title: "Jantar dos Aprovados" },
   ];
 
-  // Caso 1: selectedKinds = null (Todas as tags visíveis)
-  const allVisible = items.filter(
-    (item) => !null || (null).has(item.kind),
-  );
-  assert.equal(allVisible.length, 4);
-
-  // Caso 2: Usuário clica na tag "event" -> filtra apenas Eventos
-  const selectedEvent = new Set(["event"]);
-  const eventItems = items.filter((item) => selectedEvent.has(item.kind));
-  assert.equal(eventItems.length, 1);
-  assert.equal(eventItems[0].title, "Congresso Paulista");
-
-  // Caso 3: Usuário clica na tag "dinner" -> filtra apenas Jantar
-  const selectedDinner = new Set(["dinner"]);
-  const dinnerItems = items.filter((item) => selectedDinner.has(item.kind));
-  assert.equal(dinnerItems.length, 1);
-  assert.equal(dinnerItems[0].title, "Jantar dos Aprovados");
-
-  // Caso 4: Usuário clica novamente na tag ativa -> reseta para null (todas)
-  let currentSelection = new Set(["event"]);
-  if (currentSelection.has("event") && currentSelection.size === 1) {
-    currentSelection = null;
+  // Função pura que replica a lógica de toggleKind do CalendarWorkspace
+  function executeToggleKind(current, kind, multi = false) {
+    if (multi) {
+      if (!current) return new Set([kind]);
+      const next = new Set(current);
+      if (next.has(kind)) {
+        next.delete(kind);
+        return next.size === 0 ? null : next;
+      }
+      next.add(kind);
+      return next;
+    }
+    if (current && current.size === 1 && current.has(kind)) {
+      return null;
+    }
+    return new Set([kind]);
   }
-  const resetItems = items.filter(
-    (item) => !currentSelection || currentSelection.has(item.kind),
-  );
-  assert.equal(resetItems.length, 4);
+
+  // Estado inicial: Todas visíveis
+  let selection = null;
+  let visible = items.filter((i) => !selection || selection.has(i.kind));
+  assert.equal(visible.length, 4);
+
+  // 1. Clicar em "event" -> isola "event"
+  selection = executeToggleKind(selection, "event", false);
+  assert.deepEqual(Array.from(selection), ["event"]);
+  visible = items.filter((i) => !selection || selection.has(i.kind));
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].title, "Congresso Paulista");
+
+  // 2. Clicar em "dinner" -> comuta diretamente para "dinner" (sem acumular)
+  selection = executeToggleKind(selection, "dinner", false);
+  assert.deepEqual(Array.from(selection), ["dinner"]);
+  visible = items.filter((i) => !selection || selection.has(i.kind));
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].title, "Jantar dos Aprovados");
+
+  // 3. Clicar novamente em "dinner" -> limpa para todas
+  selection = executeToggleKind(selection, "dinner", false);
+  assert.equal(selection, null);
+  visible = items.filter((i) => !selection || selection.has(i.kind));
+  assert.equal(visible.length, 4);
+
+  // 4. Multi-seleção com tecla modificadora (Shift / Ctrl)
+  selection = executeToggleKind(null, "event", true);
+  selection = executeToggleKind(selection, "dinner", true);
+  assert.equal(selection.size, 2);
+  assert.ok(selection.has("event"));
+  assert.ok(selection.has("dinner"));
+  visible = items.filter((i) => !selection || selection.has(i.kind));
+  assert.equal(visible.length, 2);
+});
+
+test("6. hydrate normaliza kinds legados e sanitiza datas civilmente", () => {
+  const clientItemLegacy = {
+    id: "legacy_1",
+    kind: "prova_teorica",
+    title: "Prova AMRIGS",
+    summary: null,
+    startsAt: "2026-11-15",
+    endsAt: "2026-11-15",
+    productId: null,
+    owner: null,
+    status: "planned",
+    details: {},
+  };
+
+  const hydrated = hydrate(clientItemLegacy);
+  assert.equal(hydrated.kind, "theoretical_exam", "Deve normalizar para tag canônica");
+  assert.equal(hydrated.startsAt.getFullYear(), 2026);
+  assert.equal(hydrated.startsAt.getMonth(), 10); // Nov
+  assert.equal(hydrated.startsAt.getDate(), 15);
 });

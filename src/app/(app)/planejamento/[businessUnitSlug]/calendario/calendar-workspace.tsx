@@ -126,23 +126,40 @@ export function CalendarWorkspace({
     return push({ em: addMonths(currentAnchor, 12 * direction) });
   }
 
-  function toggleKind(kind: TimelineKind) {
+  function toggleKind(kind: TimelineKind, multi = false) {
     setSelectedKinds((current) => {
-      if (!current) {
-        return new Set([kind]);
+      if (multi) {
+        if (!current) return new Set([kind]);
+        const next = new Set(current);
+        if (next.has(kind)) {
+          next.delete(kind);
+          return next.size === 0 ? null : next;
+        }
+        next.add(kind);
+        return next;
       }
-      if (current.has(kind) && current.size === 1) {
+      // Clique padrão: se já for a única tag selecionada, limpa para todas. Se não, isola a tag clicada.
+      if (current && current.size === 1 && current.has(kind)) {
         return null;
       }
-      const next = new Set(current);
-      if (next.has(kind)) {
-        next.delete(kind);
-        if (next.size === 0) return null;
-      } else {
-        next.add(kind);
-      }
-      return next;
+      return new Set([kind]);
     });
+  }
+
+  function handleItemSaved(savedDate: Date, savedKind: TimelineKind) {
+    // Se o item foi criado/salvo em outro mês, navega automaticamente para lá
+    // para que o usuário veja imediatamente o item que acabou de criar!
+    if (
+      savedDate.getFullYear() !== currentAnchor.getFullYear() ||
+      savedDate.getMonth() !== currentAnchor.getMonth()
+    ) {
+      push({ em: savedDate });
+    }
+    // Se havia filtro ativo por tag e a tag do item salvo não está no filtro,
+    // limpa o filtro (Todas) para que o novo item não fique oculto.
+    if (selectedKinds && !selectedKinds.has(savedKind)) {
+      setSelectedKinds(null);
+    }
   }
 
   const periodLabel = describePeriod(zoom, currentAnchor);
@@ -263,7 +280,9 @@ export function CalendarWorkspace({
             <button
               key={kind}
               type="button"
-              onClick={() => toggleKind(kind)}
+              onClick={(e) =>
+                toggleKind(kind, e.shiftKey || e.ctrlKey || e.metaKey)
+              }
               aria-pressed={isSelected || isAllSelected}
               title={config.description}
               className={cn(
@@ -347,6 +366,7 @@ export function CalendarWorkspace({
             setOpenItemId(null);
             setCreatingOn(null);
           }}
+          onSaved={handleItemSaved}
         />
       ) : null}
     </>

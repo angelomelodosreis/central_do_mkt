@@ -23,6 +23,7 @@ import {
   parseCalendarDate,
   toDateInput,
 } from "@/lib/modules/strategy/dates";
+import { canonicalKind } from "@/lib/modules/strategy/timeline-kinds";
 
 export const dynamic = "force-dynamic";
 
@@ -140,7 +141,7 @@ export default async function StrategyCalendarPage({
         : item.endsAt;
     return {
       id: item.id,
-      kind: item.kind,
+      kind: canonicalKind(item.kind),
       title: item.title,
       summary: item.summary,
       startsAt: toDateInput(s),

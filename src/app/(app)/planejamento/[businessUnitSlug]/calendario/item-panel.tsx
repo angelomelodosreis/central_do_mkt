@@ -20,10 +20,11 @@ import {
   TIMELINE_STATUSES,
   type TimelineKind,
 } from "@/lib/db/schema";
-import { toDateInput } from "@/lib/modules/strategy/dates";
+import { parseCalendarDate, toDateInput } from "@/lib/modules/strategy/dates";
 import {
   TIMELINE_KIND_ORDER,
   TIMELINE_STATUS_LABELS,
+  canonicalKind,
   kindConfig,
 } from "@/lib/modules/strategy/timeline-kinds";
 import { cn } from "@/lib/utils/cn";
@@ -43,6 +44,7 @@ export function ItemPanel({
   item,
   createOn,
   onClose,
+  onSaved,
 }: {
   cycleId: string;
   products: ClientProduct[];
@@ -50,6 +52,7 @@ export function ItemPanel({
   item: CalendarItem | null;
   createOn: Date | null;
   onClose: () => void;
+  onSaved?: (savedDate: Date, savedKind: TimelineKind) => void;
 }) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState<
@@ -57,16 +60,25 @@ export function ItemPanel({
     FormData
   >(saveTimelineItem, INITIAL_STRATEGY_STATE);
 
-  const [kind, setKind] = useState<TimelineKind>(item?.kind ?? "event");
+  const [kind, setKind] = useState<TimelineKind>(
+    item ? canonicalKind(item.kind) : "event",
+  );
   const config = kindConfig(kind);
 
-  // Salvou: fecha o painel e atualiza a rota. A lista foi revalidada pelo servidor.
+  const isNew = !item;
+  const start = item?.startsAt ?? createOn ?? new Date();
+  const end = item?.endsAt ?? createOn ?? new Date();
+  const [startsAtInput, setStartsAtInput] = useState<string>(toDateInput(start));
+
+  // Salvou: fecha o painel, atualiza a rota e avisa o workspace para navegar para o item.
   useEffect(() => {
     if (state.status === "success") {
       router.refresh();
+      const savedDate = parseCalendarDate(startsAtInput);
+      onSaved?.(savedDate, kind);
       onClose();
     }
-  }, [state, onClose, router]);
+  }, [state, onClose, router, startsAtInput, kind, onSaved]);
 
   // Esc fecha, como em qualquer painel.
   useEffect(() => {
@@ -76,10 +88,6 @@ export function ItemPanel({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  const isNew = !item;
-  const start = item?.startsAt ?? createOn ?? new Date();
-  const end = item?.endsAt ?? createOn ?? new Date();
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -176,7 +184,8 @@ export function ItemPanel({
                 id="startsAt"
                 name="startsAt"
                 type="date"
-                defaultValue={toDateInput(start)}
+                value={startsAtInput}
+                onChange={(e) => setStartsAtInput(e.target.value)}
                 disabled={!canEdit}
                 required
               />

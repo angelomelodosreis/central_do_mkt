@@ -166,7 +166,11 @@ export function formatRange(startsAt: Date, endsAt: Date): string {
 
 /** Data no formato que o `<input type="date">` entende. */
 export function toDateInput(date: Date): string {
-  const copy = startOfDay(date);
+  let target = date;
+  if (target.getFullYear() > 2100) {
+    target = new Date(Math.floor(target.getTime() / 1000));
+  }
+  const copy = startOfDay(target);
   const month = String(copy.getMonth() + 1).padStart(2, "0");
   const day = String(copy.getDate()).padStart(2, "0");
   return `${copy.getFullYear()}-${month}-${day}`;

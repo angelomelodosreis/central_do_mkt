@@ -263,10 +263,10 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
     linksToProduct: true,
     fields: [],
   },
-  prova_teorica: null as any,
-  prova_pratica: null as any,
-  jantar: null as any,
-  outros: null as any,
+  prova_teorica: undefined as any,
+  prova_pratica: undefined as any,
+  jantar: undefined as any,
+  outros: undefined as any,
 };
 
 // Vinculação de aliases para compartilharem a mesma configuração exata
@@ -286,6 +286,28 @@ export const TIMELINE_KIND_ORDER: TimelineKind[] = [
   "seasonality",
   "other",
 ];
+
+export const KIND_ALIASES: Record<string, TimelineKind> = {
+  prova_teorica: "theoretical_exam",
+  prova_pratica: "practical_exam",
+  jantar: "dinner",
+  outros: "other",
+  milestone: "theoretical_exam",
+  product_window: "launch",
+};
+
+/**
+ * Normaliza qualquer valor de kind (incluindo aliases legados em português ou da versão anterior)
+ * para uma das 8 tags canônicas oficiais solicitadas pela Beatriz.
+ */
+export function canonicalKind(kind: string | null | undefined): TimelineKind {
+  if (!kind) return "event";
+  const resolved = KIND_ALIASES[kind] || kind;
+  if ((TIMELINE_KIND_ORDER as readonly string[]).includes(resolved)) {
+    return resolved as TimelineKind;
+  }
+  return "event";
+}
 
 export const TIMELINE_STATUS_LABELS: Record<TimelineStatus, string> = {
   planned: "Planejado",
@@ -311,5 +333,6 @@ export const TIMELINE_STATUS_SIGNAL: Partial<
 };
 
 export function kindConfig(kind: TimelineKind): KindConfig {
-  return TIMELINE_KIND_CONFIG[kind] ?? TIMELINE_KIND_CONFIG.event;
+  const canonical = canonicalKind(kind);
+  return TIMELINE_KIND_CONFIG[canonical] ?? TIMELINE_KIND_CONFIG.event;
 }

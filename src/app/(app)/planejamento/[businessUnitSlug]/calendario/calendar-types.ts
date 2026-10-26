@@ -1,5 +1,6 @@
 import type { TimelineKind, TimelineStatus } from "@/lib/db/schema";
 import { parseCalendarDate } from "@/lib/modules/strategy/dates";
+import { canonicalKind } from "@/lib/modules/strategy/timeline-kinds";
 
 /**
  * Item já serializado para o cliente.
@@ -35,6 +36,7 @@ export type CalendarItem = Omit<ClientItem, "startsAt" | "endsAt"> & {
 export function hydrate(item: ClientItem): CalendarItem {
   return {
     ...item,
+    kind: canonicalKind(item.kind),
     startsAt: parseCalendarDate(item.startsAt),
     endsAt: parseCalendarDate(item.endsAt),
   };

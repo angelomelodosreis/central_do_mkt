@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { moveTimelineItem } from "../../actions";
 import type { CalendarItem } from "./calendar-types";
@@ -36,6 +37,7 @@ export function MonthView({
   onOpen: (id: string) => void;
   onCreate: (day: Date) => void;
 }) {
+  const router = useRouter();
   const month = startOfMonth(anchor);
   const days = monthGridDays(month);
   const weeks = Array.from({ length: 6 }, (_, index) =>
@@ -68,7 +70,11 @@ export function MonthView({
     return { mode: mode as "move" | "resize", id };
   }
 
-  function handleDrop(item: CalendarItem, day: Date, mode: "move" | "resize") {
+  async function handleDrop(
+    item: CalendarItem,
+    day: Date,
+    mode: "move" | "resize",
+  ) {
     const form = new FormData();
     form.set("itemId", item.id);
 
@@ -83,8 +89,9 @@ export function MonthView({
       form.set("endsAt", toDateInput(end));
     }
 
-    void moveTimelineItem(form);
     setDragId(null);
+    await moveTimelineItem(form);
+    router.refresh();
   }
 
   return (
@@ -125,26 +132,41 @@ export function MonthView({
                       const info = readDrag(event);
                       if (!info) return;
                       const item = items.find((i) => i.id === info.id);
-                      if (item) handleDrop(item, day, info.mode);
+                      if (item) void handleDrop(item, day, info.mode);
                     }}
                     onDoubleClick={() => canEdit && onCreate(day)}
                     className={cn(
-                      "min-h-24 border-r border-slate-100 px-1.5 pt-1.5 last:border-r-0",
-                      foraDoMes && "bg-slate-50/60",
+                      "group/day min-h-24 border-r border-slate-100 px-1.5 pt-1.5 last:border-r-0 transition-colors hover:bg-slate-50/60",
+                      foraDoMes && "bg-slate-50/60 hover:bg-slate-50/90",
                     )}
                   >
-                    <span
-                      className={cn(
-                        "inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
-                        isToday(day)
-                          ? "bg-brand-600 font-semibold text-white"
-                          : foraDoMes
-                            ? "text-slate-300"
-                            : "text-slate-500",
-                      )}
-                    >
-                      {day.getDate()}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          "inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
+                          isToday(day)
+                            ? "bg-brand-600 font-semibold text-white"
+                            : foraDoMes
+                              ? "text-slate-300"
+                              : "text-slate-500",
+                        )}
+                      >
+                        {day.getDate()}
+                      </span>
+                      {canEdit && !foraDoMes ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCreate(day);
+                          }}
+                          className="opacity-0 group-hover/day:opacity-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 size-5 rounded-md flex items-center justify-center text-xs font-bold transition-all cursor-pointer"
+                          title="Criar item neste dia"
+                        >
+                          +
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}

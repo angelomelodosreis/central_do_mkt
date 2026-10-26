@@ -39,7 +39,10 @@ import {
   startOfDay,
 } from "@/lib/modules/strategy/dates";
 import { getItemBusinessUnit } from "@/lib/modules/strategy/queries";
-import { TIMELINE_KIND_CONFIG } from "@/lib/modules/strategy/timeline-kinds";
+import {
+  TIMELINE_KIND_CONFIG,
+  canonicalKind,
+} from "@/lib/modules/strategy/timeline-kinds";
 import { newId } from "@/lib/utils/id";
 
 function field(formData: FormData, key: string): string {
@@ -91,14 +94,8 @@ function isKind(value: string): value is TimelineKind {
 }
 
 function normalizeKind(value: string): TimelineKind | null {
-  const aliases: Record<string, TimelineKind> = {
-    prova_teorica: "theoretical_exam",
-    prova_pratica: "practical_exam",
-    jantar: "dinner",
-    outros: "other",
-  };
-  const resolved = aliases[value] || value;
-  return isKind(resolved) ? (resolved as TimelineKind) : null;
+  if (!value) return null;
+  return canonicalKind(value);
 }
 
 function isStatus(value: string): value is TimelineStatus {

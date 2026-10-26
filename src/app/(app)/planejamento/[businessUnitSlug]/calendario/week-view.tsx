@@ -46,26 +46,41 @@ export function WeekView({
               key={day.toISOString()}
               onDoubleClick={() => canEdit && onCreate(day)}
               className={cn(
-                "min-h-40 border-slate-100 p-2",
+                "group/day min-h-40 border-slate-100 p-2 transition-colors hover:bg-slate-50/50",
                 index < 6 && "sm:border-r",
                 "border-b sm:border-b-0",
               )}
             >
-              <p className="mb-2 flex items-center gap-1.5">
-                <span className="text-xs text-slate-500">
-                  {WEEKDAYS_SHORT[day.getDay()]}
-                </span>
-                <span
-                  className={cn(
-                    "inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
-                    isToday(day)
-                      ? "bg-brand-600 font-semibold text-white"
-                      : "text-slate-600",
-                  )}
-                >
-                  {day.getDate()}
-                </span>
-              </p>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-500">
+                    {WEEKDAYS_SHORT[day.getDay()]}
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex size-6 items-center justify-center rounded-full text-xs tabular-nums",
+                      isToday(day)
+                        ? "bg-brand-600 font-semibold text-white"
+                        : "text-slate-600",
+                    )}
+                  >
+                    {day.getDate()}
+                  </span>
+                </p>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCreate(day);
+                    }}
+                    className="opacity-0 group-hover/day:opacity-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 size-5 rounded-md flex items-center justify-center text-xs font-bold transition-all cursor-pointer"
+                    title="Criar item neste dia"
+                  >
+                    +
+                  </button>
+                ) : null}
+              </div>
 
               <ul className="space-y-1">
                 {doDia.map((item) => {
