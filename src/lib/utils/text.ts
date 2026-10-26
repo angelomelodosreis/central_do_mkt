@@ -86,3 +86,26 @@ export function compareNames(a: string, b: string): number {
 export function sortByName<T>(itens: T[], nome: (item: T) => string): T[] {
   return [...itens].sort((a, b) => compareNames(nome(a), nome(b)));
 }
+
+/**
+ * Higieniza textos livres e mensagens de onboarding para remover tags HTML, scripts,
+ * payloads maliciosos (ex.: <img src=x onerror=...>, <script>), protocolos perigosos
+ * e caracteres de controle, garantindo apenas texto puro seguro.
+ */
+export function sanitizePlainText(
+  input: string | null | undefined,
+  maxLength = 500,
+): string {
+  if (!input) return "";
+  let clean = input
+    // Remove tags HTML (<...>)
+    .replace(/<[^>]*>?/gm, "")
+    // Remove caracteres de controle ASCII perigosos
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+    .trim();
+
+  if (clean.length > maxLength) {
+    clean = clean.slice(0, maxLength).trim();
+  }
+  return clean;
+}

@@ -236,9 +236,9 @@ export function UsersPanel({
                       <p className="mt-0.5 truncate text-xs text-slate-500">
                         {resumoDeAlcance(person)}
                       </p>
-                      {person.requestedNote && (
+                      {person.requestedNote && person.requestedNote.trim().length > 0 && (
                         <p className="mt-1 text-xs text-amber-800 bg-amber-50 border border-amber-200/60 rounded-md px-2 py-0.5 inline-block font-medium">
-                          📝 Mensagem no onboarding: &ldquo;{person.requestedNote}&rdquo;
+                          📝 Mensagem no onboarding: &ldquo;{person.requestedNote.trim()}&rdquo;
                         </p>
                       )}
                     </div>

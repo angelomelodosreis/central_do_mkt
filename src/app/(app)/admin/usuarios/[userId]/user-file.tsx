@@ -816,9 +816,9 @@ function Cabecalho({
               </span>
             ))}
           </div>
-          {person.requestedBUs.find((bu) => bu.note)?.note && (
+          {person.requestedBUs.find((bu) => bu.note && bu.note.trim().length > 0)?.note && (
             <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-900 font-medium">
-              📝 <strong>Mensagem no onboarding:</strong> &ldquo;{person.requestedBUs.find((bu) => bu.note)?.note}&rdquo;
+              📝 <strong>Mensagem no onboarding:</strong> &ldquo;{person.requestedBUs.find((bu) => bu.note && bu.note.trim().length > 0)?.note}&rdquo;
             </div>
           )}
           {person.status === "pending" && (

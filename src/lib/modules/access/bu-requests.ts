@@ -10,6 +10,7 @@ import {
   user,
 } from "@/lib/db/schema";
 import { newId } from "@/lib/utils/id";
+import { sanitizePlainText } from "@/lib/utils/text";
 
 export type BuRequestItem = {
   id: string;
@@ -49,7 +50,10 @@ export async function getUserBuRequests(
     .where(eq(buAccessRequest.userId, userId))
     .orderBy(desc(buAccessRequest.requestedAt));
 
-  return rows;
+  return rows.map((r) => ({
+    ...r,
+    note: r.note ? sanitizePlainText(r.note) : null,
+  }));
 }
 
 /**
@@ -66,6 +70,7 @@ export async function submitBuRequests(
 
   const db = await getDb();
   const now = new Date();
+  const cleanNote = note ? sanitizePlainText(note) : null;
 
   // Remove solicitações pendentes anteriores para evitar duplicações
   await db
@@ -83,7 +88,7 @@ export async function submitBuRequests(
       id: newId("bar"),
       userId,
       businessUnitId: buId,
-      note: note || null,
+      note: cleanNote || null,
       status: "pending",
       requestedAt: now,
     });
@@ -278,8 +283,9 @@ export async function getPendingBuRequestsSummary(): Promise<
       existing.count += 1;
       existing.buLabels.push(row.buLabel);
     }
-    if (!existing.note && row.note) {
-      existing.note = row.note;
+    const cleanNote = row.note ? sanitizePlainText(row.note) : null;
+    if (!existing.note && cleanNote) {
+      existing.note = cleanNote;
     }
     map.set(row.userId, existing);
   }
