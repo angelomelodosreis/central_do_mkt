@@ -5,6 +5,7 @@ import { useState } from "react";
 import { undoAuditAction } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { formatDateTime } from "@/lib/utils/format";
 
 export type AuditEntryView = {
@@ -62,9 +63,9 @@ export function AuditEntryRow({ entry }: { entry: AuditEntryView }) {
               >
                 <input type="hidden" name="logId" value={entry.id} />
                 <span className="text-xs text-slate-600">Desfazer?</span>
-                <Button type="submit" size="sm">
+                <SubmitButton size="sm" pendingLabel="Desfazendo…">
                   Sim
-                </Button>
+                </SubmitButton>
                 <Button
                   type="button"
                   size="sm"

@@ -63,7 +63,7 @@ export function NewDomainForm() {
             required
           />
         </div>
-        <Button type="submit" variant="primary" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending} loading={isPending}>
           {isPending ? "Autorizando…" : "Autorizar"}
         </Button>
         <Button type="button" variant="ghost" onClick={() => setAberto(false)}>

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { togglePersona } from "../../actions";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 /**
  * Desativar pede confirmação; reativar não — só uma das duas direções tira algo
@@ -24,9 +25,9 @@ export function TogglePersonaButton({
     return (
       <form action={togglePersona}>
         <input type="hidden" name="personaId" value={personaId} />
-        <Button type="submit" variant="secondary">
+        <SubmitButton variant="secondary" pendingLabel="Reativando…">
           Reativar persona
-        </Button>
+        </SubmitButton>
       </form>
     );
   }
@@ -51,9 +52,9 @@ export function TogglePersonaButton({
         <span className="font-medium text-slate-900">{personaName}</span>?
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" variant="danger">
+        <SubmitButton variant="danger" pendingLabel="Desativando…">
           Sim, desativar
-        </Button>
+        </SubmitButton>
         <Button
           type="button"
           variant="ghost"

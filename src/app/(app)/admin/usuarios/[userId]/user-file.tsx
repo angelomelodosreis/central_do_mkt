@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { deleteUser, resetTwoFactor, saveUserFile, saveAndApproveUser } from "./actions";
-import { approveUser, reactivateUser, suspendUser } from "../actions";
+import { reactivateUser, suspendUser } from "../actions";
 import { Avatar } from "@/components/org/person-card";
 import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -239,8 +241,125 @@ export function UserFile({
       ? jobTitles.find((title) => title.id === rascunho.jobTitleId)
       : null;
 
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [pendingAction, setPendingAction] = useState<
+    "save" | "approve" | "suspend" | "reactivate" | "reset-2fa" | "delete" | null
+  >(null);
+
+  function buildFormData(): FormData {
+    const fd = new FormData();
+    fd.append("userId", person.id);
+    fd.append("jobTitleId", rascunho.jobTitleId);
+    fd.append("role", rascunho.role);
+    fd.append("isSuperAdmin", rascunho.isSuperAdmin ? "1" : "0");
+    for (const id of rascunho.teamIds) fd.append("teamIds", id);
+    for (const id of rascunho.squadIds) fd.append("squadIds", id);
+    for (const chave of rascunho.escopos) fd.append("escopos", chave);
+    return fd;
+  }
+
+  function handleSaveAndApprove() {
+    setPendingAction("approve");
+    startTransition(async () => {
+      try {
+        await saveAndApproveUser(buildFormData());
+        toast.success(`Acesso de ${person.name} aprovado com sucesso!`);
+      } catch (err) {
+        toast.error("Erro ao aprovar acesso. Tente novamente.");
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  }
+
+  function handleSave() {
+    setPendingAction("save");
+    startTransition(async () => {
+      try {
+        await saveUserFile(buildFormData());
+        toast.success(`Alterações de ${person.name} salvas com sucesso!`);
+      } catch (err) {
+        toast.error("Erro ao salvar alterações.");
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  }
+
+  function handleReactivate() {
+    setPendingAction("reactivate");
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.id);
+        await reactivateUser(fd);
+        toast.success(`Acesso de ${person.name} reativado!`);
+      } catch (err) {
+        toast.error("Erro ao reativar acesso.");
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  }
+
+  function handleSuspend() {
+    setPendingAction("suspend");
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.id);
+        await suspendUser(fd);
+        toast.success(`Acesso de ${person.name} suspenso.`);
+      } catch (err) {
+        toast.error("Erro ao suspender acesso.");
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  }
+
+  function handleReset2FA() {
+    setPendingAction("reset-2fa");
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.id);
+        await resetTwoFactor(fd);
+        toast.success(`Segundo fator de ${person.name} redefinido com sucesso!`);
+      } catch (err) {
+        toast.error("Erro ao redefinir segundo fator.");
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  }
+
+  function handleDelete() {
+    setPendingAction("delete");
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.id);
+        await deleteUser(fd);
+        toast.success(`Usuário ${person.name} excluído.`);
+        router.push("/admin/usuarios");
+      } catch (err) {
+        toast.error("Erro ao excluir usuário.");
+      } finally {
+        setPendingAction(null);
+      }
+    });
+  }
+
   return (
-    <form action={saveUserFile}>
+    <form
+      action={saveUserFile}
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSave();
+      }}
+    >
       <input type="hidden" name="userId" value={person.id} />
       <input type="hidden" name="jobTitleId" value={rascunho.jobTitleId} />
       <input type="hidden" name="role" value={rascunho.role} />
@@ -260,7 +379,16 @@ export function UserFile({
       ))}
 
       <Card>
-        <Cabecalho person={person} isSelf={isSelf} alterado={alterado} />
+        <Cabecalho
+          person={person}
+          isSelf={isSelf}
+          alterado={alterado}
+          isPending={isPending}
+          pendingAction={pendingAction}
+          onApprove={handleSaveAndApprove}
+          onReactivate={handleReactivate}
+          onSuspend={handleSuspend}
+        />
 
         <Row
           label="Cargo"
@@ -421,14 +549,24 @@ export function UserFile({
         </Row>
 
         <Row label="Verificação em duas etapas">
-          <SegundoFator person={person} />
+          <SegundoFator
+            person={person}
+            isPending={isPending}
+            pendingAction={pendingAction}
+            onReset2FA={handleReset2FA}
+          />
         </Row>
 
         <Rodape
           person={person}
           isSelf={isSelf}
           alterado={alterado}
+          isPending={isPending}
+          pendingAction={pendingAction}
           aoDescartar={() => setRascunho(doServidor)}
+          onSaveAndApprove={handleSaveAndApprove}
+          onSave={handleSave}
+          onDelete={handleDelete}
         />
       </Card>
     </form>
@@ -615,10 +753,20 @@ function Cabecalho({
   person,
   isSelf,
   alterado,
+  isPending,
+  pendingAction,
+  onApprove,
+  onReactivate,
+  onSuspend,
 }: {
   person: UserFileData;
   isSelf: boolean;
   alterado: boolean;
+  isPending: boolean;
+  pendingAction: string | null;
+  onApprove: () => void;
+  onReactivate: () => void;
+  onSuspend: () => void;
 }) {
   // Estes botões mandam o MESMO formulário para outro destino, então clicar num
   // deles com o rascunho aberto jogaria fora o que ainda não foi salvo — sem
@@ -683,24 +831,25 @@ function Cabecalho({
         </div>
       )}
 
-      {/* Aprovar, reativar e suspender são decisões sobre a CONTA, não
-          atributos dela: valem no clique e não esperam o "Salvar". Por isso
-          são `formAction` — o mesmo formulário, outro destino. */}
+      {/* Aprovar, reativar e suspender são decisões sobre a CONTA */}
       <div className="flex shrink-0 flex-wrap gap-2">
         {person.status === "pending" ? (
           <Button
-            type="submit"
-            formAction={saveAndApproveUser}
+            type="button"
+            onClick={onApprove}
             variant="primary"
+            loading={isPending && pendingAction === "approve"}
+            disabled={isPending}
           >
             Aprovar acesso
           </Button>
         ) : null}
         {person.status === "suspended" ? (
           <Button
-            type="submit"
-            formAction={reactivateUser}
-            disabled={alterado}
+            type="button"
+            onClick={onReactivate}
+            disabled={alterado || isPending}
+            loading={isPending && pendingAction === "reactivate"}
             title={espera}
           >
             Reativar
@@ -710,10 +859,11 @@ function Cabecalho({
             plataforma para fora dela mesma. O servidor também recusa. */}
         {person.status === "active" && !isSelf ? (
           <Button
-            type="submit"
-            formAction={suspendUser}
+            type="button"
+            onClick={onSuspend}
             variant="ghost"
-            disabled={alterado}
+            disabled={alterado || isPending}
+            loading={isPending && pendingAction === "suspend"}
             title={espera}
           >
             Suspender
@@ -726,13 +876,18 @@ function Cabecalho({
 
 /**
  * Situação do segundo fator, e o botão que o redefine.
- *
- * Fica na ficha e não numa tela própria porque a pergunta só aparece junto com
- * a pessoa: "fulano perdeu o celular". A confirmação em dois passos existe
- * porque redefinir DERRUBA as sessões dela — quem clicar sem querer tira
- * alguém do meio do trabalho.
  */
-function SegundoFator({ person }: { person: UserFileData }) {
+function SegundoFator({
+  person,
+  isPending,
+  pendingAction,
+  onReset2FA,
+}: {
+  person: UserFileData;
+  isPending: boolean;
+  pendingAction: string | null;
+  onReset2FA: () => void;
+}) {
   const [confirmando, setConfirmando] = useState(false);
 
   if (!person.twoFactorEnabled) {
@@ -752,6 +907,7 @@ function SegundoFator({ person }: { person: UserFileData }) {
             type="button"
             size="sm"
             variant="ghost"
+            disabled={isPending}
             onClick={() => setConfirmando(true)}
           >
             Redefinir
@@ -767,10 +923,12 @@ function SegundoFator({ person }: { person: UserFileData }) {
             aplicativo de novo.
           </p>
           <Button
-            type="submit"
-            formAction={resetTwoFactor}
+            type="button"
+            onClick={onReset2FA}
             size="sm"
             variant="secondary"
+            loading={isPending && pendingAction === "reset-2fa"}
+            disabled={isPending}
           >
             Redefinir
           </Button>
@@ -778,6 +936,7 @@ function SegundoFator({ person }: { person: UserFileData }) {
             type="button"
             size="sm"
             variant="ghost"
+            disabled={isPending}
             onClick={() => setConfirmando(false)}
           >
             Cancelar
@@ -790,20 +949,27 @@ function SegundoFator({ person }: { person: UserFileData }) {
 
 /**
  * O pé da ficha: quando entrou, o que fazer com o que mudou, e a exclusão.
- *
- * Salvar e descartar só aparecem quando há o que salvar — um botão permanente
- * em cinza é indistinguível de um desabilitado, e some quando importa.
  */
 function Rodape({
   person,
   isSelf,
   alterado,
+  isPending,
+  pendingAction,
   aoDescartar,
+  onSaveAndApprove,
+  onSave,
+  onDelete,
 }: {
   person: UserFileData;
   isSelf: boolean;
   alterado: boolean;
+  isPending: boolean;
+  pendingAction: string | null;
   aoDescartar: () => void;
+  onSaveAndApprove: () => void;
+  onSave: () => void;
+  onDelete: () => void;
 }) {
   const [confirmando, setConfirmando] = useState(false);
 
@@ -817,19 +983,32 @@ function Rodape({
         <div className="flex flex-wrap items-center gap-2">
           {alterado ? (
             <>
-              <Button type="button" variant="ghost" onClick={aoDescartar}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={aoDescartar}
+                disabled={isPending}
+              >
                 Descartar
               </Button>
               {person.status === "pending" ? (
                 <Button
-                  type="submit"
-                  formAction={saveAndApproveUser}
+                  type="button"
+                  onClick={onSaveAndApprove}
                   variant="primary"
+                  loading={isPending && pendingAction === "approve"}
+                  disabled={isPending}
                 >
                   Salvar e aprovar acesso
                 </Button>
               ) : (
-                <Button type="submit" variant="primary">
+                <Button
+                  type="button"
+                  onClick={onSave}
+                  variant="primary"
+                  loading={isPending && pendingAction === "save"}
+                  disabled={isPending}
+                >
                   Salvar alterações
                 </Button>
               )}
@@ -838,6 +1017,7 @@ function Rodape({
             <Button
               type="button"
               variant="ghost"
+              disabled={isPending}
               onClick={() => setConfirmando(true)}
             >
               Excluir pessoa
@@ -854,10 +1034,12 @@ function Rodape({
             desfazer — suspender guarda o histórico.
           </p>
           <Button
-            type="submit"
-            formAction={deleteUser}
+            type="button"
+            onClick={onDelete}
             size="sm"
             variant="danger"
+            loading={isPending && pendingAction === "delete"}
+            disabled={isPending}
           >
             Excluir
           </Button>
@@ -865,6 +1047,7 @@ function Rodape({
             type="button"
             size="sm"
             variant="ghost"
+            disabled={isPending}
             onClick={() => setConfirmando(false)}
           >
             Cancelar

@@ -11,6 +11,7 @@ import {
 import { INITIAL_BASE_STATE } from "../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input, FIELD_WIDTHS } from "@/components/ui/field";
@@ -193,9 +194,9 @@ export function ProductsPanel({
                           ]}
                         />
                       </div>
-                      <Button type="submit" size="sm" variant="secondary">
+                      <SubmitButton size="sm" variant="secondary" pendingLabel="Salvando…">
                         Salvar
-                      </Button>
+                      </SubmitButton>
                     </form>
 
                     <Button
@@ -208,9 +209,9 @@ export function ProductsPanel({
 
                     <form action={toggleProduct}>
                       <input type="hidden" name="productId" value={item.id} />
-                      <Button type="submit" size="sm" variant="ghost">
+                      <SubmitButton size="sm" variant="ghost" pendingLabel={item.isActive ? "Desativando…" : "Reativando…"}>
                         {item.isActive ? "Desativar" : "Reativar"}
-                      </Button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </li>
@@ -310,7 +311,7 @@ function NewProductDrawer({
           <Input id="product-description" name="description" maxLength={200} />
         </Field>
 
-        <Button type="submit" variant="primary" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending} loading={isPending}>
           {isPending ? "Cadastrando…" : "Cadastrar produto"}
         </Button>
       </form>
@@ -361,9 +362,9 @@ function EditProductDrawer({
           </p>
 
           <div className="flex gap-2">
-            <Button type="submit" variant="primary">
+            <SubmitButton variant="primary" pendingLabel="Salvando…">
               Salvar
-            </Button>
+            </SubmitButton>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>

@@ -5,6 +5,7 @@ import { NewDomainForm } from "./new-domain-form";
 import { toggleAllowedDomain } from "./actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardBody, PageHeader } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth/session";
 import { getDb } from "@/lib/db/client";
@@ -89,9 +90,9 @@ export default async function AdminDomainsPage() {
                   ) : (
                     <form action={toggleAllowedDomain}>
                       <input type="hidden" name="domainId" value={item.id} />
-                      <Button type="submit" size="sm" variant="ghost">
+                      <SubmitButton size="sm" variant="ghost" pendingLabel={item.isActive ? "Desativando…" : "Reativando…"}>
                         {item.isActive ? "Desativar" : "Reativar"}
-                      </Button>
+                      </SubmitButton>
                     </form>
                   )}
                 </li>

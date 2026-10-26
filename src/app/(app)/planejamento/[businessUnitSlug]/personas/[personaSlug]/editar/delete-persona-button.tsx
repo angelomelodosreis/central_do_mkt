@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { deletePersona } from "../../actions";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export function DeletePersonaButton({
   personaId,
@@ -33,9 +34,9 @@ export function DeletePersonaButton({
         <strong className="font-semibold text-slate-900">{personaName}</strong>? Esta ação não pode ser desfeita.
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" variant="danger">
+        <SubmitButton variant="danger" pendingLabel="Excluindo definitivamente…">
           Sim, excluir definitivamente
-        </Button>
+        </SubmitButton>
         <Button
           type="button"
           variant="ghost"

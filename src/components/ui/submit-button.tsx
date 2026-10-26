@@ -19,16 +19,23 @@ import { Button } from "./button";
 export function SubmitButton({
   children,
   pendingLabel,
+  loading,
   ...props
 }: ComponentProps<typeof Button> & {
-  /** Rótulo durante o envio. Sem ele, o próprio rótulo fica com reticências. */
+  /** Rótulo durante o envio. Sem ele, mantém o rótulo original com spinner. */
   pendingLabel?: string;
 }) {
   const { pending } = useFormStatus();
+  const isSpinning = Boolean(pending || loading);
 
   return (
-    <Button type="submit" disabled={pending || props.disabled} {...props}>
-      {pending ? (pendingLabel ?? "…") : children}
+    <Button
+      type="submit"
+      disabled={isSpinning || props.disabled}
+      loading={isSpinning}
+      {...props}
+    >
+      {pending && pendingLabel ? pendingLabel : children}
     </Button>
   );
 }

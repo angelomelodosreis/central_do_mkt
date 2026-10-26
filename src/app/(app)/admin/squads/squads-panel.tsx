@@ -12,6 +12,7 @@ import {
 import { Avatar } from "@/components/org/person-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
@@ -171,13 +172,13 @@ function SquadCard({
 
         <form action={toggleSquad}>
           <input type="hidden" name="squadId" value={squad.id} />
-          <Button
-            type="submit"
+          <SubmitButton
             size="sm"
             variant={squad.isActive ? "ghost" : "secondary"}
+            pendingLabel={squad.isActive ? "Desativando…" : "Reativando…"}
           >
             {squad.isActive ? "Desativar" : "Reativar"}
-          </Button>
+          </SubmitButton>
         </form>
       </div>
 
@@ -224,9 +225,9 @@ function SquadCard({
                       name="membershipId"
                       value={member.membershipId}
                     />
-                    <Button type="submit" size="sm" variant="ghost">
+                    <SubmitButton size="sm" variant="ghost" pendingLabel="Salvando…">
                       {member.isLead ? "Tirar" : "Responsável"}
-                    </Button>
+                    </SubmitButton>
                   </form>
                   <form action={removeSquadMember}>
                     <input
@@ -234,9 +235,9 @@ function SquadCard({
                       name="membershipId"
                       value={member.membershipId}
                     />
-                    <Button type="submit" size="sm" variant="ghost">
+                    <SubmitButton size="sm" variant="ghost" pendingLabel="Removendo…">
                       Remover
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </li>
               ))}
@@ -265,9 +266,9 @@ function SquadCard({
                 />
               </Field>
             </div>
-            <Button type="submit" size="sm">
+            <SubmitButton size="sm" pendingLabel="Adicionando…">
               Adicionar
-            </Button>
+            </SubmitButton>
             <Button
               type="button"
               size="sm"

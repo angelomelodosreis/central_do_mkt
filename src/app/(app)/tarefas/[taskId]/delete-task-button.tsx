@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { deleteTask } from "../actions";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 /**
  * Confirmação em dois passos.
@@ -39,9 +40,9 @@ export function DeleteTaskButton({
       </p>
       <form action={deleteTask}>
         <input type="hidden" name="taskId" value={taskId} />
-        <Button type="submit" size="sm" variant="danger">
+        <SubmitButton size="sm" variant="danger" pendingLabel="Excluindo…">
           Excluir
-        </Button>
+        </SubmitButton>
       </form>
       <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
         Cancelar

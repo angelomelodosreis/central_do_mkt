@@ -6,6 +6,7 @@ import { createDivision, toggleDivision, updateDivision } from "../actions";
 import { INITIAL_BASE_STATE } from "../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input } from "@/components/ui/field";
@@ -124,9 +125,9 @@ export function DivisionsPanel({
                 </ButtonLink>
                 <form action={toggleDivision} className="ml-auto">
                   <input type="hidden" name="divisionId" value={division.id} />
-                  <Button type="submit" size="sm" variant="ghost">
+                  <SubmitButton size="sm" variant="ghost" pendingLabel={division.isActive ? "Desativando…" : "Reativando…"}>
                     {division.isActive ? "Desativar" : "Reativar"}
-                  </Button>
+                  </SubmitButton>
                 </form>
               </div>
             </CardBody>
@@ -210,7 +211,7 @@ function NewDivisionDrawer({
           />
         </Field>
 
-        <Button type="submit" variant="primary" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending} loading={isPending}>
           {isPending ? "Criando…" : "Criar divisão"}
         </Button>
       </form>
@@ -256,9 +257,9 @@ function EditDivisionDrawer({
           </Field>
 
           <div className="flex gap-2">
-            <Button type="submit" variant="primary">
+            <SubmitButton variant="primary" pendingLabel="Salvando…">
               Salvar
-            </Button>
+            </SubmitButton>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>

@@ -11,6 +11,7 @@ import {
 import { INITIAL_ORG_STATE } from "../form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardBody, Section } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input } from "@/components/ui/field";
@@ -166,9 +167,9 @@ export function JobTitlesPanel({
                           name="jobTitleId"
                           value={title.id}
                         />
-                        <Button type="submit" size="sm" variant="ghost">
+                        <SubmitButton size="sm" variant="ghost" pendingLabel={title.isActive ? "Desativando…" : "Reativando…"}>
                           {title.isActive ? "Desativar" : "Reativar"}
-                        </Button>
+                        </SubmitButton>
                       </form>
                       {/* Excluir só existe quando ninguém ocupa o cargo:
                           ocupado, apagar deixaria pessoas apontando para nada
@@ -203,9 +204,9 @@ export function JobTitlesPanel({
                             name="jobTitleId"
                             value={title.id}
                           />
-                          <Button type="submit" size="sm" variant="danger">
+                          <SubmitButton size="sm" variant="danger" pendingLabel="Excluindo…">
                             Excluir
-                          </Button>
+                          </SubmitButton>
                         </form>
                         <Button
                           size="sm"
@@ -378,7 +379,7 @@ function NewTitleDrawer({
 
         <TimesDoCargo units={units} iniciais={[]} />
 
-        <Button type="submit" variant="primary" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending} loading={isPending}>
           {isPending ? "Criando…" : "Criar cargo"}
         </Button>
       </form>
@@ -443,9 +444,9 @@ function EditTitleDrawer({
           </p>
 
           <div className="flex gap-2">
-            <Button type="submit" variant="primary">
+            <SubmitButton variant="primary" pendingLabel="Salvando…">
               Salvar
-            </Button>
+            </SubmitButton>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>

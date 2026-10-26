@@ -6,6 +6,7 @@ import { createOrgUnit, toggleOrgUnit, updateOrgUnit } from "./actions";
 import { INITIAL_ORG_STATE } from "./form-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardBody } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input } from "@/components/ui/field";
@@ -145,9 +146,9 @@ export function StructurePanel({ units }: { units: UnitRow[] }) {
                   </Button>
                   <form action={toggleOrgUnit}>
                     <input type="hidden" name="teamId" value={unit.id} />
-                    <Button type="submit" size="sm" variant="ghost">
+                    <SubmitButton size="sm" variant="ghost" pendingLabel={unit.isActive ? "Desativando…" : "Reativando…"}>
                       {unit.isActive ? "Desativar" : "Reativar"}
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </div>
               </li>
@@ -290,7 +291,7 @@ function NewUnitDrawer({
           <Input id="unit-description" name="description" maxLength={200} />
         </Field>
 
-        <Button type="submit" variant="primary" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending} loading={isPending}>
           {isPending ? "Criando…" : "Criar"}
         </Button>
       </form>
@@ -361,9 +362,9 @@ function EditUnitDrawer({
           </Field>
 
           <div className="flex gap-2">
-            <Button type="submit" variant="primary">
+            <SubmitButton variant="primary" pendingLabel="Salvando…">
               Salvar
-            </Button>
+            </SubmitButton>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>
