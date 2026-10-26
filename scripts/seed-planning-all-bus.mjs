@@ -51,9 +51,9 @@ export async function seedPlanningAllBus(client) {
       cycleId = `cyc_${buSlug}_2026`;
       const cycleSlug = "ciclo-2026-2027";
       const cycleName = `${buLabel} · 2026 / 2027`;
-      const startsAt = new Date("2026-01-01T00:00:00.000Z").getTime();
-      const endsAt = new Date("2027-12-31T23:59:59.999Z").getTime();
-      const now = Date.now();
+      const startsAt = Math.floor(new Date("2026-01-01T00:00:00.000Z").getTime() / 1000);
+      const endsAt = Math.floor(new Date("2027-12-31T23:59:59.999Z").getTime() / 1000);
+      const now = Math.floor(Date.now() / 1000);
 
       await client.execute({
         sql: `INSERT INTO strategy_cycle (id, business_unit_id, name, slug, starts_at, ends_at, is_current, created_at, updated_at)
@@ -74,7 +74,7 @@ export async function seedPlanningAllBus(client) {
     let roundId;
     if (resRounds.rows.length === 0) {
       roundId = `rnd_${cycleId}_1`;
-      const now = Date.now();
+      const now = Math.floor(Date.now() / 1000);
       await client.execute({
         sql: `INSERT INTO strategy_round (id, cycle_id, sequence, reference_date, is_open, summary, cycle_period, created_at, updated_at)
               VALUES (?, ?, 1, ?, 1, '1ª Rodada de Diagnóstico Semestral (Leitura dos 5 Pilares)', 'Jan - Dez/2027', ?, ?)`,
@@ -92,7 +92,7 @@ export async function seedPlanningAllBus(client) {
     });
 
     if (resGoals.rows.length === 0) {
-      const now = Date.now();
+      const now = Math.floor(Date.now() / 1000);
       const defaultGoals = [
         {
           id: `kpi_${buSlug}_1`,

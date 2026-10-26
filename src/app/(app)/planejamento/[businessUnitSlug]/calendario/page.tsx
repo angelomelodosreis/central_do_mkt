@@ -105,9 +105,19 @@ export default async function StrategyCalendarPage({
   // A âncora é o dia que o calendário está mostrando. Sem ela na URL, abre no
   // hoje — ou no começo do ciclo, se o ciclo ainda não começou.
   const now = new Date();
+  // Sanitização defensiva contra datas armazenadas em milissegundos
+  const cycleStartsAt =
+    cycle.startsAt.getFullYear() > 2100
+      ? new Date(Math.floor(cycle.startsAt.getTime() / 1000))
+      : cycle.startsAt;
+  const cycleEndsAt =
+    cycle.endsAt.getFullYear() > 2100
+      ? new Date(Math.floor(cycle.endsAt.getTime() / 1000))
+      : cycle.endsAt;
+
   const anchor =
     (em ? fromDateInput(em) : null) ??
-    (cycle.startsAt.getTime() > now.getTime() ? cycle.startsAt : now);
+    (cycleStartsAt.getTime() > now.getTime() ? cycleStartsAt : now);
 
   const janela = windowFor(zoom, anchor);
   const [items, products] = await Promise.all([
@@ -123,8 +133,8 @@ export default async function StrategyCalendarPage({
         id: cycle.id,
         slug: cycle.slug,
         name: cycle.name,
-        startsAt: cycle.startsAt.toISOString(),
-        endsAt: cycle.endsAt.toISOString(),
+        startsAt: cycleStartsAt.toISOString(),
+        endsAt: cycleEndsAt.toISOString(),
       }}
       zoom={zoom}
       anchorIso={anchor.toISOString()}
