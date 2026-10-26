@@ -1,14 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Check,
-  Copy,
-  Lock,
-  RotateCcw,
-  Sparkles,
-  Info,
-} from "lucide-react";
+import Image from "next/image";
+import { Check, Copy, RotateCcw } from "lucide-react";
 
 import {
   calculateInstallments,
@@ -20,8 +14,6 @@ import {
   PARCELAS_STORAGE_KEY,
   type ParcelasState,
 } from "@/lib/modules/calculadora-parcelas/math";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils/cn";
 
 export interface ProductOption {
   id: string;
@@ -57,7 +49,7 @@ export function CalculatorWorkspace({
         if (parsed.n !== undefined) setNInput(String(parsed.n));
       }
     } catch {
-      // Falha silenciosa em caso de restrição do navegador
+      // Ignora erro de acesso ao storage
     }
     setMounted(true);
   }, []);
@@ -74,7 +66,7 @@ export function CalculatorWorkspace({
       };
       localStorage.setItem(PARCELAS_STORAGE_KEY, JSON.stringify(stateToSave));
     } catch {
-      // Ignora erro de cota de storage
+      // Ignora erro de cota
     }
   }, [product, priceInput, nInput, mounted]);
 
@@ -113,7 +105,7 @@ export function CalculatorWorkspace({
     setToastMessage(message);
     setTimeout(() => {
       setToastMessage(null);
-    }, 2400);
+    }, 2200);
   };
 
   const handleCopy = async () => {
@@ -123,7 +115,7 @@ export function CalculatorWorkspace({
       showToast("Texto copiado para a área de transferência!");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      showToast("Selecione o texto manualmente para copiar.");
+      showToast("Texto selecionado — use Ctrl+C");
     }
   };
 
@@ -131,7 +123,7 @@ export function CalculatorWorkspace({
     setProduct(DEFAULT_PARCELAS_EXAMPLE.product);
     setPriceInput(String(DEFAULT_PARCELAS_EXAMPLE.price));
     setNInput(String(DEFAULT_PARCELAS_EXAMPLE.n));
-    showToast("Exemplo padrão restaurado!");
+    showToast("Exemplo restaurado");
   };
 
   const tableRows = useMemo(() => {
@@ -149,110 +141,516 @@ export function CalculatorWorkspace({
   }, [price, n, maxDisplayN]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 pb-16">
-      {/* Header com identidade MedCof */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="calc-container">
+      {/* Estilos fiéis e escopados à calculadora do Claude Artifact */}
+      <style jsx>{`
+        .calc-container {
+          max-width: 1120px;
+          margin: 0 auto;
+          color: #1d1d22;
+          font-size: 15px;
+          line-height: 1.5;
+        }
+
+        .calc-header {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+
+        .calc-brand {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          background: #ffffff;
+          border: 1px solid #e6e4e6;
+          border-radius: 10px;
+          padding: 8px 14px;
+          margin-bottom: 14px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        }
+
+        .calc-brand-text {
+          font-weight: 700;
+          font-size: 14px;
+          letter-spacing: -0.01em;
+          color: #1d1d22;
+        }
+
+        .calc-brand-sub {
+          font-size: 11px;
+          color: #5c5a62;
+          margin-left: 2px;
+        }
+
+        .calc-tag {
+          display: inline-block;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          background: #fbefdf;
+          color: #a2560b;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+
+        .calc-title {
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          font-size: clamp(26px, 4vw, 36px);
+          line-height: 1.15;
+          margin: 0;
+          color: #1d1d22;
+        }
+
+        .calc-lede {
+          color: #5c5a62;
+          margin: 6px 0 0;
+          max-width: 60ch;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .calc-btn {
+          border: 1px solid #e6e4e6;
+          background: #ffffff;
+          color: #1d1d22;
+          padding: 8px 14px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.15s ease;
+        }
+        .calc-btn:hover {
+          border-color: #5c5a62;
+          background: #f6f6f7;
+        }
+
+        .calc-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 360px;
+          gap: 24px;
+          align-items: start;
+        }
+        @media (max-width: 920px) {
+          .calc-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+
+        .calc-col {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          min-width: 0;
+        }
+
+        .calc-block {
+          background: #ffffff;
+          border: 1px solid #e6e4e6;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+        .calc-block h2 {
+          font-weight: 600;
+          letter-spacing: -0.01em;
+          font-size: 18px;
+          margin: 0 0 4px;
+          color: #1d1d22;
+        }
+        .calc-block .hint {
+          color: #5c5a62;
+          font-size: 13px;
+          margin: 0 0 14px;
+        }
+
+        .calc-fields {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+          gap: 12px;
+        }
+
+        .calc-label {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 13px;
+          color: #5c5a62;
+          font-weight: 500;
+        }
+
+        .calc-input {
+          font: inherit;
+          color: #1d1d22 !important;
+          background: #f6f6f7 !important;
+          border: 1px solid #e6e4e6 !important;
+          border-radius: 8px;
+          padding: 8px 10px;
+          width: 100%;
+          min-width: 0;
+          font-size: 15px;
+          transition: border-color 0.15s ease;
+        }
+        .calc-input:focus {
+          border-color: #e5283a !important;
+          outline: none;
+          background: #ffffff !important;
+        }
+        .calc-input-number {
+          font-size: 15px;
+          text-align: right;
+          font-variant-numeric: tabular-nums;
+          font-family: inherit;
+          font-weight: 600;
+        }
+
+        .calc-suffix {
+          position: relative;
+        }
+        .calc-suffix input {
+          padding-right: 68px !important;
+        }
+        .calc-suffix span {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 13px;
+          color: #5c5a62;
+          font-weight: 600;
+          pointer-events: none;
+        }
+
+        .calc-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .calc-cards div {
+          background: #f6f6f7;
+          border-radius: 8px;
+          padding: 10px 12px;
+          font-size: 12px;
+          color: #5c5a62;
+        }
+        .calc-cards b {
+          display: block;
+          font-size: 16px;
+          color: #1d1d22;
+          font-weight: 600;
+          font-variant-numeric: tabular-nums;
+          margin-top: 2px;
+        }
+
+        .calc-tablewrap {
+          overflow-x: auto;
+        }
+        .calc-table {
+          border-collapse: collapse;
+          width: 100%;
+          min-width: 480px;
+        }
+        .calc-table th {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+          color: #5c5a62;
+          font-weight: 600;
+          text-align: left;
+          padding: 8px 6px;
+          border-bottom: 1px solid #e6e4e6;
+        }
+        .calc-table th.num,
+        .calc-table td.num {
+          text-align: right;
+        }
+        .calc-table td {
+          padding: 7px 6px;
+          border-bottom: 1px solid #e6e4e6;
+          font-variant-numeric: tabular-nums;
+          font-size: 14px;
+          color: #1d1d22;
+        }
+        .calc-table tbody tr {
+          cursor: pointer;
+        }
+        .calc-table tbody tr:hover td {
+          background: #f6f6f7;
+        }
+        .calc-table tr.sel td {
+          background: #fdebed !important;
+          font-weight: 600;
+        }
+        .calc-pill {
+          display: inline-block;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 999px;
+          margin-left: 6px;
+        }
+        .calc-pill-free {
+          background: #e5f4ec;
+          color: #1d7a4f;
+        }
+        .calc-pill-sel {
+          background: #e5283a;
+          color: #ffffff;
+        }
+
+        .calc-ticket {
+          position: sticky;
+          top: 24px;
+          background: #ffffff;
+          border: 1px solid #e6e4e6;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+        }
+        @media (max-width: 920px) {
+          .calc-ticket {
+            position: static;
+          }
+        }
+        .calc-ticket-head {
+          padding: 22px 20px;
+          background: #e5283a;
+          color: #ffffff;
+        }
+        .calc-ticket-head .proc {
+          font-size: 13px;
+          color: #ffd6da;
+          margin-bottom: 6px;
+          overflow-wrap: anywhere;
+          font-weight: 600;
+        }
+        .calc-ticket-head .price {
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          font-size: 40px;
+          line-height: 1;
+          font-variant-numeric: tabular-nums;
+          color: #ffffff;
+        }
+        .calc-ticket-head .price small {
+          font-size: 22px;
+          font-weight: 700;
+          margin-right: 6px;
+        }
+        .calc-ticket-head .price-sub {
+          font-size: 13px;
+          color: #ffd6da;
+          margin-top: 10px;
+        }
+        .calc-ticket-head .price-sub b {
+          color: #ffffff;
+          font-weight: 600;
+        }
+        .calc-rows {
+          padding: 16px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .calc-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          font-size: 14px;
+          color: #5c5a62;
+        }
+        .calc-row .v {
+          font-variant-numeric: tabular-nums;
+          white-space: nowrap;
+          color: #1d1d22;
+          font-weight: 500;
+        }
+        .calc-row.total {
+          border-top: 1px solid #e6e4e6;
+          padding-top: 8px;
+          font-weight: 600;
+          color: #1d1d22;
+        }
+        .calc-row.int .v {
+          color: #e5283a;
+          font-weight: 700;
+        }
+        .calc-copybox {
+          border-top: 1px dashed #e6e4e6;
+          padding: 16px 20px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .calc-copybox h3 {
+          margin: 0;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+          color: #5c5a62;
+          font-weight: 600;
+        }
+        .calc-copytext {
+          background: #f6f6f7;
+          border-left: 3px solid #e5283a;
+          border-radius: 6px;
+          padding: 12px;
+          font-size: 14px;
+          line-height: 1.5;
+          white-space: pre-line;
+          color: #1d1d22;
+          font-family: inherit;
+        }
+        .calc-btn-copy {
+          background: #e5283a;
+          border: 1px solid #e5283a;
+          color: #ffffff;
+          font-weight: 600;
+          width: 100%;
+          justify-content: center;
+          padding: 10px 14px;
+          border-radius: 8px;
+          font-size: 14px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: background-color 0.15s ease;
+        }
+        .calc-btn-copy:hover {
+          background: #c41b2c;
+          border-color: #c41b2c;
+        }
+        .calc-foot {
+          color: #5c5a62;
+          font-size: 12px;
+          margin-top: 20px;
+          max-width: 75ch;
+          line-height: 1.5;
+        }
+        .calc-toast {
+          position: fixed;
+          left: 50%;
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+          transform: translateX(-50%);
+          background: #1d1d22;
+          color: #ffffff;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          z-index: 9999;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+      `}</style>
+
+      {/* Header com Logo e Restaurar Exemplo */}
+      <header className="calc-header">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-              Calculadora de parcelas
-            </h1>
+          <div className="calc-brand">
+            <Image
+              src="/brand/medcof-mark.svg"
+              alt="Grupo MedCof"
+              width={26}
+              height={30}
+              className="h-6 w-auto"
+            />
+            <div>
+              <span className="calc-brand-text">Grupo MedCof</span>
+              <span className="calc-brand-sub">· Central do Marketing</span>
+            </div>
+          </div>
+
+          <div>
             {isExample && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
-                <Sparkles className="h-3 w-3" />
+              <span className="calc-tag">
                 Valores de exemplo — substitua pelos seus
               </span>
             )}
+            <h1 className="calc-title">Calculadora de parcelas</h1>
+            <p className="calc-lede">
+              Juros simples, igual à planilha do time: cada parcela recebe o valor
+              dividido mais um acréscimo fixo sobre o preço à vista.
+            </p>
           </div>
-          <p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
-            Juros simples, igual à planilha do time: cada parcela recebe o valor
-            dividido mais um acréscimo fixo sobre o preço à vista.
-          </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleResetExample}
-            className="text-xs"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Restaurar exemplo
-          </Button>
-        </div>
-      </div>
+        <button
+          className="calc-btn"
+          type="button"
+          onClick={handleResetExample}
+        >
+          <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+          Restaurar exemplo
+        </button>
+      </header>
 
-      {/* Grid Principal: Entradas & Tabela à esquerda, Ficha à direita */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-        {/* Coluna Esquerda (Formulário + Tabela) */}
-        <div className="space-y-6 lg:col-span-7 xl:col-span-8">
-          {/* Bloco de Entradas e Cálculo Rápido */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-              Informações
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              Preencha o preço à vista e o número de parcelas. A taxa por parcela é
-              fixa pelo padrão corporativo.
+      {/* Grid: Formulário + Tabela à esquerda, Ticket à direita */}
+      <div className="calc-grid">
+        <div className="calc-col">
+          {/* Seção de Informações */}
+          <section className="calc-block">
+            <h2>Informações</h2>
+            <p className="hint">
+              Preencha o preço à vista e o número de parcelas. A taxa por parcela é fixa.
             </p>
 
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="calc-fields">
               {/* Produto (opcional) */}
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Produto (opcional)
-                </label>
-                <div className="mt-1">
-                  <input
-                    type="text"
-                    list="product-suggestions"
-                    value={product}
-                    onChange={(e) => setProduct(e.target.value)}
-                    placeholder="Ex.: Extensivo TED 2027"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                  />
-                  {suggestedProducts.length > 0 && (
-                    <datalist id="product-suggestions">
-                      {suggestedProducts.map((p) => (
-                        <option
-                          key={p.id}
-                          value={p.name}
-                          label={p.businessUnitLabel ?? undefined}
-                        />
-                      ))}
-                    </datalist>
-                  )}
-                </div>
-              </div>
+              <label className="calc-label" style={{ gridColumn: "1 / -1" }}>
+                Produto (opcional)
+                <input
+                  type="text"
+                  list="product-suggestions"
+                  value={product}
+                  onChange={(e) => setProduct(e.target.value)}
+                  placeholder="Ex.: Extensivo TED 2027"
+                  className="calc-input"
+                />
+                {suggestedProducts.length > 0 && (
+                  <datalist id="product-suggestions">
+                    {suggestedProducts.map((p) => (
+                      <option
+                        key={p.id}
+                        value={p.name}
+                        label={p.businessUnitLabel ?? undefined}
+                      />
+                    ))}
+                  </datalist>
+                )}
+              </label>
 
               {/* Valor à vista */}
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Valor à vista
-                </label>
-                <div className="relative mt-1">
+              <label className="calc-label">
+                Valor à vista
+                <div className="calc-suffix">
                   <input
                     type="number"
                     min="0"
                     step="1"
                     value={priceInput}
                     onChange={(e) => setPriceInput(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-3 pr-10 text-right font-mono text-sm font-semibold text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="calc-input calc-input-number"
                   />
-                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-bold text-slate-400">
-                    R$
-                  </span>
+                  <span>R$</span>
                 </div>
-              </div>
+              </label>
 
               {/* Número de parcelas */}
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Número de parcelas
-                </label>
-                <div className="relative mt-1">
+              <label className="calc-label">
+                Número de parcelas
+                <div className="calc-suffix">
                   <input
                     type="number"
                     min="1"
@@ -260,287 +658,193 @@ export function CalculatorWorkspace({
                     step="1"
                     value={nInput}
                     onChange={(e) => setNInput(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-3 pr-8 text-right font-mono text-sm font-semibold text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="calc-input calc-input-number"
                   />
-                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-bold text-slate-400">
-                    x
-                  </span>
+                  <span>x</span>
                 </div>
-              </div>
+              </label>
 
               {/* Taxa de juros padrão (fixa) */}
-              <div className="sm:col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                    Taxa de juros padrão (fixa MedCof)
-                  </label>
-                  <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-                    <Lock className="h-3 w-3" />
-                    Padrão corporativo Grupo MedCof
-                  </span>
-                </div>
-                <div className="relative mt-1">
+              <label className="calc-label">
+                Taxa de juros padrão (fixa)
+                <div className="calc-suffix">
                   <input
                     type="text"
                     readOnly
                     disabled
+                    aria-readonly="true"
+                    title="Taxa fixa definida pelo Grupo MedCof"
                     value={fmtPct(DEFAULT_PARCELAS_RATE)}
-                    className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 py-2 pl-3 pr-16 text-right font-mono text-sm font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
+                    className="calc-input calc-input-number"
+                    style={{ cursor: "not-allowed", opacity: 0.8 }}
                   />
-                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-medium text-slate-400">
-                    /parc.
-                  </span>
+                  <span>% /parc.</span>
                 </div>
-              </div>
+              </label>
             </div>
 
-            {/* Painel com os 3 cards de cálculos intermediários */}
-            <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  Divisão base
-                </span>
-                <span className="mt-1 block font-mono text-base font-bold text-slate-900 dark:text-white">
-                  {fmtBRL(calc.base)}
-                </span>
+            {/* Métricas Intermediárias */}
+            <div className="calc-cards">
+              <div>
+                Divisão base
+                <b>{fmtBRL(calc.base)}</b>
               </div>
-
-              <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  Acréscimo fixo por parcela
-                </span>
-                <span className="mt-1 block font-mono text-base font-bold text-slate-900 dark:text-white">
-                  {fmtBRL(calc.add)}
-                </span>
+              <div>
+                Acréscimo fixo por parcela
+                <b>{fmtBRL(calc.add)}</b>
               </div>
-
-              <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-3 dark:border-brand-900/40 dark:bg-brand-950/20">
-                <span className="block text-[11px] font-medium text-brand-700 dark:text-brand-300">
+              <div style={{ background: "#fdebed", border: "1px solid #fbccd2" }}>
+                <span style={{ color: "#c41b2c", fontWeight: 600 }}>
                   Valor final da parcela
                 </span>
-                <span className="mt-1 block font-mono text-base font-bold text-brand-900 dark:text-brand-100">
-                  {fmtBRL(calc.inst)}
-                </span>
+                <b style={{ color: "#e5283a" }}>{fmtBRL(calc.inst)}</b>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Bloco Tabela de Todas as Opções */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-                  Todas as opções
-                </h2>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  Clique numa linha para levar esse número de parcelas para a ficha.
-                  Em 1x não há juros.
-                </p>
-              </div>
-
-              {/* Botões de limite de visualização */}
-              <div className="flex items-center gap-1">
+          {/* Seção Todas as Opções */}
+          <section className="calc-block">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+              <h2>Todas as opções</h2>
+              <div style={{ display: "flex", gap: "4px" }}>
                 {[12, 24, 36].map((limit) => (
                   <button
                     key={limit}
                     type="button"
                     onClick={() => setMaxDisplayN(limit)}
-                    className={cn(
-                      "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
-                      maxDisplayN === limit
-                        ? "bg-brand-600 text-white font-semibold"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300",
-                    )}
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid " + (maxDisplayN === limit ? "#e5283a" : "#e6e4e6"),
+                      background: maxDisplayN === limit ? "#e5283a" : "#ffffff",
+                      color: maxDisplayN === limit ? "#ffffff" : "#5c5a62",
+                      cursor: "pointer",
+                    }}
                   >
                     Até {limit}x
                   </button>
                 ))}
               </div>
             </div>
+            <p className="hint">
+              Clique numa linha para levar esse número de parcelas para a ficha. Em 1x não há juros.
+            </p>
 
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[480px] border-collapse text-left text-xs">
+            <div className="calc-tablewrap">
+              <table className="calc-table">
                 <thead>
-                  <tr className="border-b border-slate-200 text-slate-400 dark:border-slate-800">
-                    <th className="py-2.5 pl-2 font-semibold uppercase tracking-wider">
-                      Parcelas
-                    </th>
-                    <th className="py-2.5 text-right font-semibold uppercase tracking-wider">
-                      Valor da parcela
-                    </th>
-                    <th className="py-2.5 text-right font-semibold uppercase tracking-wider">
-                      Total a prazo
-                    </th>
-                    <th className="py-2.5 pr-2 text-right font-semibold uppercase tracking-wider">
-                      Juros totais
-                    </th>
+                  <tr>
+                    <th>Parcelas</th>
+                    <th className="num">Valor da parcela</th>
+                    <th className="num">Total a prazo</th>
+                    <th className="num">Juros totais</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                <tbody>
                   {tableRows.map(({ k, res, isSelected }) => (
                     <tr
                       key={k}
                       onClick={() => setNInput(String(k))}
-                      className={cn(
-                        "cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/60",
-                        isSelected
-                          ? "bg-brand-50/80 font-bold text-brand-950 dark:bg-brand-950/40 dark:text-brand-100"
-                          : "text-slate-700 dark:text-slate-300",
-                      )}
+                      className={isSelected ? "sel" : ""}
                     >
-                      <td className="py-2.5 pl-2">
-                        <span className="font-sans font-medium">{k}x</span>
+                      <td>
+                        {k}x
                         {k === 1 ? (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 font-sans text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                            sem juros
-                          </span>
+                          <span className="calc-pill calc-pill-free">sem juros</span>
                         ) : isSelected ? (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-brand-200/80 px-2 py-0.5 font-sans text-[10px] font-bold text-brand-900 dark:bg-brand-900 dark:text-brand-200">
-                            selecionada
-                          </span>
+                          <span className="calc-pill calc-pill-sel">selecionada</span>
                         ) : null}
                       </td>
-                      <td className="py-2.5 text-right font-semibold">
-                        {fmtBRL(res.inst)}
-                      </td>
-                      <td className="py-2.5 text-right text-slate-600 dark:text-slate-400">
-                        {fmtBRL(res.total)}
-                      </td>
-                      <td className="py-2.5 pr-2 text-right">
-                        {res.juros > 0 ? (
-                          <span className="text-brand-600 dark:text-brand-400">
-                            {fmtBRL(res.juros)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
+                      <td className="num font-semibold">{fmtBRL(res.inst)}</td>
+                      <td className="num">{fmtBRL(res.total)}</td>
+                      <td className="num" style={{ color: res.juros > 0 ? "#e5283a" : undefined }}>
+                        {res.juros > 0 ? fmtBRL(res.juros) : "—"}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         </div>
 
-        {/* Coluna Direita (Ficha da Oferta / Ticket) */}
-        <div className="lg:col-span-5 xl:col-span-4">
-          <div className="sticky top-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-slate-950">
-            {/* Cabeçalho do Ticket em Vermelho MedCof */}
-            <div className="bg-brand-600 p-5 text-white dark:bg-brand-700">
-              <div className="truncate text-xs font-semibold uppercase tracking-wider text-brand-200">
-                {product.trim() || "Oferta MedCof"}
-              </div>
-              <div className="mt-2 flex items-baseline gap-1.5 font-mono">
-                <span className="text-2xl font-bold text-brand-100">{n}x</span>
-                <span className="text-3xl font-black tracking-tight">
-                  {fmtBRL(calc.inst)}
-                </span>
-              </div>
-              <div className="mt-2 text-xs text-brand-100">
-                {n === 1 ? (
-                  <span className="font-bold underline decoration-brand-300">
-                    sem juros
-                  </span>
-                ) : (
-                  <>
-                    taxa de{" "}
-                    <b className="text-white">
-                      {fmtPct(DEFAULT_PARCELAS_RATE)}
-                    </b>{" "}
-                    por parcela
-                  </>
-                )}{" "}
-                · ou <b className="text-white">{fmtBRL(price)}</b> à vista
-              </div>
+        {/* Coluna da Ficha Lateral (Ticket) */}
+        <aside className="calc-ticket" aria-live="polite">
+          <div className="calc-ticket-head">
+            <div className="proc">{product.trim() || "Oferta MedCof"}</div>
+            <div className="price">
+              <small>{n}x</small>
+              <span>{fmtBRL(calc.inst)}</span>
             </div>
-
-            {/* Linhas de Conferência dos Valores */}
-            <div className="space-y-2.5 p-5 text-xs">
-              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                <span>Valor à vista</span>
-                <span className="font-mono font-medium text-slate-900 dark:text-white">
-                  {fmtBRL(price)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                <span>Taxa por parcela</span>
-                <span className="font-mono font-medium text-slate-900 dark:text-white">
-                  {n === 1 ? "—" : fmtPct(DEFAULT_PARCELAS_RATE)}
-                </span>
-              </div>
-
-              <div className="border-t border-slate-100 pt-2.5 dark:border-slate-800">
-                <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white">
-                  <span>Valor total a prazo</span>
-                  <span className="font-mono text-sm">{fmtBRL(calc.total)}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-brand-600 dark:text-brand-400">
-                <span className="font-medium">Juros totais pagos</span>
-                <span className="font-mono font-bold">{fmtBRL(calc.juros)}</span>
-              </div>
-            </div>
-
-            {/* Caixa de Texto para a Peça / Criativo */}
-            <div className="border-t border-dashed border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-900/40">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Texto para a peça
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  Pronto para anúncios e copies
-                </span>
-              </div>
-
-              <div className="mt-2 rounded-xl border-l-4 border-brand-500 bg-white p-3 font-mono text-xs leading-relaxed text-slate-800 shadow-xs dark:bg-slate-950 dark:text-slate-200">
-                <pre className="whitespace-pre-line font-sans">{pieceCopyText}</pre>
-              </div>
-
-              <div className="mt-3">
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={handleCopy}
-                  className="w-full text-xs font-semibold"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4" />
-                      Copiar texto
-                    </>
-                  )}
-                </Button>
-              </div>
+            <div className="price-sub">
+              {n === 1 ? (
+                <b>sem juros</b>
+              ) : (
+                <>
+                  taxa de <b>{fmtPct(DEFAULT_PARCELAS_RATE)}</b> por parcela
+                </>
+              )}{" "}
+              · ou <b>{fmtBRL(price)}</b> à vista
             </div>
           </div>
-        </div>
+
+          <div className="calc-rows">
+            <div className="calc-row">
+              <span>Valor à vista</span>
+              <span className="v">{fmtBRL(price)}</span>
+            </div>
+            <div className="calc-row">
+              <span>Taxa por parcela</span>
+              <span className="v">
+                {n === 1 ? "—" : fmtPct(DEFAULT_PARCELAS_RATE)}
+              </span>
+            </div>
+            <div className="calc-row total">
+              <span>Valor total a prazo</span>
+              <span className="v">{fmtBRL(calc.total)}</span>
+            </div>
+            <div className="calc-row int">
+              <span>Juros totais pagos</span>
+              <span className="v">{fmtBRL(calc.juros)}</span>
+            </div>
+          </div>
+
+          <div className="calc-copybox">
+            <h3>Texto para a peça</h3>
+            <div className="calc-copytext">{pieceCopyText}</div>
+            <button
+              className="calc-btn-copy"
+              type="button"
+              onClick={handleCopy}
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Texto copiado!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copiar texto
+                </>
+              )}
+            </button>
+          </div>
+        </aside>
       </div>
 
-      {/* Explicação da fórmula no rodapé */}
-      <div className="flex items-start gap-2 rounded-xl border border-slate-200/80 bg-slate-50 p-4 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
-        <Info className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-        <p>
-          <strong>Fórmula (juros simples):</strong> divisão base = valor à vista ÷
-          parcelas; acréscimo fixo = valor à vista × taxa ({fmtPct(DEFAULT_PARCELAS_RATE)} só
-          acima de 1x); parcela = divisão base + acréscimo. Total a prazo =
-          parcela × parcelas. Valores arredondados para centavos.
-        </p>
-      </div>
+      <p className="calc-foot">
+        Fórmula (juros simples): divisão base = valor à vista ÷ parcelas; acréscimo fixo = valor
+        à vista × taxa (só acima de 1x); parcela = divisão base + acréscimo. Total a prazo = parcela
+        × parcelas. Valores arredondados para centavos.
+      </p>
 
-      {/* Toast Flutuante de Confirmação */}
+      {/* Toast Notificação */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-medium text-white shadow-lg dark:bg-white dark:text-slate-900">
-            {toastMessage}
-          </div>
+        <div className="calc-toast animate-in fade-in duration-150">
+          {toastMessage}
         </div>
       )}
     </div>
