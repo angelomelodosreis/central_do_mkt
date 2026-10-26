@@ -67,8 +67,7 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
   theoretical_exam: {
     label: "Prova teórica",
     plural: "Provas teóricas",
-    description:
-      "Datas e períodos de provas teóricas de residência médica e concursos.",
+    description: "Data da prova teórica da especialidade",
     chip: "bg-amber-100 text-amber-900 ring-amber-200",
     dot: "bg-amber-500",
     lane: "bg-amber-500",
@@ -91,8 +90,7 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
   practical_exam: {
     label: "Prova prática",
     plural: "Provas práticas",
-    description:
-      "Datas de provas práticas, habilidades e multimídia de residência.",
+    description: "Data da prova prática da especialidade",
     chip: "bg-indigo-100 text-indigo-900 ring-indigo-200",
     dot: "bg-indigo-500",
     lane: "bg-indigo-500",
@@ -116,9 +114,9 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
     label: "Jantar",
     plural: "Jantares",
     description: "Jantares de confraternização, premiação e recepção de alunos.",
-    chip: "bg-rose-100 text-rose-900 ring-rose-200",
-    dot: "bg-rose-500",
-    lane: "bg-rose-500",
+    chip: "bg-pink-100 text-pink-900 ring-pink-200",
+    dot: "bg-pink-500",
+    lane: "bg-pink-500",
     linksToProduct: true,
     fields: [
       {

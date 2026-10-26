@@ -110,6 +110,19 @@ test("3. Catálogo oficial das 8 tags solicitadas pela Beatriz", () => {
   assert.equal(kindConfig("seasonality").label, "Sazonalidade de mercado");
   assert.equal(kindConfig("other").label, "Outros");
 
+  // Conferência dos tooltips/descrições solicitados pela Beatriz
+  assert.equal(
+    kindConfig("theoretical_exam").description,
+    "Data da prova teórica da especialidade",
+  );
+  assert.equal(
+    kindConfig("practical_exam").description,
+    "Data da prova prática da especialidade",
+  );
+  // Conferência da cor rosa para Jantar solicitada pela Beatriz
+  assert.equal(kindConfig("dinner").chip, "bg-pink-100 text-pink-900 ring-pink-200");
+  assert.equal(kindConfig("dinner").dot, "bg-pink-500");
+
   // Cada tag deve possuir cor própria e distinta (chip e dot)
   const chips = new Set();
   const dots = new Set();
