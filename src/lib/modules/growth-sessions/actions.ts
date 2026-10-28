@@ -9,6 +9,7 @@ import { growthSession } from "@/lib/db/schema";
 import { newId } from "@/lib/utils/id";
 import { sanitizePlainText } from "@/lib/utils/text";
 import { extractYoutubeId, normalizeVideoUrl } from "./utils";
+import { ensureGrowthSessionTable } from "./queries";
 
 export type ActionState = {
   success?: boolean;
@@ -96,6 +97,7 @@ export async function createGrowthSessionAction(
       }
     }
 
+    await ensureGrowthSessionTable();
     const db = await getDb();
 
     // Obtém o próximo uploadOrder
@@ -152,6 +154,7 @@ export async function deleteGrowthSessionAction(
       return { error: "ID da sessão é obrigatório." };
     }
 
+    await ensureGrowthSessionTable();
     const db = await getDb();
     await db.delete(growthSession).where(eq(growthSession.id, sessionId));
 
