@@ -17,6 +17,7 @@ import {
   User,
   TrendingUp,
   Calculator,
+  MonitorPlay,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
@@ -71,6 +72,14 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     category: "Navegação",
     href: "/calculadora-de-parcelas",
     icon: Calculator,
+  },
+  {
+    id: "nav_growth_sessions",
+    title: "Growth Sessions",
+    subtitle: "Treinamentos, gravações e playbooks da equipe MedCof",
+    category: "Navegação",
+    href: "/growth-sessions",
+    icon: MonitorPlay,
   },
   {
     id: "nav_docs",

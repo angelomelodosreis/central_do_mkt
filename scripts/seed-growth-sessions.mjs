@@ -1,0 +1,381 @@
+/**
+ * Popula a tabela growth_session com as 15 sessões oficiais da equipe MedCof.
+ */
+export async function seedGrowthSessions(client) {
+  try {
+    const existingRes = await client.execute("SELECT count(*) as total FROM growth_session");
+    const count = Number(existingRes.rows[0]?.total ?? 0);
+    if (count > 0) {
+      console.log(`[seed-growth-sessions] growth_session já possui ${count} sessões registradas.`);
+      return;
+    }
+  } catch (err) {
+    console.warn("[seed-growth-sessions] Tabela growth_session ainda não criada ou inacessível:", err.message);
+    return;
+  }
+
+  console.log("[seed-growth-sessions] Populando as 15 Growth Sessions oficiais...");
+
+  const now = Date.now();
+
+  const sessions = [
+    {
+      id: "mentalidade-carvazan",
+      uploadOrder: 15,
+      title: "GROWTH SESSIONS - Mentalidade - Carvazan",
+      theme: "Mentalidade & Alta Performance",
+      date: "28/10",
+      time: "16h18",
+      presenter: "Carvazan",
+      category: "Soft Skills",
+      youtubeId: "1QQZoc-l9jA",
+      videoUrl: "https://youtu.be/1QQZoc-l9jA",
+      toolUrl: null,
+      summaryUrl: null,
+      presentationUrl: null,
+      links: null,
+      description:
+        "Sessão sobre Mentalidade conduzida por Carvazan: alinhamento de postura, inteligência emocional, foco, disciplina e princípios de alta performance no ecossistema MedCof.",
+    },
+    {
+      id: "upskill-teste-gratis",
+      uploadOrder: 14,
+      title: "Upskill: Teste Grátis",
+      theme: "Teste Grátis & Aquisição",
+      date: "16/10",
+      time: "11h38",
+      presenter: "Marketing MedCof",
+      category: "Estratégia",
+      youtubeId: "qq3FLxiTtAo",
+      videoUrl: "https://youtu.be/qq3FLxiTtAo",
+      toolUrl: null,
+      summaryUrl: null,
+      presentationUrl: null,
+      links: null,
+      description:
+        "Sessão de Upskill focada na estratégia de Teste Grátis: alavanca de aquisição e conversão de novos alunos, análise da jornada de entrada, retenção e gatilhos de transição para os planos pagos.",
+    },
+    {
+      id: "teste-ab-marketing",
+      uploadOrder: 13,
+      title: "GROWTH SESSIONS - Teste A/B",
+      theme: "Testes A/B & Experimentação",
+      date: "16/10",
+      time: "11h28",
+      presenter: "Marketing MedCof",
+      category: "Analytics",
+      youtubeId: "4yC-YiLC9mg",
+      videoUrl: "https://youtu.be/4yC-YiLC9mg",
+      toolUrl: null,
+      summaryUrl:
+        "https://docs.google.com/document/d/1z8xmlTRDa4_R0TOtSb_wl8DrR2L9cuywnhR70IQZzVk/edit?tab=t.0#heading=h.ihzvhv1p1qfm",
+      presentationUrl: null,
+      links: null,
+      description:
+        "Guia completo de testes estruturados no Marketing MedCof: formulação de hipóteses orientadas a dados, metodologia de testes A/B em anúncios, copy e landing pages, cálculo de significância estatística e cultura de experimentação contínua.",
+    },
+    {
+      id: "estrategia-midia-playbook",
+      uploadOrder: 12,
+      title: "GROWTH SESSIONS - Estratégia de Mídia e Playbook de Campanhas",
+      theme: "Mídia Paga & Estratégia",
+      date: "18/09",
+      time: "17h53",
+      presenter: "Gustavo",
+      category: "Mídia Paga",
+      youtubeId: "zbgCkt0sFIc",
+      videoUrl: "https://youtu.be/zbgCkt0sFIc",
+      toolUrl: null,
+      summaryUrl:
+        "https://docs.google.com/document/d/1AuG90inBHbQhpelfDanNMM4Yrs8i2Y0BEl24riUB7Vw/edit?tab=t.fqut0u5d532x",
+      presentationUrl: null,
+      links: JSON.stringify([
+        {
+          label: "Playbook de Campanhas (PDF)",
+          url: "https://assets.grupomedcof.com.br/1c6f856c-4b0b-45aa-9cbd-a4b33b81ee25.pdf",
+        },
+        {
+          label: "Growth Session - Apresentação (PDF)",
+          url: "https://assets.grupomedcof.com.br/d8d2fb2e-0be5-410a-8b8e-ccdae6e2050f.pdf",
+        },
+      ]),
+      description:
+        "Sessão focada em estratégia de mídia a partir da jornada do cliente. Entenda por que o canal não deve ser o ponto de partida e como aplicar as melhores práticas do Playbook de Campanhas no Meta Ads.",
+    },
+    {
+      id: "treinamento-active-segmentacao",
+      uploadOrder: 11,
+      title: "Treinamento - Novo Fluxo Active - Segmentação",
+      theme: "ActiveCampaign e Segmentação",
+      date: "25/08",
+      time: "15h58",
+      presenter: "Grupo MedCof",
+      category: "Automação",
+      youtubeId: "WEYCr-bbM3U",
+      videoUrl: "https://youtu.be/WEYCr-bbM3U",
+      toolUrl: null,
+      summaryUrl: null,
+      presentationUrl: null,
+      links: null,
+      description:
+        "Treinamento prático focado no novo fluxo de segmentação dentro do ActiveCampaign. Aprenda a automatizar, gerenciar tags e estruturar a régua de relacionamento dos leads para máxima eficiência.",
+    },
+    {
+      id: "lancamentos-infoprodutos",
+      uploadOrder: 10,
+      title: "Fluxo de Lançamentos de infoprodutos - Thiago Ferreira",
+      theme: "Lançamentos de Infoprodutos",
+      date: "19/08",
+      time: "14h00",
+      presenter: "Thiago Ferreira",
+      category: "Lançamentos",
+      youtubeId: "zFEa-3nDh58",
+      videoUrl: "https://youtu.be/zFEa-3nDh58",
+      toolUrl: null,
+      summaryUrl: null,
+      presentationUrl: null,
+      links: null,
+      description:
+        "Treinamento completo sobre o fluxo estratégico e operacional de lançamentos de infoprodutos, conduzido por Thiago Ferreira. Estruturação de fases (PPL, CPL, PL), atração e captação de leads, aquisição de tráfego, nutrição em grupos de WhatsApp e estratégias de conversão em carrinhos de alta performance.",
+    },
+    {
+      id: "segmentacao-crm",
+      uploadOrder: 9,
+      title: "GROWTH SESSIONS - Segmentação",
+      theme: "Segmentação & CRM",
+      date: "14/08",
+      time: "10h00",
+      presenter: "Grupo MedCof",
+      category: "Estratégia",
+      youtubeId: "cvyB25_3YI8",
+      videoUrl: "https://youtu.be/cvyB25_3YI8",
+      toolUrl: null,
+      summaryUrl:
+        "https://docs.google.com/document/d/1ApusTi3HKvLJytrwYIcfMoOlqZ5quhH1UPtuQ3sFS6I/edit?usp=sharing",
+      presentationUrl:
+        "https://assets.grupomedcof.com.br/f90fa487-2583-4c1c-9468-653f85d8c61b.pptx",
+      links: null,
+      description:
+        "Treinamento estratégico focado em metodologias de segmentação de base de leads, agrupamento de perfis, clusters de comportamento e personalização de réguas de comunicação para máxima conversão no ecossistema MedCof.",
+    },
+    {
+      id: "inteligencia-emocional",
+      uploadOrder: 8,
+      title: "GROWTH SESSIONS - Inteligência Emocional - 06.08",
+      theme: "Inteligência Emocional",
+      date: "06/08",
+      time: "11h00",
+      presenter: "Grupo MedCof",
+      category: "Soft Skills",
+      youtubeId: "c844VGKcjok",
+      videoUrl: "https://youtu.be/c844VGKcjok",
+      toolUrl: null,
+      summaryUrl:
+        "https://docs.google.com/document/d/1_9pHiAt_UwW-Gk5-48EkKlxbkWafkYVTOxv5RDwdKS0/edit?usp=sharing",
+      presentationUrl:
+        "https://docs.google.com/presentation/d/1bdxeUTcYglOHQzkZHKPMxCYO7SmYNgl3/edit?usp=sharing&ouid=102726331880328798777&rtpof=true&sd=true",
+      links: null,
+      description:
+        "Sessão de treinamento focada em Inteligência Emocional e na aplicação do método DISC no ambiente de trabalho. Aprenda a desenvolver relações mais saudáveis, produtivas e colaborativas no dia a dia corporativo.",
+    },
+    {
+      id: "planejamento-eventos",
+      uploadOrder: 7,
+      title: "GROWTH SESSIONS - Planejamento de Eventos",
+      theme: "Planejamento de Eventos",
+      date: "24/07",
+      time: "13h36",
+      presenter: "Beatriz Biscalchini",
+      category: "Eventos",
+      youtubeId: "A18vEqvKATg",
+      videoUrl: "https://youtu.be/A18vEqvKATg",
+      toolUrl: null,
+      summaryUrl: null,
+      presentationUrl:
+        "https://assets.grupomedcof.com.br/362f45ff-c534-414c-9d55-b236acf068e0.pdf",
+      links: JSON.stringify([
+        {
+          label: "Ata da Reunião",
+          url: "https://docs.google.com/document/d/156YkGIWxmzJEFpOQ6IqKkl5IAwEFhBYkq2965IYPrHQ/edit?usp=sharing",
+        },
+        {
+          label: "TEMPLATE - Planejamento de Eventos (4)",
+          url: "https://docs.google.com/presentation/d/1UF3a8lkFzj-0EhwtNx1ltNorLcmIRYtz/edit?usp=sharing&ouid=112128606568623730770&rtpof=true&sd=true",
+        },
+      ]),
+      description:
+        "Treinamento sobre Planejamento de Eventos, templates e melhores práticas ministrado por Beatriz Biscalchini.",
+    },
+    {
+      id: "treinamento-utms-leandro",
+      uploadOrder: 6,
+      title: "Treinamento com Leandro - UTMs",
+      theme: "UTMs e Rastreamento",
+      date: "24/07",
+      time: "10h00",
+      presenter: "Leandro",
+      category: "Analytics",
+      youtubeId: "Lv2AyAFm-Xk",
+      videoUrl: "https://youtu.be/Lv2AyAFm-Xk",
+      toolUrl: null,
+      summaryUrl:
+        "https://assets.grupomedcof.com.br/aa6ce0ad-521d-4195-a946-d4c24ad4040d.docx",
+      presentationUrl:
+        "https://assets.grupomedcof.com.br/02e7a182-046e-4605-ace1-f4cf53b4b9e2.html",
+      links: null,
+      description:
+        "Treinamento sobre uso e boas práticas de UTMs para rastreamento de campanhas, ministrado por Leandro.",
+    },
+    {
+      id: "metodologia-benchmarking",
+      uploadOrder: 5,
+      title: "GROWTH SESSIONS - Metodologia de Benchmarking - 14.07",
+      theme: "Benchmarking Estratégico",
+      date: "14/07",
+      time: "11h00",
+      presenter: "Beatriz Biscalchini",
+      category: "Estratégia",
+      youtubeId: "srcAKVVLnnc",
+      videoUrl: "https://youtu.be/srcAKVVLnnc",
+      toolUrl: null,
+      summaryUrl: null,
+      presentationUrl: null,
+      links: JSON.stringify([
+        {
+          label: "Aula (Drive)",
+          url: "https://drive.google.com/file/d/1s6cYj0p4_s8SXRcdX48KWVNSBVAac8cO/view?usp=sharing",
+        },
+        {
+          label: "Case 01",
+          url: "https://docs.google.com/document/d/1S7f_0C-dwolLnxuqQrXIQKetOJLqcHievh4qc99CtJA/edit?usp=sharing",
+        },
+        {
+          label: "Case 02",
+          url: "https://docs.google.com/document/d/1p0InW5Zl-XZ_HRZEnnLzg4jQS4EkKPpEvFunor2Xxn4/edit?usp=sharing",
+        },
+        {
+          label: "Material Benchmarking",
+          url: "https://docs.google.com/document/d/1VdZFor94kBlUd7RI5tm6OB8psCvKWk8Rn5zlUXbYeYA/edit?usp=sharing",
+        },
+        {
+          label: "Benchmarking - TEMI",
+          url: "https://docs.google.com/document/d/13eMyIydFBO0KPK6YqBzgCA2ATYY1buB0C7W5YIsaVt4/edit?usp=sharing",
+        },
+        {
+          label: "Ata Reunião Gemini",
+          url: "https://docs.google.com/document/d/1uykBcsCtWhedEUgQktsiMTeNRIdrdHBODZg7TZyCN9U/edit?usp=sharing",
+        },
+      ]),
+      description:
+        "Treinamento sobre Metodologia de Benchmarking ministrado por Beatriz Biscalchini. Aprenda os 6 pilares práticos para análise de mercado, o uso de ferramentas de IA na pesquisa e estratégias competitivas.",
+    },
+    {
+      id: "google-ads",
+      uploadOrder: 4,
+      title: "GROWTH SESSIONS - Google Ads e Diversificação - 25.06",
+      theme: "Google Ads",
+      date: "25/06",
+      time: "14h54",
+      presenter: "João Prompero",
+      category: "Mídia Paga",
+      youtubeId: "HYSd30I0uDQ",
+      videoUrl: "https://youtu.be/HYSd30I0uDQ",
+      toolUrl: null,
+      summaryUrl:
+        "https://docs.google.com/document/d/1NZEOu-7VWYNfI6JY_OdxDaQV7fTx8gRrlY8J0nqYUts/edit?usp=sharing",
+      presentationUrl: null,
+      links: null,
+      description:
+        "Entenda os desafios da IA no Meta Ads e aprenda a diversificar com Google Ads. Descubra os pilares da plataforma, como funciona o Índice de Qualidade (Ad Rank), campanhas AI Max e a importância da congruência entre anúncio e landing page.",
+    },
+    {
+      id: "organizacao-priorizacao",
+      uploadOrder: 3,
+      title: "GROWTH SESSIONS - Organização e Priorização - 11.06",
+      theme: "Organização e Priorização",
+      date: "11/06",
+      time: "10h00",
+      presenter: "Grupo MedCof",
+      category: "Produtividade",
+      youtubeId: "KbZSGBOotWo",
+      videoUrl: "https://youtu.be/KbZSGBOotWo",
+      toolUrl: null,
+      summaryUrl: null,
+      presentationUrl:
+        "https://assets.grupomedcof.com.br/5f0d9b34-38b6-4213-892f-af8d21231ce5.pdf",
+      links: null,
+      description:
+        "Aprenda métodos práticos de organização e priorização para otimizar sua rotina, gerenciar o tempo de forma eficiente e maximizar os resultados no dia a dia.",
+    },
+    {
+      id: "meta-ads",
+      uploadOrder: 2,
+      title: "GROWTH SESSIONS - Meta - João Prompero",
+      theme: "Meta Ads",
+      date: "02/06",
+      time: "14h02",
+      presenter: "João Prompero",
+      category: "Mídia Paga",
+      youtubeId: "LpEm3mmUZWU",
+      videoUrl: "https://youtu.be/LpEm3mmUZWU",
+      toolUrl: null,
+      summaryUrl:
+        "https://docs.google.com/document/d/14uCZZGpQst1pj2GIYvQ4ffY1aARHDALufvDckldZjds/edit?usp=sharing",
+      presentationUrl:
+        "https://claude.ai/public/artifacts/86fc39f2-3142-4a4e-bded-335750c18c05",
+      links: null,
+      description:
+        "Meta Ads Strategy Guide: Andromeda AI & Best Practices. Learn Meta Ads fundamentals, Andromeda AI algorithm, creative targeting strategies, and actionable tactics to optimize ad performance and scaling.",
+    },
+    {
+      id: "data-studio",
+      uploadOrder: 1,
+      title: "Treinamento Ferramenta Data Studio 20/05",
+      theme: "Data Studio",
+      date: "20/05",
+      time: "15h27",
+      presenter: "Grupo MedCof",
+      category: "BI & Dashboards",
+      youtubeId: "CmdHT4UcOMU",
+      videoUrl: "https://youtu.be/CmdHT4UcOMU",
+      toolUrl: "https://datastudio.google.com/u/0/navigation/reporting",
+      summaryUrl: null,
+      presentationUrl: null,
+      links: null,
+      description:
+        "Unlock the power of your data with interactive dashboards and beautiful reports that inspire smarter business decisions.",
+    },
+  ];
+
+  for (const session of sessions) {
+    await client.execute({
+      sql: `INSERT INTO growth_session (
+        id, upload_order, title, theme, date, time, presenter, category,
+        youtube_id, video_url, tool_url, summary_url, presentation_url,
+        links, description, created_by, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        session.id,
+        session.uploadOrder,
+        session.title,
+        session.theme,
+        session.date,
+        session.time,
+        session.presenter,
+        session.category,
+        session.youtubeId,
+        session.videoUrl,
+        session.toolUrl,
+        session.summaryUrl,
+        session.presentationUrl,
+        session.links,
+        session.description,
+        "seed_system",
+        now,
+        now,
+      ],
+    });
+  }
+
+  console.log(`[seed-growth-sessions] Sucesso: ${sessions.length} sessões inseridas.`);
+}

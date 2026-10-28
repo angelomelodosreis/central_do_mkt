@@ -18,6 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { seedPlanningAllBus } from "./seed-planning-all-bus.mjs";
 import { seedPlanningReviewFeed } from "./seed-planning-review-feed.mjs";
+import { seedGrowthSessions } from "./seed-growth-sessions.mjs";
 
 loadEnv({ path: ".env.local", quiet: true });
 
@@ -56,6 +57,7 @@ try {
   try {
     await seedPlanningAllBus(client);
     await seedPlanningReviewFeed(client);
+    await seedGrowthSessions(client);
   } catch (seedErr) {
     console.warn("Aviso: falha ao semear dados:", seedErr.message);
   }

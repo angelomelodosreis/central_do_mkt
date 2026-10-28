@@ -15,3 +15,4 @@ export * from "./tasks.schema";
 export * from "./files.schema";
 export * from "./planning-review-feed.schema";
 export * from "./notifications.schema";
+export * from "./growth-sessions.schema";

@@ -123,6 +123,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     icon: "calculator",
   });
 
+  items.push({
+    href: "/growth-sessions",
+    label: "Growth Sessions",
+    description: "Treinamentos e playbooks",
+    icon: "video",
+  });
+
   if (can(currentUser, "documentation")) {
     items.push({
       href: "/documentacao",
