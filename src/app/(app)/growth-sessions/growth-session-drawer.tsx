@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   FileText,
@@ -16,7 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
-import { createGrowthSessionAction } from "@/lib/modules/growth-sessions/actions";
+import {
+  createGrowthSessionAction,
+  updateGrowthSessionAction,
+} from "@/lib/modules/growth-sessions/actions";
+import type { GrowthSessionView } from "@/lib/modules/growth-sessions/queries";
 import { extractYoutubeId } from "@/lib/modules/growth-sessions/utils";
 
 const CATEGORIES = [
@@ -41,11 +45,13 @@ type ExtraLinkItem = {
 export function GrowthSessionDrawer({
   open,
   onClose,
-  onCreated,
+  sessionToEdit,
+  onSaved,
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated?: (sessionId: string) => void;
+  sessionToEdit?: GrowthSessionView | null;
+  onSaved?: (sessionId: string) => void;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -66,6 +72,43 @@ export function GrowthSessionDrawer({
   const [description, setDescription] = useState("");
   const [extraLinks, setExtraLinks] = useState<ExtraLinkItem[]>([]);
 
+  // Sincroniza formulário com dados da sessão em edição ou reseta ao abrir para nova
+  useEffect(() => {
+    if (sessionToEdit && open) {
+      setTitle(sessionToEdit.title);
+      setTheme(sessionToEdit.theme);
+      if (CATEGORIES.includes(sessionToEdit.category)) {
+        setCategory(sessionToEdit.category);
+        setCustomCategory("");
+      } else {
+        setCategory("Outro");
+        setCustomCategory(sessionToEdit.category);
+      }
+      setPresenter(sessionToEdit.presenter);
+      setDate(sessionToEdit.date);
+      setTime(sessionToEdit.time ?? "");
+      setVideoUrl(
+        sessionToEdit.videoUrl ??
+          (sessionToEdit.youtubeId
+            ? `https://youtu.be/${sessionToEdit.youtubeId}`
+            : ""),
+      );
+      setSummaryUrl(sessionToEdit.summaryUrl ?? "");
+      setPresentationUrl(sessionToEdit.presentationUrl ?? "");
+      setToolUrl(sessionToEdit.toolUrl ?? "");
+      setDescription(sessionToEdit.description);
+      setExtraLinks(
+        (sessionToEdit.parsedLinks ?? []).map((l) => ({
+          id: Math.random().toString(36).substring(2, 9),
+          label: l.label,
+          url: l.url,
+        })),
+      );
+    } else if (!sessionToEdit && open) {
+      resetForm();
+    }
+  }, [sessionToEdit, open]);
+
   const detectedYoutubeId = extractYoutubeId(videoUrl);
 
   function resetForm() {
@@ -74,6 +117,10 @@ export function GrowthSessionDrawer({
     setCategory("Estratégia");
     setCustomCategory("");
     setPresenter("");
+    const today = new Date();
+    setDate(
+      `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}`,
+    );
     setTime("");
     setVideoUrl("");
     setSummaryUrl("");
@@ -154,17 +201,24 @@ export function GrowthSessionDrawer({
         );
       }
 
-      const res = await createGrowthSessionAction(fd);
+      const res = sessionToEdit
+        ? await updateGrowthSessionAction(sessionToEdit.id, fd)
+        : await createGrowthSessionAction(fd);
+
       if (res.error) {
         toast.error(res.error);
         return;
       }
 
-      toast.success("Growth Session cadastrada com sucesso!");
+      toast.success(
+        sessionToEdit
+          ? "Growth Session atualizada com sucesso!"
+          : "Growth Session cadastrada com sucesso!",
+      );
       resetForm();
       onClose();
-      if (res.id && onCreated) {
-        onCreated(res.id);
+      if (res.id && onSaved) {
+        onSaved(res.id);
       }
     });
   }
@@ -174,8 +228,12 @@ export function GrowthSessionDrawer({
       open={open}
       onClose={onClose}
       width="lg"
-      title="Subir Nova Growth Session"
-      description="Cadastre uma gravação, playbook prático ou sessão de capacitação da equipe."
+      title={sessionToEdit ? "Editar Growth Session" : "Subir Nova Growth Session"}
+      description={
+        sessionToEdit
+          ? "Atualize as informações, gravações, documentos ou links deste treinamento."
+          : "Cadastre uma gravação, playbook prático ou sessão de capacitação da equipe."
+      }
       footer={
         <div className="flex w-full items-center justify-end gap-3">
           <Button
@@ -193,7 +251,7 @@ export function GrowthSessionDrawer({
             disabled={isPending}
             onClick={handleSubmit}
           >
-            Salvar e Publicar
+            {sessionToEdit ? "Salvar Alterações" : "Salvar e Publicar"}
           </Button>
         </div>
       }

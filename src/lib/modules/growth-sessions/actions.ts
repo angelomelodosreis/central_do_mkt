@@ -143,6 +143,106 @@ export async function createGrowthSessionAction(
 }
 
 /**
+ * Atualiza os dados de uma Growth Session existente no catálogo.
+ */
+export async function updateGrowthSessionAction(
+  sessionId: string,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    await requireUser();
+    if (!sessionId) {
+      return { error: "ID da sessão é obrigatório para edição." };
+    }
+
+    const titleRaw = formData.get("title")?.toString();
+    const themeRaw = formData.get("theme")?.toString();
+    const categoryRaw = formData.get("category")?.toString();
+    const presenterRaw = formData.get("presenter")?.toString();
+    const dateRaw = formData.get("date")?.toString();
+    const timeRaw = formData.get("time")?.toString();
+    const videoUrlRaw = formData.get("videoUrl")?.toString();
+    const summaryUrlRaw = formData.get("summaryUrl")?.toString();
+    const presentationUrlRaw = formData.get("presentationUrl")?.toString();
+    const toolUrlRaw = formData.get("toolUrl")?.toString();
+    const linksJsonRaw = formData.get("linksJson")?.toString();
+    const descriptionRaw = formData.get("description")?.toString();
+
+    const title = sanitizePlainText(titleRaw, 250);
+    const theme = sanitizePlainText(themeRaw, 200);
+    const category = sanitizePlainText(categoryRaw || "Estratégia", 80);
+    const presenter = sanitizePlainText(presenterRaw, 120);
+    const date = sanitizePlainText(dateRaw, 60);
+    const time = timeRaw ? sanitizePlainText(timeRaw, 30) : null;
+    const description = sanitizePlainText(descriptionRaw, 4000);
+
+    if (!title) return { error: "O título da Growth Session é obrigatório." };
+    if (!theme) return { error: "O tema / foco da sessão é obrigatório." };
+    if (!presenter) return { error: "O nome do(a) apresentador(a) é obrigatório." };
+    if (!date) return { error: "A data da sessão é obrigatória." };
+    if (!description) return { error: "A descrição ou principais aprendizados são obrigatórios." };
+
+    const normalizedVideoUrl = normalizeVideoUrl(videoUrlRaw);
+    const youtubeId = normalizedVideoUrl ? extractYoutubeId(normalizedVideoUrl) : null;
+    const summaryUrl = summaryUrlRaw?.trim() ? normalizeVideoUrl(summaryUrlRaw) : null;
+    const presentationUrl = presentationUrlRaw?.trim() ? normalizeVideoUrl(presentationUrlRaw) : null;
+    const toolUrl = toolUrlRaw?.trim() ? normalizeVideoUrl(toolUrlRaw) : null;
+
+    let cleanLinksJson: string | null = null;
+    if (linksJsonRaw) {
+      try {
+        const parsed = JSON.parse(linksJsonRaw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const validLinks = parsed
+            .filter((item) => item && item.url && typeof item.url === "string" && item.url.trim().length > 0)
+            .map((item) => ({
+              label: sanitizePlainText(item.label || "Material complementar", 100),
+              url: normalizeVideoUrl(item.url),
+            }));
+          if (validLinks.length > 0) {
+            cleanLinksJson = JSON.stringify(validLinks);
+          }
+        }
+      } catch {
+        cleanLinksJson = null;
+      }
+    }
+
+    await ensureGrowthSessionTable();
+    const db = await getDb();
+    const now = new Date();
+
+    await db
+      .update(growthSession)
+      .set({
+        title,
+        theme,
+        category: category || "Estratégia",
+        presenter,
+        date,
+        time: time || null,
+        youtubeId: youtubeId || null,
+        videoUrl: normalizedVideoUrl || null,
+        toolUrl: toolUrl || null,
+        summaryUrl: summaryUrl || null,
+        presentationUrl: presentationUrl || null,
+        links: cleanLinksJson,
+        description,
+        updatedAt: now,
+      })
+      .where(eq(growthSession.id, sessionId));
+
+    revalidatePath("/growth-sessions");
+    return { success: true, id: sessionId };
+  } catch (err) {
+    console.error("[updateGrowthSessionAction] Erro ao atualizar:", err);
+    return {
+      error: err instanceof Error ? err.message : "Erro ao atualizar Growth Session.",
+    };
+  }
+}
+
+/**
  * Remove uma Growth Session do catálogo.
  */
 export async function deleteGrowthSessionAction(

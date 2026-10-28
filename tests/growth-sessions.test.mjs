@@ -99,5 +99,37 @@ describe("Módulo Growth Sessions & Treinamentos MedCof", () => {
       assert.ok(docSession.summaryUrl);
       assert.ok(docSession.presentationUrl);
     });
+
+    test("Atualização / Edição: recalcula YouTube ID ao alterar link de vídeo", () => {
+      const initialVideo = "https://youtu.be/1QQZoc-l9jA";
+      const initialYoutubeId = extractYoutubeId(initialVideo);
+      assert.equal(initialYoutubeId, "1QQZoc-l9jA");
+
+      // Simula edição para nova URL do YouTube
+      const updatedVideo = "https://www.youtube.com/watch?v=kYI9Q5K2gY4";
+      const updatedNormalized = normalizeVideoUrl(updatedVideo);
+      const updatedYoutubeId = extractYoutubeId(updatedNormalized);
+      assert.equal(updatedYoutubeId, "kYI9Q5K2gY4");
+
+      // Simula edição para vídeo externo não-YouTube (ex: Loom)
+      const externalLoom = "https://www.loom.com/share/abc123456";
+      const externalNormalized = normalizeVideoUrl(externalLoom);
+      const loomYoutubeId = extractYoutubeId(externalNormalized);
+      assert.equal(loomYoutubeId, null);
+      assert.equal(externalNormalized, externalLoom);
+    });
+
+    test("Atualização / Edição: atualiza links extras e sanitiza labels", () => {
+      const updatedRawLinks = [
+        { label: "Novo Guia de Bolso <script>alert(1)</script>", url: "https://assets.medcof.com.br/guia.pdf" },
+      ];
+      const sanitizedLinks = updatedRawLinks.map((item) => ({
+        label: sanitizePlainText(item.label, 100),
+        url: normalizeVideoUrl(item.url),
+      }));
+
+      assert.equal(sanitizedLinks[0].label, "Novo Guia de Bolso alert(1)");
+      assert.equal(sanitizedLinks[0].url, "https://assets.medcof.com.br/guia.pdf");
+    });
   });
 });

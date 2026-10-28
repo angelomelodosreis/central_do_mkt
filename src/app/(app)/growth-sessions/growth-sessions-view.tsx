@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   Link as LinkIcon,
   MonitorPlay,
+  Pencil,
   Play,
   Plus,
   Presentation,
@@ -54,6 +55,9 @@ export function GrowthSessionsView({
   const [viewMode, setViewMode] = useState<"player" | "grid">("player");
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<GrowthSessionView | null>(
+    null,
+  );
 
   // Carrega IDs assistidos do localStorage e respeita hash deep-linking
   useEffect(() => {
@@ -186,7 +190,10 @@ export function GrowthSessionsView({
           <Button
             type="button"
             variant="primary"
-            onClick={() => setIsDrawerOpen(true)}
+            onClick={() => {
+              setEditingSession(null);
+              setIsDrawerOpen(true);
+            }}
             className="shadow-sm"
           >
             <Plus className="mr-1.5 size-4" /> Subir Growth Session
@@ -414,6 +421,21 @@ export function GrowthSessionsView({
 
                 {/* Botões de Ação */}
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setEditingSession(currentSession);
+                      setIsDrawerOpen(true);
+                    }}
+                    className="gap-1.5"
+                    title="Editar informações desta sessão"
+                  >
+                    <Pencil className="size-3.5 text-slate-500" />
+                    Editar
+                  </Button>
+
                   <Button
                     type="button"
                     variant={
@@ -760,9 +782,23 @@ export function GrowthSessionsView({
                       {session.presenter}
                     </span>
 
-                    <span className="inline-flex items-center gap-1 text-brand-700 font-semibold text-[11px]">
-                      Assistir <ArrowUpRight className="size-3.5" />
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingSession(session);
+                          setIsDrawerOpen(true);
+                        }}
+                        className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                        title="Editar sessão"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                      <span className="inline-flex items-center gap-1 text-brand-700 font-semibold text-[11px]">
+                        Assistir <ArrowUpRight className="size-3.5" />
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -771,13 +807,18 @@ export function GrowthSessionsView({
         </div>
       )}
 
-      {/* Drawer para Cadastrar / Subir Nova Growth Session */}
+      {/* Drawer para Cadastrar ou Editar Growth Session */}
       <GrowthSessionDrawer
         open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        onCreated={(newId) => {
-          setSelectedId(newId);
+        sessionToEdit={editingSession}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setEditingSession(null);
+        }}
+        onSaved={(savedId) => {
+          setSelectedId(savedId);
           setViewMode("player");
+          setEditingSession(null);
         }}
       />
     </div>
