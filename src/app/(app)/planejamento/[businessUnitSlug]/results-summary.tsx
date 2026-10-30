@@ -107,17 +107,53 @@ export function ResultsSummary({
       />
 
       <StatGrid>
-        {INDICADORES.map(({ metric }) => (
-          <Stat
-            key={metric}
-            label={rotuloCurto(metric)}
-            labelCompleto={rotuloDoIndicador(metric)}
-            value={formatarIndicador(metric, recente[metric])}
-            variacao={variacao(recente[metric], anterior[metric])}
-            sentido={SENTIDO[metric]}
-            tamanho="sm"
-          />
-        ))}
+        {INDICADORES.map(({ metric }) => {
+          let badge: React.ReactNode = null;
+          if (metric === "sales" && recente.sales_conversion !== null) {
+            badge = (
+              <span
+                className="ml-1.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200/60"
+                title="Taxa de conversão direta (Vendas ÷ Leads)"
+              >
+                {recente.sales_conversion.toFixed(1)}% conv.
+              </span>
+            );
+          } else if (metric === "leads" && recente.sales_conversion !== null) {
+            badge = (
+              <span
+                className="ml-1.5 rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold text-brand-700 border border-brand-200/60"
+                title="Conversão de lead em matrícula"
+              >
+                Lead → Aluno
+              </span>
+            );
+          }
+
+          return (
+            <Stat
+              key={metric}
+              label={
+                <span className="inline-flex items-center">
+                  <span>
+                    {metric === "sales_conversion"
+                      ? "Conversão (Lead → Matrícula)"
+                      : rotuloCurto(metric)}
+                  </span>
+                  {badge}
+                </span>
+              }
+              labelCompleto={
+                metric === "sales_conversion"
+                  ? "Taxa de conversão de leads em matrículas concluídas (Vendas ÷ Leads)"
+                  : rotuloDoIndicador(metric)
+              }
+              value={formatarIndicador(metric, recente[metric])}
+              variacao={variacao(recente[metric], anterior[metric])}
+              sentido={SENTIDO[metric]}
+              tamanho="sm"
+            />
+          );
+        })}
       </StatGrid>
 
       {/* A série inteira em miniatura: a tendência é a informação, e para
@@ -201,13 +237,14 @@ export function ResultsSummary({
                   ? null
                   : Math.max((feito / alvo) * 100, 0);
 
+              const pctDisplay = pct !== null ? Math.round(pct) : null;
               const sentido = SENTIDO[metric];
               // Para métricas de custo (CAC, CPL):
               // menor ou igual à meta é VERDE (sucesso); superior à meta é VERMELHO (alerta).
               const isGood =
                 sentido === "desce"
-                  ? pct !== null && pct <= 100
-                  : pct !== null && pct >= 100;
+                  ? pctDisplay !== null && pctDisplay <= 100
+                  : pctDisplay !== null && pctDisplay >= 100;
 
               return (
                 <li key={metric}>
@@ -237,11 +274,29 @@ export function ResultsSummary({
                         style={{ width: `${Math.min(pct ?? 0, 100)}%` }}
                       />
                     </div>
-                    <span className="shrink-0 text-xs tabular-nums text-slate-500">
-                      {pct === null
-                        ? "—"
-                        : `${pct.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`}
+                    <span className="shrink-0 text-xs tabular-nums text-slate-500 font-medium">
+                      {pctDisplay === null ? "—" : `${pctDisplay}%`}
                     </span>
+                    {pctDisplay !== null ? (
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.2 text-[10px] font-bold border shrink-0",
+                          isGood
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : sentido === "desce"
+                              ? "bg-rose-50 text-rose-700 border-rose-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200",
+                        )}
+                      >
+                        {sentido === "desce"
+                          ? pctDisplay <= 100
+                            ? "Dentro da meta"
+                            : `Acima da meta (+${pctDisplay - 100}%)`
+                          : pctDisplay >= 100
+                            ? "Meta atingida"
+                            : `${pctDisplay}% da meta`}
+                      </span>
+                    ) : null}
                   </div>
                 </li>
               );

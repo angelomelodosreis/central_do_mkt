@@ -246,7 +246,7 @@ export function MarketingTree({
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
             <Compass className="size-3.5 text-brand-600" />
-            <span>Divisão:</span>
+            <span>Área / Departamento:</span>
           </span>
           {raizes.map((raiz) => {
             const count = getSubtreeCount(raiz.id);

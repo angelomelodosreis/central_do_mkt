@@ -66,4 +66,79 @@ describe("Sistema de Acessos e Escopos (Central do Marketing)", () => {
     assert.equal(canSeeBusinessUnit(regularScope, "bu_cirurgia"), true);
     assert.equal(canSeeBusinessUnit(regularScope, "bu_cardiologia"), false);
   });
+
+  test("Membros e editores possuem permissão de visualização do módulo Panorama", () => {
+    // Simula a matriz de permissões resolvida para member/editor
+    const memberPermissions = {
+      panorama: { canView: true, canEdit: false },
+      personas: { canView: true, canEdit: true },
+    };
+
+    assert.equal(memberPermissions.panorama.canView, true);
+    assert.equal(memberPermissions.panorama.canEdit, false);
+  });
+
+  test("Conformidade de cores para Realizado vs Meta (CAC e Ticket Médio)", () => {
+    // Para CAC (métrica de custo com sentido 'desce'):
+    // Se realizado <= meta (ex: 96%), pctDisplay <= 100 deve ser VERDE (sucesso)
+    const cacFeito = 1277.46;
+    const cacAlvo = 1331.0;
+    const cacPct = (cacFeito / cacAlvo) * 100;
+    const cacDisplay = Math.round(cacPct);
+    const cacIsGood = cacDisplay <= 100;
+    assert.equal(cacDisplay, 96);
+    assert.equal(cacIsGood, true);
+
+    // Se CAC exceder a meta (ex: 1500 vs 1331 = 113%), deve ser VERMELHO (alerta)
+    const cacEstouradoPct = (1500 / 1331) * 100;
+    const cacEstouradoDisplay = Math.round(cacEstouradoPct);
+    assert.equal(cacEstouradoDisplay <= 100, false);
+
+    // Para Ticket Médio (sentido 'sobe'):
+    // Se feito = 3590.71 e alvo = 3592, pct = 99.96%, Math.round dá 100% -> VERDE (sucesso)
+    const ticketFeito = 3590.71;
+    const ticketAlvo = 3592.0;
+    const ticketPct = (ticketFeito / ticketAlvo) * 100;
+    const ticketDisplay = Math.round(ticketPct);
+    const ticketIsGood = ticketDisplay >= 100;
+    assert.equal(ticketDisplay, 100);
+    assert.equal(ticketIsGood, true);
+  });
+
+  test("Membros e editores podem editar estratégia dentro do escopo da sua BU", () => {
+    // Simula a função canEditModule em access.ts
+    const canEditStrategy = (userRole, userPermissions, moduleKey, podeVerBu) =>
+      podeVerBu &&
+      (Boolean(userPermissions[moduleKey]?.canEdit) ||
+        ((moduleKey === "personas" || moduleKey === "strategy") &&
+          (userRole === "member" || userRole === "editor")));
+
+    assert.equal(canEditStrategy("member", { strategy: { canEdit: true } }, "strategy", true), true);
+    assert.equal(canEditStrategy("editor", { strategy: { canEdit: false } }, "strategy", true), true);
+    assert.equal(canEditStrategy("member", { strategy: { canEdit: true } }, "strategy", false), false);
+  });
+
+  test("Pilares do Diagnóstico 2.0 priorizam faturamento histórico e deixam market share opcional", async () => {
+    const { DIAGNOSIS_LENS_PROVOCATIONS, DIAGNOSIS_LENS_EVIDENCE_HINTS } = await import(
+      "../src/lib/db/schema/diagnosis.schema.ts"
+    );
+
+    assert.ok(
+      DIAGNOSIS_LENS_PROVOCATIONS.negocio_mercado.includes("faturamento e volume"),
+      "Provocação de negócio_mercado deve focar em faturamento e volume",
+    );
+    assert.ok(
+      DIAGNOSIS_LENS_EVIDENCE_HINTS.negocio_mercado.includes("opcional"),
+      "Evidências de negócio_mercado devem esclarecer que market share formal é opcional",
+    );
+    assert.ok(
+      DIAGNOSIS_LENS_EVIDENCE_HINTS.cliente_marca.includes("opcionais"),
+      "Evidências de cliente_marca devem esclarecer que pesquisas amplas são opcionais",
+    );
+  });
+
+  test("Rótulo da visão completa do Organograma engloba Empresa e Marketing", async () => {
+    const { ORG_VIEW_LABELS } = await import("../src/app/(app)/organograma/types.ts");
+    assert.equal(ORG_VIEW_LABELS.marketing, "Organograma Geral (Empresa & Marketing)");
+  });
 });

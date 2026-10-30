@@ -253,6 +253,20 @@
       "when": 1788500013000,
       "tag": "0035_growth_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1788500014000,
+      "tag": "0036_allow_panorama_for_members",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1788500015000,
+      "tag": "0037_strategy_and_name_generator_permissions",
+      "breakpoints": true
     }
   ]
 }

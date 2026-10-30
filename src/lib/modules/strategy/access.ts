@@ -116,7 +116,7 @@ export async function requireStrategyBusinessUnit(
   const canEditModule = (moduleKey: ModuleKey) =>
     podeVer &&
     (Boolean(currentUser.permissions[moduleKey]?.canEdit) ||
-      (moduleKey === "personas" &&
+      ((moduleKey === "personas" || moduleKey === "strategy") &&
         (currentUser.role === "member" || currentUser.role === "editor")));
 
   return {

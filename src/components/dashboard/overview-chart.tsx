@@ -213,11 +213,15 @@ export function OverviewChart({
                               {formatCurrency(item.revenue)}
                             </p>
                           </div>
-                          <div className="mt-2 space-y-1 text-slate-300 text-[11px]">
-                            <p className="flex items-center justify-between gap-2">
-                              <span>Volume de Vendas:</span>
-                              <strong className="text-white">{item.sales.toLocaleString("pt-BR")} matrículas</strong>
-                            </p>
+                          <div className="mt-2 rounded-lg bg-sky-500/15 p-2 ring-1 ring-sky-400/30">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] uppercase font-bold tracking-wider text-sky-200">Volume de Vendas</span>
+                              <strong className="text-sm font-bold text-white tabular-nums">
+                                {item.sales.toLocaleString("pt-BR")} <span className="text-xs font-normal text-sky-200">vendas</span>
+                              </strong>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-slate-300 text-[11px]">
                             <p className="flex items-center justify-between gap-2">
                               <span>Ticket Médio:</span>
                               <strong className="text-white">{formatCurrency(item.avgTicket)}</strong>
@@ -294,19 +298,15 @@ export function OverviewChart({
 
         <div className="rounded-2xl bg-white/10 p-3 shadow-inner backdrop-blur-sm ring-1 ring-white/15 sm:p-4">
           <p className="text-[11px] font-medium uppercase tracking-wider text-brand-300">
-            {isCurrentMonth && projectedMonthEndFormatted
-              ? "Projeção Mês (Run-Rate)"
-              : "Volume de Vendas"}
+            Volume de Vendas
           </p>
           <p className="mt-1 font-display text-xl font-bold tracking-tight text-white sm:text-2xl tabular-nums truncate">
-            {isCurrentMonth && projectedMonthEndFormatted
-              ? projectedMonthEndFormatted
-              : `${selectedPoint.sales.toLocaleString("pt-BR")} matrículas`}
+            {selectedPoint.sales.toLocaleString("pt-BR")} matrículas
           </p>
           <p className="mt-0.5 text-[11px] text-brand-200">
             {isCurrentMonth
-              ? `${selectedPoint.sales} matrículas até agora (${currentMonthName || selectedPoint.month})`
-              : `${selectedPoint.month}`}
+              ? `${selectedPoint.month} em andamento${projectedMonthEndFormatted ? ` · Est. Run-Rate: ${projectedMonthEndFormatted}` : ""}`
+              : `${selectedPoint.month} · Fechamento do mês`}
           </p>
         </div>
 

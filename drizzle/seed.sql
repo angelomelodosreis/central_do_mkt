@@ -68,7 +68,7 @@ INSERT OR IGNORE INTO role_permission (id, role, module_key, can_view, can_edit,
   ('perm_editor_documentation',  'editor', 'documentation',  1, 1, unixepoch()),
   ('perm_editor_personas',       'editor', 'personas',       1, 1, unixepoch()),
   ('perm_editor_strategy',       'editor', 'strategy',       1, 1, unixepoch()),
-  ('perm_editor_panorama',       'editor', 'panorama',       0, 0, unixepoch()),
+  ('perm_editor_panorama',       'editor', 'panorama',       1, 0, unixepoch()),
   ('perm_editor_parameters',     'editor', 'parameters',     0, 0, unixepoch()),
   ('perm_editor_admin',          'editor', 'admin',          0, 0, unixepoch()),
   ('perm_leader_admin',          'leader', 'admin',          0, 0, unixepoch()),
@@ -76,8 +76,8 @@ INSERT OR IGNORE INTO role_permission (id, role, module_key, can_view, can_edit,
   ('perm_member_name_generator', 'member', 'name_generator', 1, 0, unixepoch()),
   ('perm_member_documentation',  'member', 'documentation',  1, 0, unixepoch()),
   ('perm_member_personas',       'member', 'personas',       1, 1, unixepoch()),
-  ('perm_member_strategy',       'member', 'strategy',       1, 0, unixepoch()),
-  ('perm_member_panorama',       'member', 'panorama',       0, 0, unixepoch()),
+  ('perm_member_strategy',       'member', 'strategy',       1, 1, unixepoch()),
+  ('perm_member_panorama',       'member', 'panorama',       1, 0, unixepoch()),
   ('perm_member_parameters',     'member', 'parameters',     0, 0, unixepoch()),
   ('perm_member_admin',          'member', 'admin',          0, 0, unixepoch());
 
@@ -91,6 +91,18 @@ INSERT OR IGNORE INTO naming_template (id, slug, name, description, block_separa
   ('tpl_utm_link', 'utm-link',             'Link com UTMs de Rastreamento', 'Parâmetros de rastreamento para links de campanhas, newsletters e bio.', '_', 1, 30, NULL, NULL, unixepoch(), unixepoch());
 
 -- Blocos de cada modelo. position define a ordem no nome final.
+-- Lista ActiveCampaign: bu-tipo_de_lista-nome_da_lista
+INSERT OR IGNORE INTO naming_template_field (id, template_id, position, field_type, label, hint, placeholder, is_required, options, source_key) VALUES
+  ('fld_lista_bu',   'tpl_lista_ac', 0, 'official_base', 'Business Unit', 'A BU responsável pela lista.', NULL, 1, NULL, 'business_unit'),
+  ('fld_lista_tipo', 'tpl_lista_ac', 1, 'select',        'Tipo de lista', 'Lead para potenciais clientes, aluno para matriculados.', NULL, 1, '[{"value":"lead","label":"Lead"},{"value":"aluno","label":"Aluno"}]', NULL),
+  ('fld_lista_nome', 'tpl_lista_ac', 2, 'text',          'Nome da lista', 'Escreva normalmente, com espaços e acentos. A padronização é automática.', 'Ex.: Black Friday Novembro', 1, NULL, NULL);
+
+-- Tag ActiveCampaign: bu-nome_da_tag-mes_ano
+INSERT OR IGNORE INTO naming_template_field (id, template_id, position, field_type, label, hint, placeholder, is_required, options, source_key) VALUES
+  ('fld_tag_bu',   'tpl_tag_ac', 0, 'official_base', 'Business Unit', 'A BU responsável pela tag.', NULL, 1, NULL, 'business_unit'),
+  ('fld_tag_nome', 'tpl_tag_ac', 1, 'text',          'Nome da tag',   'Escreva normalmente, com espaços e acentos. A padronização é automática.', 'Ex.: Interesse Extensivo', 1, NULL, NULL),
+  ('fld_tag_mes',  'tpl_tag_ac', 2, 'month_year',    'Mês e ano',     'Mês e ano de referência da tag.', NULL, 1, NULL, NULL);
+
 -- Campanha Meta Ads: bu-objetivo-nome_campanha-mes_ano
 INSERT OR IGNORE INTO naming_template_field (id, template_id, position, field_type, label, hint, placeholder, is_required, options) VALUES
   ('fld_meta_bu',   'tpl_campanha_meta', 0, 'business_unit', 'Business Unit',  'A BU da campanha.', NULL, 1, NULL),

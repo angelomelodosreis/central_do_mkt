@@ -51,6 +51,23 @@ export function ReviewCycleView({
   // Estado da Revisão selecionada (1 ou 2)
   const [selectedQuarter, setSelectedQuarter] = useState<string>("Q1");
 
+  function handleSelectQuarter(quarter: string) {
+    setSelectedQuarter(quarter);
+    const rev =
+      allReviews.find((r) => r.quarter === quarter) ??
+      (quarter === "Q1" ? initialReview : null);
+    setDiagnosticValid(rev?.diagnosticValid ?? "sim");
+    setMarketChanges(rev?.marketChanges ?? "");
+    setNewProblems(rev?.newProblems ?? "");
+    setMissedOpportunities(rev?.missedOpportunities ?? "");
+    setObjectiveAssumptions(rev?.objectiveAssumptions ?? "");
+    setNeedsGoalRevision(rev?.needsGoalRevision ?? "nao");
+    setNextQuarterFocus(rev?.nextQuarterFocus ?? "");
+    setDecisionTaken("");
+    setIsCompleted(rev?.status === "completed");
+    setStatusMessage(null);
+  }
+
   // Dados do formulário das 7 perguntas + decisão tomada
   const [diagnosticValid, setDiagnosticValid] = useState<string>(
     initialReview?.diagnosticValid ?? "sim",
@@ -95,8 +112,12 @@ export function ReviewCycleView({
         ? `${nextQuarterFocus}\n\n[Decisão Tomada]: ${decisionTaken}`
         : nextQuarterFocus;
 
+      const currentReview =
+        allReviews.find((r) => r.quarter === selectedQuarter) ??
+        (selectedQuarter === "Q1" ? initialReview : null);
+
       const res = await saveFullQuarterlyReviewAction({
-        id: initialReview?.id,
+        id: currentReview?.id,
         businessUnitId,
         cycleId,
         quarter: selectedQuarter,
@@ -189,7 +210,7 @@ export function ReviewCycleView({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
           {/* Card 1: Revisão 1 (Trimestral) */}
           <div
-            onClick={() => setSelectedQuarter("Q1")}
+            onClick={() => handleSelectQuarter("Q1")}
             className={cn(
               "rounded-3xl border-2 p-6 transition shadow-2xs flex flex-col justify-between cursor-pointer",
               selectedQuarter === "Q1"
@@ -212,7 +233,7 @@ export function ReviewCycleView({
                 </div>
 
                 <span className="rounded-full bg-sky-50 px-3 py-0.5 text-xs font-semibold text-sky-700 border border-sky-200">
-                  {isCompleted ? "Concluída" : "Em andamento"}
+                  {isCompleted && selectedQuarter === "Q1" ? "Concluída" : "Em andamento"}
                 </span>
               </div>
 
@@ -224,6 +245,11 @@ export function ReviewCycleView({
             <div className="mt-4 pt-3 border-t border-rose-100/70">
               <button
                 type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectQuarter("Q1");
+                  document.getElementById("review-form-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
                 style={{ borderRadius: "9999px" }}
                 className="w-full bg-[#e2263c] hover:bg-[#cf1730] py-2.5 text-xs sm:text-sm font-semibold text-white transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
               >
@@ -235,7 +261,7 @@ export function ReviewCycleView({
 
           {/* Card 2: Revisão 2 (Semestral) */}
           <div
-            onClick={() => setSelectedQuarter("Q2")}
+            onClick={() => handleSelectQuarter("Q2")}
             className={cn(
               "rounded-3xl border p-6 transition shadow-2xs flex flex-col justify-between cursor-pointer",
               selectedQuarter === "Q2"
@@ -258,7 +284,11 @@ export function ReviewCycleView({
                 </div>
 
                 <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs font-semibold text-slate-600 border border-slate-200">
-                  Não iniciada
+                  {allReviews.find((r) => r.quarter === "Q2")?.status === "completed"
+                    ? "Concluída"
+                    : allReviews.find((r) => r.quarter === "Q2")
+                      ? "Em andamento"
+                      : "Não iniciada"}
                 </span>
               </div>
 
@@ -270,10 +300,15 @@ export function ReviewCycleView({
             <div className="mt-4 pt-3 border-t border-slate-100">
               <button
                 type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectQuarter("Q2");
+                  document.getElementById("review-form-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
                 style={{ borderRadius: "9999px" }}
                 className="w-full border border-slate-300 bg-white hover:bg-slate-50 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                Iniciar revisão
+                {allReviews.find((r) => r.quarter === "Q2") ? "Continuar revisão" : "Iniciar revisão"}
                 <ArrowRight className="size-3.5" />
               </button>
             </div>
@@ -284,7 +319,7 @@ export function ReviewCycleView({
       {/* ── ÁREA PRINCIPAL: FORMULÁRIO (ESQUERDA 2/3) + SIDEBAR (DIREITA 1/3) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
         {/* LADO ESQUERDO: Formulário com as 7 Perguntas Oficiais */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-2xs space-y-7">
+        <div id="review-form-section" className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-2xs space-y-7">
           {/* Header do Form */}
           <div className="border-b border-slate-100 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>

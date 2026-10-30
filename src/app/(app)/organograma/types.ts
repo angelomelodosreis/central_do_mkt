@@ -66,7 +66,7 @@ export type OrgView = (typeof ORG_VIEWS)[number];
 export const ORG_VIEW_LABELS: Record<OrgView, string> = {
   squads: "Squads por BU",
   times: "Áreas, subáreas e times",
-  marketing: "Estrutura do Marketing",
+  marketing: "Organograma Geral (Empresa & Marketing)",
 };
 
 export const ORG_VIEW_DESCRIPTIONS: Record<OrgView, string> = {
@@ -75,7 +75,7 @@ export const ORG_VIEW_DESCRIPTIONS: Record<OrgView, string> = {
   times:
     "Cada área, subárea e time com quem responde por ele e a equipe, na ordem de senioridade dos cargos.",
   marketing:
-    "Organograma hierárquico oficial do Marketing MedCof, com visualização em canvas navegável estilo Figma.",
+    "Organograma completo da MedCof em canvas navegável estilo Figma, abrangendo Marketing, Comercial, Corpo Docente e Novos Negócios.",
 };
 
 /**

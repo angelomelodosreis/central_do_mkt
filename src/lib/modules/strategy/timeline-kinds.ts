@@ -195,7 +195,7 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
     label: "Sazonalidade de mercado",
     plural: "Sazonalidades de mercado",
     description:
-      "Períodos externos do mercado e calendário médico: datas comemorativas, férias.",
+      "Fatores externos do calendário médico e mercado (recesso acadêmico, provas de residência, datas comemorativas). Não confundir com janelas próprias de turmas da MedCof.",
     chip: "bg-violet-100 text-violet-900 ring-violet-200",
     dot: "bg-violet-500",
     lane: "bg-violet-500",
@@ -254,7 +254,8 @@ export const TIMELINE_KIND_CONFIG: Record<TimelineKind, KindConfig> = {
   product_window: {
     label: "Janela de Produto (MedCof)",
     plural: "Janelas de Produtos (MedCof)",
-    description: "Período comercial ou acadêmico de um curso MedCof.",
+    description:
+      "Período interno oficial de matrículas e turmas abertas dos cursos da MedCof (ex: abertura de carrinho, fechamento de lote).",
     chip: "bg-emerald-100 text-emerald-900 ring-emerald-200",
     dot: "bg-emerald-500",
     lane: "bg-emerald-500",

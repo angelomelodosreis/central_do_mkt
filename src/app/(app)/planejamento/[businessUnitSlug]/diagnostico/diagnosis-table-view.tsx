@@ -58,19 +58,18 @@ const PILLARS: DiagnosisPillarDef[] = [
     tone: "indigo",
     centralQuestion: "Onde estamos e como estamos em relação ao mercado?",
     provocations: [
-      "Estamos crescendo?",
-      "Perdemos volume?",
-      "O mercado cresceu mais que a MedCof?",
-      "Estamos ganhando ou perdendo participação?",
-      "Entraram concorrentes mais agressivos?",
+      "Estamos crescendo em faturamento e volume de matrículas?",
+      "Como foi a velocidade de vendas em relação aos ciclos anteriores?",
+      "Surgiram concorrentes com ofertas similares?",
+      "Houve variação expressiva no ticket médio ou mix de planos?",
     ],
     evidences: [
-      "Faturamento",
-      "Vendas",
-      "Crescimento",
-      "Tamanho do mercado",
-      "Market share",
-      "Concorrência",
+      "Faturamento histórico",
+      "Volume de vendas",
+      "Ticket médio",
+      "Ritmo de matrículas",
+      "Concorrência direta",
+      "Market share (opcional)",
     ],
   },
   {
@@ -80,20 +79,18 @@ const PILLARS: DiagnosisPillarDef[] = [
     tone: "rose",
     centralQuestion: "Estamos relevantes para o público certo?",
     provocations: [
-      "Perdemos algum público?",
-      "Estamos alcançando novos segmentos?",
-      "A marca continua sendo considerada?",
-      "Perdemos relevância ou diferenciação?",
-      "As necessidades do público mudaram?",
+      "As personas prioritárias estão sendo atendidas?",
+      "Estamos alcançando médicos no momento certo da jornada (R1, R2, R3, Especialista)?",
+      "O feedback dos alunos e comunidade reflete o valor percebido?",
+      "Identificamos novas dores ou mudanças no perfil dos inscritos?",
     ],
     evidences: [
-      "Personas",
-      "Base de alunos",
-      "Aquisição",
-      "Pesquisas",
-      "Awareness",
-      "Consideração",
-      "Percepção de marca",
+      "Personas ativas",
+      "Base de alunos e comunidade",
+      "Momentos de carreira",
+      "NPS e feedbacks de turma",
+      "Taxa de retenção",
+      "Percepção de marca (opcional)",
     ],
   },
   {
@@ -427,7 +424,9 @@ export function DiagnosisTableView({
     });
   }
 
-  const metasHref = `/planejamento/${businessUnitSlug}/ciclos?ciclo=${cycleSlug ?? ""}&aba=metas`;
+  const metasHref = cycleSlug
+    ? `/planejamento/${businessUnitSlug}/ciclos?ciclo=${encodeURIComponent(cycleSlug)}&aba=metas`
+    : `/planejamento/${businessUnitSlug}/ciclos?aba=metas`;
 
   function renderCommentsContent() {
     return (

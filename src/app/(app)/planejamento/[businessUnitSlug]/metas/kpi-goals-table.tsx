@@ -224,24 +224,16 @@ export function KpiGoalsTable({
 
   const objectiveExamples = [
     {
-      icon: GraduationCap,
-      text: `Ser a principal referência nacional em educação médica para ${businessUnitName}.`,
+      label: "Aprovação & Título",
+      text: `Liderar a aprovação nas provas de residência e título de especialista de ${businessUnitName}, consolidando a esteira R+.`,
     },
     {
-      icon: BarChart2,
-      text: "Ampliar nossa participação e fortalecer a liderança da BU no mercado.",
+      label: "Matrículas & Retenção",
+      text: `Superar a meta de novas matrículas em ${businessUnitName} e elevar a retenção de alunos ao longo do ciclo.`,
     },
     {
-      icon: Star,
-      text: "Tornar a BU uma das marcas mais reconhecidas e consideradas em sua categoria.",
-    },
-    {
-      icon: Leaf,
-      text: "Consolidar a BU como uma operação de crescimento sustentável e relevante.",
-    },
-    {
-      icon: Users,
-      text: "Ser a principal referência em desenvolvimento de carreira médica.",
+      label: "Referência Prática & NPS",
+      text: `Tornar ${businessUnitName} a referência absoluta em qualidade pedagógica prática e recomendação entre médicos.`,
     },
   ];
 
@@ -513,33 +505,25 @@ export function KpiGoalsTable({
           </div>
         </div>
 
-        {/* Chips de Exemplos Clicáveis com Ícones Dedicados */}
-        <div className="rounded-2xl border border-rose-200/80 bg-rose-100/50 p-4">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 mb-3">
-            <Lightbulb className="size-4 text-[#e2263c]" />
-            <span>Exemplos de objetivo da BU:</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {objectiveExamples.map((example, idx) => {
-              const Icon = example.icon;
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  disabled={!canEdit}
-                  onClick={() => handleApplyExample(example.text)}
-                  className="rounded-2xl border border-rose-200/70 bg-white p-3.5 text-left text-xs font-medium text-slate-700 hover:border-rose-300 hover:bg-rose-50/50 hover:text-slate-900 transition shadow-2xs flex flex-col justify-between gap-2.5 cursor-pointer group"
-                >
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-[#e2263c] group-hover:bg-rose-100 transition">
-                    <Icon className="size-4" />
-                  </div>
-                  <span className="leading-snug text-[11px] text-slate-700 group-hover:text-slate-900">
-                    {example.text}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+        {/* Sugestões Diretas de Objetivos da BU (Subtle Helper Bar) */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-700 shrink-0">
+            <Lightbulb className="size-3.5 text-[#e2263c]" />
+            Sugestões diretas:
+          </span>
+          {objectiveExamples.map((example, idx) => (
+            <button
+              key={idx}
+              type="button"
+              disabled={!canEdit}
+              onClick={() => handleApplyExample(example.text)}
+              title={example.text}
+              className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-white/90 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-[#e2263c] hover:bg-rose-50 hover:text-slate-900 transition shadow-2xs cursor-pointer disabled:opacity-50"
+            >
+              <span>{example.label}</span>
+              <span className="text-slate-400 text-[10px]">↳</span>
+            </button>
+          ))}
         </div>
       </div>
 

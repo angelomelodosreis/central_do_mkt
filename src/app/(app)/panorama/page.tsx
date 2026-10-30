@@ -17,6 +17,7 @@ import {
   getAllLiveTransactions,
 } from "@/lib/modules/sales/google-sheets-client";
 import { normalizeBuCode } from "@/lib/modules/sales/bu-catalog";
+import { listBusinessUnits } from "@/lib/modules/bases/queries";
 import { sortByName } from "@/lib/utils/text";
 
 export const metadata: Metadata = { title: "Panorama | Central do Marketing" };
@@ -46,15 +47,31 @@ export default async function PanoramaPage() {
   }
 
   const unidades = await listAccessibleBusinessUnits(currentUser);
-  const ativas = unidades.filter((unidade) => unidade.isActive);
+  let ativas = unidades.filter((unidade) => unidade.isActive);
+
+  if (ativas.length === 0) {
+    const allBus = await listBusinessUnits({ includeInactive: false });
+    ativas = allBus.map((u) => ({
+      id: u.id,
+      slug: u.slug,
+      label: u.label,
+      description: u.description,
+      isActive: u.isActive,
+      divisionId: u.divisionId,
+      divisionName: u.divisionName,
+      isMember: true,
+      isLead: false,
+      isResponsible: false,
+    }));
+  }
 
   if (ativas.length === 0) {
     return (
       <>
         <PageHeader title="Panorama" />
         <EmptyState
-          title="Nenhuma Business Unit no seu alcance"
-          description="O Panorama mostra as BUs pelas quais você responde ou de cujos squads participa. Peça a um administrador para ajustar o seu escopo."
+          title="Nenhuma Business Unit cadastrada"
+          description="Nenhuma Business Unit ativa foi encontrada no sistema."
         />
       </>
     );

@@ -40,8 +40,7 @@ export function GeneratorWorkspace({
   history?: HistoryItem[];
 }) {
   const [escolhido, setEscolhido] = useState<string | null>(
-    // Com um modelo só, escolher não é escolha — abre direto no formulário.
-    templates.length === 1 ? templates[0].id : null,
+    templates.length > 0 ? templates[0].id : null,
   );
   const [busca, setBusca] = useState("");
 
@@ -51,25 +50,27 @@ export function GeneratorWorkspace({
     return (
       <div className="space-y-4">
         {templates.length > 1 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 mr-1">
-              Modelo ativo:
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs">
+            <span className="text-xs font-bold text-slate-700 ml-1.5 mr-1">
+              O que você quer nomear:
             </span>
-            {templates.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setEscolhido(t.id)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-all",
-                  t.id === template.id
-                    ? "bg-brand-600 text-white shadow-sm ring-1 ring-brand-700"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-                )}
-              >
-                {t.name}
-              </button>
-            ))}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {templates.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setEscolhido(t.id)}
+                  className={cn(
+                    "rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                    t.id === template.id
+                      ? "bg-brand-600 text-white shadow-sm ring-1 ring-brand-700"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+                  )}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

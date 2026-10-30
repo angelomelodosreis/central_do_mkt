@@ -86,9 +86,9 @@ export const DIAGNOSIS_LENS_QUESTIONS: Record<string, string> = {
 
 export const DIAGNOSIS_LENS_PROVOCATIONS: Record<string, string> = {
   negocio_mercado:
-    "Estamos crescendo? Perdemos volume? O mercado cresceu mais que a MedCof? Estamos ganhando ou perdendo participação? Entraram concorrentes mais agressivos?",
+    "Estamos crescendo em faturamento e volume de matrículas? Como foi a velocidade de vendas em relação aos ciclos anteriores? Surgiram concorrentes com ofertas similares?",
   cliente_marca:
-    "Perdemos algum público? Estamos conseguindo alcançar novos segmentos? A marca continua sendo considerada? Perdemos relevância ou diferenciação? As necessidades do público mudaram?",
+    "As personas prioritárias estão sendo atendidas? Estamos alcançando médicos no momento certo da jornada (R1, R2, R3, Especialista)? O feedback dos alunos e comunidade reflete o valor percebido?",
   portfolio_oferta:
     "Estamos concentrados demais em um produto? Algum produto perdeu relevância? Temos alguma necessidade importante sem solução? Perdemos competitividade em preço ou valor percebido?",
   funil_conversao:
@@ -99,9 +99,9 @@ export const DIAGNOSIS_LENS_PROVOCATIONS: Record<string, string> = {
 
 export const DIAGNOSIS_LENS_EVIDENCE_HINTS: Record<string, string> = {
   negocio_mercado:
-    "Faturamento, vendas, crescimento, tamanho do mercado, market share, concorrência",
+    "Faturamento histórico, volume de vendas, ticket médio, ritmo de matrículas, concorrência direta (market share formal é opcional quando não houver dados de mercado)",
   cliente_marca:
-    "Personas, base de alunos, aquisição, pesquisas, awareness, consideração, percepção de marca",
+    "Personas ativas, base de alunos, momentos de carreira, NPS e feedbacks de turma, taxa de retenção (pesquisas amplas de percepção de marca são contextuais e opcionais)",
   portfolio_oferta:
     "Vendas e faturamento por produto, mix, ticket, preços, ofertas, concorrência, pesquisas de mercado",
   funil_conversao:

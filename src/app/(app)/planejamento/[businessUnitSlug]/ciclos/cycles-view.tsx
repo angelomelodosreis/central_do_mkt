@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Calendar,
@@ -115,6 +116,29 @@ export function CyclesView({
   const [diagnosisSubTab, setDiagnosisSubTab] = useState<DiagnosisSubTab>(
     initialDiagnosisSubTab,
   );
+
+  const searchParams = useSearchParams();
+
+  // Sincroniza activeTab quando initialTab muda (navegação entre rotas)
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  // Sincroniza activeTab quando os parâmetros de busca da URL mudam
+  useEffect(() => {
+    const abaParam = searchParams.get("aba");
+    const subabaParam = searchParams.get("subaba");
+    if (abaParam === "metas" || abaParam === "revisoes") {
+      setActiveTab(abaParam);
+    } else if (abaParam === "diagnostico") {
+      setActiveTab("diagnostico");
+      if (subabaParam === "comentarios") {
+        setDiagnosisSubTab("comentarios");
+      }
+    }
+  }, [searchParams]);
 
   // Sincronização com o histórico do navegador (botões Voltar/Avançar)
   useEffect(() => {
@@ -319,19 +343,57 @@ export function CyclesView({
                 </div>
               </div>
 
-              {/* Métricas do Ciclo (3 colunas) */}
+              {/* Métricas do Ciclo (3 colunas com botões indicadores diretos) */}
               <div className="mt-5 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-left">
-                <div>
-                  <p className="font-display text-xl font-bold text-slate-900 tabular-nums">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedCycleId(c.id);
+                    handleMainTabSelect("metas");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedCycleId(c.id);
+                      handleMainTabSelect("metas");
+                    }
+                  }}
+                  title="Abrir diretamente as Metas deste ciclo"
+                  className="group/meta cursor-pointer rounded-lg p-1 -m-1 hover:bg-purple-50/80 transition"
+                >
+                  <p className="font-display text-xl font-bold text-slate-900 tabular-nums group-hover/meta:text-purple-700 transition">
                     {c.goalsCount}
                   </p>
-                  <p className="text-xs text-slate-500">Metas definidas</p>
+                  <p className="text-xs text-slate-500 group-hover/meta:text-purple-700 font-medium">Metas do ciclo →</p>
                 </div>
-                <div>
-                  <p className="font-display text-xl font-bold text-slate-900 tabular-nums">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedCycleId(c.id);
+                    handleMainTabSelect("revisoes");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedCycleId(c.id);
+                      handleMainTabSelect("revisoes");
+                    }
+                  }}
+                  title="Abrir diretamente as Revisões deste ciclo"
+                  className="group/rev cursor-pointer rounded-lg p-1 -m-1 hover:bg-rose-50/80 transition"
+                >
+                  <p className="font-display text-xl font-bold text-slate-900 tabular-nums group-hover/rev:text-rose-700 transition">
                     {c.reviewsCompleted}/{c.reviewsTotal}
                   </p>
-                  <p className="text-xs text-slate-500">Revisões</p>
+                  <p className="text-xs text-slate-500 group-hover/rev:text-rose-700 font-medium">Revisões →</p>
                 </div>
                 <div>
                   <p className="font-display text-xl font-bold text-slate-900 tabular-nums">
