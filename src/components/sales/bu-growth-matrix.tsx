@@ -198,7 +198,7 @@ export function BuGrowthMatrix({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar BU..."
-              className="rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-brand-500 focus:outline-none"
+              className="rounded-xl border border-slate-300 bg-white pl-8 pr-3 py-1.5 text-xs font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-brand-500 focus:outline-none shadow-2xs"
             />
           </div>
 

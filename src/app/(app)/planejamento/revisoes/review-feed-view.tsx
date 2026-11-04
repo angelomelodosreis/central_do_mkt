@@ -848,7 +848,7 @@ export function ReviewFeedView({
               placeholder="Buscar observações, pautas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder-slate-400 shadow-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             {searchTerm && (
               <button
@@ -1357,7 +1357,7 @@ export function ReviewFeedView({
                     placeholder="Filtrar por nome..."
                     value={mentionSearch}
                     onChange={(e) => setMentionSearch(e.target.value)}
-                    className="mt-1.5 w-full rounded-lg border border-purple-200 bg-white px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="mt-1.5 w-full rounded-lg border border-purple-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-1 focus:ring-purple-500"
                     autoFocus
                   />
                   <div className="mt-1.5 space-y-0.5">
@@ -1388,7 +1388,7 @@ export function ReviewFeedView({
                   placeholder="Responder... Use @ para mencionar alguém e enviar notificação"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full resize-y min-h-[85px] rounded-xl border border-slate-200 bg-white p-3 pr-20 text-sm leading-relaxed text-slate-800 placeholder-slate-400 shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                  className="w-full resize-y min-h-[85px] rounded-xl border border-slate-300 bg-white p-3 pr-20 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                   onKeyDown={(e) => {
                     if (e.key === "@") {
                       setShowMentionPicker(true);
@@ -1467,7 +1467,7 @@ export function ReviewFeedView({
                   <select
                     value={newItemBuId}
                     onChange={(e) => setNewItemBuId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                     required
                   >
                     {businessUnits.map((bu) => (
@@ -1508,7 +1508,7 @@ export function ReviewFeedView({
                         const match = assignableUsers.find((p) => p.name === val);
                         setNewItemAssigneeEmail(match?.email || "");
                       }}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                       required
                     >
                       <option value="">— Selecione o responsável —</option>
@@ -1527,7 +1527,7 @@ export function ReviewFeedView({
                         setNewItemAssignee(e.target.value);
                         setNewItemAssigneeEmail("");
                       }}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                       required
                     />
                   )}
@@ -1544,7 +1544,7 @@ export function ReviewFeedView({
                     type="date"
                     value={newItemMeetingDate}
                     onChange={(e) => setNewItemMeetingDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                     required
                   />
                 </div>
@@ -1558,7 +1558,7 @@ export function ReviewFeedView({
                     type="date"
                     value={newItemFollowUpDate}
                     onChange={(e) => setNewItemFollowUpDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                     required
                   />
                 </div>
@@ -1573,7 +1573,7 @@ export function ReviewFeedView({
                     onChange={(e) =>
                       setNewItemStatus(e.target.value as PlanningReviewStatus)
                     }
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                   >
                     <option value="novo">Novo</option>
                     <option value="em_andamento">Em andamento</option>
@@ -1593,7 +1593,7 @@ export function ReviewFeedView({
                   placeholder={`• Revisar precificação e oferta do Extensivo\n• Alinhar calendário com Social Media\n• Subir novos criativos de conversão`}
                   value={newItemDetails}
                   onChange={(e) => setNewItemDetails(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y min-h-[110px] transition"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y min-h-[110px] transition"
                   required
                 />
               </div>
@@ -1692,7 +1692,7 @@ export function ReviewFeedView({
                   <select
                     value={editBuId}
                     onChange={(e) => setEditBuId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                     required
                   >
                     {businessUnits.map((bu) => (
@@ -1731,7 +1731,7 @@ export function ReviewFeedView({
                         const match = assignableUsers.find((p) => p.name === val);
                         setEditAssigneeEmail(match?.email || "");
                       }}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                       required
                     >
                       <option value="">— Selecione o responsável —</option>
@@ -1749,7 +1749,7 @@ export function ReviewFeedView({
                       onChange={(e) => {
                         setEditAssignee(e.target.value);
                       }}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                       required
                     />
                   )}
@@ -1766,7 +1766,7 @@ export function ReviewFeedView({
                     type="date"
                     value={editMeetingDate}
                     onChange={(e) => setEditMeetingDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                     required
                   />
                 </div>
@@ -1780,7 +1780,7 @@ export function ReviewFeedView({
                     type="date"
                     value={editFollowUpDate}
                     onChange={(e) => setEditFollowUpDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                     required
                   />
                 </div>
@@ -1793,7 +1793,7 @@ export function ReviewFeedView({
                   <select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value as PlanningReviewStatus)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition"
                   >
                     <option value="novo">Novo</option>
                     <option value="em_andamento">Em andamento</option>
@@ -1813,7 +1813,7 @@ export function ReviewFeedView({
                   rows={4}
                   value={editDetails}
                   onChange={(e) => setEditDetails(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y min-h-[110px] transition"
+                  className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y min-h-[110px] transition"
                   required
                 />
               </div>

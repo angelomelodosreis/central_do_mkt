@@ -462,7 +462,7 @@ export function DiagnosisTableView({
               }}
               placeholder="Escreva um comentário, reflexão ou sugestão sobre o diagnóstico da BU (ou use Ctrl+Enter para enviar)..."
               rows={3}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-y min-h-[90px]"
+              className="w-full rounded-2xl border border-slate-300 bg-white p-4 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:bg-white focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-y min-h-[90px]"
             />
           </div>
 
@@ -958,8 +958,8 @@ export function DiagnosisTableView({
                               placeholder="Escreva aqui o diagnóstico deste pilar..."
                               rows={5}
                               className={cn(
-                                "w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-y min-h-[110px]",
-                                !editable && "bg-slate-100/60 text-slate-600 cursor-not-allowed",
+                                "w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-y min-h-[110px]",
+                                !editable && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                               )}
                             />
                             <div className="flex items-center justify-between text-xs">
@@ -1108,8 +1108,8 @@ export function DiagnosisTableView({
                 placeholder="Descreva aqui o principal desafio ou oportunidade da BU para este ciclo estratégico..."
                 rows={4}
                 className={cn(
-                  "w-full rounded-2xl border border-rose-200 bg-white p-4 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition shadow-2xs resize-y min-h-[120px]",
-                  !editable && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                  "w-full rounded-2xl border border-rose-300 bg-white p-4 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition shadow-2xs resize-y min-h-[120px]",
+                  !editable && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                 )}
               />
               <div className="flex items-center justify-between text-xs">

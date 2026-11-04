@@ -348,7 +348,7 @@ export function PersonaForm({
               placeholder="Ex.: Dra. Marina, a plantonista"
               maxLength={60}
               required
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition"
             />
           </div>
 
@@ -365,7 +365,7 @@ export function PersonaForm({
               placeholder="Ex.: Eu sei a teoria, mas erro questão na hora da prova"
               maxLength={120}
               required
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition"
             />
             <p className="text-[11px] text-slate-500 leading-tight pt-0.5">
               <span className="text-amber-700 font-medium">Evite:</span> busca preparação de qualidade ·{" "}
@@ -388,7 +388,7 @@ export function PersonaForm({
               maxLength={160}
               placeholder="Ex.: Chega do plantão às 7h e não consegue manter a rotina de questões"
               required
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 transition resize-y min-h-[85px] shadow-2xs"
+              className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 transition resize-y min-h-[85px] shadow-2xs"
             />
             <p className="text-[11px] text-slate-500 leading-tight pt-0.5">
               <span className="text-amber-700 font-medium">Evite:</span> falta de tempo ·{" "}
@@ -407,7 +407,7 @@ export function PersonaForm({
               value={pains[0]?.solution || ""}
               onChange={(e) => updatePain(0, { solution: e.target.value })}
               placeholder="Ex.: App com modo offline e simulados rápidos de 15 questões"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition"
             />
           </div>
 
@@ -423,7 +423,7 @@ export function PersonaForm({
               defaultValue={values.interests}
               rows={3}
               placeholder="Ex.: Acompanha caso clínico comentado, ouve podcast no deslocamento, salva resumo de prova antiga"
-              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 transition resize-y min-h-[85px] shadow-2xs"
+              className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 transition resize-y min-h-[85px] shadow-2xs"
             />
           </div>
 
@@ -558,7 +558,7 @@ export function PersonaForm({
                   value={specialtyTitle}
                   onChange={(e) => setSpecialtyTitle(e.target.value)}
                   placeholder="Ex.: TEGO — Ginecologia e Obstetrícia, TEC, TED, TSA..."
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-1 focus:ring-[#e2263c] shadow-2xs"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-[#e2263c] focus:outline-none focus:ring-1 focus:ring-[#e2263c] shadow-2xs"
                 />
               </div>
 

@@ -117,7 +117,7 @@ export function ActivitySidebar({
               value={searchBu}
               onChange={(e) => setSearchBu(e.target.value)}
               placeholder="Buscar unidade..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
         )}

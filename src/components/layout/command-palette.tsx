@@ -365,7 +365,7 @@ export function CommandPalette() {
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
             placeholder="Buscar páginas, Business Units ou ferramentas… (ex: 'Residência', 'Tarefas')"
-            className="ml-3 flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+            className="ml-3 flex-1 bg-transparent text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none"
           />
           <kbd className="hidden rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 sm:inline-block">
             ESC

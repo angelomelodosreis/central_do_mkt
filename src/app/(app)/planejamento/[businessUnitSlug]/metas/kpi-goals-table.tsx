@@ -534,8 +534,8 @@ export function KpiGoalsTable({
                 placeholder="Ex.: Ser a principal referência nacional em educação médica para Ginecologia e Obstetrícia..."
                 rows={4}
                 className={cn(
-                  "w-full rounded-2xl border border-rose-200 bg-white p-4 text-sm sm:text-base leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition resize-y min-h-[110px] shadow-2xs",
-                  !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                  "w-full rounded-2xl border border-rose-300 bg-white p-4 text-sm sm:text-base leading-relaxed text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition resize-y min-h-[110px] shadow-2xs",
+                  !canEdit && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                 )}
               />
               <div className="flex items-center justify-between text-xs">
@@ -735,8 +735,8 @@ export function KpiGoalsTable({
                               placeholder="Ex.: Ampliar a participação da MedCof GO no mercado..."
                               rows={3}
                               className={cn(
-                                "w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-y min-h-[75px] shadow-2xs font-medium",
-                                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                                "w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-y min-h-[75px] shadow-2xs font-medium",
+                                !canEdit && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                               )}
                             />
                             <div className="flex justify-end pr-1">
@@ -957,8 +957,8 @@ export function KpiGoalsTable({
                               }
                               placeholder="Ex.: Market share"
                               className={cn(
-                                "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
-                                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                                "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                                !canEdit && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                               )}
                             />
                             <datalist id={`kpi-options-${row.id}`}>
@@ -988,8 +988,8 @@ export function KpiGoalsTable({
                             }
                             placeholder="Ex.: 8,20%"
                             className={cn(
-                              "w-full rounded-xl border border-purple-200 bg-purple-50/50 px-3 py-2 text-sm font-bold text-purple-950 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
-                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                              "w-full rounded-xl border border-purple-300 bg-purple-50/50 px-3 py-2 text-sm font-bold text-purple-950 placeholder:text-slate-500 placeholder:font-normal focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                              !canEdit && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                             )}
                           />
                         )}
@@ -1014,8 +1014,8 @@ export function KpiGoalsTable({
                             }
                             placeholder="Ex.: Número de alunos"
                             className={cn(
-                              "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
-                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                              "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                              !canEdit && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                             )}
                           />
                         )}
@@ -1043,8 +1043,8 @@ export function KpiGoalsTable({
                             }
                             placeholder="Ex.: 159 alunos"
                             className={cn(
-                              "w-full rounded-xl border border-purple-200 bg-purple-50/50 px-3 py-2 text-sm font-bold text-purple-950 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
-                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                              "w-full rounded-xl border border-purple-300 bg-purple-50/50 px-3 py-2 text-sm font-bold text-purple-950 placeholder:text-slate-500 placeholder:font-normal focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                              !canEdit && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                             )}
                           />
                         )}
@@ -1074,8 +1074,8 @@ export function KpiGoalsTable({
                               }
                               placeholder="Ex.: potencial de mercado de 1.933 pessoas estimado para o TEGO..."
                               className={cn(
-                                "w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-y min-h-[75px] shadow-2xs",
-                                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                                "w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-y min-h-[75px] shadow-2xs",
+                                !canEdit && "bg-slate-50 text-slate-900 font-medium cursor-not-allowed",
                               )}
                             />
                             <div className="flex justify-end pr-1">

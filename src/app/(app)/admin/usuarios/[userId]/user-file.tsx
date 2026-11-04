@@ -1237,7 +1237,7 @@ function BuPermissionsPicker({
         placeholder="Buscar BU por nome ou código (ex: MEDCOF_CARDIOLOGIA)..."
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 shadow-2xs focus:border-brand-500 focus:outline-none"
+        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal shadow-2xs focus:border-brand-500 focus:outline-none"
       />
 
       {/* Grid de checkboxes com as BUs */}

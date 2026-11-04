@@ -3,12 +3,12 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const CONTROL_CLASSES =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm " +
-  "placeholder:text-slate-500 hover:border-slate-400 " +
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm font-medium " +
+  "placeholder:text-slate-500 placeholder:font-normal hover:border-slate-400 " +
   // `outline-none` junto do anel: sem isso o navegador desenha o contorno dele
   // por cima do nosso, e o campo em foco fica com duas bordas.
   "focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 " +
-  "disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500 disabled:hover:border-slate-300";
+  "disabled:cursor-not-allowed disabled:bg-slate-50/80 disabled:text-slate-900 disabled:hover:border-slate-300";
 
 export function Field({
   label,

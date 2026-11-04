@@ -118,7 +118,7 @@ export function PersonaCombobox({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/70 pl-9 pr-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:bg-white transition"
+              className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-[#e2263c] focus:outline-none focus:bg-white transition shadow-2xs"
             />
           </div>
 

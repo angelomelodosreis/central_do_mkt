@@ -306,7 +306,7 @@ export function OnboardingModal({
                 placeholder="Filtrar por nome (ex: Cirurgia, Derma, Anest) ou código…"
                 value={buSearch}
                 onChange={(e) => setBuSearch(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-9 pr-3 text-xs text-slate-800 transition placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-xs font-medium text-slate-900 transition placeholder:text-slate-500 placeholder:font-normal focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-2xs"
               />
             </div>
 

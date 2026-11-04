@@ -577,7 +577,7 @@ export function CampaignModal({
                     ? "Ex.: Captação Simulado Nacional ENARE R1"
                     : "Ex.: Semana da Especialidade no Podcast MedCof"
               }
-              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-2xs transition"
+              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-2xs transition"
             />
           </div>
 
@@ -634,7 +634,7 @@ export function CampaignModal({
                       value={customProductName}
                       onChange={(e) => setCustomProductName(e.target.value)}
                       placeholder="Ex.: Extensivo Elite + R-Mais..."
-                      className="w-full rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                      className="w-full rounded-xl border border-emerald-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                     />
                   </div>
                 )}
@@ -650,7 +650,7 @@ export function CampaignModal({
                     value={salesGoal}
                     onChange={(e) => setSalesGoal(e.target.value)}
                     placeholder="Ex.: 300 matrículas"
-                    className="w-full rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                    className="w-full rounded-xl border border-emerald-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                   />
                 </div>
                 <div>
@@ -662,7 +662,7 @@ export function CampaignModal({
                     value={offerDetails}
                     onChange={(e) => setOfferDetails(e.target.value)}
                     placeholder="Ex.: 12x s/ juros + Bônus"
-                    className="w-full rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                    className="w-full rounded-xl border border-emerald-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                   />
                 </div>
               </div>
@@ -680,7 +680,7 @@ export function CampaignModal({
                   value={leadMagnet}
                   onChange={(e) => setLeadMagnet(e.target.value)}
                   placeholder="Ex.: Guia 500 Questões Comentadas ou Simulado Aberto"
-                  className="w-full rounded-xl border border-sky-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
+                  className="w-full rounded-xl border border-sky-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
                 />
               </div>
 
@@ -692,7 +692,7 @@ export function CampaignModal({
                   <select
                     value={personaId}
                     onChange={(e) => setPersonaId(e.target.value)}
-                    className="w-full rounded-xl border border-sky-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
+                    className="w-full rounded-xl border border-sky-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
                   >
                     <option value="">Selecione a persona...</option>
                     {personas.map((p) => (
@@ -711,7 +711,7 @@ export function CampaignModal({
                     value={leadsCount}
                     onChange={(e) => setLeadsCount(e.target.value)}
                     placeholder="Ex.: 1.500 leads"
-                    className="w-full rounded-xl border border-sky-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
+                    className="w-full rounded-xl border border-sky-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
                   />
                 </div>
               </div>
@@ -729,7 +729,7 @@ export function CampaignModal({
                   value={channels}
                   onChange={(e) => setChannels(e.target.value)}
                   placeholder="Ex.: YouTube Live, Instagram Reels, Podcast, E-mail"
-                  className="w-full rounded-xl border border-purple-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-2xs"
+                  className="w-full rounded-xl border border-purple-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-2xs"
                 />
               </div>
             </div>
@@ -745,7 +745,7 @@ export function CampaignModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Detalhes adicionais, alinhamento de equipe ou hipóteses para o mês..."
-              className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y min-h-[95px] shadow-2xs transition"
+              className="w-full rounded-xl border border-slate-300 bg-white p-3.5 text-sm leading-relaxed font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y min-h-[95px] shadow-2xs transition"
             />
           </div>
 

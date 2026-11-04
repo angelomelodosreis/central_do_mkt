@@ -702,7 +702,7 @@ export function CyclesView({
                   value={newCycleName}
                   onChange={(e) => setNewCycleName(e.target.value)}
                   placeholder="Ex.: Ciclo 2 · 2027 ou 2º Semestre"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs"
                 />
               </div>
 

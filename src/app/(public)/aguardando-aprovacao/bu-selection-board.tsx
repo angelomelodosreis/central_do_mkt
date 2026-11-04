@@ -131,7 +131,7 @@ export function BuSelectionBoard({
           placeholder="Filtrar por nome (ex: Cirurgia) ou código (ex: MEDCOF_USA)…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2.5 pl-10 pr-4 text-sm text-slate-800 transition placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 transition placeholder:text-slate-500 placeholder:font-normal focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-2xs"
         />
         {search && (
           <button
@@ -232,7 +232,7 @@ export function BuSelectionBoard({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Ex: Atuo como Designer responsável pelas campanhas de Cirurgia e Emergência..."
-          className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-800 transition placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm font-medium text-slate-900 transition placeholder:text-slate-500 placeholder:font-normal focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-2xs resize-y min-h-[75px]"
         />
       </div>
 

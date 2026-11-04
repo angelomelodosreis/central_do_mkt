@@ -78,6 +78,31 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-brand-500;
   }
+
+  /*
+   * Legibilidade e contraste para inputs, selects, textareas e placeholders.
+   * Evita que placeholders em cinza claro (slate-400 / 50% opacity) sumam na tela,
+   * e impede que navegadores WebKit/iOS apaguem textos em campos desabilitados/leitura.
+   */
+  input::placeholder,
+  textarea::placeholder {
+    color: #475569; /* slate-600: contraste 7:1 (AAA) sobre branco e >6:1 sobre fundos claros */
+    opacity: 1;
+  }
+
+  input,
+  textarea,
+  select {
+    color: #0f172a; /* slate-900 sólido por padrão */
+  }
+
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    color: #0f172a;
+    -webkit-text-fill-color: #0f172a;
+    opacity: 1;
+  }
 }
 
 @layer components {
