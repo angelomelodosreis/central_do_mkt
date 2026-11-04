@@ -420,7 +420,7 @@ export function ComparativePeriodPicker({
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-semibold text-slate-900 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                       required
                     />
                   </div>
@@ -432,7 +432,7 @@ export function ComparativePeriodPicker({
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-semibold text-slate-900 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                       required
                     />
                   </div>
@@ -487,7 +487,7 @@ export function ComparativePeriodPicker({
                           type="date"
                           value={compareStartDate}
                           onChange={(e) => setCompareStartDate(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-semibold text-slate-900 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                           required
                         />
                       </div>
@@ -499,7 +499,7 @@ export function ComparativePeriodPicker({
                           type="date"
                           value={compareEndDate}
                           onChange={(e) => setCompareEndDate(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-semibold text-slate-900 shadow-2xs focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                           required
                         />
                       </div>
@@ -519,7 +519,7 @@ export function ComparativePeriodPicker({
                 <select
                   value={selectedCurrentMonth}
                   onChange={(e) => setSelectedCurrentMonth(e.target.value)}
-                  className="rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="rounded-xl border border-blue-200 bg-white px-3.5 py-2 text-sm font-bold text-blue-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
                 >
                   {availableMonths.map((m) => (
                     <option key={m.key} value={m.key}>
@@ -537,7 +537,7 @@ export function ComparativePeriodPicker({
                 <select
                   value={selectedPrevMonth}
                   onChange={(e) => setSelectedPrevMonth(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-bold text-slate-900 shadow-2xs focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
                 >
                   {availableMonths.map((m) => (
                     <option key={m.key} value={m.key}>

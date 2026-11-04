@@ -87,7 +87,7 @@ export function DashboardBuFilter({
             value={activeBuCode || ""}
             onChange={(e) => handleSelectBu(e.target.value)}
             disabled={isPending}
-            className="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-1.5 pr-8 text-xs font-medium text-slate-800 shadow-2xs hover:border-slate-300 focus:border-brand-500 focus:bg-white focus:outline-none transition cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 pr-9 text-sm font-medium text-slate-900 shadow-2xs hover:border-slate-300 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition cursor-pointer"
           >
             <option value="">
               {isMaster

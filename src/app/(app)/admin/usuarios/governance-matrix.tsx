@@ -247,14 +247,14 @@ export function GovernanceMatrix({ data }: { data: GovernanceMatrixData }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filtrar usuário…"
-              className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 focus:border-brand-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
           </div>
 
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-brand-500 focus:outline-none"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
           >
             <option value="">Todos os papéis</option>
             {USER_ROLES.map((r) => (

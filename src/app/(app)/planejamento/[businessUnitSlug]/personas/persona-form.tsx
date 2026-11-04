@@ -263,7 +263,7 @@ export function PersonaForm({
                 id="owner-select"
                 name="owner"
                 defaultValue={values.owner || "Heloiza Goes"}
-                className="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 pr-7 text-xs font-medium text-slate-800 transition focus:border-red-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-red-500"
+                className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2 pr-8 text-sm font-medium text-slate-800 transition focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-100 shadow-2xs cursor-pointer"
               >
                 {OWNER_OPTIONS.map((opt) => (
                   <option key={opt} value={opt}>
