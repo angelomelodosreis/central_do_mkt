@@ -122,13 +122,13 @@ export function MonthlyCampaignsBar({
   const monthYearKey = `${year}-${String(month).padStart(2, "0")}`;
   const monthLabel = `${MONTH_NAMES[monthAnchor.getMonth()]} de ${year}`;
 
-  // Filtra as campanhas vigentes do mês ativo
+  // Filtra as campanhas vigentes do mês ativo (suporta múltiplas por tipo/produto)
   const activeCampaigns = campaigns.filter(
     (c) => c.monthYearKey === monthYearKey,
   );
-  const vendasCamp = activeCampaigns.find((c) => c.type === "vendas");
-  const captacaoCamp = activeCampaigns.find((c) => c.type === "captacao");
-  const awarenessCamp = activeCampaigns.find((c) => c.type === "awareness");
+  const vendasCampaigns = activeCampaigns.filter((c) => c.type === "vendas");
+  const captacaoCampaigns = activeCampaigns.filter((c) => c.type === "captacao");
+  const awarenessCampaigns = activeCampaigns.filter((c) => c.type === "awareness");
 
   function handleOpenCreate(type: MonthlyCampaignType) {
     setEditingCampaign(null);
@@ -160,20 +160,23 @@ export function MonthlyCampaignsBar({
               </span>
             </div>
             <p className="text-[11px] text-slate-500">
-              Foco estratégico de marketing para o período
+              Foco estratégico de marketing para o período ({activeCampaigns.length}{" "}
+              {activeCampaigns.length === 1 ? "campanha ativa" : "campanhas ativas"})
             </p>
           </div>
         </div>
 
-        {/* Três Slots de Campanhas: Vendas, Captação e Awareness */}
+        {/* Slots de Campanhas com suporte a múltiplos produtos/ações por categoria */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* 1. Slot de Vendas */}
-          {vendasCamp ? (
+          {/* 1. Campanhas de Vendas (múltiplos produtos) */}
+          {vendasCampaigns.map((camp) => (
             <button
+              key={camp.id}
               type="button"
-              onClick={() => handleOpenEdit(vendasCamp)}
+              onClick={() => handleOpenEdit(camp)}
+              title={`Editar campanha: ${camp.title}${camp.productName ? ` (${camp.productName})` : ""}`}
               className={cn(
-                "group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs transition cursor-pointer shadow-2xs",
+                "group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs transition cursor-pointer shadow-2xs hover:scale-[1.01]",
                 CAMPAIGN_STYLES.vendas.badgeBg,
                 CAMPAIGN_STYLES.vendas.badgeBorder,
                 CAMPAIGN_STYLES.vendas.pillBg,
@@ -185,40 +188,49 @@ export function MonthlyCampaignsBar({
                   CAMPAIGN_STYLES.vendas.dotBg,
                 )}
               />
-              <div className="min-w-0 max-w-[200px]">
+              <div className="min-w-0 max-w-[210px]">
                 <div className="flex items-center gap-1">
                   <span className="font-bold text-emerald-950 truncate">
-                    {vendasCamp.title}
+                    {camp.title}
                   </span>
-                  <span className="rounded bg-emerald-200/60 px-1 text-[9px] font-bold text-emerald-800 uppercase">
+                  <span className="rounded bg-emerald-200/60 px-1 text-[9px] font-bold text-emerald-800 uppercase shrink-0">
                     Vendas
                   </span>
                 </div>
                 <p className="truncate text-[10px] text-emerald-700/90">
-                  {vendasCamp.productName || "Produto"}
-                  {vendasCamp.salesGoal ? ` • Meta: ${vendasCamp.salesGoal}` : ""}
+                  {camp.productName || "Produto"}
+                  {camp.salesGoal ? ` • Meta: ${camp.salesGoal}` : ""}
                 </p>
               </div>
-              <ChevronRight className="size-3 text-emerald-400 group-hover:text-emerald-700 transition ml-0.5" />
+              <ChevronRight className="size-3 text-emerald-400 group-hover:text-emerald-700 transition ml-0.5 shrink-0" />
             </button>
-          ) : canEdit ? (
+          ))}
+          {canEdit && (
             <button
               type="button"
               onClick={() => handleOpenCreate("vendas")}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/40 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 transition cursor-pointer"
+              title="Adicionar mais uma campanha de vendas / outro produto para este mês"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/40 text-emerald-700 hover:bg-emerald-100/60 transition cursor-pointer shadow-2xs",
+                vendasCampaigns.length > 0
+                  ? "px-2 py-1.5 text-[11px] font-medium"
+                  : "px-2.5 py-1.5 text-xs font-semibold",
+              )}
             >
               <Plus className="size-3" />
               <span>+ Vendas</span>
             </button>
-          ) : null}
+          )}
 
-          {/* 2. Slot de Captação */}
-          {captacaoCamp ? (
+          {/* 2. Campanhas de Captação */}
+          {captacaoCampaigns.map((camp) => (
             <button
+              key={camp.id}
               type="button"
-              onClick={() => handleOpenEdit(captacaoCamp)}
+              onClick={() => handleOpenEdit(camp)}
+              title={`Editar captação: ${camp.title}`}
               className={cn(
-                "group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs transition cursor-pointer shadow-2xs",
+                "group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs transition cursor-pointer shadow-2xs hover:scale-[1.01]",
                 CAMPAIGN_STYLES.captacao.badgeBg,
                 CAMPAIGN_STYLES.captacao.badgeBorder,
                 CAMPAIGN_STYLES.captacao.pillBg,
@@ -233,41 +245,46 @@ export function MonthlyCampaignsBar({
               <div className="min-w-0 max-w-[210px]">
                 <div className="flex items-center gap-1">
                   <span className="font-bold text-sky-950 truncate">
-                    {captacaoCamp.title}
+                    {camp.title}
                   </span>
-                  <span className="rounded bg-sky-200/60 px-1 text-[9px] font-bold text-sky-800 uppercase">
+                  <span className="rounded bg-sky-200/60 px-1 text-[9px] font-bold text-sky-800 uppercase shrink-0">
                     Captação
                   </span>
                 </div>
                 <p className="truncate text-[10px] text-sky-700/90">
-                  {captacaoCamp.leadMagnet
-                    ? `Isca: ${captacaoCamp.leadMagnet}`
-                    : "Isca ativa"}
-                  {captacaoCamp.leadsCount
-                    ? ` • ${captacaoCamp.leadsCount} leads`
-                    : ""}
+                  {camp.leadMagnet ? `Isca: ${camp.leadMagnet}` : "Isca ativa"}
+                  {camp.leadsCount ? ` • ${camp.leadsCount} leads` : ""}
                 </p>
               </div>
-              <ChevronRight className="size-3 text-sky-400 group-hover:text-sky-700 transition ml-0.5" />
+              <ChevronRight className="size-3 text-sky-400 group-hover:text-sky-700 transition ml-0.5 shrink-0" />
             </button>
-          ) : canEdit ? (
+          ))}
+          {canEdit && (
             <button
               type="button"
               onClick={() => handleOpenCreate("captacao")}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-sky-300 bg-sky-50/40 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-50 transition cursor-pointer"
+              title="Adicionar campanha de captação de leads para este mês"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-xl border border-dashed border-sky-300 bg-sky-50/40 text-sky-700 hover:bg-sky-100/60 transition cursor-pointer shadow-2xs",
+                captacaoCampaigns.length > 0
+                  ? "px-2 py-1.5 text-[11px] font-medium"
+                  : "px-2.5 py-1.5 text-xs font-semibold",
+              )}
             >
               <Plus className="size-3" />
               <span>+ Captação</span>
             </button>
-          ) : null}
+          )}
 
-          {/* 3. Slot de Awareness */}
-          {awarenessCamp ? (
+          {/* 3. Campanhas de Awareness */}
+          {awarenessCampaigns.map((camp) => (
             <button
+              key={camp.id}
               type="button"
-              onClick={() => handleOpenEdit(awarenessCamp)}
+              onClick={() => handleOpenEdit(camp)}
+              title={`Editar awareness: ${camp.title}`}
               className={cn(
-                "group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs transition cursor-pointer shadow-2xs",
+                "group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-left text-xs transition cursor-pointer shadow-2xs hover:scale-[1.01]",
                 CAMPAIGN_STYLES.awareness.badgeBg,
                 CAMPAIGN_STYLES.awareness.badgeBorder,
                 CAMPAIGN_STYLES.awareness.pillBg,
@@ -279,31 +296,44 @@ export function MonthlyCampaignsBar({
                   CAMPAIGN_STYLES.awareness.dotBg,
                 )}
               />
-              <div className="min-w-0 max-w-[190px]">
+              <div className="min-w-0 max-w-[200px]">
                 <div className="flex items-center gap-1">
                   <span className="font-bold text-purple-950 truncate">
-                    {awarenessCamp.title}
+                    {camp.title}
                   </span>
-                  <span className="rounded bg-purple-200/60 px-1 text-[9px] font-bold text-purple-800 uppercase">
+                  <span className="rounded bg-purple-200/60 px-1 text-[9px] font-bold text-purple-800 uppercase shrink-0">
                     Awareness
                   </span>
                 </div>
                 <p className="truncate text-[10px] text-purple-700/90">
-                  {awarenessCamp.channels || "Canais & Branding"}
+                  {camp.channels || "Canais & Branding"}
                 </p>
               </div>
-              <ChevronRight className="size-3 text-purple-400 group-hover:text-purple-700 transition ml-0.5" />
+              <ChevronRight className="size-3 text-purple-400 group-hover:text-purple-700 transition ml-0.5 shrink-0" />
             </button>
-          ) : canEdit ? (
+          ))}
+          {canEdit && (
             <button
               type="button"
               onClick={() => handleOpenCreate("awareness")}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-purple-300 bg-purple-50/40 px-2.5 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-50 transition cursor-pointer"
+              title="Adicionar campanha de awareness para este mês"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-xl border border-dashed border-purple-300 bg-purple-50/40 text-purple-700 hover:bg-purple-100/60 transition cursor-pointer shadow-2xs",
+                awarenessCampaigns.length > 0
+                  ? "px-2 py-1.5 text-[11px] font-medium"
+                  : "px-2.5 py-1.5 text-xs font-semibold",
+              )}
             >
               <Plus className="size-3" />
               <span>+ Awareness</span>
             </button>
-          ) : null}
+          )}
+
+          {!canEdit && activeCampaigns.length === 0 && (
+            <span className="text-xs text-slate-400 italic">
+              Nenhuma campanha planejada para este mês
+            </span>
+          )}
         </div>
       </div>
 
@@ -322,7 +352,8 @@ export function MonthlyCampaignsBar({
           onClose={() => setModalOpen(false)}
           onSaved={(saved) => {
             setModalOpen(false);
-            const next = editingCampaign
+            const exists = campaigns.some((c) => c.id === saved.id);
+            const next = exists
               ? campaigns.map((c) => (c.id === saved.id ? saved : c))
               : [...campaigns, saved];
             onCampaignsChange?.(next);
@@ -401,11 +432,11 @@ export function CampaignModal({
       title: title.trim(),
       monthYearKey,
       productId: productId || null,
-      productName: selectedProd?.name || null,
+      productName: selectedProd?.name || campaign?.productName || null,
       leadMagnet: leadMagnet || null,
       leadsCount: leadsCount || null,
       personaId: personaId || null,
-      personaName: selectedPersona?.name || null,
+      personaName: selectedPersona?.name || campaign?.personaName || null,
       offerDetails: offerDetails || null,
       salesGoal: salesGoal || null,
       channels: channels || null,

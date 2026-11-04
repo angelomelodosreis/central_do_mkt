@@ -114,7 +114,7 @@ export function CalendarWorkspace({
           monthYearKey:
             item.details?.monthYearKey || item.startsAt.slice(0, 7),
           productId: item.productId,
-          productName: prod?.name || null,
+          productName: item.details?.productName || prod?.name || null,
           leadMagnet: item.details?.leadMagnet || null,
           leadsCount: item.details?.leadsCount || null,
           personaId: item.details?.personaId || null,
@@ -441,9 +441,12 @@ export function CalendarWorkspace({
           onClose={() => setModalCampaignToOpen(null)}
           onSaved={(saved) => {
             setModalCampaignToOpen(null);
-            setCampaignsState((prev) =>
-              prev.map((c) => (c.id === saved.id ? saved : c)),
-            );
+            setCampaignsState((prev) => {
+              const exists = prev.some((c) => c.id === saved.id);
+              return exists
+                ? prev.map((c) => (c.id === saved.id ? saved : c))
+                : [...prev, saved];
+            });
           }}
           onDeleted={(deletedId) => {
             setModalCampaignToOpen(null);

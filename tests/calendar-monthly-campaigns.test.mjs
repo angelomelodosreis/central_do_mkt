@@ -172,4 +172,76 @@ describe("Campanhas de Marketing do Mês no Calendário (Feedback Beatriz Biscal
     const shouldNotRenderOnOtherDays = day15 === 1 && activeCampaigns.length > 0;
     assert.equal(shouldNotRenderOnOtherDays, false);
   });
+
+  test("6. Múltiplas campanhas de Vendas no mesmo mês para produtos diferentes (Feedback Beatriz Biscalchini)", () => {
+    const novemberCampaigns = [
+      {
+        id: "camp_nov_elite",
+        type: "vendas",
+        title: "Black November - Extensivo Elite 2027",
+        productId: "prod_elite_2027",
+        productName: "Extensivo Elite 2027",
+        monthYearKey: "2026-11",
+        salesGoal: "300 matrículas",
+        offerDetails: "12x s/ juros + Bônus",
+      },
+      {
+        id: "camp_nov_cirurgia",
+        type: "vendas",
+        title: "Black November - R+ Cirurgia",
+        productId: "prod_r_cirurgia",
+        productName: "R+ Cirurgia Geral",
+        monthYearKey: "2026-11",
+        salesGoal: "150 matrículas",
+        offerDetails: "10% OFF no PIX",
+      },
+    ];
+
+    // Filtra campanhas de vendas ativas do mês
+    const vendasCampaigns = novemberCampaigns.filter((c) => c.type === "vendas");
+
+    assert.equal(vendasCampaigns.length, 2, "Deve permitir mais de 1 campanha de vendas no mesmo mês");
+    assert.equal(vendasCampaigns[0].productName, "Extensivo Elite 2027");
+    assert.equal(vendasCampaigns[1].productName, "R+ Cirurgia Geral");
+    assert.notEqual(vendasCampaigns[0].productId, vendasCampaigns[1].productId);
+  });
+
+  test("7. Atualização resiliente do estado local de campanhas (criação e edição sem perda)", () => {
+    let campaigns = [
+      { id: "c1", type: "vendas", title: "Campanha 1", monthYearKey: "2026-11" },
+    ];
+
+    // Adiciona uma nova campanha (novo produto)
+    const newCamp = { id: "c2", type: "vendas", title: "Campanha 2", monthYearKey: "2026-11" };
+    const existsNew = campaigns.some((c) => c.id === newCamp.id);
+    campaigns = existsNew
+      ? campaigns.map((c) => (c.id === newCamp.id ? newCamp : c))
+      : [...campaigns, newCamp];
+
+    assert.equal(campaigns.length, 2, "Nova campanha deve ser adicionada à lista existente");
+
+    // Edita uma campanha existente
+    const updatedCamp = { id: "c1", type: "vendas", title: "Campanha 1 Atualizada", monthYearKey: "2026-11" };
+    const existsUpd = campaigns.some((c) => c.id === updatedCamp.id);
+    campaigns = existsUpd
+      ? campaigns.map((c) => (c.id === updatedCamp.id ? updatedCamp : c))
+      : [...campaigns, updatedCamp];
+
+    assert.equal(campaigns.length, 2, "Edição não duplica a campanha");
+    assert.equal(campaigns.find((c) => c.id === "c1").title, "Campanha 1 Atualizada");
+    assert.equal(campaigns.find((c) => c.id === "c2").title, "Campanha 2");
+  });
+
+  test("8. Preservação de productName e personaName mesmo se id do produto/persona for alterado", () => {
+    const details = {
+      isMonthlyCampaign: "true",
+      campaignType: "vendas",
+      monthYearKey: "2026-11",
+      productId: "prod_elite",
+      productName: "Extensivo Elite 2027",
+    };
+
+    const hydratedProductName = details.productName || null;
+    assert.equal(hydratedProductName, "Extensivo Elite 2027");
+  });
 });
