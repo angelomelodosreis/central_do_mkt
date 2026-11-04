@@ -7,29 +7,73 @@ function LogoMark({ compact }: { compact: boolean }) {
   return (
     <>
       {/*
-        O símbolo oficial do Grupo MedCof, em `public/brand`. Fica sobre um
-        quadrado branco com borda para manter o contorno legível tanto na barra
-        lateral clara quanto no menu do celular.
+        O símbolo oficial do Grupo MedCof (marca vetorial MedCof UI em #E2263C).
+        Fica sobre um contêiner branco com borda e shadow-100 para manter o contorno
+        nítido em qualquer plano de fundo.
       */}
       <span
         aria-hidden
-        className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm"
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white shadow-100 transition-transform group-hover:scale-105"
       >
-        <Image
-          src="/brand/medcof-mark.svg"
-          alt=""
-          width={41}
-          height={46}
+        <svg
+          width="44"
+          height="54"
+          viewBox="0 0 44 54"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
           className="h-5 w-auto"
-          priority
-        />
+        >
+          <g clipPath="url(#medcof-logo-clip-nav)">
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M0.690982 21.2556C-2.96901 31.6769 8.00826 39.6372 31.9089 43.1845C38.9832 43.903 43.7553 40.763 43.1075 35.4392C37.8361 38.1634 6.36721 29.1791 0.690982 21.2556Z"
+              fill="#E2263C"
+            />
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M36.214 10.9135C25.0882 6.58262 15.4039 5.38887 14.6454 8.2007C11.7897 2.20929 22.2893 0.644967 30.1707 3.30404C30.5917 2.57704 29.1099 0.916532 28.2489 0C32.2625 1.6888 37.4907 6.973 38.0656 10.6137C38.2221 11.6122 37.3233 11.3463 36.214 10.9135Z"
+              fill="#E2263C"
+            />
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M19.6711 8.11582C18.3782 8.01964 17.5577 8.26292 17.3363 8.33364C16.6157 8.56277 16.0731 8.8994 15.7277 9.14834C16.2972 9.67166 17.1474 10.3902 18.2702 11.1059C19.4821 11.8781 20.5051 12.3223 21.3823 12.6815C25.2177 14.2515 27.2016 14.9898 29.5768 15.5075C30.3811 15.6829 30.7806 15.7706 31.1801 15.8045C33.8657 16.0365 36.0843 14.9304 37.4366 14.0535C33.7334 12.9955 30.9236 11.9177 29.01 11.1087C26.7805 10.1667 24.4323 9.57548 22.1839 8.68724C21.9518 8.59672 20.9828 8.20917 19.6684 8.11299L19.6711 8.11582Z"
+              fill="#E2263C"
+            />
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M38.3408 14.5203C46.1385 23.2782 34.1194 30.4549 10.594 21.6998C6.16475 20.0025 4.01896 18.4664 3.43055 16.9332C2.43728 14.3505 7.16072 10.7947 7.34696 10.5939C13.6251 14.5061 34.4568 20.9784 38.3408 14.5231V14.5203Z"
+              fill="#E2263C"
+            />
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M29.4473 47.1392C22.8992 46.6696 17.1366 45.5154 13.3552 44.0869C15.8357 43.524 21.3526 43.838 26.8453 43.7984C20.6077 42.6216 15.3174 41.0912 11.069 39.2327C9.26332 39.6428 8.08381 40.4575 7.61957 41.6824C5.63572 45.7276 13.5819 50.5931 20.9532 51.4672C21.053 52.3102 19.0476 53.1872 17.9032 53.6511C22.2244 53.8434 29.064 51.2805 31.0181 48.2113C31.5553 47.3683 30.6268 47.224 29.4473 47.1392Z"
+              fill="#E2263C"
+            />
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M34.0007 26.8538C32.5567 27.1339 30.9534 27.2866 29.199 27.2866C25.2043 27.2866 20.5726 26.5342 15.5901 25.1C20.8318 27.7817 26.3595 30.4266 29.1531 32.701C33.3691 33.7222 37.1668 34.3332 39.7768 34.3332C41.3828 34.3332 42.0063 34.1012 42.1979 33.9994L42.2978 33.9485C41.0319 31.6826 37.99 29.23 34.0007 26.8538Z"
+              fill="#E2263C"
+            />
+          </g>
+          <defs>
+            <clipPath id="medcof-logo-clip-nav">
+              <rect width="43.1641" height="53.6596" fill="white" />
+            </clipPath>
+          </defs>
+        </svg>
       </span>
       {compact ? null : (
         <span className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate font-display text-sm font-semibold text-slate-900">
+          <span className="truncate font-display text-sm font-bold text-slate-900 tracking-tight">
             Central do Marketing
           </span>
-          <span className="truncate text-xs text-slate-500">Grupo MedCof</span>
+          <span className="truncate text-xs text-slate-500 font-medium">Grupo MedCof</span>
         </span>
       )}
     </>

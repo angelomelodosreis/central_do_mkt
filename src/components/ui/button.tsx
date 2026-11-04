@@ -4,48 +4,41 @@ import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "brand" | "secondary" | "ghost" | "danger" | "dark";
 type Size = "sm" | "md";
 
 /**
- * A ação principal é a única preenchida com o vermelho da marca. A destrutiva
- * usa contorno e um marsala mais escuro: com a marca em vermelho, a cor sozinha
- * não distingue mais "confirmar" de "apagar" — a diferença precisa estar também
- * no preenchimento.
- *
- * O PADRÃO é `secondary`, e isso é deliberado. Enquanto `primary` era o padrão,
- * escrever `<Button>` sem pensar dava o destaque máximo de graça: a ferramenta
- * chegou a ter 64 botões vermelhos, quatro deles competindo numa tela só. O
- * destaque só significa alguma coisa quando é escasso, então agora ele é uma
- * escolha explícita — `variant="primary"` — e cada tela tem de decidir qual é
- * a sua ação principal.
+ * Padrão canônico de Botões do MedCof UI Design System:
+ * - `brand` / `primary`: degradê vibrante da marca MedCof (#d81d33 -> #ef344a) com relevo tátil.
+ * - `dark`: degradê grafite premium (#292929 -> #3c3c3c).
+ * - `secondary`: fundo branco com inner shadow e borda neutra (padrão escasso para não poluir telas).
+ * - `danger`: degradê destrutivo marsala/rubi escuro (#7f0e1b -> #90202d).
+ * - `ghost`: ação terciária sutil com contorno no hover.
+ * - formato: rounded-full (pílula oficial MedCof UI).
  */
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:outline-brand-600 disabled:hover:bg-brand-600",
+    "bg-linear-to-br from-btn-brand-from to-btn-brand-to text-white font-semibold shadow-2xs hover:from-btn-brand-hover-from hover:to-btn-brand-hover-to active:from-btn-brand-active active:to-btn-brand-active focus-visible:outline-btn-brand-outline disabled:opacity-50",
+  brand:
+    "bg-linear-to-br from-btn-brand-from to-btn-brand-to text-white font-semibold shadow-2xs hover:from-btn-brand-hover-from hover:to-btn-brand-hover-to active:from-btn-brand-active active:to-btn-brand-active focus-visible:outline-btn-brand-outline disabled:opacity-50",
+  dark:
+    "bg-linear-to-br from-btn-primary-from to-btn-primary-to text-white font-semibold shadow-2xs hover:from-btn-primary-hover-from hover:to-btn-primary-hover-to active:from-btn-primary-active-from active:to-btn-primary-active-to focus-visible:outline-btn-primary-outline disabled:opacity-50",
   secondary:
-    "border border-slate-300 bg-white text-slate-700 shadow-sm hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-brand-600",
-  /**
-   * A ação terciária ganhou contorno no hover.
-   *
-   * Sem ele, um `ghost` ao lado de um `secondary` parecia texto solto — dava
-   * para clicar, mas não parecia clicável até o mouse passar por cima. Em linhas
-   * com três ações lado a lado, era o botão que as pessoas não achavam.
-   */
+    "border border-slate-300 bg-white text-slate-800 shadow-100 font-medium hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-brand-500",
   ghost:
-    "border border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-brand-600",
+    "border border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-brand-500",
   danger:
-    "border border-danger-200 bg-white text-danger-700 shadow-sm hover:border-danger-600 hover:bg-danger-50 focus-visible:outline-danger-700",
+    "bg-linear-to-br from-btn-destructive-from to-btn-destructive-to text-white font-semibold shadow-2xs hover:from-btn-destructive-hover-from hover:to-btn-destructive-hover-to active:from-btn-destructive-active-from active:to-btn-destructive-active-to focus-visible:outline-btn-destructive-outline disabled:opacity-50",
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-8 gap-1.5 px-2.5 text-xs",
-  md: "h-10 gap-2 px-4 text-sm",
+  sm: "h-8 gap-1.5 px-3.5 text-xs",
+  md: "h-10 gap-2 px-5 text-sm",
 };
 
 function classes(variant: Variant, size: Size, className?: string) {
   return cn(
-    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl font-medium transition-colors",
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full font-medium transition-all cursor-pointer",
     // Foco visível pelo teclado: não existia nenhum estilo de foco, então quem
     // navega por Tab não tinha como saber onde estava.
     "focus-visible:outline-2 focus-visible:outline-offset-2",

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils/cn";
 export function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn("rounded-2xl border border-slate-200 bg-white", className)}
+      className={cn("rounded-2xl border border-slate-200/90 bg-white shadow-2xs transition-all", className)}
       {...props}
     />
   );

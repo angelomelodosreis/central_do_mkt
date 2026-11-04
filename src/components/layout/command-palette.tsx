@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Calculator,
   MonitorPlay,
+  Palette,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils/cn";
@@ -80,6 +81,14 @@ const DEFAULT_COMMANDS: CommandItem[] = [
     category: "Navegação",
     href: "/growth-sessions",
     icon: MonitorPlay,
+  },
+  {
+    id: "nav_styleguide",
+    title: "Design System & Style Guide",
+    subtitle: "Catálogo MedCof UI oficial, tokens, botões e espécimes",
+    category: "Navegação",
+    href: "/styleguide",
+    icon: Palette,
   },
   {
     id: "nav_docs",

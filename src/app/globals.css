@@ -51,6 +51,47 @@
     0 8px 20px -4px rgba(0, 0, 0, 0.06),
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
   --shadow-soft-inset: inset 0 2px 4px 0 rgba(15, 23, 42, 0.05);
+
+  /* MedCof UI — Tokens oficiais de Botões e Gradientes */
+  --color-btn-brand-from: #d81d33;
+  --color-btn-brand-to: #ef344a;
+  --color-btn-brand-hover-from: #dd4759;
+  --color-btn-brand-hover-to: #f15b6d;
+  --color-btn-brand-active: #7f0e1b;
+  --color-btn-brand-outline: #f3a8b1;
+
+  --color-btn-primary-from: #292929;
+  --color-btn-primary-to: #3c3c3c;
+  --color-btn-primary-hover-from: #434343;
+  --color-btn-primary-hover-to: #555555;
+  --color-btn-primary-active-from: #111111;
+  --color-btn-primary-active-to: #222222;
+  --color-btn-primary-outline: #b2b2b2;
+
+  --color-btn-secondary-hover-from: #dcdcdc;
+  --color-btn-secondary-hover-to: #ececec;
+  --color-btn-secondary-active-from: #d0d0d0;
+  --color-btn-secondary-active-to: #e1e1e1;
+  --color-btn-secondary-outline: #cccccc;
+
+  --color-btn-destructive-from: #7f0e1b;
+  --color-btn-destructive-to: #90202d;
+  --color-btn-destructive-hover-from: #ac1628;
+  --color-btn-destructive-hover-to: #bf293b;
+  --color-btn-destructive-active-from: #260105;
+  --color-btn-destructive-active-to: #361115;
+  --color-btn-destructive-outline: #f3a8b1;
+
+  --color-btn-success-from: #06ae77;
+  --color-btn-success-to: #1ec68e;
+  --color-btn-success-hover-from: #38be91;
+  --color-btn-success-hover-to: #4ad0a3;
+  --color-btn-success-active-from: #016644;
+  --color-btn-success-active-to: #1c805f;
+  --color-btn-success-outline: #9fe3cd;
+
+  --shadow-100: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --inner-shadow-100: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 @layer base {
@@ -198,5 +239,16 @@
   }
   .prose-doc td {
     @apply border border-slate-200 px-3 py-2 align-top;
+  }
+
+  /* Classes utilitárias do MedCof UI Design System */
+  .shadow-100 {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  .ui-inner-shadow-100 {
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+  .ui-card-stroke {
+    border: 1px solid rgba(226, 232, 240, 0.8);
   }
 }
