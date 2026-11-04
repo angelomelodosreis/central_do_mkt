@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     "Plataforma interna do time de marketing da MedCof: ferramentas, processos e convenções em um só lugar.",
   // Plataforma interna: não deve aparecer em buscador nenhum.
   robots: { index: false, follow: false },
-  icons: { icon: "/brand/medcof-mark.svg" },
+  icons: { icon: [{ url: "/medcof-favicon-2026/favicon.ico", sizes: "any" }, { url: "/medcof-favicon-2026/icon-32.png", sizes: "32x32", type: "image/png" }], shortcut: "/medcof-favicon-2026/favicon.ico", apple: [{ url: "/medcof-favicon-2026/apple-touch-icon.png", sizes: "180x180", type: "image/png" }] },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
