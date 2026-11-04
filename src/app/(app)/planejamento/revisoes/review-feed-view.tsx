@@ -1388,7 +1388,7 @@ export function ReviewFeedView({
                   placeholder="Responder... Use @ para mencionar alguém e enviar notificação"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-3 pr-20 text-xs text-slate-800 placeholder-slate-400 shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full resize-y min-h-[85px] rounded-xl border border-slate-200 bg-white p-3 pr-20 text-sm leading-relaxed text-slate-800 placeholder-slate-400 shadow-2xs focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                   onKeyDown={(e) => {
                     if (e.key === "@") {
                       setShowMentionPicker(true);

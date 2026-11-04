@@ -45,7 +45,7 @@ export function Input({ className, ...props }: ComponentProps<"input">) {
 export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
   return (
     <textarea
-      className={cn(CONTROL_CLASSES, "font-mono text-[13px]", className)}
+      className={cn(CONTROL_CLASSES, "font-sans text-sm leading-relaxed resize-y min-h-[90px] p-3", className)}
       {...props}
     />
   );

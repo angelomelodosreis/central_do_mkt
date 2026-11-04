@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Target,
   ShoppingBag,
@@ -396,11 +397,25 @@ export function CampaignModal({
   onSaved: (campaign: MonthlyCampaign) => void;
   onDeleted: (id: string) => void;
 }) {
+  const router = useRouter();
   const [type, setType] = useState<MonthlyCampaignType>(
     campaign?.type || initialType,
   );
   const [title, setTitle] = useState(campaign?.title || "");
-  const [productId, setProductId] = useState(campaign?.productId || "");
+
+  // Suporte a múltiplos produtos na campanha de vendas (Beatriz: "aqui na de vendas por exemplo, ser de mais de um produto?")
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(() => {
+    if (campaign?.productId) {
+      return [campaign.productId];
+    }
+    return [];
+  });
+  const [customProductName, setCustomProductName] = useState(
+    campaign?.productName && !products.some(p => p.id === campaign.productId && p.name === campaign.productName)
+      ? campaign.productName
+      : ""
+  );
+
   const [personaId, setPersonaId] = useState(campaign?.personaId || "");
   const [leadMagnet, setLeadMagnet] = useState(campaign?.leadMagnet || "");
   const [leadsCount, setLeadsCount] = useState(campaign?.leadsCount || "");
@@ -413,15 +428,28 @@ export function CampaignModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  function toggleProduct(prodId: string) {
+    if (selectedProductIds.includes(prodId)) {
+      setSelectedProductIds(selectedProductIds.filter((id) => id !== prodId));
+    } else {
+      setSelectedProductIds([...selectedProductIds, prodId]);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) {
-      toast.error("Informe o nome da campanha.");
+      toast.error("Informe o título da campanha.");
       return;
     }
 
     setIsSubmitting(true);
-    const selectedProd = products.find((p) => p.id === productId);
+    const selectedProds = products.filter((p) => selectedProductIds.includes(p.id));
+    const combinedProductName = selectedProds.length > 0
+      ? selectedProds.map((p) => p.name).join(" + ")
+      : (customProductName.trim() || campaign?.productName || null);
+    const primaryProductId = selectedProds[0]?.id || selectedProductIds[0] || null;
+
     const selectedPersona = personas.find((p) => p.id === personaId);
 
     const res = await saveMonthlyCampaignAction({
@@ -431,8 +459,8 @@ export function CampaignModal({
       type,
       title: title.trim(),
       monthYearKey,
-      productId: productId || null,
-      productName: selectedProd?.name || campaign?.productName || null,
+      productId: primaryProductId,
+      productName: combinedProductName,
       leadMagnet: leadMagnet || null,
       leadsCount: leadsCount || null,
       personaId: personaId || null,
@@ -449,6 +477,7 @@ export function CampaignModal({
         campaign ? "Campanha atualizada!" : "Campanha criada com sucesso!",
       );
       onSaved(res.campaign);
+      router.refresh();
     } else {
       toast.error(res.error || "Erro ao salvar campanha.");
     }
@@ -470,14 +499,15 @@ export function CampaignModal({
     if (res.ok) {
       toast.success("Campanha excluída.");
       onDeleted(campaign.id);
+      router.refresh();
     } else {
       toast.error(res.error || "Erro ao excluir campanha.");
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in">
-      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in overflow-y-auto">
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-5 my-8">
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
@@ -515,9 +545,9 @@ export function CampaignModal({
                       type="button"
                       onClick={() => setType(opt)}
                       className={cn(
-                        "flex items-center justify-center gap-1.5 rounded-xl border py-2 px-3 text-xs font-bold transition cursor-pointer",
+                        "flex items-center justify-center gap-1.5 rounded-xl border py-2.5 px-3 text-xs font-bold transition cursor-pointer",
                         selected
-                          ? cn(style.badgeBg, style.badgeBorder, style.badgeText, "ring-1 ring-inset")
+                          ? cn(style.badgeBg, style.badgeBorder, style.badgeText, "ring-1 ring-inset shadow-2xs")
                           : "border-slate-200 text-slate-600 hover:bg-slate-50",
                       )}
                     >
@@ -547,32 +577,70 @@ export function CampaignModal({
                     ? "Ex.: Captação Simulado Nacional ENARE R1"
                     : "Ex.: Semana da Especialidade no Podcast MedCof"
               }
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 shadow-2xs transition"
             />
           </div>
 
           {/* Campos específicos por Tipo */}
           {type === "vendas" && (
-            <div className="space-y-3 rounded-xl border border-emerald-100 bg-emerald-50/30 p-3">
+            <div className="space-y-3.5 rounded-xl border border-emerald-100 bg-emerald-50/30 p-3.5">
               <div>
-                <label className="block text-xs font-semibold text-emerald-950 mb-1">
-                  Produto Foco da Esteira
-                </label>
-                <select
-                  value={productId}
-                  onChange={(e) => setProductId(e.target.value)}
-                  className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                >
-                  <option value="">Selecione o produto foco...</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-emerald-950">
+                    Produtos da Esteira {selectedProductIds.length > 0 && `(${selectedProductIds.length} selecionado${selectedProductIds.length > 1 ? "s" : ""})`}
+                  </label>
+                  {selectedProductIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedProductIds([])}
+                      className="text-[11px] text-emerald-700 hover:text-emerald-900 font-medium underline cursor-pointer"
+                    >
+                      Limpar seleção
+                    </button>
+                  )}
+                </div>
+
+                {products.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto p-1.5 bg-white rounded-xl border border-emerald-200">
+                      {products.map((p) => {
+                        const isSelected = selectedProductIds.includes(p.id);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => toggleProduct(p.id)}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border",
+                              isSelected
+                                ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs font-semibold"
+                                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                            )}
+                          >
+                            {isSelected && <Check className="size-3 stroke-[3]" />}
+                            <span>{p.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-emerald-800 leading-tight">
+                      💡 Selecione um ou mais produtos para campanhas integradas da esteira.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="text"
+                      value={customProductName}
+                      onChange={(e) => setCustomProductName(e.target.value)}
+                      placeholder="Ex.: Extensivo Elite + R-Mais..."
+                      className="w-full rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-emerald-950 mb-1">
                     Meta de Vendas / Matrículas
@@ -582,7 +650,7 @@ export function CampaignModal({
                     value={salesGoal}
                     onChange={(e) => setSalesGoal(e.target.value)}
                     placeholder="Ex.: 300 matrículas"
-                    className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                   />
                 </div>
                 <div>
@@ -594,7 +662,7 @@ export function CampaignModal({
                     value={offerDetails}
                     onChange={(e) => setOfferDetails(e.target.value)}
                     placeholder="Ex.: 12x s/ juros + Bônus"
-                    className="w-full rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-2xs"
                   />
                 </div>
               </div>
@@ -602,7 +670,7 @@ export function CampaignModal({
           )}
 
           {type === "captacao" && (
-            <div className="space-y-3 rounded-xl border border-sky-100 bg-sky-50/30 p-3">
+            <div className="space-y-3.5 rounded-xl border border-sky-100 bg-sky-50/30 p-3.5">
               <div>
                 <label className="block text-xs font-semibold text-sky-950 mb-1">
                   Isca Digital / Lead Magnet Ativo
@@ -612,11 +680,11 @@ export function CampaignModal({
                   value={leadMagnet}
                   onChange={(e) => setLeadMagnet(e.target.value)}
                   placeholder="Ex.: Guia 500 Questões Comentadas ou Simulado Aberto"
-                  className="w-full rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="w-full rounded-xl border border-sky-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-sky-950 mb-1">
                     Persona Foco
@@ -624,7 +692,7 @@ export function CampaignModal({
                   <select
                     value={personaId}
                     onChange={(e) => setPersonaId(e.target.value)}
-                    className="w-full rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full rounded-xl border border-sky-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
                   >
                     <option value="">Selecione a persona...</option>
                     {personas.map((p) => (
@@ -643,7 +711,7 @@ export function CampaignModal({
                     value={leadsCount}
                     onChange={(e) => setLeadsCount(e.target.value)}
                     placeholder="Ex.: 1.500 leads"
-                    className="w-full rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                    className="w-full rounded-xl border border-sky-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 shadow-2xs"
                   />
                 </div>
               </div>
@@ -651,7 +719,7 @@ export function CampaignModal({
           )}
 
           {type === "awareness" && (
-            <div className="space-y-3 rounded-xl border border-purple-100 bg-purple-50/30 p-3">
+            <div className="space-y-3.5 rounded-xl border border-purple-100 bg-purple-50/30 p-3.5">
               <div>
                 <label className="block text-xs font-semibold text-purple-950 mb-1">
                   Canais & Frentes de Divulgação
@@ -661,7 +729,7 @@ export function CampaignModal({
                   value={channels}
                   onChange={(e) => setChannels(e.target.value)}
                   placeholder="Ex.: YouTube Live, Instagram Reels, Podcast, E-mail"
-                  className="w-full rounded-lg border border-purple-200 bg-white px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full rounded-xl border border-purple-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-2xs"
                 />
               </div>
             </div>
@@ -673,11 +741,11 @@ export function CampaignModal({
               Observações Estratégicas (opcional)
             </label>
             <textarea
-              rows={2}
+              rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Detalhes adicionais, alinhamento de equipe ou hipóteses para o mês..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 resize-y min-h-[95px] shadow-2xs transition"
             />
           </div>
 
@@ -701,7 +769,7 @@ export function CampaignModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
               >
                 Cancelar
               </button>
@@ -709,7 +777,7 @@ export function CampaignModal({
                 <button
                   type="submit"
                   disabled={isSubmitting || !title.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-brand-700 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-xs font-bold text-white shadow-2xs transition hover:bg-brand-700 disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>

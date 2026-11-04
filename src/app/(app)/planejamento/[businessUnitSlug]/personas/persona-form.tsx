@@ -384,11 +384,11 @@ export function PersonaForm({
               name="pain"
               value={pains[0]?.pain || ""}
               onChange={(e) => updatePain(0, { pain: e.target.value })}
-              rows={2}
+              rows={3}
               maxLength={160}
               placeholder="Ex.: Chega do plantão às 7h e não consegue manter a rotina de questões"
               required
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition resize-none"
+              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 transition resize-y min-h-[85px] shadow-2xs"
             />
             <p className="text-[11px] text-slate-500 leading-tight pt-0.5">
               <span className="text-amber-700 font-medium">Evite:</span> falta de tempo ·{" "}
@@ -421,9 +421,9 @@ export function PersonaForm({
               id="interests"
               name="interests"
               defaultValue={values.interests}
-              rows={2}
+              rows={3}
               placeholder="Ex.: Acompanha caso clínico comentado, ouve podcast no deslocamento, salva resumo de prova antiga"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition resize-none"
+              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 transition resize-y min-h-[85px] shadow-2xs"
             />
           </div>
 

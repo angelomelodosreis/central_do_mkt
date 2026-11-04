@@ -462,7 +462,7 @@ export function DiagnosisTableView({
               }}
               placeholder="Escreva um comentário, reflexão ou sugestão sobre o diagnóstico da BU (ou use Ctrl+Enter para enviar)..."
               rows={3}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-none"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-100 transition shadow-2xs resize-y min-h-[90px]"
             />
           </div>
 

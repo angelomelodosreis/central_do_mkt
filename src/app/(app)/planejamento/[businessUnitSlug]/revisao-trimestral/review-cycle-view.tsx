@@ -428,7 +428,7 @@ export function ReviewCycleView({
               </div>
             </div>
 
-            <div className="relative pl-10">
+            <div className="pl-10 space-y-1">
               <textarea
                 value={marketChanges}
                 disabled={!canEdit}
@@ -436,11 +436,13 @@ export function ReviewCycleView({
                 onChange={(e) => setMarketChanges(e.target.value)}
                 placeholder="Ex.: A conversão melhorou nas últimas semanas, mas o volume de leads está abaixo do esperado."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-y min-h-[95px] transition shadow-2xs"
               />
-              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
-                {marketChanges.length}/500
-              </span>
+              <div className="flex justify-end pr-1">
+                <span className="text-xs tabular-nums font-mono text-slate-400">
+                  {marketChanges.length}/500
+                </span>
+              </div>
             </div>
           </div>
 
@@ -460,7 +462,7 @@ export function ReviewCycleView({
               </div>
             </div>
 
-            <div className="relative pl-10">
+            <div className="pl-10 space-y-1">
               <textarea
                 value={newProblems}
                 disabled={!canEdit}
@@ -468,11 +470,13 @@ export function ReviewCycleView({
                 onChange={(e) => setNewProblems(e.target.value)}
                 placeholder="Registre novos problemas identificados..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-y min-h-[95px] transition shadow-2xs"
               />
-              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
-                {newProblems.length}/500
-              </span>
+              <div className="flex justify-end pr-1">
+                <span className="text-xs tabular-nums font-mono text-slate-400">
+                  {newProblems.length}/500
+                </span>
+              </div>
             </div>
           </div>
 
@@ -492,7 +496,7 @@ export function ReviewCycleView({
               </div>
             </div>
 
-            <div className="relative pl-10">
+            <div className="pl-10 space-y-1">
               <textarea
                 value={missedOpportunities}
                 disabled={!canEdit}
@@ -500,11 +504,13 @@ export function ReviewCycleView({
                 onChange={(e) => setMissedOpportunities(e.target.value)}
                 placeholder="Registre oportunidades a acelerar..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-y min-h-[95px] transition shadow-2xs"
               />
-              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
-                {missedOpportunities.length}/500
-              </span>
+              <div className="flex justify-end pr-1">
+                <span className="text-xs tabular-nums font-mono text-slate-400">
+                  {missedOpportunities.length}/500
+                </span>
+              </div>
             </div>
           </div>
 
@@ -524,7 +530,7 @@ export function ReviewCycleView({
               </div>
             </div>
 
-            <div className="relative pl-10">
+            <div className="pl-10 space-y-1">
               <textarea
                 value={objectiveAssumptions}
                 disabled={!canEdit}
@@ -532,11 +538,13 @@ export function ReviewCycleView({
                 onChange={(e) => setObjectiveAssumptions(e.target.value)}
                 placeholder="Avalie a sustentabilidade do objetivo..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-y min-h-[95px] transition shadow-2xs"
               />
-              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
-                {objectiveAssumptions.length}/500
-              </span>
+              <div className="flex justify-end pr-1">
+                <span className="text-xs tabular-nums font-mono text-slate-400">
+                  {objectiveAssumptions.length}/500
+                </span>
+              </div>
             </div>
           </div>
 
@@ -607,7 +615,7 @@ export function ReviewCycleView({
               </div>
             </div>
 
-            <div className="relative pl-10">
+            <div className="pl-10 space-y-1">
               <textarea
                 value={nextQuarterFocus}
                 disabled={!canEdit}
@@ -615,11 +623,13 @@ export function ReviewCycleView({
                 onChange={(e) => setNextQuarterFocus(e.target.value)}
                 placeholder="Ex.: Priorizar lançamento da extensão de pós-graduação e otimizar funil de conversão orgânica..."
                 rows={3}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 pb-7 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-none transition shadow-2xs"
+                className="w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 resize-y min-h-[95px] transition shadow-2xs"
               />
-              <span className="absolute bottom-2.5 right-3 text-xs tabular-nums font-mono text-slate-400">
-                {nextQuarterFocus.length}/500
-              </span>
+              <div className="flex justify-end pr-1">
+                <span className="text-xs tabular-nums font-mono text-slate-400">
+                  {nextQuarterFocus.length}/500
+                </span>
+              </div>
             </div>
           </div>
 

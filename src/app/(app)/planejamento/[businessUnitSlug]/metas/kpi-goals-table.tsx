@@ -20,6 +20,8 @@ import {
   Users,
   MoreVertical,
   ChevronDown,
+  Eye,
+  Pencil,
 } from "lucide-react";
 import { saveCycleObjectiveAndGoalsAction } from "../../actions";
 import type { StrategyKpiGoal } from "@/lib/db/schema";
@@ -203,6 +205,8 @@ export function KpiGoalsTable({
   const [isPending, startTransition] = useTransition();
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isEditingObjective, setIsEditingObjective] = useState(false);
+  const [viewMode, setViewMode] = useState<"edit" | "read">("edit");
 
   // Popover para adicionar tags a uma linha
   const [activePickerRowId, setActivePickerRowId] = useState<string | null>(
@@ -481,28 +485,76 @@ export function KpiGoalsTable({
           </div>
         </div>
 
-        {/* Input de Objetivo da BU no ciclo */}
+        {/* Objetivo da BU no ciclo (Estilo Diagnóstico: Leitura Clara + Edição Expansível) */}
         <div>
-          <label className="text-xs font-semibold text-slate-800 flex items-center gap-1 mb-1.5">
-            Objetivo da BU no ciclo <span className="text-[#e2263c]">*</span>
-          </label>
-          <div className="relative">
-            <textarea
-              value={cycleObjective}
-              disabled={!canEdit}
-              maxLength={500}
-              onChange={(e) => handleObjectiveChange(e.target.value)}
-              placeholder="Ex.: Ser a principal referência nacional em educação médica para Ginecologia e Obstetrícia."
-              rows={3}
-              className={cn(
-                "w-full rounded-2xl border border-rose-200 bg-white p-4 pb-7 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition resize-none shadow-2xs",
-                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-              )}
-            />
-            <span className="absolute bottom-2.5 right-3.5 text-xs tabular-nums font-mono text-slate-400">
-              {cycleObjective.length}/500
-            </span>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-semibold text-slate-800 flex items-center gap-1">
+              Objetivo da BU no ciclo <span className="text-[#e2263c]">*</span>
+            </label>
+            {cycleObjective && canEdit && !isEditingObjective && (
+              <button
+                type="button"
+                onClick={() => setIsEditingObjective(true)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 hover:text-rose-900 transition cursor-pointer"
+              >
+                <Pencil className="size-3 text-[#e2263c]" />
+                <span>Editar</span>
+              </button>
+            )}
           </div>
+
+          {cycleObjective && !isEditingObjective ? (
+            <div className="group relative rounded-2xl border border-rose-200/90 bg-white p-5 shadow-2xs transition hover:border-rose-300">
+              <div className="text-base sm:text-lg font-medium leading-relaxed text-slate-900 whitespace-pre-wrap">
+                {cycleObjective}
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-rose-100 pt-2.5">
+                <span className="text-xs font-mono tabular-nums text-slate-400">
+                  {cycleObjective.length}/500 caracteres
+                </span>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingObjective(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 border border-rose-200/80 hover:bg-rose-100 transition cursor-pointer"
+                  >
+                    <Pencil className="size-3 text-[#e2263c]" />
+                    Editar Objetivo
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                value={cycleObjective}
+                disabled={!canEdit}
+                maxLength={500}
+                onChange={(e) => handleObjectiveChange(e.target.value)}
+                placeholder="Ex.: Ser a principal referência nacional em educação médica para Ginecologia e Obstetrícia..."
+                rows={4}
+                className={cn(
+                  "w-full rounded-2xl border border-rose-200 bg-white p-4 text-sm sm:text-base leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-[#e2263c] focus:outline-none focus:ring-2 focus:ring-rose-100 transition resize-y min-h-[110px] shadow-2xs",
+                  !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                )}
+              />
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-xs tabular-nums font-mono text-slate-400">
+                  {cycleObjective.length}/500 caracteres
+                </span>
+                {cycleObjective && canEdit && isEditingObjective && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingObjective(false)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition cursor-pointer"
+                  >
+                    <Check className="size-3 text-emerald-600" />
+                    Concluir edição
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sugestões Diretas de Objetivos da BU (Subtle Helper Bar) */}
@@ -565,44 +617,81 @@ export function KpiGoalsTable({
           </div>
         </div>
 
+        {/* Alternador de Modo: Leitura Confortável vs Edição Direta */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
+          <div className="flex items-center gap-1.5 rounded-xl bg-purple-100/70 p-1 border border-purple-200/80 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setViewMode("read")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition cursor-pointer",
+                viewMode === "read"
+                  ? "bg-white text-purple-950 shadow-2xs ring-1 ring-purple-200"
+                  : "text-purple-700 hover:text-purple-950 hover:bg-white/60",
+              )}
+            >
+              <Eye className="size-3.5 text-purple-600" />
+              <span>Modo Leitura (Visualizar)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("edit")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition cursor-pointer",
+                viewMode === "edit"
+                  ? "bg-purple-600 text-white shadow-2xs"
+                  : "text-purple-700 hover:text-purple-950 hover:bg-white/60",
+              )}
+            >
+              <Pencil className="size-3.5" />
+              <span>Modo Edição (Formulário)</span>
+            </button>
+          </div>
+
+          <div className="text-xs text-purple-800 font-medium flex items-center gap-1">
+            <span>💡</span>
+            <span>Caixas de texto redimensionáveis verticalmente para leitura fluida e confortável.</span>
+          </div>
+        </div>
+
         {/* Tabela de Metas 2.0 Fiel à Referência */}
         <div className="overflow-hidden rounded-2xl border border-purple-200/80 bg-white shadow-2xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-purple-200 bg-purple-50/70 text-[11px] font-bold uppercase tracking-wider text-purple-900">
                   <th scope="col" className="px-3 py-3.5 w-12 text-center">
                     #
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[210px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[260px]">
                     Meta <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[240px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[230px]">
                     <span className="flex items-center gap-1">
                       Embasamento no Diagnóstico <span className="text-rose-600">*</span>
                       <HelpCircle className="size-3 text-slate-400" />
                     </span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[240px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[220px]">
                     KPI Principal <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[120px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[130px]">
                     Valor-Alvo <span className="text-rose-600">*</span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[220px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[200px]">
                     <span className="flex items-center gap-1">
                       KPI Secundário
                       <HelpCircle className="size-3 text-slate-400" />
                     </span>
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[120px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[130px]">
                     Valor-Alvo
                   </th>
-                  <th scope="col" className="px-4 py-3.5 min-w-[220px]">
+                  <th scope="col" className="px-4 py-3.5 min-w-[260px]">
                     Comentários
                   </th>
                   {canEdit && (
-                    <th scope="col" className="px-3 py-3.5 w-12 text-center">
+                    <th scope="col" className="px-3 py-3.5 w-14 text-center">
                       Ações
                     </th>
                   )}
@@ -624,25 +713,39 @@ export function KpiGoalsTable({
 
                       {/* Meta * */}
                       <td className="px-4 py-3.5">
-                        <div className="relative">
-                          <textarea
-                            value={row.title}
-                            disabled={!canEdit}
-                            maxLength={200}
-                            onChange={(e) =>
-                              updateGoalRow(row.id, { title: e.target.value })
-                            }
-                            placeholder="Ex.: Ampliar a participação da MedCof GO no mercado"
-                            rows={2}
-                            className={cn(
-                              "w-full rounded-xl border border-slate-200 bg-white p-2.5 pb-5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-none shadow-2xs",
-                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                            )}
-                          />
-                          <span className="absolute bottom-1.5 right-2 text-[9px] tabular-nums font-mono text-slate-400">
-                            {row.title.length}/200
-                          </span>
-                        </div>
+                        {viewMode === "read" ? (
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold text-slate-900 leading-snug whitespace-pre-wrap">
+                              {row.title || (
+                                <span className="text-slate-400 font-normal italic">
+                                  Sem título informado
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <textarea
+                              value={row.title}
+                              disabled={!canEdit}
+                              maxLength={200}
+                              onChange={(e) =>
+                                updateGoalRow(row.id, { title: e.target.value })
+                              }
+                              placeholder="Ex.: Ampliar a participação da MedCof GO no mercado..."
+                              rows={3}
+                              className={cn(
+                                "w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-y min-h-[75px] shadow-2xs font-medium",
+                                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                              )}
+                            />
+                            <div className="flex justify-end pr-1">
+                              <span className="text-[10px] tabular-nums font-mono text-slate-400">
+                                {row.title.length}/200
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </td>
 
                       {/* Embasamento no Diagnóstico * */}
@@ -652,7 +755,7 @@ export function KpiGoalsTable({
                             {row.tags.map((tag, tIdx) => (
                               <span
                                 key={tIdx}
-                                className="inline-flex items-center gap-1 rounded-lg bg-purple-50/90 px-2 py-1 text-[11px] font-semibold text-purple-700 border border-purple-200/90 shadow-2xs hover:bg-purple-100 transition"
+                                className="inline-flex items-center gap-1 rounded-lg bg-purple-50/90 px-2.5 py-1 text-xs font-semibold text-purple-700 border border-purple-200/90 shadow-2xs hover:bg-purple-100 transition"
                               >
                                 <button
                                   type="button"
@@ -832,116 +935,156 @@ export function KpiGoalsTable({
                       </td>
 
                       {/* KPI Principal * com Datalist/Sugestões */}
-                      <td className="px-4 py-3.5 min-w-[240px]">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            list={`kpi-options-${row.id}`}
-                            value={row.primaryKpiName}
-                            disabled={!canEdit}
-                            title={row.primaryKpiName || undefined}
-                            onChange={(e) =>
-                              updateGoalRow(row.id, {
-                                primaryKpiName: e.target.value,
-                              })
-                            }
-                            placeholder="Ex.: Market share"
-                            className={cn(
-                              "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs font-medium",
-                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                            )}
-                          />
-                          <datalist id={`kpi-options-${row.id}`}>
-                            {COMMON_KPIS.map((kpi, kIdx) => (
-                              <option key={kIdx} value={kpi} />
-                            ))}
-                          </datalist>
-                        </div>
+                      <td className="px-4 py-3.5 min-w-[220px]">
+                        {viewMode === "read" ? (
+                          <div className="space-y-1">
+                            <span className="text-sm font-semibold text-slate-900 block leading-tight">
+                              {row.primaryKpiName || "—"}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <input
+                              type="text"
+                              list={`kpi-options-${row.id}`}
+                              value={row.primaryKpiName}
+                              disabled={!canEdit}
+                              title={row.primaryKpiName || undefined}
+                              onChange={(e) =>
+                                updateGoalRow(row.id, {
+                                  primaryKpiName: e.target.value,
+                                })
+                              }
+                              placeholder="Ex.: Market share"
+                              className={cn(
+                                "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                              )}
+                            />
+                            <datalist id={`kpi-options-${row.id}`}>
+                              {COMMON_KPIS.map((kpi, kIdx) => (
+                                <option key={kIdx} value={kpi} />
+                              ))}
+                            </datalist>
+                          </div>
+                        )}
                       </td>
 
                       {/* Valor-Alvo * */}
-                      <td className="px-4 py-3.5 min-w-[120px]">
-                        <input
-                          type="text"
-                          value={row.primaryKpiTarget}
-                          disabled={!canEdit}
-                          onChange={(e) =>
-                            updateGoalRow(row.id, {
-                              primaryKpiTarget: e.target.value,
-                            })
-                          }
-                          placeholder="Ex.: 8,20%"
-                          className={cn(
-                            "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs font-medium",
-                            !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                          )}
-                        />
-                      </td>
-
-                      {/* KPI Secundário */}
-                      <td className="px-4 py-3.5 min-w-[220px]">
-                        <input
-                          type="text"
-                          value={row.secondaryKpiName}
-                          disabled={!canEdit}
-                          title={row.secondaryKpiName || undefined}
-                          onChange={(e) =>
-                            updateGoalRow(row.id, {
-                              secondaryKpiName: e.target.value,
-                            })
-                          }
-                          placeholder="Ex.: Número de alunos"
-                          className={cn(
-                            "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
-                            !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                          )}
-                        />
-                      </td>
-
-                      {/* Valor-Alvo (Secundário) */}
-                      <td className="px-4 py-3.5">
-                        <input
-                          type="text"
-                          value={row.secondaryKpiTarget}
-                          disabled={!canEdit}
-                          onChange={(e) =>
-                            updateGoalRow(row.id, {
-                              secondaryKpiTarget: e.target.value,
-                            })
-                          }
-                          placeholder="Ex.: 159 alunos"
-                          className={cn(
-                            "w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs font-medium",
-                            !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
-                          )}
-                        />
-                      </td>
-
-                      {/* Comentários */}
-                      <td className="px-4 py-3.5">
-                        <div className="relative">
-                          <textarea
-                            value={row.comments}
+                      <td className="px-4 py-3.5 min-w-[130px]">
+                        {viewMode === "read" ? (
+                          <span className="inline-block px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs tabular-nums">
+                            {row.primaryKpiTarget || "Sem alvo"}
+                          </span>
+                        ) : (
+                          <input
+                            type="text"
+                            value={row.primaryKpiTarget}
                             disabled={!canEdit}
-                            maxLength={500}
-                            rows={2}
                             onChange={(e) =>
                               updateGoalRow(row.id, {
-                                comments: e.target.value,
+                                primaryKpiTarget: e.target.value,
                               })
                             }
-                            placeholder="Ex.: potencial de mercado de 1.933 pessoas..."
+                            placeholder="Ex.: 8,20%"
                             className={cn(
-                              "w-full rounded-xl border border-slate-200 bg-white p-2.5 pb-4 text-xs text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-none shadow-2xs",
+                              "w-full rounded-xl border border-purple-200 bg-purple-50/50 px-3 py-2 text-sm font-bold text-purple-950 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
                               !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
                             )}
                           />
-                          {row.comments.length > 0 && (
-                            <span className="absolute bottom-1 right-2 text-[8px] tabular-nums font-mono text-slate-400">
-                              {row.comments.length}/500
+                        )}
+                      </td>
+
+                      {/* KPI Secundário */}
+                      <td className="px-4 py-3.5 min-w-[200px]">
+                        {viewMode === "read" ? (
+                          <span className="text-sm text-slate-800 block leading-tight">
+                            {row.secondaryKpiName || "—"}
+                          </span>
+                        ) : (
+                          <input
+                            type="text"
+                            value={row.secondaryKpiName}
+                            disabled={!canEdit}
+                            title={row.secondaryKpiName || undefined}
+                            onChange={(e) =>
+                              updateGoalRow(row.id, {
+                                secondaryKpiName: e.target.value,
+                              })
+                            }
+                            placeholder="Ex.: Número de alunos"
+                            className={cn(
+                              "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                            )}
+                          />
+                        )}
+                      </td>
+
+                      {/* Valor-Alvo (Secundário) */}
+                      <td className="px-4 py-3.5 min-w-[130px]">
+                        {viewMode === "read" ? (
+                          row.secondaryKpiTarget ? (
+                            <span className="inline-block px-2.5 py-1 rounded-lg bg-purple-50 text-purple-800 border border-purple-200 font-bold text-xs tabular-nums">
+                              {row.secondaryKpiTarget}
                             </span>
-                          )}
-                        </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs">—</span>
+                          )
+                        ) : (
+                          <input
+                            type="text"
+                            value={row.secondaryKpiTarget}
+                            disabled={!canEdit}
+                            onChange={(e) =>
+                              updateGoalRow(row.id, {
+                                secondaryKpiTarget: e.target.value,
+                              })
+                            }
+                            placeholder="Ex.: 159 alunos"
+                            className={cn(
+                              "w-full rounded-xl border border-purple-200 bg-purple-50/50 px-3 py-2 text-sm font-bold text-purple-950 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition shadow-2xs",
+                              !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                            )}
+                          />
+                        )}
+                      </td>
+
+                      {/* Comentários */}
+                      <td className="px-4 py-3.5 min-w-[260px]">
+                        {viewMode === "read" ? (
+                          <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 italic">
+                            {row.comments || (
+                              <span className="text-slate-400 not-italic">
+                                Nenhum comentário informado
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <textarea
+                              value={row.comments}
+                              disabled={!canEdit}
+                              maxLength={500}
+                              rows={3}
+                              onChange={(e) =>
+                                updateGoalRow(row.id, {
+                                  comments: e.target.value,
+                                })
+                              }
+                              placeholder="Ex.: potencial de mercado de 1.933 pessoas estimado para o TEGO..."
+                              className={cn(
+                                "w-full rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100 transition resize-y min-h-[75px] shadow-2xs",
+                                !canEdit && "bg-slate-50 text-slate-600 cursor-not-allowed",
+                              )}
+                            />
+                            <div className="flex justify-end pr-1">
+                              <span className="text-[10px] tabular-nums font-mono text-slate-400">
+                                {row.comments.length}/500
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </td>
 
                       {/* Ações */}
