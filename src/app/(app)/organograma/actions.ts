@@ -304,40 +304,46 @@ export async function setParentOrgUnit(formData: FormData): Promise<void> {
 }
 
 /** Cargo de uma pessoa, editado direto do organograma. */
-export async function setPersonJobTitle(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
+export async function setPersonJobTitle(formData: FormData): Promise<{ ok: boolean; message: string }> {
+  try {
+    const admin = await requireAdmin();
 
-  const userId = field(formData, "userId");
-  if (!userId) return;
+    const userId = field(formData, "userId");
+    if (!userId) return { ok: false, message: "Usuário não informado." };
 
-  const jobTitleId = field(formData, "jobTitleId") || null;
+    const jobTitleId = field(formData, "jobTitleId") || null;
 
-  const db = await getDb();
-  const antes = await db
-    .select({ id: user.id, name: user.name, jobTitleId: user.jobTitleId })
-    .from(user)
-    .where(eq(user.id, userId))
-    .get();
+    const db = await getDb();
+    const antes = await db
+      .select({ id: user.id, name: user.name, jobTitleId: user.jobTitleId })
+      .from(user)
+      .where(eq(user.id, userId))
+      .get();
 
-  if (!antes) return;
+    if (!antes) return { ok: false, message: "Usuário não encontrado." };
 
-  await db
-    .update(user)
-    .set({ jobTitleId, updatedAt: new Date() })
-    .where(eq(user.id, userId));
+    await db
+      .update(user)
+      .set({ jobTitleId, updatedAt: new Date() })
+      .where(eq(user.id, userId));
 
-  await writeAuditLog({
-    actorUserId: admin.id,
-    actorEmail: admin.email,
-    action: "user.org_change",
-    entityType: "user",
-    entityId: userId,
-    summary: `Alterou o cargo de ${antes.name} pelo organograma`,
-    beforeData: { jobTitleId: antes.jobTitleId },
-    afterData: { jobTitleId },
-  });
+    await writeAuditLog({
+      actorUserId: admin.id,
+      actorEmail: admin.email,
+      action: "user.org_change",
+      entityType: "user",
+      entityId: userId,
+      summary: `Alterou o cargo de ${antes.name} pelo organograma`,
+      beforeData: { jobTitleId: antes.jobTitleId },
+      afterData: { jobTitleId },
+    });
 
-  revalidateOrganograma();
+    revalidateOrganograma();
+    return { ok: true, message: "Cargo atualizado com sucesso!" };
+  } catch (err) {
+    console.error("[setPersonJobTitle] Erro:", err);
+    return { ok: false, message: "Erro ao salvar cargo. Tente novamente." };
+  }
 }
 
 /** Usado pelos seletores do painel lateral do organograma. */

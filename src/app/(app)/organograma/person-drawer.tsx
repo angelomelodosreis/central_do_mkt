@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   deactivatePerson,
@@ -28,15 +30,243 @@ import {
 } from "@/lib/db/schema";
 
 /**
+ * Seção de Cargo com feedback imediato, bloqueio contra múltiplos cliques
+ * e atualização otimista na interface.
+ */
+function CargoSection({
+  person,
+  jobTitles,
+  canEdit,
+}: {
+  person: OrgPerson;
+  jobTitles: Array<{ id: string; name: string }>;
+  canEdit: boolean;
+}) {
+  const [selectedJobTitleId, setSelectedJobTitleId] = useState(
+    person.jobTitleId ?? "",
+  );
+  const [displayedJobTitleName, setDisplayedJobTitleName] = useState(
+    person.jobTitleName ?? null,
+  );
+  const [isPending, startTransition] = useTransition();
+
+  // Mantém sincronizado caso a pessoa ou os dados externos mudem
+  useEffect(() => {
+    setSelectedJobTitleId(person.jobTitleId ?? "");
+    setDisplayedJobTitleName(person.jobTitleName ?? null);
+  }, [person.jobTitleId, person.jobTitleName]);
+
+  const hasChanged = selectedJobTitleId !== (person.jobTitleId ?? "");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isPending || !hasChanged) return;
+
+    const previousJobTitleId = person.jobTitleId ?? "";
+    const previousJobTitleName = displayedJobTitleName;
+    const targetTitle = jobTitles.find((t) => t.id === selectedJobTitleId);
+    const newName = targetTitle
+      ? targetTitle.name
+      : selectedJobTitleId
+        ? null
+        : "Sem cargo definido";
+
+    // Atualização otimista imediata para feedback instantâneo ao usuário
+    setDisplayedJobTitleName(newName);
+
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.userId);
+        fd.append("jobTitleId", selectedJobTitleId);
+
+        const res = await setPersonJobTitle(fd);
+        if (res && !res.ok) {
+          // Reverte o estado visual em caso de falha do servidor
+          setSelectedJobTitleId(previousJobTitleId);
+          setDisplayedJobTitleName(previousJobTitleName);
+          toast.error(res.message || "Erro ao atualizar cargo.");
+        } else {
+          toast.success(
+            newName && newName !== "Sem cargo definido"
+              ? `Cargo de ${person.name} atualizado para "${newName}"!`
+              : `Cargo de ${person.name} removido com sucesso!`,
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        setSelectedJobTitleId(previousJobTitleId);
+        setDisplayedJobTitleName(previousJobTitleName);
+        toast.error("Erro ao salvar cargo. Tente novamente.");
+      }
+    });
+  };
+
+  return (
+    <section>
+      <div className="flex items-center justify-between">
+        <SectionTitle>Cargo</SectionTitle>
+        {isPending && (
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 animate-pulse">
+            <Loader2 className="size-3.5 animate-spin" />
+            Salvando cargo…
+          </span>
+        )}
+      </div>
+
+      {canEdit ? (
+        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+          <input type="hidden" name="userId" value={person.userId} />
+          <div className="min-w-0 flex-1">
+            <Select
+              name="jobTitleId"
+              size="sm"
+              value={selectedJobTitleId}
+              onValueChange={setSelectedJobTitleId}
+              disabled={isPending}
+              ariaLabel="Cargo"
+              placeholder="Sem cargo definido"
+              options={[
+                { value: "", label: "Sem cargo definido" },
+                ...jobTitles.map((title) => ({
+                  value: title.id,
+                  label: title.name,
+                })),
+              ]}
+            />
+          </div>
+          <Button
+            type="submit"
+            size="sm"
+            variant={hasChanged ? "primary" : "secondary"}
+            loading={isPending}
+            disabled={isPending || !hasChanged}
+          >
+            {isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </form>
+      ) : (
+        <p className="text-sm text-slate-700">
+          {displayedJobTitleName ?? "sem cargo definido"}
+        </p>
+      )}
+
+      {displayedJobTitleName && canEdit && (
+        <p className="mt-1.5 text-xs text-slate-500">
+          Cargo atual:{" "}
+          <span className="font-semibold text-slate-800">
+            {displayedJobTitleName}
+          </span>
+        </p>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Seção de Papel com feedback visual imediato e trava anti-duplo clique.
+ */
+function RoleSection({
+  person,
+  canEdit,
+}: {
+  person: OrgPerson;
+  canEdit: boolean;
+}) {
+  const [selectedRole, setSelectedRole] = useState(person.role);
+  const [displayedRole, setDisplayedRole] = useState(person.role);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setSelectedRole(person.role);
+    setDisplayedRole(person.role);
+  }, [person.role]);
+
+  const hasChanged = selectedRole !== person.role;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isPending || !hasChanged) return;
+
+    const previousRole = displayedRole;
+    setDisplayedRole(selectedRole);
+
+    startTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.userId);
+        fd.append("role", selectedRole);
+
+        await changeUserRole(fd);
+        toast.success(
+          `Papel de ${person.name} alterado para "${USER_ROLE_LABELS[selectedRole]}".`,
+        );
+      } catch (err) {
+        console.error(err);
+        setSelectedRole(previousRole);
+        setDisplayedRole(previousRole);
+        toast.error("Erro ao alterar papel de acesso.");
+      }
+    });
+  };
+
+  return (
+    <section>
+      <div className="flex items-center justify-between">
+        <SectionTitle>Papel de acesso</SectionTitle>
+        {isPending && (
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 animate-pulse">
+            <Loader2 className="size-3.5 animate-spin" />
+            Salvando papel…
+          </span>
+        )}
+      </div>
+
+      {canEdit ? (
+        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+          <input type="hidden" name="userId" value={person.userId} />
+          <div className="min-w-0 flex-1">
+            <Select
+              name="role"
+              size="sm"
+              value={selectedRole}
+              onValueChange={(val) => setSelectedRole(val as any)}
+              disabled={isPending}
+              ariaLabel="Papel de acesso"
+              options={USER_ROLES.map((role) => ({
+                value: role,
+                label: USER_ROLE_LABELS[role],
+              }))}
+            />
+          </div>
+          <Button
+            type="submit"
+            size="sm"
+            variant={hasChanged ? "primary" : "secondary"}
+            loading={isPending}
+            disabled={isPending || !hasChanged}
+          >
+            {isPending ? "Salvando…" : "Salvar"}
+          </Button>
+        </form>
+      ) : (
+        <RoleBadge role={displayedRole} />
+      )}
+      <p className="mt-1.5 text-xs text-slate-500">
+        O papel diz o que ela pode fazer. Sobre o quê é escopo — e escopo se
+        concede na ficha completa.
+      </p>
+    </section>
+  );
+}
+
+/**
  * Edição da pessoa sem sair do organograma.
  *
  * Um painel lateral, e não um desvio para Administração: quem está olhando a
  * estrutura precisa corrigir o cargo ou a unidade ali, no contexto em que
  * percebeu o erro. Sair da tela e voltar faz perder o lugar na árvore — e, com
  * 40 pessoas, achar de novo onde se estava é o suficiente para não corrigir.
- *
- * As ações são as MESMAS da ficha em Administração. Nenhuma regra vive aqui: se
- * vivesse, as duas telas divergiriam na primeira mudança.
  */
 export function PersonDrawer({
   person,
@@ -51,6 +281,12 @@ export function PersonDrawer({
 }) {
   const [confirmandoTirar, setConfirmandoTirar] = useState(false);
   const [confirmandoDesativar, setConfirmandoDesativar] = useState(false);
+  const [teamSelectId, setTeamSelectId] = useState("");
+  const [squadSelectId, setSquadSelectId] = useState("");
+
+  const [isTeamPending, startTeamTransition] = useTransition();
+  const [isSquadPending, startSquadTransition] = useTransition();
+  const [isDangerPending, startDangerTransition] = useTransition();
 
   const unidadesDisponiveis = snapshot.units.filter(
     (unit) =>
@@ -62,6 +298,74 @@ export function PersonDrawer({
     (item) => item.isActive && !person.squadIds.includes(item.id),
   );
 
+  const handleAddTeam = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!teamSelectId || isTeamPending) return;
+
+    startTeamTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.userId);
+        fd.append("teamId", teamSelectId);
+        await addTeamMembership(fd);
+        setTeamSelectId("");
+        toast.success(`Adicionado ao time com sucesso!`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Erro ao incluir no time.");
+      }
+    });
+  };
+
+  const handleRemoveTeam = (membershipId: string, teamName: string) => {
+    if (isTeamPending) return;
+    startTeamTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("membershipId", membershipId);
+        await removeTeamMembership(fd);
+        toast.success(`Removido de "${teamName}".`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Erro ao remover do time.");
+      }
+    });
+  };
+
+  const handleAddSquad = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!squadSelectId || isSquadPending) return;
+
+    startSquadTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("userId", person.userId);
+        fd.append("squadId", squadSelectId);
+        await addSquadMember(fd);
+        setSquadSelectId("");
+        toast.success(`Adicionado ao squad com sucesso!`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Erro ao adicionar ao squad.");
+      }
+    });
+  };
+
+  const handleRemoveSquad = (membershipId: string, squadLabel: string) => {
+    if (isSquadPending) return;
+    startSquadTransition(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("membershipId", membershipId);
+        await removeSquadMember(fd);
+        toast.success(`Removido do squad "${squadLabel}".`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Erro ao remover do squad.");
+      }
+    });
+  };
+
   return (
     <Drawer
       open
@@ -70,69 +374,15 @@ export function PersonDrawer({
       description={person.email}
     >
       <div className="space-y-4">
-        {/* Cargo — um só, e da pessoa */}
-        <section>
-          <SectionTitle>Cargo</SectionTitle>
-          {canEdit ? (
-            <form action={setPersonJobTitle} className="flex items-end gap-2">
-              <input type="hidden" name="userId" value={person.userId} />
-              <div className="min-w-0 flex-1">
-                <Select
-                  name="jobTitleId"
-                  size="sm"
-                  defaultValue={person.jobTitleId ?? ""}
-                  ariaLabel="Cargo"
-                  placeholder="Sem cargo definido"
-                  options={[
-                    { value: "", label: "Sem cargo definido" },
-                    ...snapshot.jobTitles.map((title) => ({
-                      value: title.id,
-                      label: title.name,
-                    })),
-                  ]}
-                />
-              </div>
-              <Button type="submit" size="sm" variant="secondary">
-                Salvar
-              </Button>
-            </form>
-          ) : (
-            <p className="text-sm text-slate-700">
-              {person.jobTitleName ?? "sem cargo definido"}
-            </p>
-          )}
-        </section>
+        {/* Cargo — Seção reativa com feedback de carregamento e trava anti-duplo clique */}
+        <CargoSection
+          person={person}
+          jobTitles={snapshot.jobTitles}
+          canEdit={canEdit}
+        />
 
         {/* Papel de acesso */}
-        <section>
-          <SectionTitle>Papel de acesso</SectionTitle>
-          {canEdit ? (
-            <form action={changeUserRole} className="flex items-end gap-2">
-              <input type="hidden" name="userId" value={person.userId} />
-              <div className="min-w-0 flex-1">
-                <Select
-                  name="role"
-                  size="sm"
-                  defaultValue={person.role}
-                  ariaLabel="Papel de acesso"
-                  options={USER_ROLES.map((role) => ({
-                    value: role,
-                    label: USER_ROLE_LABELS[role],
-                  }))}
-                />
-              </div>
-              <Button type="submit" size="sm" variant="secondary">
-                Salvar
-              </Button>
-            </form>
-          ) : (
-            <RoleBadge role={person.role} />
-          )}
-          <p className="mt-1.5 text-xs text-slate-500">
-            O papel diz o que ela pode fazer. Sobre o quê é escopo — e escopo se
-            concede na ficha completa.
-          </p>
-        </section>
+        <RoleSection person={person} canEdit={canEdit} />
 
         {/* Onde a pessoa está na estrutura */}
         <section>
@@ -166,21 +416,21 @@ export function PersonDrawer({
 
                   {canEdit ? (
                     <div className="flex shrink-0 gap-1">
-                      <form action={removeTeamMembership}>
-                        <input
-                          type="hidden"
-                          name="membershipId"
-                          value={position.membershipId}
-                        />
-                        <Button
-                          type="submit"
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                        >
-                          Tirar do time
-                        </Button>
-                      </form>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={isTeamPending}
+                        onClick={() =>
+                          handleRemoveTeam(
+                            position.membershipId,
+                            position.teamName,
+                          )
+                        }
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      >
+                        Tirar do time
+                      </Button>
                     </div>
                   ) : null}
                 </li>
@@ -189,10 +439,7 @@ export function PersonDrawer({
           )}
 
           {canEdit && unidadesDisponiveis.length > 0 ? (
-            <form
-              action={addTeamMembership}
-              className="mt-2 flex items-end gap-2"
-            >
+            <form onSubmit={handleAddTeam} className="mt-2 flex items-end gap-2">
               <input type="hidden" name="userId" value={person.userId} />
               <div className="min-w-0 flex-1">
                 <Field label="Incluir em" htmlFor="drawer-unidade">
@@ -200,6 +447,9 @@ export function PersonDrawer({
                     id="drawer-unidade"
                     name="teamId"
                     size="sm"
+                    value={teamSelectId}
+                    onValueChange={setTeamSelectId}
+                    disabled={isTeamPending}
                     placeholder="Escolha…"
                     options={unidadesDisponiveis.map((unit) => ({
                       value: unit.id,
@@ -209,8 +459,13 @@ export function PersonDrawer({
                   />
                 </Field>
               </div>
-              <Button type="submit" size="sm">
-                Adicionar
+              <Button
+                type="submit"
+                size="sm"
+                loading={isTeamPending}
+                disabled={isTeamPending || !teamSelectId}
+              >
+                {isTeamPending ? "Adicionando…" : "Adicionar"}
               </Button>
             </form>
           ) : null}
@@ -242,21 +497,21 @@ export function PersonDrawer({
                       ) : null}
                     </p>
                     {canEdit ? (
-                      <form action={removeSquadMember}>
-                        <input
-                          type="hidden"
-                          name="membershipId"
-                          value={person.squadMembershipIds[item.id] ?? ""}
-                        />
-                        <Button
-                          type="submit"
-                          size="sm"
-                          variant="ghost"
-                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                        >
-                          Tirar do squad
-                        </Button>
-                      </form>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={isSquadPending}
+                        onClick={() =>
+                          handleRemoveSquad(
+                            person.squadMembershipIds[item.id] ?? "",
+                            item.label,
+                          )
+                        }
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      >
+                        Tirar do squad
+                      </Button>
                     ) : null}
                   </li>
                 ))}
@@ -264,7 +519,7 @@ export function PersonDrawer({
           )}
 
           {canEdit && squadsDisponiveis.length > 0 ? (
-            <form action={addSquadMember} className="mt-2 flex items-end gap-2">
+            <form onSubmit={handleAddSquad} className="mt-2 flex items-end gap-2">
               <input type="hidden" name="userId" value={person.userId} />
               <div className="min-w-0 flex-1">
                 <Field label="Adicionar squad" htmlFor="drawer-squad">
@@ -272,6 +527,9 @@ export function PersonDrawer({
                     id="drawer-squad"
                     name="squadId"
                     size="sm"
+                    value={squadSelectId}
+                    onValueChange={setSquadSelectId}
+                    disabled={isSquadPending}
                     placeholder="Escolha a BU…"
                     options={squadsDisponiveis.map((item) => ({
                       value: item.id,
@@ -281,8 +539,13 @@ export function PersonDrawer({
                   />
                 </Field>
               </div>
-              <Button type="submit" size="sm">
-                Adicionar
+              <Button
+                type="submit"
+                size="sm"
+                loading={isSquadPending}
+                disabled={isSquadPending || !squadSelectId}
+              >
+                {isSquadPending ? "Adicionando…" : "Adicionar"}
               </Button>
             </form>
           ) : null}
@@ -295,37 +558,50 @@ export function PersonDrawer({
               Tirar do organograma
             </h4>
             <p className="text-xs text-red-700">
-              Desvincule {person.name} de toda a estrutura ou suspenda o acesso à Central.
+              Desvincule {person.name} de toda a estrutura ou suspenda o acesso à
+              Central.
             </p>
 
             <div className="space-y-2 pt-1">
               {confirmandoTirar ? (
                 <div className="rounded-xl border border-red-200 bg-white p-3 space-y-2">
                   <p className="text-xs font-medium text-slate-800">
-                    Tem certeza? {person.name} será desvinculado(a) de todos os times e squads, ficando &quot;fora da estrutura&quot;.
+                    Tem certeza? {person.name} será desvinculado(a) de todos os
+                    times e squads, ficando &quot;fora da estrutura&quot;.
                   </p>
                   <div className="flex gap-2">
-                    <form
-                      action={async (fd) => {
-                        await removeFromAllOrgUnits(fd);
-                        setConfirmandoTirar(false);
-                        onClose();
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      loading={isDangerPending}
+                      disabled={isDangerPending}
+                      className="border-red-300 text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        startDangerTransition(async () => {
+                          try {
+                            const fd = new FormData();
+                            fd.append("userId", person.userId);
+                            await removeFromAllOrgUnits(fd);
+                            setConfirmandoTirar(false);
+                            toast.success(
+                              `${person.name} foi removido(a) de todos os times e squads.`,
+                            );
+                            onClose();
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Erro ao remover usuário.");
+                          }
+                        });
                       }}
                     >
-                      <input type="hidden" name="userId" value={person.userId} />
-                      <Button
-                        type="submit"
-                        size="sm"
-                        variant="secondary"
-                        className="border-red-300 text-red-700 hover:bg-red-50"
-                      >
-                        Confirmar remoção
-                      </Button>
-                    </form>
+                      Confirmar remoção
+                    </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
+                      disabled={isDangerPending}
                       onClick={() => setConfirmandoTirar(false)}
                     >
                       Cancelar
@@ -347,25 +623,41 @@ export function PersonDrawer({
               {confirmandoDesativar ? (
                 <div className="rounded-xl border border-red-200 bg-white p-3 space-y-2">
                   <p className="text-xs font-medium text-slate-800">
-                    Suspender {person.name}? A pessoa perderá acesso imediato à Central e sumirá do organograma.
+                    Suspender {person.name}? A pessoa perderá acesso imediato à
+                    Central e sumirá do organograma.
                   </p>
                   <div className="flex gap-2">
-                    <form
-                      action={async (fd) => {
-                        await deactivatePerson(fd);
-                        setConfirmandoDesativar(false);
-                        onClose();
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="danger"
+                      loading={isDangerPending}
+                      disabled={isDangerPending}
+                      onClick={() => {
+                        startDangerTransition(async () => {
+                          try {
+                            const fd = new FormData();
+                            fd.append("userId", person.userId);
+                            await deactivatePerson(fd);
+                            setConfirmandoDesativar(false);
+                            toast.success(
+                              `${person.name} foi suspenso(a) da plataforma.`,
+                            );
+                            onClose();
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Erro ao suspender usuário.");
+                          }
+                        });
                       }}
                     >
-                      <input type="hidden" name="userId" value={person.userId} />
-                      <Button type="submit" size="sm" variant="danger">
-                        Confirmar suspensão
-                      </Button>
-                    </form>
+                      Confirmar suspensão
+                    </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
+                      disabled={isDangerPending}
                       onClick={() => setConfirmandoDesativar(false)}
                     >
                       Cancelar

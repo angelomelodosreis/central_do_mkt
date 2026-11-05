@@ -18,6 +18,7 @@ import {
   Trash2,
   ArrowRight,
   UserCheck,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,6 +63,8 @@ export function GovernanceMatrix({ data }: { data: GovernanceMatrixData }) {
   });
 
   const [isPending, startTransition] = useTransition();
+  const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   // Filtro de usuários para a matriz
   const filteredUsers = useMemo(() => {
@@ -86,34 +89,58 @@ export function GovernanceMatrix({ data }: { data: GovernanceMatrixData }) {
     scopeId: string | null,
     targetName: string,
   ) {
+    if (isPending) return;
+    setPendingAction(`scope_${scopeType}_${scopeId ?? "all"}`);
     startTransition(async () => {
-      const res = await toggleDirectScopeAction(userId, scopeType, scopeId);
-      if (res.ok) {
-        toast.success(res.message ?? "Escopo atualizado com sucesso.");
-      } else {
-        toast.error(res.message ?? "Erro ao alterar escopo.");
+      try {
+        const res = await toggleDirectScopeAction(userId, scopeType, scopeId);
+        if (res.ok) {
+          toast.success(res.message ?? "Escopo atualizado com sucesso.");
+        } else {
+          toast.error(res.message ?? "Erro ao alterar escopo.");
+        }
+      } catch (err) {
+        toast.error("Erro ao alterar escopo.");
+      } finally {
+        setPendingAction(null);
       }
     });
   }
 
   function handleRoleChange(userId: string, newRole: UserRole) {
+    if (isPending) return;
+    setPendingRole(newRole);
     startTransition(async () => {
-      const res = await updateUserRoleAction(userId, newRole);
-      if (res.ok) {
-        toast.success(res.message ?? "Papel alterado com sucesso.");
-      } else {
-        toast.error(res.message ?? "Erro ao alterar papel.");
+      try {
+        const res = await updateUserRoleAction(userId, newRole);
+        if (res.ok) {
+          toast.success(res.message ?? "Papel alterado com sucesso.");
+        } else {
+          toast.error(res.message ?? "Erro ao alterar papel.");
+        }
+      } catch (err) {
+        toast.error("Erro ao alterar papel.");
+      } finally {
+        setPendingRole(null);
       }
     });
   }
 
   function handleToggleSuperAdmin(userId: string) {
+    if (isPending) return;
+    setPendingAction("superadmin");
     startTransition(async () => {
-      const res = await toggleSuperAdminAction(userId);
-      if (res.ok) {
-        toast.success(res.message ?? "Super Admin alterado.");
-      } else {
-        toast.error(res.message ?? "Erro ao alterar Super Admin.");
+      try {
+        const res = await toggleSuperAdminAction(userId);
+        if (res.ok) {
+          toast.success(res.message ?? "Super Admin alterado.");
+        } else {
+          toast.error(res.message ?? "Erro ao alterar Super Admin.");
+        }
+      } catch (err) {
+        toast.error("Erro ao alterar Super Admin.");
+      } finally {
+        setPendingAction(null);
       }
     });
   }
@@ -641,37 +668,57 @@ export function GovernanceMatrix({ data }: { data: GovernanceMatrixData }) {
                     Ações Rápidas
                   </p>
                   <div className="grid grid-cols-2 gap-2">
-                    {USER_ROLES.map((role) => (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() => handleRoleChange(selectedUser.id, role)}
-                        disabled={selectedUser.role === role}
-                        className={cn(
-                          "rounded-lg border px-2 py-1.5 text-xs font-medium transition",
-                          selectedUser.role === role
-                            ? "border-brand-600 bg-brand-50 text-brand-700"
-                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
-                        )}
-                      >
-                        {USER_ROLE_LABELS[role]}
-                      </button>
-                    ))}
+                    {USER_ROLES.map((role) => {
+                      const isThisRolePending = isPending && pendingRole === role;
+                      return (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => handleRoleChange(selectedUser.id, role)}
+                          disabled={selectedUser.role === role || isPending}
+                          className={cn(
+                            "rounded-lg border px-2 py-1.5 text-xs font-medium transition flex items-center justify-center gap-1.5 cursor-pointer",
+                            selectedUser.role === role
+                              ? "border-brand-600 bg-brand-50 text-brand-700"
+                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                            isPending && "opacity-60 cursor-not-allowed",
+                          )}
+                        >
+                          {isThisRolePending ? (
+                            <Loader2 className="size-3 animate-spin text-brand-600" />
+                          ) : null}
+                          <span>
+                            {isThisRolePending
+                              ? "Salvando…"
+                              : USER_ROLE_LABELS[role]}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <button
                     type="button"
                     onClick={() => handleToggleSuperAdmin(selectedUser.id)}
+                    disabled={isPending}
                     className={cn(
-                      "mt-2 w-full rounded-lg border py-2 text-xs font-medium transition",
+                      "mt-2 w-full rounded-lg border py-2 text-xs font-medium transition flex items-center justify-center gap-1.5 cursor-pointer",
                       selectedUser.isSuperAdmin
                         ? "border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100"
                         : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                      isPending && "opacity-60 cursor-not-allowed",
                     )}
                   >
-                    {selectedUser.isSuperAdmin
-                      ? "Revogar Super Admin"
-                      : "Promover a Super Admin"}
+                    {isPending && pendingAction === "superadmin" ? (
+                      <Loader2 className="size-3 animate-spin text-purple-700" />
+                    ) : null}
+                    <span>
+                      {isPending && pendingAction === "superadmin"
+                        ? "Alterando…"
+                        : selectedUser.isSuperAdmin
+                          ? "Revogar Super Admin"
+                          : "Promover a Super Admin"}
+                    </span>
                   </button>
 
                   <Link
